@@ -1,14 +1,14 @@
-{{ define "title" }}<title>{{ .Wiki.Title }} - {{.Wiki.Title }}</title>{{ end }}
+{{ define "title" }}<title>{{ .PageTitle }} - {{.PageTitle }}</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
     {{ template "sidebar_cats" . }}
 {{ end }}
 {{ define "content" }}     
-<h1>{{ .Wiki.Title }}</h1>
-{{$title := .Wiki.Title}}
-<h2>{{ .Frontmatter.Tags }}</h2>
-<h2>{{ .Frontmatter.Created }}</h2>
-<h2>{{ .Frontmatter.LastModTime }}</h2>
+<h1>{{ .PageTitle }}</h1>
+{{$title := .PageTitle}}
+<p>{{ .Frontmatter.Tags }}</p>
+<p>{{ .Frontmatter.Created }}</p>
+<p>{{ .Frontmatter.LastModTime }}</p>
 <hr />
 <div>
 {{.Wiki.Content | safeHTML}}
