@@ -1,0 +1,183 @@
+2015/07/26 01:53:25 Started GET "/" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57398
+2015/07/26 01:53:25 Returning 404 in 1.726569ms
+2015/07/26 01:53:25 Started GET "/favicon.ico" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57398
+2015/07/26 01:53:25 Returning 404 in 78.723µs
+2015/07/26 01:54:36 Started GET "/md/README.md" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57413
+2015/07/26 01:54:36 Returning 404 in 88.574µs
+2015/07/26 01:54:48 Started GET "/md/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57413
+2015/07/26 01:54:48 Returning 404 in 76.118µs
+2015/07/26 01:58:59 Started GET "/md/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57469
+2015/07/26 01:58:59 Returning 404 in 73.713µs
+2015/07/26 01:59:13 Started GET "/md/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57474
+2015/07/26 01:59:13 Returning 404 in 86.326µs
+2015/07/26 02:00:22 Started GET "/md/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57488
+2015/07/26 02:00:22 README Page rendered!
+2015/07/26 02:00:22 Returning 200 in 783.398µs
+2015/07/26 02:00:22 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57488
+2015/07/26 02:00:22 Returning 200 in 4.388962ms
+2015/07/26 02:00:22 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57489
+2015/07/26 02:00:22 Returning 200 in 136.712µs
+2015/07/26 02:00:22 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57490
+2015/07/26 02:00:22 Returning 200 in 40.654µs
+2015/07/26 02:00:22 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57488
+2015/07/26 02:00:22 Returning 200 in 111.225µs
+2015/07/26 02:00:22 Started GET "/favicon.png" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57489
+2015/07/26 02:00:22 Returning 200 in 115.714µs
+2015/07/26 02:21:38 Started GET "/md/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57924
+2015/07/26 02:21:38 README Page rendered!
+2015/07/26 02:21:38 Returning 200 in 761.268µs
+2015/07/26 02:21:38 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57924
+2015/07/26 02:21:38 Returning 304 in 64.836µs
+2015/07/26 02:21:38 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57924
+2015/07/26 02:21:38 Returning 304 in 85.621µs
+2015/07/26 02:21:38 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57925
+2015/07/26 02:21:38 Returning 304 in 63.439µs
+2015/07/26 02:21:38 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57924
+2015/07/26 02:21:38 Returning 304 in 65.518µs
+2015/07/26 02:24:21 Started GET "/md/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57961
+2015/07/26 02:24:21 README Page rendered!
+2015/07/26 02:24:21 Returning 200 in 649.256µs
+2015/07/26 02:24:21 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57961
+2015/07/26 02:24:21 Returning 304 in 68.748µs
+2015/07/26 02:24:21 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57961
+2015/07/26 02:24:21 Returning 304 in 57.221µs
+2015/07/26 02:24:21 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57961
+2015/07/26 02:24:21 Returning 304 in 61.669µs
+2015/07/26 02:24:21 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57961
+2015/07/26 02:24:21 Returning 304 in 64.853µs
+2015/07/26 02:24:46 Started GET "/edit/zomg" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:57961
+2015/07/26 02:24:46 Returning 0 in 57.777µs
+2015/07/26 02:35:37 Started GET "/edit/zomg" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58113
+2015/07/26 02:35:37 Returning 0 in 118.625µs
+2015/07/26 02:43:50 Started GET "/edit/zomg" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58230
+2015/07/26 02:43:50 Returning 0 in 82.864µs
+2015/07/26 02:43:52 Started GET "/edit/zomg" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58231
+2015/07/26 02:43:52 Returning 0 in 67.221µs
+2015/07/26 02:44:04 Started GET "/" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58231
+2015/07/26 02:44:04 Returning 200 in 109.57µs
+2015/07/26 02:44:12 Started GET "/zomg" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58231
+2015/07/26 02:44:12 Returning 404 in 59.603µs
+2015/07/26 02:45:24 Started GET "/edit/zomg" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58252
+2015/07/26 02:45:24 Returning 0 in 169.135µs
+2015/07/26 02:46:06 Started GET "/edit/zomg" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58260
+2015/07/26 02:46:06 Returning 0 in 118.961µs
+2015/07/26 02:46:10 Started GET "/edit/aaa" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58261
+2015/07/26 02:46:10 Returning 0 in 69.345µs
+2015/07/26 02:49:27 Started GET "/edit/aaa" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58303
+2015/07/26 02:49:27 Returning 0 in 154.715µs
+2015/07/26 02:50:03 Started GET "/edit/aaa" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58316
+2015/07/26 02:50:03 open ./md/aaa.md: no such file or directory
+2015/07/26 02:50:03 Returning 0 in 197.892µs
+2015/07/26 02:50:38 Started GET "/edit/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58333
+2015/07/26 02:50:38 Returning 0 in 151.922µs
+2015/07/26 02:52:03 Started GET "/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58354
+2015/07/26 02:52:03 template: md.tmpl:1:35: executing "title" at <.Page.Title>: Page is not a field of struct type struct { Wiki *main.Wiki; Title string; MD template.HTML }
+2015/07/26 02:52:03 README Page rendered!
+2015/07/26 02:52:03 Returning 0 in 713.484µs
+2015/07/26 02:53:29 Started GET "/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58368
+2015/07/26 02:53:29 template: base.tmpl:24:29: executing "base" at <.Page.TheName>: Page is not a field of struct type struct { Wiki *main.Wiki; Title string; MD template.HTML }
+2015/07/26 02:53:29 README Page rendered!
+2015/07/26 02:53:29 Returning 0 in 552.618µs
+2015/07/26 02:56:14 Started GET "/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58406
+2015/07/26 02:56:14 template: base.tmpl:24:29: executing "base" at <.Base.SiteName>: Base is not a field of struct type struct { Wiki *main.Wiki; Title string; MD template.HTML }
+2015/07/26 02:56:14 README Page rendered!
+2015/07/26 02:56:14 Returning 0 in 757.168µs
+2015/07/26 02:57:45 Started GET "/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58426
+2015/07/26 02:57:45 template: login_form.tmpl:2:11: executing "login_form" at <.Page.UN>: Page is not a field of struct type struct { Wiki *main.Wiki; Title string; MD template.HTML }
+2015/07/26 02:57:45 README Page rendered!
+2015/07/26 02:57:45 Returning 0 in 682.247µs
+2015/07/26 02:58:32 Started GET "/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58438
+2015/07/26 02:58:32 README Page rendered!
+2015/07/26 02:58:32 Returning 200 in 807.01µs
+2015/07/26 02:58:32 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58438
+2015/07/26 02:58:32 Returning 304 in 100.687µs
+2015/07/26 02:58:32 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58438
+2015/07/26 02:58:32 Returning 304 in 63.486µs
+2015/07/26 02:58:32 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58438
+2015/07/26 02:58:32 Returning 304 in 57.786µs
+2015/07/26 02:58:32 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58438
+2015/07/26 02:58:32 Returning 304 in 58.406µs
+2015/07/26 02:58:45 Started GET "/edit/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58438
+2015/07/26 02:58:45 Returning 0 in 109.439µs
+2015/07/26 02:59:56 Started GET "/edit/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58464
+2015/07/26 02:59:56 Returning 0 in 377.444µs
+2015/07/26 03:02:53 Started GET "/edit/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58505
+2015/07/26 03:02:53 template: edit.tmpl:10:61: executing "content" at <.Body>: Body is not a field of struct type *main.Wiki
+2015/07/26 03:02:53 Returning 0 in 404.703µs
+2015/07/26 03:02:57 Started GET "/" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58505
+2015/07/26 03:02:57 Returning 304 in 73.587µs
+2015/07/26 03:03:01 Started GET "/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58505
+2015/07/26 03:03:01 index Page rendered!
+2015/07/26 03:03:01 Returning 200 in 289.955µs
+2015/07/26 03:03:18 Started GET "/edit/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58505
+2015/07/26 03:03:18 template: edit.tmpl:10:61: executing "content" at <.Body>: Body is not a field of struct type *main.Wiki
+2015/07/26 03:03:18 Returning 0 in 117.567µs
+2015/07/26 03:03:46 Started GET "/edit/README" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58517
+2015/07/26 03:03:46 Returning 200 in 444.416µs
+2015/07/26 03:03:46 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58517
+2015/07/26 03:03:46 Returning 304 in 71.044µs
+2015/07/26 03:03:46 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58517
+2015/07/26 03:03:46 Returning 304 in 55.997µs
+2015/07/26 03:03:46 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58518
+2015/07/26 03:03:46 Returning 304 in 37.209µs
+2015/07/26 03:03:46 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58517
+2015/07/26 03:03:46 Returning 304 in 59.048µs
+2015/07/26 03:03:46 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58518
+2015/07/26 03:03:46 Returning 200 in 4.112679ms
+2015/07/26 03:03:46 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58517
+2015/07/26 03:03:46 Returning 200 in 126.702µs
+2015/07/26 03:03:46 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58519
+2015/07/26 03:03:46 Returning 200 in 141.401µs
+2015/07/26 03:03:46 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58517
+2015/07/26 03:03:46 Returning 200 in 187.256µs
+2015/07/26 03:03:46 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58518
+2015/07/26 03:03:46 Returning 200 in 77.811µs
+2015/07/26 03:07:54 Started GET "/" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58574
+2015/07/26 03:07:54 open ./md/title.md: no such file or directory
+2015/07/26 03:07:54 open ./md/title.md: no such file or directory
+2015/07/26 03:07:54 [timer] indexHandler took 46.609µs
+2015/07/26 03:07:54 Returning 404 in 109.582µs
+2015/07/26 03:08:10 Started GET "/" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:10 index Page rendered!
+2015/07/26 03:08:10 [timer] indexHandler took 274.971µs
+2015/07/26 03:08:10 Returning 200 in 327.025µs
+2015/07/26 03:08:10 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:10 Returning 304 in 74.509µs
+2015/07/26 03:08:10 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:10 Returning 304 in 53.416µs
+2015/07/26 03:08:10 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:10 Returning 304 in 78.555µs
+2015/07/26 03:08:10 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58578
+2015/07/26 03:08:10 Returning 304 in 72.808µs
+2015/07/26 03:08:10 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:10 Returning 304 in 62.673µs
+2015/07/26 03:08:10 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58578
+2015/07/26 03:08:10 Returning 304 in 61.377µs
+2015/07/26 03:08:10 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:10 Returning 304 in 84.496µs
+2015/07/26 03:08:10 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58578
+2015/07/26 03:08:10 Returning 304 in 69.135µs
+2015/07/26 03:08:10 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58579
+2015/07/26 03:08:10 Returning 304 in 84.99µs
+2015/07/26 03:08:25 Started GET "/" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:25 index Page rendered!
+2015/07/26 03:08:25 [timer] indexHandler took 123.563µs
+2015/07/26 03:08:25 Returning 200 in 195.79µs
+2015/07/26 03:08:25 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:25 Returning 304 in 61.532µs
+2015/07/26 03:08:25 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:25 Returning 304 in 57.332µs
+2015/07/26 03:08:25 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:25 Returning 304 in 55.49µs
+2015/07/26 03:08:25 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58578
+2015/07/26 03:08:25 Returning 304 in 45.664µs
+2015/07/26 03:08:25 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:25 Returning 304 in 71.122µs
+2015/07/26 03:08:25 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:25 Returning 304 in 62.984µs
+2015/07/26 03:08:25 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58579
+2015/07/26 03:08:25 Returning 304 in 38.589µs
+2015/07/26 03:08:25 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:25 Returning 304 in 54.579µs
+2015/07/26 03:08:25 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
+2015/07/26 03:08:25 Returning 304 in 50.803µs

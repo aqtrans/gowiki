@@ -1,0 +1,41 @@
+{{ define "base" }}
+<!DOCTYPE html>
+<!--[if IE 9]><html class="lt-ie10" lang="en" > <![endif]--> 
+<html class="no-js" lang="en" >
+<head>
+  {{ template "title" . }}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Gowiki">
+  <link rel="shortcut icon" type="image/png" href="/favicon.png"/>
+  <link rel="shortcut icon" type="image/ico" href="/favicon.ico" />
+  <link rel="stylesheet" href="/css/normalize.css"> 
+  <link rel="stylesheet" href="/css/foundation.css"> 
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="stylesheet" href="/css/font-awesome.min.css">
+  <script src="/js/modernizr.js"></script>
+  <script src="/js/jquery.js"></script>
+  <script src="/js/fastclick.js"></script>
+  <script src="/js/foundation.min.js"></script>
+ </head>
+<body>
+<div class="row">
+  <div class="small-2 columns sidebar">
+      <a href="/"><h3>Wiki</a></h3>
+      {{ template "sidebar" .}}
+  </div>
+<div class="small-10 columns body">
+  <div class="alerts"></div>
+{{ template "content" . }}
+</div>
+</div>
+<footer>
+</footer>
+  <script> $(document).foundation(); </script>
+  <script src="/js/my.js"></script>
+  {{ template "extra_scripts" . }}
+</body>
+</html>
+{{ end }}
+{{ define "sidebar" }}{{ end }}
+{{ define "extra_scripts" }}{{ end }}

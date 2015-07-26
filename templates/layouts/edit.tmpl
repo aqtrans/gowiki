@@ -1,0 +1,13 @@
+{{ define "title" }}<title>{{ .Title }} - {{.Title }}</title>{{ end }}
+{{ define "sidebar" }}
+    {{ template "sidebar_nav" . }}
+{{ end }}
+{{ define "content" }}     
+<h1>Editing {{.Title}}</h1>
+{{$title := .Title}}
+<hr />
+<form action="/save/{{.Title}}" method="POST">
+<div><textarea name="body" rows="20" cols="80">{{printf "%s" .Content}}</textarea></div>
+<div><input type="submit" value="Save"></div>
+</form>
+{{ end }}
