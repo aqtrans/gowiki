@@ -5,6 +5,10 @@ package main
 // - LDAP integration
 // - Buttons
 // - Private pages
+// - Tests
+
+// YAML frontmatter based on http://godoc.org/j4k.co/fmatter
+
 
 import (
 	"bytes"
@@ -462,7 +466,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Wiki  *Wiki
 		Title string
-		MD    template.HTML
+		MD    string
 	}{
 		p,
 		name,
