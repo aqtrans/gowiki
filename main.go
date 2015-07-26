@@ -417,8 +417,9 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 func (wiki *Wiki) save() error {
     filename := wiki.Title + ".md"
     fullfilename := "md/" + filename
-	gitCmd(exec.Command("git", "commit", "-m", "commit from gowiki"))
 	gitCmd(exec.Command("git", "add", fullfilename))
+	gitCmd(exec.Command("git", "commit", "-m", "commit from gowiki"))
+	gitCmd(exec.Command("git", "push"))
     return ioutil.WriteFile(fullfilename, wiki.Content, 0600)
 }
 
