@@ -16,6 +16,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -417,9 +418,21 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 func (wiki *Wiki) save() error {
     filename := wiki.Title + ".md"
     fullfilename := "md/" + filename
-	gitCmd(exec.Command("git", "add", fullfilename))
-	gitCmd(exec.Command("git", "commit", "-m", "commit from gowiki"))
-	gitCmd(exec.Command("git", "push"))
+	gitadd := exec.Command("git", "add", fullfilename)
+	gitcommit := exec.Command("git", "commit", "-m", "commit from gowiki")
+	gitpush := exec.Command("git", "push")
+	err := gitadd.Run()
+	if err != nil {
+		log.Println(err)
+	}
+	err := gitcommit.Run()
+	if err != nil {
+		log.Println(err)
+	}
+	err := gitpush.Run()
+	if err != nil {
+		log.Println(err)
+	}		
     return ioutil.WriteFile(fullfilename, wiki.Content, 0600)
 }
 
@@ -491,7 +504,7 @@ func jsEditHandler(w http.ResponseWriter, r *http.Request) {
 
 // Run git command, will currently die on all errors
 func gitCmd(cmd *exec.Cmd) (*bytes.Buffer) {
-    cmd.Dir = fmt.Sprintf("%s/", DIRECTORY)
+    cmd.Dir = fmt.Sprintf("%s/", "/usr/bin/")
     var out bytes.Buffer
     cmd.Stdout = &out
     runError := cmd.Run()

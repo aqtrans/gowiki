@@ -1243,3 +1243,51 @@ ddddddd
 2015/07/26 05:11:01 Returning 200 in 484.119µs
 2015/07/26 05:11:01 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33759
 2015/07/26 05:11:01 Returning 304 in 91.875µs
+2015/07/26 05:49:07 Started GET "/" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:07 index Page rendered!
+2015/07/26 05:49:07 [timer] indexHandler took 294.79µs
+2015/07/26 05:49:07 Returning 200 in 349.814µs
+2015/07/26 05:49:08 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:08 Returning 304 in 104.094µs
+2015/07/26 05:49:08 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:08 Returning 304 in 58.414µs
+2015/07/26 05:49:08 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:08 Returning 304 in 67.898µs
+2015/07/26 05:49:08 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:08 Returning 304 in 65.763µs
+2015/07/26 05:49:08 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:08 Returning 304 in 48.33µs
+2015/07/26 05:49:08 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:08 Returning 304 in 67.902µs
+2015/07/26 05:49:08 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:08 Returning 304 in 62.811µs
+2015/07/26 05:49:08 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:08 Returning 304 in 69.545µs
+2015/07/26 05:49:08 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:08 Returning 304 in 64.254µs
+2015/07/26 05:49:08 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:08 Returning 304 in 56.628µs
+2015/07/26 05:49:15 Started GET "/edit/zzz" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:15 open ./md/zzz.md: no such file or directory
+2015/07/26 05:49:15 open ./md/zzz.md: no such file or directory
+2015/07/26 05:49:15 Returning 200 in 427.365µs
+2015/07/26 05:49:15 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:15 Returning 304 in 69.105µs
+2015/07/26 05:49:15 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:15 Returning 304 in 77.763µs
+2015/07/26 05:49:24 Started POST "/api/save/zzz" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:24 feggrg
+2015/07/26 05:49:24 Error: command failed with:
+"
+"
+2015/07/26 05:49:24 Error: command failed with:
+"
+"
+2015/07/26 05:49:24 Error: command failed with:
+"
+"
+2015/07/26 05:49:24 zzz page saved!
+2015/07/26 05:49:24 [timer] jsEditHandler took 2.020037ms
+2015/07/26 05:49:24 Returning 200 in 2.075765ms
+2015/07/26 05:49:24 Started GET "/fonts/fontawesome-webfont.woff?v=4.2.0" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:34489
+2015/07/26 05:49:24 Returning 304 in 72.05µs
