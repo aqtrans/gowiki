@@ -418,21 +418,21 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 func (wiki *Wiki) save() error {
     filename := wiki.Title + ".md"
     fullfilename := "md/" + filename
-	gitadd := exec.Command("git", "add", fullfilename)
-	gitcommit := exec.Command("git", "commit", "-m", "commit from gowiki")
-	gitpush := exec.Command("git", "push")
-	err := gitadd.Run()
+	gitadd, err := exec.Command("git", "add", fullfilename).Output()
 	if err != nil {
 		log.Println(err)
 	}
-	err = gitcommit.Run()
+	fmt.Printf("%s\n", gitadd)
+	gitcommit, err := exec.Command("git", "commit", "-m", "commit from gowiki").Output()
 	if err != nil {
 		log.Println(err)
 	}
-	err = gitpush.Run()
+	fmt.Printf("%s\n", gitcommit)
+	gitpush := exec.Command("git", "push").Output()
 	if err != nil {
 		log.Println(err)
-	}		
+	}
+	fmt.Printf("%s\n", gitpush)
     return ioutil.WriteFile(fullfilename, wiki.Content, 0600)
 }
 

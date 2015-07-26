@@ -1,0 +1,6 @@
+CommonMark.Editor/*
+.DS_Store
+tmp/*
+req.log
+.directory
+
