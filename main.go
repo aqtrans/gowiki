@@ -425,11 +425,11 @@ func (wiki *Wiki) save() error {
 	if err != nil {
 		log.Println(err)
 	}
-	err := gitcommit.Run()
+	err = gitcommit.Run()
 	if err != nil {
 		log.Println(err)
 	}
-	err := gitpush.Run()
+	err = gitpush.Run()
 	if err != nil {
 		log.Println(err)
 	}		
