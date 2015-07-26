@@ -18,7 +18,7 @@
 $(function() {
     var editor = $('#editor').commonMarkEditor({ save: true, title: {{.Title}}, name: "#editor", text: {{printf "%s" .Content}} });
     editor[0].on.change(function(e) {
-        $.post( "/api/save/{{.Title}}", e.text, function(data){
+        $.post( "/save/{{.Title}}", e.text, function(data){
             if(data.success){
               $(".alerts").append("<div class=\"alert-box success\" data-alert>Wiki successfully updated! <a style='color:#fff' href=/"+data.name+"><i class='fa fa-external-link'></i>[Wiki page]</a><a class=\"close\">&times;</a></div>");
               $(document).foundation('alert','reflow');
