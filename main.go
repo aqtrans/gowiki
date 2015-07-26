@@ -416,8 +416,74 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 func (wiki *Wiki) save() error {
     filename := wiki.Title + ".md"
-    fullfilename := "data/" + filename 
+    fullfilename := "md/" + filename 
     return ioutil.WriteFile(fullfilename, wiki.Content, 0600)
+}
+
+func jsEditHandler(w http.ResponseWriter, r *http.Request) {
+	defer timeTrack(time.Now(), "jsEditHandler")
+	vars := mux.Vars(r)
+	name := vars["name"]	
+	txt := r.Body
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(txt)
+	bpaste := buf.String()
+	log.Print(bpaste)
+
+	wiki := &Wiki{Created: 123, LastModTime: 123, Title: name, Content: []byte(bpaste)}
+	err := wiki.save()
+	if err != nil {
+		WriteJ(w, "", false)
+		log.Println(err)
+		return
+	}
+	WriteJ(w, name, true)
+	log.Println(name + " page saved!")
+	
+	/*
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+		WriteJ(w, "", false)
+	}
+	
+	
+	short := r.PostFormValue("short")
+	if short != "" {
+		short = short
+	} else {
+		dictionary := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+		var bytes = make([]byte, 4)
+		rand.Read(bytes)
+		for k, v := range bytes {
+			bytes[k] = dictionary[v%byte(len(dictionary))]
+		}
+		short = string(bytes)
+	}
+	long := r.PostFormValue("long")
+	s := &Shorturl{
+		Created: time.Now().Unix(),
+		Short:   short,
+		Long:    long,
+	}
+
+	/*
+		Created string
+		Short 	string
+		Long 	string
+	*/
+	/*
+	err = s.save()
+	if err != nil {
+		log.Println(err)
+		WriteJ(w, "", false)
+	}
+	//log.Println("Short: " + s.Short)
+	//log.Println("Long: " + s.Long)
+
+	WriteJ(w, s.Short, true)
+	*/
+
 }
 
 func main() {
@@ -464,7 +530,9 @@ func main() {
 	r := mux.NewRouter().StrictSlash(true)
 	//d := r.Host("go.jba.io").Subrouter()
 	r.HandleFunc("/", indexHandler).Methods("GET")
+	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats.md") })
 	r.HandleFunc("/{name}", viewHandler).Methods("GET")
+	r.HandleFunc("/api/save/{name}", jsEditHandler)
 	r.HandleFunc("/edit/{name}", editHandler)
 	r.HandleFunc("/save/{name}", saveHandler)
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))

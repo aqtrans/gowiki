@@ -1,6 +1,7 @@
 {{ define "title" }}<title>{{ .Title }} - {{.Title }}</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
+    {{ template "sidebar_cats" . }}
 {{ end }}
 {{ define "content" }}     
 <h1>{{ .Title }}</h1>
