@@ -1,6 +1,6 @@
 ---
 title: omg
-categories: omg, lol, zomg
+categories: [omg, lol, zomg]
 ---
 
 feggrg
