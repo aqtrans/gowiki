@@ -111,4 +111,16 @@ $(document).ready(function(){
     });
   });
 
+  $.get("/cats", function(data) {
+      var items = data.split(',');
+      $.each(
+          items ,
+          function(i,v) {
+              $("#sidecats").append("<li><a href=/" + v + "><span>" + v + "</span></a></li>") ;
+          }
+      );
+  });
+
+
+
 });

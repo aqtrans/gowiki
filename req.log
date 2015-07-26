@@ -181,3 +181,1065 @@
 2015/07/26 03:08:25 Returning 304 in 54.579µs
 2015/07/26 03:08:25 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:58577
 2015/07/26 03:08:25 Returning 304 in 50.803µs
+2015/07/26 03:37:47 Started GET "/" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59841
+2015/07/26 03:37:47 index Page rendered!
+2015/07/26 03:37:47 [timer] indexHandler took 392.931µs
+2015/07/26 03:37:47 Returning 200 in 465.93µs
+2015/07/26 03:37:48 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59841
+2015/07/26 03:37:48 Returning 304 in 89.998µs
+2015/07/26 03:37:48 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59841
+2015/07/26 03:37:48 Returning 304 in 61.604µs
+2015/07/26 03:37:48 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59841
+2015/07/26 03:37:48 Returning 304 in 60.388µs
+2015/07/26 03:37:48 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59841
+2015/07/26 03:37:48 Returning 304 in 64.524µs
+2015/07/26 03:37:48 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59841
+2015/07/26 03:37:48 Returning 304 in 51.961µs
+2015/07/26 03:37:48 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59841
+2015/07/26 03:37:48 Returning 304 in 79.173µs
+2015/07/26 03:37:48 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59841
+2015/07/26 03:37:48 Returning 304 in 57.094µs
+2015/07/26 03:37:48 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59841
+2015/07/26 03:37:48 Returning 304 in 65.923µs
+2015/07/26 03:37:48 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59841
+2015/07/26 03:37:48 Returning 304 in 64.319µs
+2015/07/26 03:37:52 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59841
+2015/07/26 03:37:52 Returning 200 in 329.405µs
+2015/07/26 03:37:52 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59841
+2015/07/26 03:37:52 Returning 200 in 4.106337ms
+2015/07/26 03:37:52 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59841
+2015/07/26 03:37:52 Returning 200 in 109.735µs
+2015/07/26 03:37:55 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59857
+2015/07/26 03:37:55 Returning 200 in 137.203µs
+2015/07/26 03:37:55 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59857
+2015/07/26 03:37:55 Returning 200 in 85.165µs
+2015/07/26 03:37:55 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59857
+2015/07/26 03:37:55 Returning 200 in 91.659µs
+2015/07/26 03:37:55 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59857
+2015/07/26 03:37:55 Returning 200 in 93.538µs
+2015/07/26 03:37:55 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59857
+2015/07/26 03:37:55 Returning 200 in 172.689µs
+2015/07/26 03:37:55 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59857
+2015/07/26 03:37:55 Returning 200 in 81.368µs
+2015/07/26 03:37:55 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59857
+2015/07/26 03:37:55 Returning 200 in 106.481µs
+2015/07/26 03:37:55 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59857
+2015/07/26 03:37:55 Returning 200 in 98.519µs
+2015/07/26 03:37:55 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59857
+2015/07/26 03:37:55 Returning 200 in 125.116µs
+2015/07/26 03:37:55 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59857
+2015/07/26 03:37:55 Returning 200 in 105.43µs
+2015/07/26 03:37:55 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59857
+2015/07/26 03:37:55 Returning 200 in 157.691µs
+2015/07/26 03:37:55 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59857
+2015/07/26 03:37:55 Returning 200 in 131.576µs
+2015/07/26 03:38:51 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:51 Returning 200 in 517.812µs
+2015/07/26 03:38:51 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:51 Returning 200 in 4.135938ms
+2015/07/26 03:38:51 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:51 Returning 200 in 86.103µs
+2015/07/26 03:38:51 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:51 Returning 200 in 110.627µs
+2015/07/26 03:38:51 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:51 Returning 200 in 178.731µs
+2015/07/26 03:38:51 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:51 Returning 200 in 89.325µs
+2015/07/26 03:38:51 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:51 Returning 200 in 132.524µs
+2015/07/26 03:38:51 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:51 Returning 200 in 141.94µs
+2015/07/26 03:38:51 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:51 Returning 200 in 178.182µs
+2015/07/26 03:38:51 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:51 Returning 200 in 140.38µs
+2015/07/26 03:38:51 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:51 Returning 200 in 237.076µs
+2015/07/26 03:38:51 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:51 Returning 200 in 126.917µs
+2015/07/26 03:38:55 Started GET "/js/commonmark.editor-0.3.1.min.js.map" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:55 Returning 200 in 119.894µs
+2015/07/26 03:38:55 Started GET "/src/commonmark.editor.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59878
+2015/07/26 03:38:55 Returning 404 in 78.85µs
+2015/07/26 03:40:21 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:21 Returning 200 in 471.287µs
+2015/07/26 03:40:21 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:21 Returning 304 in 73.777µs
+2015/07/26 03:40:21 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:21 Returning 304 in 61.606µs
+2015/07/26 03:40:21 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:21 Returning 304 in 53.923µs
+2015/07/26 03:40:21 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:21 Returning 304 in 70.629µs
+2015/07/26 03:40:21 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:21 Returning 304 in 69.588µs
+2015/07/26 03:40:21 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:21 Returning 304 in 70.236µs
+2015/07/26 03:40:21 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:21 Returning 304 in 66.049µs
+2015/07/26 03:40:21 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:21 Returning 304 in 65.233µs
+2015/07/26 03:40:21 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:21 Returning 304 in 84.338µs
+2015/07/26 03:40:21 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:21 Returning 304 in 93.586µs
+2015/07/26 03:40:21 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:21 Returning 304 in 62.708µs
+2015/07/26 03:40:22 Started GET "/js/commonmark.editor-0.3.1.min.js.map" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:22 Returning 200 in 4.085031ms
+2015/07/26 03:40:22 Started GET "/src/commonmark.editor.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59904
+2015/07/26 03:40:22 Returning 404 in 64.315µs
+2015/07/26 03:41:57 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 200 in 483.414µs
+2015/07/26 03:41:57 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 304 in 75.547µs
+2015/07/26 03:41:57 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 304 in 74.35µs
+2015/07/26 03:41:57 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 304 in 52.144µs
+2015/07/26 03:41:57 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 304 in 70.995µs
+2015/07/26 03:41:57 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 304 in 79.116µs
+2015/07/26 03:41:57 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 304 in 71.828µs
+2015/07/26 03:41:57 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 304 in 61.538µs
+2015/07/26 03:41:57 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 304 in 84.745µs
+2015/07/26 03:41:57 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 304 in 95.375µs
+2015/07/26 03:41:57 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 304 in 87.944µs
+2015/07/26 03:41:57 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 304 in 60.938µs
+2015/07/26 03:41:57 Started GET "/js/commonmark.editor-0.3.1.min.js.map" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 200 in 4.004505ms
+2015/07/26 03:41:57 Started GET "/src/commonmark.editor.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59922
+2015/07/26 03:41:57 Returning 404 in 59.541µs
+2015/07/26 03:45:03 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59963
+2015/07/26 03:45:03 Returning 200 in 542.277µs
+2015/07/26 03:45:03 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59963
+2015/07/26 03:45:03 Returning 304 in 68.332µs
+2015/07/26 03:45:03 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59963
+2015/07/26 03:45:03 Returning 304 in 54.526µs
+2015/07/26 03:45:03 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59963
+2015/07/26 03:45:03 Returning 304 in 56.919µs
+2015/07/26 03:45:03 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59963
+2015/07/26 03:45:03 Returning 304 in 57.118µs
+2015/07/26 03:45:03 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59963
+2015/07/26 03:45:03 Returning 304 in 51.305µs
+2015/07/26 03:45:03 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59964
+2015/07/26 03:45:03 Returning 304 in 35.941µs
+2015/07/26 03:45:03 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59963
+2015/07/26 03:45:03 Returning 304 in 48.96µs
+2015/07/26 03:45:03 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59964
+2015/07/26 03:45:03 Returning 304 in 57.033µs
+2015/07/26 03:45:03 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59964
+2015/07/26 03:45:03 Returning 304 in 52.899µs
+2015/07/26 03:45:03 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59963
+2015/07/26 03:45:03 Returning 304 in 30.585µs
+2015/07/26 03:45:03 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59963
+2015/07/26 03:45:03 Returning 304 in 66.103µs
+2015/07/26 03:45:38 Started GET "/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59963
+2015/07/26 03:45:38 index Page rendered!
+2015/07/26 03:45:38 Returning 200 in 336.644µs
+2015/07/26 03:46:56 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59995
+2015/07/26 03:46:56 Returning 200 in 504.223µs
+2015/07/26 03:46:56 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59995
+2015/07/26 03:46:56 Returning 304 in 71.112µs
+2015/07/26 03:46:56 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59995
+2015/07/26 03:46:56 Returning 304 in 61.3µs
+2015/07/26 03:46:56 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59995
+2015/07/26 03:46:56 Returning 304 in 59.28µs
+2015/07/26 03:46:56 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59995
+2015/07/26 03:46:56 Returning 304 in 56.874µs
+2015/07/26 03:46:56 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59995
+2015/07/26 03:46:56 Returning 304 in 61.865µs
+2015/07/26 03:46:56 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59995
+2015/07/26 03:46:56 Returning 304 in 63.724µs
+2015/07/26 03:46:56 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59995
+2015/07/26 03:46:56 Returning 304 in 61.936µs
+2015/07/26 03:46:56 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59995
+2015/07/26 03:46:56 Returning 304 in 74.065µs
+2015/07/26 03:46:56 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59995
+2015/07/26 03:46:56 Returning 304 in 49.662µs
+2015/07/26 03:46:56 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59995
+2015/07/26 03:46:56 Returning 304 in 70.873µs
+2015/07/26 03:46:56 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:59995
+2015/07/26 03:46:56 Returning 304 in 84.909µs
+2015/07/26 03:46:59 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60002
+2015/07/26 03:46:59 Returning 200 in 173.955µs
+2015/07/26 03:46:59 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60002
+2015/07/26 03:46:59 Returning 200 in 4.16403ms
+2015/07/26 03:46:59 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60004
+2015/07/26 03:46:59 Returning 200 in 68.162µs
+2015/07/26 03:46:59 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60005
+2015/07/26 03:46:59 Returning 200 in 781.363µs
+2015/07/26 03:46:59 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60003
+2015/07/26 03:46:59 Returning 200 in 125.681µs
+2015/07/26 03:46:59 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60003
+2015/07/26 03:46:59 Returning 200 in 84.355µs
+2015/07/26 03:46:59 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60003
+2015/07/26 03:46:59 Returning 200 in 130.515µs
+2015/07/26 03:46:59 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60003
+2015/07/26 03:46:59 Returning 200 in 116.19µs
+2015/07/26 03:46:59 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60003
+2015/07/26 03:46:59 Returning 200 in 138.056µs
+2015/07/26 03:46:59 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60003
+2015/07/26 03:46:59 Returning 200 in 71.852µs
+2015/07/26 03:46:59 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60003
+2015/07/26 03:46:59 Returning 200 in 50.777µs
+2015/07/26 03:46:59 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60003
+2015/07/26 03:46:59 Returning 200 in 88.78µs
+2015/07/26 03:47:03 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 157.393µs
+2015/07/26 03:47:03 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 195.576µs
+2015/07/26 03:47:03 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 143.846µs
+2015/07/26 03:47:03 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 178.363µs
+2015/07/26 03:47:03 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 77.26µs
+2015/07/26 03:47:03 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 185.047µs
+2015/07/26 03:47:03 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 62.281µs
+2015/07/26 03:47:03 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 104.385µs
+2015/07/26 03:47:03 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 215.409µs
+2015/07/26 03:47:03 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 89.725µs
+2015/07/26 03:47:03 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 98.388µs
+2015/07/26 03:47:03 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 89.052µs
+2015/07/26 03:47:03 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 123.128µs
+2015/07/26 03:47:03 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 93.613µs
+2015/07/26 03:47:03 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 141.01µs
+2015/07/26 03:47:03 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 136.305µs
+2015/07/26 03:47:03 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 69.348µs
+2015/07/26 03:47:03 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60018
+2015/07/26 03:47:03 Returning 200 in 92.036µs
+2015/07/26 04:00:59 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60218
+2015/07/26 04:00:59 Returning 200 in 458.067µs
+2015/07/26 04:00:59 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60218
+2015/07/26 04:00:59 Returning 200 in 4.172699ms
+2015/07/26 04:00:59 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60219
+2015/07/26 04:00:59 Returning 200 in 189.11µs
+2015/07/26 04:00:59 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60220
+2015/07/26 04:00:59 Returning 200 in 68.428µs
+2015/07/26 04:00:59 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60221
+2015/07/26 04:00:59 Returning 200 in 104.33µs
+2015/07/26 04:00:59 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60222
+2015/07/26 04:00:59 Returning 200 in 85.17µs
+2015/07/26 04:00:59 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60219
+2015/07/26 04:00:59 Returning 200 in 129.978µs
+2015/07/26 04:00:59 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60219
+2015/07/26 04:00:59 Returning 200 in 110.074µs
+2015/07/26 04:00:59 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60219
+2015/07/26 04:00:59 Returning 200 in 186.563µs
+2015/07/26 04:00:59 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60219
+2015/07/26 04:00:59 Returning 200 in 90.22µs
+2015/07/26 04:00:59 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60219
+2015/07/26 04:00:59 Returning 200 in 46.815µs
+2015/07/26 04:00:59 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60219
+2015/07/26 04:00:59 Returning 200 in 948.519µs
+2015/07/26 04:01:08 Started POST "/api/save/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60219
+2015/07/26 04:01:08 &{POST /api/save/index HTTP/1.1 1 1 map[Referer:[http://localhost:3000/edit/index] Cache-Control:[no-cache] Content-Length:[0] User-Agent:[Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0] Accept:[*/*] Accept-Language:[en-US,en;q=0.5] Accept-Encoding:[gzip, deflate] X-Requested-With:[XMLHttpRequest] Connection:[keep-alive] Pragma:[no-cache]] 0xa56ae0 0 [] false localhost:3000 map[] map[] <nil> map[] [::1]:60219 /api/save/index <nil>}
+2015/07/26 04:01:08 [timer] jsEditHandler took 90.95µs
+2015/07/26 04:01:08 Returning 0 in 167.843µs
+2015/07/26 04:03:09 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60262
+2015/07/26 04:03:09 Returning 200 in 651.192µs
+2015/07/26 04:03:09 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60262
+2015/07/26 04:03:09 Returning 200 in 5.491112ms
+2015/07/26 04:03:09 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60263
+2015/07/26 04:03:09 Returning 200 in 196.384µs
+2015/07/26 04:03:09 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60264
+2015/07/26 04:03:09 Returning 200 in 76.848µs
+2015/07/26 04:03:09 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60265
+2015/07/26 04:03:09 Returning 200 in 107.912µs
+2015/07/26 04:03:09 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60263
+2015/07/26 04:03:09 Returning 200 in 65.359µs
+2015/07/26 04:03:09 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60263
+2015/07/26 04:03:09 Returning 200 in 160.566µs
+2015/07/26 04:03:09 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60263
+2015/07/26 04:03:09 Returning 200 in 114.751µs
+2015/07/26 04:03:09 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60263
+2015/07/26 04:03:09 Returning 200 in 184.328µs
+2015/07/26 04:03:09 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60263
+2015/07/26 04:03:09 Returning 200 in 1.118947ms
+2015/07/26 04:03:09 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60263
+2015/07/26 04:03:09 Returning 200 in 59.206µs
+2015/07/26 04:03:09 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60263
+2015/07/26 04:03:09 Returning 200 in 108.025µs
+2015/07/26 04:03:12 Started POST "/api/save/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60263
+2015/07/26 04:03:12 &{POST /api/save/index HTTP/1.1 1 1 map[Accept-Language:[en-US,en;q=0.5] Accept-Encoding:[gzip, deflate] X-Requested-With:[XMLHttpRequest] Connection:[keep-alive] Pragma:[no-cache] Cache-Control:[no-cache] Content-Length:[0] User-Agent:[Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0] Accept:[*/*] Referer:[http://localhost:3000/edit/index]] 0xa57ae0 0 [] false localhost:3000 map[] map[] <nil> map[] [::1]:60263 /api/save/index <nil>}
+2015/07/26 04:03:12 
+2015/07/26 04:03:12 [timer] jsEditHandler took 75.127µs
+2015/07/26 04:03:12 Returning 0 in 130.718µs
+2015/07/26 04:04:56 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60313
+2015/07/26 04:04:56 Returning 200 in 459.827µs
+2015/07/26 04:04:56 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60313
+2015/07/26 04:04:56 Returning 200 in 4.074656ms
+2015/07/26 04:04:56 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60314
+2015/07/26 04:04:56 Returning 200 in 145.184µs
+2015/07/26 04:04:56 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60314
+2015/07/26 04:04:56 Returning 200 in 73.619µs
+2015/07/26 04:04:56 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60314
+2015/07/26 04:04:56 Returning 200 in 100.085µs
+2015/07/26 04:04:56 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60314
+2015/07/26 04:04:56 Returning 200 in 95.219µs
+2015/07/26 04:04:56 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60314
+2015/07/26 04:04:56 Returning 200 in 125.562µs
+2015/07/26 04:04:56 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60314
+2015/07/26 04:04:56 Returning 200 in 85.505µs
+2015/07/26 04:04:56 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60314
+2015/07/26 04:04:56 Returning 200 in 136.21µs
+2015/07/26 04:04:56 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60314
+2015/07/26 04:04:56 Returning 200 in 104.43µs
+2015/07/26 04:04:56 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60314
+2015/07/26 04:04:56 Returning 200 in 67.066µs
+2015/07/26 04:04:56 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60314
+2015/07/26 04:04:56 Returning 200 in 96.555µs
+2015/07/26 04:04:59 Started POST "/api/save/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60314
+2015/07/26 04:04:59 &{POST /api/save/index HTTP/1.1 1 1 map[User-Agent:[Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0] Accept-Language:[en-US,en;q=0.5] Referer:[http://localhost:3000/edit/index] Content-Type:[application/x-www-form-urlencoded; charset=UTF-8] Connection:[keep-alive] Accept:[*/*] Accept-Encoding:[gzip, deflate] X-Requested-With:[XMLHttpRequest] Content-Length:[10] Pragma:[no-cache] Cache-Control:[no-cache]] 0xc208030e00 10 [] false localhost:3000 map[] map[] <nil> map[] [::1]:60314 /api/save/index <nil>}
+2015/07/26 04:04:59 
+2015/07/26 04:04:59 [timer] jsEditHandler took 86.263µs
+2015/07/26 04:04:59 Returning 0 in 142.029µs
+2015/07/26 04:05:13 Started POST "/api/save/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60314
+2015/07/26 04:05:13 &{POST /api/save/index HTTP/1.1 1 1 map[User-Agent:[Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0] Accept-Encoding:[gzip, deflate] Referer:[http://localhost:3000/edit/index] X-Requested-With:[XMLHttpRequest] Content-Length:[15] Pragma:[no-cache] Accept:[*/*] Accept-Language:[en-US,en;q=0.5] Content-Type:[application/x-www-form-urlencoded; charset=UTF-8] Connection:[keep-alive] Cache-Control:[no-cache]] 0xc2080302c0 15 [] false localhost:3000 map[] map[] <nil> map[] [::1]:60314 /api/save/index <nil>}
+2015/07/26 04:05:13 
+2015/07/26 04:05:13 [timer] jsEditHandler took 108.689µs
+2015/07/26 04:05:13 Returning 0 in 190.439µs
+2015/07/26 04:15:35 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60609
+2015/07/26 04:15:35 Returning 200 in 657.914µs
+2015/07/26 04:15:35 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60609
+2015/07/26 04:15:35 Returning 304 in 99.294µs
+2015/07/26 04:15:35 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60609
+2015/07/26 04:15:35 Returning 304 in 79.825µs
+2015/07/26 04:15:35 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60609
+2015/07/26 04:15:35 Returning 304 in 61.018µs
+2015/07/26 04:15:35 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60609
+2015/07/26 04:15:35 Returning 304 in 51.292µs
+2015/07/26 04:15:35 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60609
+2015/07/26 04:15:35 Returning 304 in 53.971µs
+2015/07/26 04:15:35 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60608
+2015/07/26 04:15:35 Returning 304 in 47.203µs
+2015/07/26 04:15:35 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60609
+2015/07/26 04:15:35 Returning 304 in 62.248µs
+2015/07/26 04:15:35 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60612
+2015/07/26 04:15:35 Returning 304 in 41.665µs
+2015/07/26 04:15:35 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60609
+2015/07/26 04:15:35 Returning 304 in 54.596µs
+2015/07/26 04:15:35 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60609
+2015/07/26 04:15:35 Returning 304 in 52.188µs
+2015/07/26 04:15:35 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60609
+2015/07/26 04:15:35 Returning 304 in 54.707µs
+2015/07/26 04:15:37 Started POST "/api/save/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60609
+2015/07/26 04:15:37 &{0xc208179ae0 <nil> <nil> false {0 0} false}
+2015/07/26 04:15:37 
+2015/07/26 04:15:37 [timer] jsEditHandler took 47.993µs
+2015/07/26 04:15:37 Returning 0 in 109.394µs
+2015/07/26 04:18:22 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60664
+2015/07/26 04:18:22 Returning 200 in 510.974µs
+2015/07/26 04:18:22 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60664
+2015/07/26 04:18:22 Returning 304 in 108.043µs
+2015/07/26 04:18:22 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60664
+2015/07/26 04:18:22 Returning 304 in 84.282µs
+2015/07/26 04:18:22 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60665
+2015/07/26 04:18:22 Returning 304 in 92.473µs
+2015/07/26 04:18:22 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60664
+2015/07/26 04:18:22 Returning 304 in 67.526µs
+2015/07/26 04:18:22 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60664
+2015/07/26 04:18:22 Returning 304 in 78.762µs
+2015/07/26 04:18:22 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60664
+2015/07/26 04:18:22 Returning 304 in 67.622µs
+2015/07/26 04:18:22 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60664
+2015/07/26 04:18:22 Returning 304 in 73.895µs
+2015/07/26 04:18:22 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60664
+2015/07/26 04:18:22 Returning 304 in 54.62µs
+2015/07/26 04:18:22 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60664
+2015/07/26 04:18:22 Returning 304 in 62.773µs
+2015/07/26 04:18:22 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60664
+2015/07/26 04:18:22 Returning 304 in 46.478µs
+2015/07/26 04:18:22 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60664
+2015/07/26 04:18:22 Returning 304 in 51.877µs
+2015/07/26 04:18:24 Started POST "/api/save/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60664
+2015/07/26 04:18:24 # OMG
+ferf
+2015/07/26 04:18:24 [timer] jsEditHandler took 6.438µs
+2015/07/26 04:18:24 Returning 0 in 69.406µs
+2015/07/26 04:20:47 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60704
+2015/07/26 04:20:47 Returning 200 in 486.347µs
+2015/07/26 04:20:47 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60704
+2015/07/26 04:20:47 Returning 304 in 67.541µs
+2015/07/26 04:20:47 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60704
+2015/07/26 04:20:47 Returning 304 in 70.165µs
+2015/07/26 04:20:47 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60704
+2015/07/26 04:20:47 Returning 304 in 61.181µs
+2015/07/26 04:20:47 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60704
+2015/07/26 04:20:47 Returning 304 in 63.617µs
+2015/07/26 04:20:47 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60704
+2015/07/26 04:20:47 Returning 304 in 59.032µs
+2015/07/26 04:20:47 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60704
+2015/07/26 04:20:47 Returning 304 in 64.615µs
+2015/07/26 04:20:47 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60704
+2015/07/26 04:20:47 Returning 304 in 59.195µs
+2015/07/26 04:20:47 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60704
+2015/07/26 04:20:47 Returning 304 in 60.187µs
+2015/07/26 04:20:47 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60704
+2015/07/26 04:20:47 Returning 304 in 87.013µs
+2015/07/26 04:20:47 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60704
+2015/07/26 04:20:47 Returning 304 in 62.124µs
+2015/07/26 04:20:47 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60704
+2015/07/26 04:20:47 Returning 304 in 61.902µs
+2015/07/26 04:20:50 Started POST "/api/save/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60704
+2015/07/26 04:20:50 # OMG
+feff
+2015/07/26 04:20:50 [timer] jsEditHandler took 30.763µs
+2015/07/26 04:20:50 Returning 500 in 92.492µs
+2015/07/26 04:22:18 Started GET "/" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60727
+2015/07/26 04:22:18 index Page rendered!
+2015/07/26 04:22:18 [timer] indexHandler took 321.978µs
+2015/07/26 04:22:18 Returning 200 in 380.678µs
+2015/07/26 04:22:23 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60727
+2015/07/26 04:22:23 Returning 200 in 668.191µs
+2015/07/26 04:22:32 Started POST "/api/save/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60727
+2015/07/26 04:22:32 # OMG
+
+ddddd
+2015/07/26 04:22:32 open data/index.md: no such file or directory
+2015/07/26 04:22:32 [timer] jsEditHandler took 54.78µs
+2015/07/26 04:22:32 Returning 200 in 112.636µs
+2015/07/26 04:23:17 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:17 Returning 200 in 490.585µs
+2015/07/26 04:23:17 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:17 Returning 304 in 79.602µs
+2015/07/26 04:23:17 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:17 Returning 304 in 59.976µs
+2015/07/26 04:23:17 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:17 Returning 304 in 62.252µs
+2015/07/26 04:23:17 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:17 Returning 304 in 71.29µs
+2015/07/26 04:23:17 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:17 Returning 304 in 60.716µs
+2015/07/26 04:23:17 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:17 Returning 304 in 59.81µs
+2015/07/26 04:23:17 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:17 Returning 304 in 61.278µs
+2015/07/26 04:23:17 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:17 Returning 304 in 73.91µs
+2015/07/26 04:23:17 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:17 Returning 304 in 53.845µs
+2015/07/26 04:23:17 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:17 Returning 304 in 63.101µs
+2015/07/26 04:23:17 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:17 Returning 304 in 60.497µs
+2015/07/26 04:23:21 Started POST "/api/save/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:21 # OMG
+
+feggr
+2015/07/26 04:23:21 index page saved!
+2015/07/26 04:23:21 [timer] jsEditHandler took 119.419µs
+2015/07/26 04:23:21 Returning 200 in 176.788µs
+2015/07/26 04:23:21 Started GET "/fonts/fontawesome-webfont.woff?v=4.2.0" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:21 Returning 200 in 4.062504ms
+2015/07/26 04:23:27 Started GET "/" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:27 index Page rendered!
+2015/07/26 04:23:27 [timer] indexHandler took 240.98µs
+2015/07/26 04:23:27 Returning 200 in 299.518µs
+2015/07/26 04:23:40 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60743
+2015/07/26 04:23:40 Returning 200 in 136.58µs
+2015/07/26 04:36:19 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60919
+2015/07/26 04:36:19 Returning 200 in 208.05µs
+2015/07/26 04:36:19 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60919
+2015/07/26 04:36:19 Returning 304 in 63.573µs
+2015/07/26 04:36:19 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60919
+2015/07/26 04:36:19 Returning 304 in 61.52µs
+2015/07/26 04:36:19 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60919
+2015/07/26 04:36:19 Returning 304 in 47.307µs
+2015/07/26 04:36:19 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60919
+2015/07/26 04:36:19 Returning 304 in 173.138µs
+2015/07/26 04:36:19 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60919
+2015/07/26 04:36:19 Returning 304 in 82.289µs
+2015/07/26 04:36:19 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60919
+2015/07/26 04:36:19 Returning 304 in 59.154µs
+2015/07/26 04:36:19 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60919
+2015/07/26 04:36:19 Returning 304 in 47.815µs
+2015/07/26 04:36:19 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60919
+2015/07/26 04:36:19 Returning 304 in 52.112µs
+2015/07/26 04:36:19 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60919
+2015/07/26 04:36:19 Returning 304 in 65.633µs
+2015/07/26 04:36:19 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60919
+2015/07/26 04:36:19 Returning 304 in 54.282µs
+2015/07/26 04:36:19 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60919
+2015/07/26 04:36:19 Returning 304 in 70.582µs
+2015/07/26 04:39:01 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60954
+2015/07/26 04:39:01 Returning 200 in 159.662µs
+2015/07/26 04:39:01 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60954
+2015/07/26 04:39:01 Returning 304 in 70.383µs
+2015/07/26 04:39:01 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60954
+2015/07/26 04:39:01 Returning 304 in 57.167µs
+2015/07/26 04:39:01 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60954
+2015/07/26 04:39:01 Returning 304 in 58.79µs
+2015/07/26 04:39:01 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60954
+2015/07/26 04:39:01 Returning 304 in 67.681µs
+2015/07/26 04:39:01 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60954
+2015/07/26 04:39:01 Returning 304 in 61.017µs
+2015/07/26 04:39:01 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60954
+2015/07/26 04:39:01 Returning 304 in 62.617µs
+2015/07/26 04:39:01 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60954
+2015/07/26 04:39:01 Returning 304 in 61.509µs
+2015/07/26 04:39:01 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60954
+2015/07/26 04:39:01 Returning 304 in 62.286µs
+2015/07/26 04:39:01 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60954
+2015/07/26 04:39:01 Returning 304 in 54.543µs
+2015/07/26 04:39:01 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60954
+2015/07/26 04:39:01 Returning 304 in 67.317µs
+2015/07/26 04:39:01 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60954
+2015/07/26 04:39:01 Returning 304 in 57.847µs
+2015/07/26 04:39:11 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60960
+2015/07/26 04:39:11 Returning 200 in 1.02847ms
+2015/07/26 04:39:11 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60960
+2015/07/26 04:39:11 Returning 200 in 142.699µs
+2015/07/26 04:39:11 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60960
+2015/07/26 04:39:11 Returning 200 in 197.336µs
+2015/07/26 04:39:11 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60960
+2015/07/26 04:39:11 Returning 200 in 109.65µs
+2015/07/26 04:39:11 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60960
+2015/07/26 04:39:11 Returning 200 in 135.599µs
+2015/07/26 04:39:11 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60960
+2015/07/26 04:39:11 Returning 200 in 98.95µs
+2015/07/26 04:39:11 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60960
+2015/07/26 04:39:11 Returning 200 in 115.187µs
+2015/07/26 04:39:11 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60960
+2015/07/26 04:39:11 Returning 200 in 143.6µs
+2015/07/26 04:39:11 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60960
+2015/07/26 04:39:11 Returning 200 in 209.06µs
+2015/07/26 04:39:11 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60960
+2015/07/26 04:39:11 Returning 200 in 101.115µs
+2015/07/26 04:39:11 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60960
+2015/07/26 04:39:11 Returning 200 in 83.79µs
+2015/07/26 04:39:11 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60960
+2015/07/26 04:39:11 Returning 200 in 127.169µs
+2015/07/26 04:39:37 Started GET "/favicon.ico" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60997
+2015/07/26 04:39:37 open ./md/favicon.ico.md: no such file or directory
+2015/07/26 04:39:37 open ./md/favicon.ico.md: no such file or directory
+2015/07/26 04:39:37 Returning 404 in 125.368µs
+2015/07/26 04:39:38 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60997
+2015/07/26 04:39:38 Returning 200 in 485.764µs
+2015/07/26 04:39:38 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60997
+2015/07/26 04:39:38 Returning 304 in 106.774µs
+2015/07/26 04:39:38 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60997
+2015/07/26 04:39:38 Returning 304 in 69.55µs
+2015/07/26 04:39:38 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60997
+2015/07/26 04:39:38 Returning 304 in 80.56µs
+2015/07/26 04:39:38 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60997
+2015/07/26 04:39:38 Returning 304 in 52.132µs
+2015/07/26 04:39:38 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60997
+2015/07/26 04:39:38 Returning 304 in 76.437µs
+2015/07/26 04:39:38 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60997
+2015/07/26 04:39:38 Returning 304 in 84.129µs
+2015/07/26 04:39:38 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60997
+2015/07/26 04:39:38 Returning 304 in 68.458µs
+2015/07/26 04:39:38 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60997
+2015/07/26 04:39:38 Returning 304 in 67.697µs
+2015/07/26 04:39:38 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60997
+2015/07/26 04:39:38 Returning 304 in 111.715µs
+2015/07/26 04:39:38 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60997
+2015/07/26 04:39:38 Returning 304 in 66.811µs
+2015/07/26 04:39:38 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:60997
+2015/07/26 04:39:38 Returning 304 in 67.736µs
+2015/07/26 04:44:24 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32842
+2015/07/26 04:44:24 Returning 200 in 444.258µs
+2015/07/26 04:44:24 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32842
+2015/07/26 04:44:24 Returning 200 in 4.146017ms
+2015/07/26 04:44:24 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32843
+2015/07/26 04:44:24 Returning 200 in 132.019µs
+2015/07/26 04:44:24 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32843
+2015/07/26 04:44:24 Returning 200 in 45.118µs
+2015/07/26 04:44:24 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32843
+2015/07/26 04:44:24 Returning 200 in 102.076µs
+2015/07/26 04:44:24 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32843
+2015/07/26 04:44:24 Returning 200 in 103.127µs
+2015/07/26 04:44:24 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32843
+2015/07/26 04:44:24 Returning 200 in 128.306µs
+2015/07/26 04:44:24 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32843
+2015/07/26 04:44:24 Returning 200 in 102.932µs
+2015/07/26 04:44:24 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32843
+2015/07/26 04:44:24 Returning 200 in 184.023µs
+2015/07/26 04:44:24 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32843
+2015/07/26 04:44:24 Returning 200 in 100.97µs
+2015/07/26 04:44:24 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32843
+2015/07/26 04:44:24 Returning 200 in 78.195µs
+2015/07/26 04:44:24 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32843
+2015/07/26 04:44:24 Returning 200 in 128.446µs
+2015/07/26 04:45:18 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:18 Returning 200 in 471.611µs
+2015/07/26 04:45:18 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:18 Returning 304 in 73.796µs
+2015/07/26 04:45:18 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:18 Returning 304 in 56.184µs
+2015/07/26 04:45:18 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:18 Returning 304 in 74.445µs
+2015/07/26 04:45:18 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:18 Returning 304 in 80.417µs
+2015/07/26 04:45:18 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:18 Returning 304 in 64.101µs
+2015/07/26 04:45:18 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:18 Returning 304 in 73.475µs
+2015/07/26 04:45:18 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:18 Returning 304 in 72.131µs
+2015/07/26 04:45:18 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:18 Returning 304 in 82.438µs
+2015/07/26 04:45:18 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:18 Returning 304 in 64.912µs
+2015/07/26 04:45:18 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:18 Returning 200 in 3.969621ms
+2015/07/26 04:45:18 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:18 Returning 304 in 79.243µs
+2015/07/26 04:45:47 Started POST "/api/save/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:47 # OMG
+
+feggrffffff
+# zzzzzzzzzzz!!
+2015/07/26 04:45:47 index page saved!
+2015/07/26 04:45:47 [timer] jsEditHandler took 155.815µs
+2015/07/26 04:45:47 Returning 200 in 221.972µs
+2015/07/26 04:45:47 Started GET "/fonts/fontawesome-webfont.woff?v=4.2.0" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:47 Returning 304 in 64.295µs
+2015/07/26 04:45:50 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:50 Returning 200 in 120.874µs
+2015/07/26 04:45:50 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32858
+2015/07/26 04:45:50 Returning 304 in 75.625µs
+2015/07/26 04:46:46 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32884
+2015/07/26 04:46:46 Returning 200 in 500.706µs
+2015/07/26 04:46:46 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32884
+2015/07/26 04:46:46 Returning 200 in 3.852844ms
+2015/07/26 04:46:46 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32886
+2015/07/26 04:46:46 Returning 200 in 66.748µs
+2015/07/26 04:46:46 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32885
+2015/07/26 04:46:46 Returning 200 in 158.441µs
+2015/07/26 04:46:46 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32885
+2015/07/26 04:46:46 Returning 200 in 110.429µs
+2015/07/26 04:46:46 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32885
+2015/07/26 04:46:46 Returning 200 in 114.81µs
+2015/07/26 04:46:46 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32885
+2015/07/26 04:46:46 Returning 200 in 135.718µs
+2015/07/26 04:46:46 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32885
+2015/07/26 04:46:46 Returning 200 in 108.329µs
+2015/07/26 04:46:46 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32885
+2015/07/26 04:46:46 Returning 200 in 198.819µs
+2015/07/26 04:46:46 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32885
+2015/07/26 04:46:46 Returning 200 in 133.583µs
+2015/07/26 04:46:46 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32885
+2015/07/26 04:46:46 Returning 200 in 64.564µs
+2015/07/26 04:46:46 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32885
+2015/07/26 04:46:46 Returning 200 in 745.248µs
+2015/07/26 04:46:49 Started POST "/api/save/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32885
+2015/07/26 04:46:49 # OMG
+
+feggrffffff
+# zzzzzzzzzzz!!
+dddd
+2015/07/26 04:46:49 index page saved!
+2015/07/26 04:46:49 [timer] jsEditHandler took 185.29µs
+2015/07/26 04:46:49 Returning 200 in 257.864µs
+2015/07/26 04:46:49 Started GET "/fonts/fontawesome-webfont.woff?v=4.2.0" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32885
+2015/07/26 04:46:49 Returning 304 in 91.753µs
+2015/07/26 04:47:22 Started GET "/edit/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32901
+2015/07/26 04:47:22 Returning 200 in 462.578µs
+2015/07/26 04:47:23 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32901
+2015/07/26 04:47:23 Returning 200 in 5.841455ms
+2015/07/26 04:47:23 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32902
+2015/07/26 04:47:23 Returning 200 in 211.285µs
+2015/07/26 04:47:23 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32903
+2015/07/26 04:47:23 Returning 200 in 77.778µs
+2015/07/26 04:47:23 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32902
+2015/07/26 04:47:23 Returning 200 in 85.197µs
+2015/07/26 04:47:23 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32902
+2015/07/26 04:47:23 Returning 200 in 95.386µs
+2015/07/26 04:47:23 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32902
+2015/07/26 04:47:23 Returning 200 in 129.275µs
+2015/07/26 04:47:23 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32902
+2015/07/26 04:47:23 Returning 200 in 100.327µs
+2015/07/26 04:47:23 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32902
+2015/07/26 04:47:23 Returning 200 in 151.208µs
+2015/07/26 04:47:23 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32902
+2015/07/26 04:47:23 Returning 200 in 97.943µs
+2015/07/26 04:47:23 Started GET "/css/commonmark.editor-0.3.1.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32902
+2015/07/26 04:47:23 Returning 200 in 73.08µs
+2015/07/26 04:47:23 Started GET "/js/commonmark.editor-0.3.1.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32902
+2015/07/26 04:47:23 Returning 200 in 725.481µs
+2015/07/26 04:47:27 Started POST "/api/save/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32902
+2015/07/26 04:47:27 # OMG
+
+feggrffffff
+# zzzzzzzzzzz!!
+ddddddd
+2015/07/26 04:47:27 index page saved!
+2015/07/26 04:47:27 [timer] jsEditHandler took 132.415µs
+2015/07/26 04:47:27 Returning 200 in 184.766µs
+2015/07/26 04:47:27 Started GET "/fonts/fontawesome-webfont.woff?v=4.2.0" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32902
+2015/07/26 04:47:27 Returning 304 in 64.922µs
+2015/07/26 04:47:30 Started GET "/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:32902
+2015/07/26 04:47:30 index Page rendered!
+2015/07/26 04:47:30 Returning 200 in 276.533µs
+2015/07/26 05:04:51 Started GET "/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33195
+2015/07/26 05:04:51 index Page rendered!
+2015/07/26 05:04:51 Returning 200 in 343.785µs
+2015/07/26 05:04:51 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33195
+2015/07/26 05:04:51 Returning 200 in 4.040081ms
+2015/07/26 05:04:51 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33197
+2015/07/26 05:04:51 Returning 200 in 77.595µs
+2015/07/26 05:04:51 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33196
+2015/07/26 05:04:51 Returning 200 in 131.28µs
+2015/07/26 05:04:51 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33196
+2015/07/26 05:04:51 Returning 200 in 118.635µs
+2015/07/26 05:04:51 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33196
+2015/07/26 05:04:51 Returning 200 in 850.106µs
+2015/07/26 05:04:51 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33196
+2015/07/26 05:04:51 Returning 200 in 120.908µs
+2015/07/26 05:04:51 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33196
+2015/07/26 05:04:51 Returning 200 in 102.247µs
+2015/07/26 05:04:51 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33196
+2015/07/26 05:04:51 Returning 200 in 198.896µs
+2015/07/26 05:04:51 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33196
+2015/07/26 05:04:51 Returning 200 in 102.882µs
+2015/07/26 05:04:51 Started GET "/md/cats.md" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33196
+2015/07/26 05:04:51 Returning 404 in 64.54µs
+2015/07/26 05:06:01 Started GET "/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33220
+2015/07/26 05:06:01 index Page rendered!
+2015/07/26 05:06:01 Returning 200 in 337.595µs
+2015/07/26 05:06:01 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33220
+2015/07/26 05:06:01 Returning 200 in 3.882878ms
+2015/07/26 05:06:01 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33221
+2015/07/26 05:06:01 Returning 200 in 132.2µs
+2015/07/26 05:06:01 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33221
+2015/07/26 05:06:01 Returning 200 in 71.569µs
+2015/07/26 05:06:01 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33221
+2015/07/26 05:06:01 Returning 200 in 119.232µs
+2015/07/26 05:06:01 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33221
+2015/07/26 05:06:01 Returning 200 in 99.797µs
+2015/07/26 05:06:01 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33221
+2015/07/26 05:06:01 Returning 200 in 119.954µs
+2015/07/26 05:06:01 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33221
+2015/07/26 05:06:01 Returning 200 in 98.642µs
+2015/07/26 05:06:01 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33221
+2015/07/26 05:06:01 Returning 200 in 151.626µs
+2015/07/26 05:06:01 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33221
+2015/07/26 05:06:01 Returning 200 in 87.898µs
+2015/07/26 05:06:01 Started GET "/cats.md" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33221
+2015/07/26 05:06:01 open ./md/cats.md.md: no such file or directory
+2015/07/26 05:06:01 open ./md/cats.md.md: no such file or directory
+2015/07/26 05:06:01 Returning 404 in 79.269µs
+2015/07/26 05:06:18 Started GET "/index" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33235
+2015/07/26 05:06:18 index Page rendered!
+2015/07/26 05:06:18 Returning 200 in 353.696µs
+2015/07/26 05:06:18 Started GET "/css/normalize.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33235
+2015/07/26 05:06:18 Returning 200 in 4.010678ms
+2015/07/26 05:06:18 Started GET "/css/foundation.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:18 Returning 200 in 146.463µs
+2015/07/26 05:06:18 Started GET "/css/app.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:18 Returning 200 in 58.751µs
+2015/07/26 05:06:18 Started GET "/css/font-awesome.min.css" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:18 Returning 200 in 110.121µs
+2015/07/26 05:06:18 Started GET "/js/modernizr.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:18 Returning 200 in 105.5µs
+2015/07/26 05:06:18 Started GET "/js/jquery.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:18 Returning 200 in 144.856µs
+2015/07/26 05:06:18 Started GET "/js/fastclick.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:18 Returning 200 in 103.883µs
+2015/07/26 05:06:18 Started GET "/js/foundation.min.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:18 Returning 200 in 237.128µs
+2015/07/26 05:06:18 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:18 Returning 200 in 119.26µs
+2015/07/26 05:06:19 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 cats Page rendered!
+2015/07/26 05:06:19 Returning 200 in 168.487µs
+2015/07/26 05:06:19 Started GET "/js/modernizr.js?_=1437905178975" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 136.751µs
+2015/07/26 05:06:19 Started GET "/js/jquery.js?_=1437905178976" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 139.442µs
+2015/07/26 05:06:19 Started GET "/js/fastclick.js?_=1437905178977" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 112.555µs
+2015/07/26 05:06:19 Started GET "/js/foundation.min.js?_=1437905178978" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 177.248µs
+2015/07/26 05:06:19 Started GET "/js/modernizr.js?_=1437905178979" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 134.562µs
+2015/07/26 05:06:19 Started GET "/js/jquery.js?_=1437905178980" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 161.34µs
+2015/07/26 05:06:19 Started GET "/js/fastclick.js?_=1437905178981" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 119.369µs
+2015/07/26 05:06:19 Started GET "/js/foundation.min.js?_=1437905178982" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 183.398µs
+2015/07/26 05:06:19 Started GET "/js/my.js?_=1437905179419" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 140.494µs
+2015/07/26 05:06:19 Started GET "/js/my.js?_=1437905179420" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 149.585µs
+2015/07/26 05:06:19 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 cats Page rendered!
+2015/07/26 05:06:19 Returning 200 in 163.323µs
+2015/07/26 05:06:19 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 cats Page rendered!
+2015/07/26 05:06:19 Returning 200 in 145.34µs
+2015/07/26 05:06:19 Started GET "/js/modernizr.js?_=1437905179421" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 128.522µs
+2015/07/26 05:06:19 Started GET "/js/modernizr.js?_=1437905179422" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 132.634µs
+2015/07/26 05:06:19 Started GET "/js/jquery.js?_=1437905179423" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 171.071µs
+2015/07/26 05:06:19 Started GET "/js/fastclick.js?_=1437905179424" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 134.564µs
+2015/07/26 05:06:19 Started GET "/js/foundation.min.js?_=1437905179425" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 211.926µs
+2015/07/26 05:06:19 Started GET "/js/modernizr.js?_=1437905179426" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 145.726µs
+2015/07/26 05:06:19 Started GET "/js/jquery.js?_=1437905179427" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 162.587µs
+2015/07/26 05:06:19 Started GET "/js/fastclick.js?_=1437905179428" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 126.493µs
+2015/07/26 05:06:19 Started GET "/js/foundation.min.js?_=1437905179429" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 211.553µs
+2015/07/26 05:06:19 Started GET "/js/my.js?_=1437905179785" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 126.729µs
+2015/07/26 05:06:19 Started GET "/js/my.js?_=1437905179786" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 114.984µs
+2015/07/26 05:06:19 Started GET "/js/jquery.js?_=1437905179430" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 155.091µs
+2015/07/26 05:06:19 Started GET "/js/fastclick.js?_=1437905179431" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 120.415µs
+2015/07/26 05:06:19 Started GET "/js/foundation.min.js?_=1437905179432" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 890.218µs
+2015/07/26 05:06:19 Started GET "/js/modernizr.js?_=1437905179433" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 136.17µs
+2015/07/26 05:06:19 Started GET "/js/jquery.js?_=1437905179434" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 166.601µs
+2015/07/26 05:06:19 Started GET "/js/fastclick.js?_=1437905179435" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 113.219µs
+2015/07/26 05:06:19 Started GET "/js/foundation.min.js?_=1437905179436" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:19 Returning 200 in 173.363µs
+2015/07/26 05:06:20 Started GET "/js/my.js?_=1437905179955" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 Returning 200 in 110.582µs
+2015/07/26 05:06:20 Started GET "/js/my.js?_=1437905179956" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 Returning 200 in 93.297µs
+2015/07/26 05:06:20 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 cats Page rendered!
+2015/07/26 05:06:20 Returning 200 in 175.616µs
+2015/07/26 05:06:20 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 cats Page rendered!
+2015/07/26 05:06:20 Returning 200 in 99.872µs
+2015/07/26 05:06:20 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 cats Page rendered!
+2015/07/26 05:06:20 Returning 200 in 97.32µs
+2015/07/26 05:06:20 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 cats Page rendered!
+2015/07/26 05:06:20 Returning 200 in 124.269µs
+2015/07/26 05:06:20 Started GET "/js/modernizr.js?_=1437905179957" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 Returning 200 in 113.864µs
+2015/07/26 05:06:20 Started GET "/js/modernizr.js?_=1437905179958" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 Returning 200 in 124.037µs
+2015/07/26 05:06:20 Started GET "/js/modernizr.js?_=1437905179959" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 Returning 200 in 121.376µs
+2015/07/26 05:06:20 Started GET "/js/modernizr.js?_=1437905179960" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 Returning 200 in 157.093µs
+2015/07/26 05:06:20 Started GET "/js/jquery.js?_=1437905179961" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 Returning 200 in 232.857µs
+2015/07/26 05:06:20 Started GET "/js/fastclick.js?_=1437905179962" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 Returning 200 in 118.113µs
+2015/07/26 05:06:20 Started GET "/js/foundation.min.js?_=1437905179963" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 Returning 200 in 232.65µs
+2015/07/26 05:06:20 Started GET "/js/modernizr.js?_=1437905179964" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:20 Returning 200 in 142.033µs
+2015/07/26 05:06:21 Started GET "/js/jquery.js?_=1437905179965" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 177.762µs
+2015/07/26 05:06:21 Started GET "/js/fastclick.js?_=1437905179966" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 155.149µs
+2015/07/26 05:06:21 Started GET "/js/foundation.min.js?_=1437905179967" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 204.646µs
+2015/07/26 05:06:21 Started GET "/js/my.js?_=1437905181066" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 109.138µs
+2015/07/26 05:06:21 Started GET "/js/my.js?_=1437905181067" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 102.738µs
+2015/07/26 05:06:21 Started GET "/js/jquery.js?_=1437905179968" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 134.727µs
+2015/07/26 05:06:21 Started GET "/js/fastclick.js?_=1437905179969" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 145.262µs
+2015/07/26 05:06:21 Started GET "/js/foundation.min.js?_=1437905179970" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 173.383µs
+2015/07/26 05:06:21 Started GET "/js/modernizr.js?_=1437905179971" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 148.281µs
+2015/07/26 05:06:21 Started GET "/js/jquery.js?_=1437905179972" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 141.679µs
+2015/07/26 05:06:21 Started GET "/js/fastclick.js?_=1437905179973" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 127.489µs
+2015/07/26 05:06:21 Started GET "/js/foundation.min.js?_=1437905179974" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 164.52µs
+2015/07/26 05:06:21 Started GET "/js/my.js?_=1437905181417" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 798.637µs
+2015/07/26 05:06:21 Started GET "/js/my.js?_=1437905181418" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 101.831µs
+2015/07/26 05:06:21 Started GET "/js/jquery.js?_=1437905179975" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 122.36µs
+2015/07/26 05:06:21 Started GET "/js/fastclick.js?_=1437905179976" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 147.507µs
+2015/07/26 05:06:21 Started GET "/js/foundation.min.js?_=1437905179977" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 171.691µs
+2015/07/26 05:06:21 Started GET "/js/modernizr.js?_=1437905179978" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 115.799µs
+2015/07/26 05:06:21 Started GET "/js/jquery.js?_=1437905179979" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 149.326µs
+2015/07/26 05:06:21 Started GET "/js/fastclick.js?_=1437905179980" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 116.21µs
+2015/07/26 05:06:21 Started GET "/js/foundation.min.js?_=1437905179981" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 182.781µs
+2015/07/26 05:06:21 Started GET "/js/my.js?_=1437905181768" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 120.435µs
+2015/07/26 05:06:21 Started GET "/js/my.js?_=1437905181769" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 124.21µs
+2015/07/26 05:06:21 Started GET "/js/jquery.js?_=1437905179982" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 162.181µs
+2015/07/26 05:06:21 Started GET "/js/fastclick.js?_=1437905179983" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 109.763µs
+2015/07/26 05:06:21 Started GET "/js/foundation.min.js?_=1437905179984" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 153.242µs
+2015/07/26 05:06:21 Started GET "/js/modernizr.js?_=1437905179985" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:21 Returning 200 in 106.359µs
+2015/07/26 05:06:22 Started GET "/js/jquery.js?_=1437905179986" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 Returning 200 in 149.639µs
+2015/07/26 05:06:22 Started GET "/js/fastclick.js?_=1437905179987" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 Returning 200 in 148.099µs
+2015/07/26 05:06:22 Started GET "/js/foundation.min.js?_=1437905179988" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 Returning 200 in 180.689µs
+2015/07/26 05:06:22 Started GET "/js/my.js?_=1437905182122" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 Returning 200 in 108.952µs
+2015/07/26 05:06:22 Started GET "/js/my.js?_=1437905182123" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 Returning 200 in 104.332µs
+2015/07/26 05:06:22 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 cats Page rendered!
+2015/07/26 05:06:22 Returning 200 in 145.355µs
+2015/07/26 05:06:22 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 cats Page rendered!
+2015/07/26 05:06:22 Returning 200 in 99.716µs
+2015/07/26 05:06:22 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 cats Page rendered!
+2015/07/26 05:06:22 Returning 200 in 89.669µs
+2015/07/26 05:06:22 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 cats Page rendered!
+2015/07/26 05:06:22 Returning 200 in 103.387µs
+2015/07/26 05:06:22 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 cats Page rendered!
+2015/07/26 05:06:22 Returning 200 in 118.241µs
+2015/07/26 05:06:22 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 cats Page rendered!
+2015/07/26 05:06:22 Returning 200 in 107.265µs
+2015/07/26 05:06:22 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 cats Page rendered!
+2015/07/26 05:06:22 Returning 200 in 108.325µs
+2015/07/26 05:06:22 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 cats Page rendered!
+2015/07/26 05:06:22 Returning 200 in 105.755µs
+2015/07/26 05:06:22 Started GET "/js/modernizr.js?_=1437905182124" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 Returning 200 in 113.165µs
+2015/07/26 05:06:22 Started GET "/js/modernizr.js?_=1437905182125" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 Returning 200 in 126.779µs
+2015/07/26 05:06:22 Started GET "/js/modernizr.js?_=1437905182126" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 Returning 200 in 118.383µs
+2015/07/26 05:06:22 Started GET "/js/modernizr.js?_=1437905182127" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 Returning 200 in 150.617µs
+2015/07/26 05:06:22 Started GET "/js/modernizr.js?_=1437905182128" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 Returning 200 in 151.24µs
+2015/07/26 05:06:22 Started GET "/js/modernizr.js?_=1437905182129" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 Returning 200 in 159.257µs
+2015/07/26 05:06:22 Started GET "/js/modernizr.js?_=1437905182130" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 Returning 200 in 924.56µs
+2015/07/26 05:06:22 Started GET "/js/modernizr.js?_=1437905182131" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:22 Returning 200 in 125.27µs
+2015/07/26 05:06:26 Started GET "/js/jquery.js?_=1437905182132" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:26 Returning 200 in 142.101µs
+2015/07/26 05:06:26 Started GET "/js/fastclick.js?_=1437905182133" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:26 Returning 200 in 167.575µs
+2015/07/26 05:06:26 Started GET "/js/foundation.min.js?_=1437905182134" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:26 Returning 200 in 214.837µs
+2015/07/26 05:06:26 Started GET "/js/modernizr.js?_=1437905182135" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:26 Returning 200 in 119.268µs
+2015/07/26 05:06:27 Started GET "/js/jquery.js?_=1437905182136" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:27 Returning 200 in 176.408µs
+2015/07/26 05:06:27 Started GET "/js/fastclick.js?_=1437905182137" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:27 Returning 200 in 175.4µs
+2015/07/26 05:06:27 Started GET "/js/foundation.min.js?_=1437905182138" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:27 Returning 200 in 225.147µs
+2015/07/26 05:06:27 Started GET "/js/my.js?_=1437905187649" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:27 Returning 200 in 163.174µs
+2015/07/26 05:06:27 Started GET "/js/my.js?_=1437905187650" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:27 Returning 200 in 155.042µs
+2015/07/26 05:06:27 Started GET "/js/jquery.js?_=1437905182139" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:27 Returning 200 in 141.722µs
+2015/07/26 05:06:27 Started GET "/js/fastclick.js?_=1437905182140" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:27 Returning 200 in 176.39µs
+2015/07/26 05:06:28 Started GET "/js/foundation.min.js?_=1437905182141" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:28 Returning 200 in 177.074µs
+2015/07/26 05:06:28 Started GET "/js/modernizr.js?_=1437905182142" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:28 Returning 200 in 142.587µs
+2015/07/26 05:06:28 Started GET "/js/jquery.js?_=1437905182143" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:28 Returning 200 in 208.973µs
+2015/07/26 05:06:29 Started GET "/js/fastclick.js?_=1437905182144" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:29 Returning 200 in 151.392µs
+2015/07/26 05:06:29 Started GET "/js/foundation.min.js?_=1437905182145" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:29 Returning 200 in 166.296µs
+2015/07/26 05:06:29 Started GET "/js/my.js?_=1437905189549" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:29 Returning 200 in 142.074µs
+2015/07/26 05:06:29 Started GET "/js/my.js?_=1437905189550" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:29 Returning 200 in 110.011µs
+2015/07/26 05:06:29 Started GET "/js/jquery.js?_=1437905182146" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:29 Returning 200 in 143.634µs
+2015/07/26 05:06:29 Started GET "/js/fastclick.js?_=1437905182147" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:29 Returning 200 in 150.367µs
+2015/07/26 05:06:30 Started GET "/js/foundation.min.js?_=1437905182148" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:30 Returning 200 in 170.415µs
+2015/07/26 05:06:30 Started GET "/js/modernizr.js?_=1437905182149" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33236
+2015/07/26 05:06:30 Returning 200 in 163.862µs
+2015/07/26 05:10:18 Started GET "/js/modernizr.js?_=1437905418370" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33740
+2015/07/26 05:10:18 Returning 200 in 3.979557ms
+2015/07/26 05:10:18 Started GET "/js/jquery.js?_=1437905418371" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33740
+2015/07/26 05:10:18 Returning 200 in 151.896µs
+2015/07/26 05:10:18 Started GET "/js/fastclick.js?_=1437905418372" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33740
+2015/07/26 05:10:18 Returning 200 in 143.449µs
+2015/07/26 05:10:18 Started GET "/js/foundation.min.js?_=1437905418373" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33740
+2015/07/26 05:10:18 Returning 200 in 182.152µs
+2015/07/26 05:10:18 Started GET "/js/modernizr.js?_=1437905418374" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33740
+2015/07/26 05:10:18 Returning 200 in 165.018µs
+2015/07/26 05:10:18 Started GET "/js/jquery.js?_=1437905418375" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33740
+2015/07/26 05:10:18 Returning 200 in 203.396µs
+2015/07/26 05:10:18 Started GET "/js/fastclick.js?_=1437905418376" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33740
+2015/07/26 05:10:18 Returning 200 in 198.103µs
+2015/07/26 05:10:18 Started GET "/js/foundation.min.js?_=1437905418377" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33740
+2015/07/26 05:10:18 Returning 200 in 172.706µs
+2015/07/26 05:10:18 Started GET "/js/my.js?_=1437905418542" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33740
+2015/07/26 05:10:18 Returning 200 in 127.938µs
+2015/07/26 05:10:18 Started GET "/js/my.js?_=1437905418543" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33740
+2015/07/26 05:10:18 Returning 200 in 119.094µs
+2015/07/26 05:10:18 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33740
+2015/07/26 05:10:18 Returning 404 in 60.026µs
+2015/07/26 05:10:18 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33740
+2015/07/26 05:10:18 Returning 404 in 43.908µs
+2015/07/26 05:10:24 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33740
+2015/07/26 05:10:24 Returning 404 in 59.261µs
+2015/07/26 05:10:46 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33754
+2015/07/26 05:10:46 Returning 404 in 55.003µs
+2015/07/26 05:10:57 Started GET "/cats" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33759
+2015/07/26 05:10:57 Returning 200 in 3.830908ms
+2015/07/26 05:11:01 Started GET "/" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33759
+2015/07/26 05:11:01 index Page rendered!
+2015/07/26 05:11:01 [timer] indexHandler took 413.261µs
+2015/07/26 05:11:01 Returning 200 in 484.119µs
+2015/07/26 05:11:01 Started GET "/js/my.js" |Host: localhost:3000 |RawURL:  |UserAgent: Mozilla/5.0 (X11; Linux x86_64; rv:41.0) Gecko/20100101 Firefox/41.0 |Scheme: http:// |IP:  from [::1]:33759
+2015/07/26 05:11:01 Returning 304 in 91.875µs
