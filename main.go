@@ -17,6 +17,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	//"bufio"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
@@ -74,14 +75,20 @@ type Frontmatter struct {
 }
 
 type Wiki struct {
-	Title       string
 	Content     string
 }
 
 type WikiPage struct {
+	PageTitle    string
+	Filename     string
 	*Frontmatter 
-	*Wiki
+	*Wiki	
 	IsPrivate    bool
+}
+
+type RawPage struct {
+	Name     string
+	Content  string
 }
 
 type ListPage struct {
@@ -279,26 +286,33 @@ func ParseBool(value string) bool {
 	return boolValue
 }
 
-// Get WikiPage{*Frontmatter, *Wiki, IsPrivate}
+/* Get type WikiPage struct {
+	PageTitle    string
+	Filename     string
+	*Frontmatter 
+	*Wiki	
+	IsPrivate    bool
+}*/
 func loadPage(r *http.Request) (*WikiPage, error) {
 	var fm Frontmatter
 	var priv bool
+	var pagetitle string
 	vars := mux.Vars(r)
-	title := vars["name"]	
-    filename := "./md/" + title + ".md"
-    body, err := ioutil.ReadFile(filename)
+	filename := vars["name"]
+    fullfilename := "./md/" + filename + ".md"
+    body, err := ioutil.ReadFile(fullfilename)
     if err != nil {
 		//This should mean file is non-existent, so create new page
 		// FIXME: Add unixtime to newly created frontmatter
 		log.Println(err)
 		errn := errors.New("No such file")
 		newwp := &WikiPage{
+			filename,
+			filename,
 			&Frontmatter{
-				Title: title,
+				Title: filename,
 			},			
-			&Wiki{
-				Title: title,
-			},
+			&Wiki{},
 			false,
 		}		
     	return newwp, errn
@@ -317,10 +331,16 @@ func loadPage(r *http.Request) (*WikiPage, error) {
 	} else {
 		priv = false
 	}
+	if fm.Title != "" {
+		pagetitle = fm.Title
+	} else {
+		pagetitle = filename
+	}
 	wp := &WikiPage{
+		pagetitle,
+		filename,
 		&fm,
 		&Wiki{
-			Title: fm.Title,
 			Content: md,
 		},
 		priv,
@@ -439,9 +459,10 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "indexHandler")
 	var fm Frontmatter
 	var priv bool
-	title := "index"	
-    filename := "./md/" + title + ".md"
-    body, err := ioutil.ReadFile(filename)
+	var pagetitle string
+	filename := "index"	
+    fullfilename := "./md/" + filename + ".md"
+    body, err := ioutil.ReadFile(fullfilename)
     if err != nil {
 		log.Println(err)
     }
@@ -453,16 +474,16 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	// Render remaining content after frontmatter
 	md := markdownRender(content)
 	log.Println(md)
-	if isPrivate(fm.Tags) {
-		log.Println("Private page!")
-		priv = true
+	if fm.Title != "" {
+		pagetitle = fm.Title
 	} else {
-		priv = false
-	}
+		pagetitle = filename
+	}	
 	wp := &WikiPage{
+		pagetitle,
+		filename,
 		&fm,
 		&Wiki{
-			Title: fm.Title,
 			Content: md,
 		},
 		priv,
@@ -516,7 +537,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println(p.Wiki.Title + " Page rendered!")
+	log.Println(p.Title + " Page rendered!")
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
@@ -534,12 +555,53 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
-
-func (wiki *Wiki) save() error {
+func (wiki *RawPage) save() error {
 	defer timeTrack(time.Now(), "wiki.save()")
-    filename := wiki.Title + ".md"
-    fullfilename := "md/" + filename
+    filename := wiki.Name + ".md"
+    fullfilename := "./md/" + filename
+	
+	ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0600)
+	
+	// Build raw contents
+	// Unnecessary for now as /save/ is passing the full text output, due to the use of the markdown editor
+	/*
+	file, err := os.Create(fullfilename)
+	if err != nil {
+		return err
+	}	
+	defer file.Close()
+	
+	f := bufio.NewWriter(file)
+	_, err = f.WriteString("---\n")
+	if err != nil {
+		return err
+	}
+	_, err = f.WriteString("title:"+ wiki.PageTitle + "\n")
+	if err != nil {
+		return err
+	}	
+	_, err = f.WriteString("tags:"+ wiki.Frontmatter.Tags + "\n")
+	if err != nil {
+		return err
+	}
+	_, err = f.WriteString("---\n")
+	if err != nil {
+		return err
+	}	
+	_, err = f.WriteString("\n")
+	if err != nil {
+		return err
+	}	
+	_, err = f.WriteString(wiki.Wiki.Content)
+	if err != nil {
+		return err
+	}	
+	f.Flush()
+	*/
+	
+	
+	//ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0600)
+	
 	gitadd := exec.Command("git", "add", fullfilename)
 	gitaddout, err := gitadd.CombinedOutput()
 	if err != nil {
@@ -558,7 +620,7 @@ func (wiki *Wiki) save() error {
 		fmt.Println(fmt.Sprint(err) + ": " + string(gitpushout))
 	}
 	//fmt.Println(string(gitpushout))
-    return ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0600)
+    return nil
 }
 
 /*
@@ -586,8 +648,29 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	bwiki := buf.String()
 	log.Print(bwiki)
 
-	wiki := &Wiki{Title: name, Content: bwiki}
-	err := wiki.save()
+	//wiki := &WikiPage{PageTitle: name, Content: bwiki}
+	/*
+	if fm.Title != "" {
+		pagetitle = fm.Title
+	} else {
+		pagetitle = filename
+	}	
+	wp := &WikiPage{
+		pagetitle,
+		filename,
+		&fm,
+		&Wiki{
+			Content: md,
+		},
+		priv,
+	}*/
+	
+	rp := &RawPage{
+		name,
+		bwiki,
+	}
+	
+	err := rp.save()
 	if err != nil {
 		WriteJ(w, "", false)
 		log.Println(err)
@@ -642,6 +725,15 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func newHandler(w http.ResponseWriter, r *http.Request) {
+	defer timeTrack(time.Now(), "saveHandler")	
+	pagetitle := r.FormValue("newwiki")
+	log.Println(pagetitle)
+	log.Println(r)
+	http.Redirect(w, r, "/edit/"+pagetitle, 301)
+
+}
+	
 func main() {
 	/* for reference
 	p1 := &Page{Title: "TestPage", Body: []byte("This is a sample page.")}
@@ -686,10 +778,11 @@ func main() {
 	r := mux.NewRouter().StrictSlash(true)
 	//d := r.Host("go.jba.io").Subrouter()
 	r.HandleFunc("/", indexHandler).Methods("GET")
+	r.HandleFunc("/new", newHandler)
 	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats.md") })
-	r.HandleFunc("/{name}", viewHandler).Methods("GET")
 	r.HandleFunc("/save/{name}", saveHandler).Methods("POST")
 	r.HandleFunc("/edit/{name}", editHandler)
+	r.HandleFunc("/{name}", viewHandler).Methods("GET")
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
 	http.Handle("/", std.Then(r))
 	http.ListenAndServe(":3000", nil)
