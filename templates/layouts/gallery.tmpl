@@ -1,0 +1,29 @@
+{{ define "title" }}<title>Image Gallery - {{.Page.TheName}}</title>{{ end }}
+{{ define "sidebar" }}
+    {{ template "sidebar_nav" . }}
+    {{ template "login_form" . }}
+{{ end }}
+{{ define "content" }} 
+<h1>Image Gallery</h1>
+<div class="row">
+	<ul class="inline-list"> 
+	{{range .Images}}
+	<li>
+	<div class="thumbspacer">
+	<a class="th" href="/i/{{.Filename}}">
+	<img class="{{.Filename|imgClass}}" src="/thumbs/{{.Filename}}.png" data-gif="/imagedirect/{{.Filename}}">
+	</a>
+	</div>
+	</li> 
+	{{ end }}
+	</ul>
+</div>
+{{ end }}
+{{ define "extra_scripts" }}
+<script src="/js/jquery.gifplayer.js" type="text/javascript"></script>
+<script type="text/javascript" charset="utf-8">
+$(function() {
+    $('.gifs').gifplayer();
+});
+</script>
+{{ end }}
