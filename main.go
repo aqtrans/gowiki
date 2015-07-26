@@ -416,7 +416,9 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 func (wiki *Wiki) save() error {
     filename := wiki.Title + ".md"
-    fullfilename := "md/" + filename 
+    fullfilename := "md/" + filename
+	gitCmd(exec.Command("git", "commit", "-m", "commit from gowiki"))
+	gitCmd(exec.Command("git", "add", fullfilename))
     return ioutil.WriteFile(fullfilename, wiki.Content, 0600)
 }
 
@@ -484,6 +486,19 @@ func jsEditHandler(w http.ResponseWriter, r *http.Request) {
 	WriteJ(w, s.Short, true)
 	*/
 
+}
+
+// Run git command, will currently die on all errors
+func gitCmd(cmd *exec.Cmd) (*bytes.Buffer) {
+    cmd.Dir = fmt.Sprintf("%s/", DIRECTORY)
+    var out bytes.Buffer
+    cmd.Stdout = &out
+    runError := cmd.Run()
+    if runError != nil {
+        log.Print(fmt.Sprintf("Error: command failed with:\n\"%s\n\"", out.String()))
+        return bytes.NewBuffer([]byte{})
+    }
+    return &out
 }
 
 func main() {
