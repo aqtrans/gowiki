@@ -1,5 +1,11 @@
 package main
 
+//TODO:
+// - GUI for Tags
+// - LDAP integration
+// - Buttons
+// - Private pages
+
 import (
 	"bytes"
 	"crypto/rand"
@@ -21,6 +27,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"gopkg.in/yaml.v2"
+	"unicode"
 )
 
 const timestamp = "2006-01-02 at 03:04:05PM"
@@ -51,6 +59,13 @@ var (
 //Base struct, Page ; has to be wrapped in a data {} strut for consistency reasons
 type Base struct {
 	SiteName    string
+}
+
+type Frontmatter struct {
+	Title       string 
+	Tags        []string 
+	Created     int64
+	LastModTime int64	
 }
 
 type Wiki struct {
@@ -142,9 +157,70 @@ func timeTrack(start time.Time, name string) {
 	log.Printf("[timer] %s took %s", name, elapsed)
 }
 
+func isPrivate(list []string) bool {
+    for _, v := range list {
+        if v == "private" {
+            return true
+        }
+    }
+    return false
+}
+
 func markdownRender(content []byte) string {
-	md := markdown.New(markdown.XHTMLOutput(true), markdown.Nofollow(true))	
+	md := markdown.New(markdown.HTML(true), markdown.Nofollow(true), markdown.Breaks(true))
 	return md.RenderToString(content)
+}
+
+func readFront(data []byte, frontmatter interface{}) (content []byte, err error) {
+	r := bytes.NewBuffer(data)
+
+	// eat away starting whitespace
+	var ch rune = ' '
+	for unicode.IsSpace(ch) {
+		ch, _, err = r.ReadRune()
+		if err != nil {
+			// file is just whitespace
+			return []byte{}, nil
+		}
+	}
+	r.UnreadRune()
+
+	// check if first line is ---
+	line, err := r.ReadString('\n')
+	if err != nil && err != io.EOF {
+		return nil, err
+	}
+
+	if strings.TrimSpace(line) != "---" {
+		// no front matter, just content
+		return data, nil
+	}
+
+	yamlStart := len(data) - r.Len()
+	yamlEnd := yamlStart
+
+	for {
+		line, err = r.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				return data, nil
+			}
+			return nil, err
+		}
+
+		if strings.TrimSpace(line) == "---" {
+			yamlEnd = len(data) - r.Len()
+			break
+		}
+	}
+
+	err = yaml.Unmarshal(data[yamlStart:yamlEnd], frontmatter)
+	if err != nil {
+		return nil, err
+	}
+	content = data[yamlEnd:]
+	err = nil
+	return
 }
 
 //Hack to allow me to make full URLs due to absence of http:// from URL.Scheme in dev situations
@@ -355,6 +431,7 @@ func getTitle(r *http.Request) (string, error) {
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
+	defer timeTrack(time.Now(), "viewHandler")
 	vars := mux.Vars(r)
 	name := vars["name"]
 	p, err := loadPage(name)
@@ -370,10 +447,17 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	//unsafe := blackfriday.MarkdownCommon(body)
-	md := markdownRender(body)
-	mdhtml := template.HTML(md)
-	//html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
+	var fm Frontmatter
+	content, err := readFront(body, &fm)
+	md := markdownRender(content)
+	log.Println(md)
+	log.Println(fm.Tags)
+	//mdhtml := template.HTML(md)
+	//log.Println(mdhtml)
+	if isPrivate(fm.Tags) {
+		log.Println("ITS TRUE")
+		//FIXME: CHECK FOR AUTH, REDIRECT TO LOGIN, ETC
+	}
 
 	data := struct {
 		Wiki  *Wiki
@@ -382,7 +466,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	}{
 		p,
 		name,
-		mdhtml,
+		md,
 	}
 	err = renderTemplate(w, "md.tmpl", data)
 	if err != nil {
@@ -392,6 +476,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
+	defer timeTrack(time.Now(), "editHandler")
 	vars := mux.Vars(r)
 	title := vars["name"]
 	p, err := loadPage(title)
@@ -402,6 +487,34 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "edit.tmpl", p)
 }
 
+
+
+func (wiki *Wiki) save() error {
+	defer timeTrack(time.Now(), "wiki.save()")
+    filename := wiki.Title + ".md"
+    fullfilename := "md/" + filename
+	gitadd := exec.Command("git", "add", fullfilename)
+	gitaddout, err := gitadd.CombinedOutput()
+	if err != nil {
+		fmt.Println(fmt.Sprint(err) + ": " + string(gitaddout))
+	}
+	//fmt.Println(string(gitaddout))
+	gitcommit := exec.Command("git", "commit", "-m", "commit from gowiki")
+	gitcommitout, err := gitcommit.CombinedOutput()
+	if err != nil {
+		fmt.Println(fmt.Sprint(err) + ": " + string(gitcommitout))
+	}
+	//fmt.Println(string(gitcommitout))
+	gitpush := exec.Command("git", "push")
+	gitpushout, err := gitpush.CombinedOutput()
+	if err != nil {
+		fmt.Println(fmt.Sprint(err) + ": " + string(gitpushout))
+	}
+	//fmt.Println(string(gitpushout))
+    return ioutil.WriteFile(fullfilename, wiki.Content, 0600)
+}
+
+/*
 func saveHandler(w http.ResponseWriter, r *http.Request) {
 		title, err := getTitle(r)
 		body := r.FormValue("body")
@@ -414,30 +527,10 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/view/"+title, http.StatusFound)
 		log.Println(title + " page saved!")
 }
+*/
 
-func (wiki *Wiki) save() error {
-    filename := wiki.Title + ".md"
-    fullfilename := "md/" + filename
-	gitadd, err := exec.Command("git", "add", fullfilename).Output()
-	if err != nil {
-		log.Println(err)
-	}
-	fmt.Printf("%s\n", gitadd)
-	gitcommit, err := exec.Command("git", "commit", "-m", "commit from gowiki").Output()
-	if err != nil {
-		log.Println(err)
-	}
-	fmt.Printf("%s\n", gitcommit)
-	gitpush := exec.Command("git", "push").Output()
-	if err != nil {
-		log.Println(err)
-	}
-	fmt.Printf("%s\n", gitpush)
-    return ioutil.WriteFile(fullfilename, wiki.Content, 0600)
-}
-
-func jsEditHandler(w http.ResponseWriter, r *http.Request) {
-	defer timeTrack(time.Now(), "jsEditHandler")
+func saveHandler(w http.ResponseWriter, r *http.Request) {
+	defer timeTrack(time.Now(), "saveHandler")
 	vars := mux.Vars(r)
 	name := vars["name"]	
 	txt := r.Body
@@ -502,19 +595,6 @@ func jsEditHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// Run git command, will currently die on all errors
-func gitCmd(cmd *exec.Cmd) (*bytes.Buffer) {
-    cmd.Dir = fmt.Sprintf("%s/", "/usr/bin/")
-    var out bytes.Buffer
-    cmd.Stdout = &out
-    runError := cmd.Run()
-    if runError != nil {
-        log.Print(fmt.Sprintf("Error: command failed with:\n\"%s\n\"", out.String()))
-        return bytes.NewBuffer([]byte{})
-    }
-    return &out
-}
-
 func main() {
 	/* for reference
 	p1 := &Page{Title: "TestPage", Body: []byte("This is a sample page.")}
@@ -561,9 +641,8 @@ func main() {
 	r.HandleFunc("/", indexHandler).Methods("GET")
 	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats.md") })
 	r.HandleFunc("/{name}", viewHandler).Methods("GET")
-	r.HandleFunc("/api/save/{name}", jsEditHandler)
+	r.HandleFunc("/save/{name}", saveHandler).Methods("POST")
 	r.HandleFunc("/edit/{name}", editHandler)
-	r.HandleFunc("/save/{name}", saveHandler)
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
 	http.Handle("/", std.Then(r))
 	http.ListenAndServe(":3000", nil)
