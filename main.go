@@ -14,6 +14,7 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -73,10 +74,14 @@ type Frontmatter struct {
 }
 
 type Wiki struct {
-	Created     int64
-	LastModTime int64
 	Title       string
-	Content     []byte
+	Content     string
+}
+
+type WikiPage struct {
+	*Frontmatter 
+	*Wiki
+	IsPrivate    bool
 }
 
 type ListPage struct {
@@ -90,17 +95,17 @@ type jsonresponse struct {
 	Success bool   `json:"success"`
 }
 
-type WikiByDate []*Wiki
+type WikiByDate []*WikiPage
 
 func (a WikiByDate) Len() int           { return len(a) }
 func (a WikiByDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a WikiByDate) Less(i, j int) bool { return a[i].Created < a[j].Created }
-	
-type WikiByModDate []*Wiki
+func (a WikiByDate) Less(i, j int) bool { return a[i].Frontmatter.Created < a[j].Frontmatter.Created }
+
+type WikiByModDate []*WikiPage
 
 func (a WikiByModDate) Len() int           { return len(a) }
 func (a WikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a WikiByModDate) Less(i, j int) bool { return a[i].LastModTime < a[j].LastModTime }
+func (a WikiByModDate) Less(i, j int) bool { return a[i].Frontmatter.LastModTime < a[j].Frontmatter.LastModTime }
 	
 	
 func init() {
@@ -274,14 +279,54 @@ func ParseBool(value string) bool {
 	return boolValue
 }
 
-func loadPage(title string) (*Wiki, error) {
+// Get WikiPage{*Frontmatter, *Wiki, IsPrivate}
+func loadPage(r *http.Request) (*WikiPage, error) {
+	var fm Frontmatter
+	var priv bool
+	vars := mux.Vars(r)
+	title := vars["name"]	
     filename := "./md/" + title + ".md"
     body, err := ioutil.ReadFile(filename)
     if err != nil {
+		//This should mean file is non-existent, so create new page
+		// FIXME: Add unixtime to newly created frontmatter
 		log.Println(err)
-    	return nil, err
+		errn := errors.New("No such file")
+		newwp := &WikiPage{
+			&Frontmatter{
+				Title: title,
+			},			
+			&Wiki{
+				Title: title,
+			},
+			false,
+		}		
+    	return newwp, errn
     }
-    return &Wiki{Title: title, Content: body}, nil
+	// Read YAML frontmatter into fm
+	content, err := readFront(body, &fm)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+	// Render remaining content after frontmatter
+	md := markdownRender(content)
+	if isPrivate(fm.Tags) {
+		log.Println("Private page!")
+		priv = true
+	} else {
+		priv = false
+	}
+	wp := &WikiPage{
+		&fm,
+		&Wiki{
+			Title: fm.Title,
+			Content: md,
+		},
+		priv,
+	}
+	// FIXME: Fetch create date, frontmatter, etc
+    return wp, nil
 }
 
 type statusWriter struct {
@@ -392,67 +437,53 @@ func WriteJ(w http.ResponseWriter, name string, success bool) error {
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "indexHandler")
-	name := "index"
-	p, err := loadPage(name)
-	if err != nil {
+	var fm Frontmatter
+	var priv bool
+	title := "index"	
+    filename := "./md/" + title + ".md"
+    body, err := ioutil.ReadFile(filename)
+    if err != nil {
 		log.Println(err)
-		http.NotFound(w, r)
-		return
-	}
-
-	body, err := ioutil.ReadFile("./md/" + name + ".md")
-	if err != nil {
-		http.NotFound(w, r)
-		log.Println(err)
-		return
-	}
-	//unsafe := blackfriday.MarkdownCommon(body)
-	md := markdownRender(body)
-	mdhtml := template.HTML(md)
-	//html := bluemonday.UGCPolicy().SanitizeBytes(unsafe)
-
-	data := struct {
-		Wiki  *Wiki
-		Title string
-		MD    template.HTML
-	}{
-		p,
-		name,
-		mdhtml,
-	}
-	err = renderTemplate(w, "md.tmpl", data)
+    }
+	// Read YAML frontmatter into fm
+	content, err := readFront(body, &fm)
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println(name + " Page rendered!")
-}
-
-func getTitle(r *http.Request) (string, error) {
-	vars := mux.Vars(r)
-	name := vars["name"]
-	//fmt.Print(name)
-	return name, nil
+	// Render remaining content after frontmatter
+	md := markdownRender(content)
+	log.Println(md)
+	if isPrivate(fm.Tags) {
+		log.Println("Private page!")
+		priv = true
+	} else {
+		priv = false
+	}
+	wp := &WikiPage{
+		&fm,
+		&Wiki{
+			Title: fm.Title,
+			Content: md,
+		},
+		priv,
+	}
+	// FIXME: Fetch create date, frontmatter, etc
+	err = renderTemplate(w, "md.tmpl", wp)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println("Index rendered!")
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "viewHandler")
-	vars := mux.Vars(r)
-	name := vars["name"]
-	p, err := loadPage(name)
-	if err != nil {
-		log.Println(err)
-		http.NotFound(w, r)
-		return
-	}
 
-	body, err := ioutil.ReadFile("./md/" + name + ".md")
-	if err != nil {
-		http.NotFound(w, r)
-		log.Println(err)
-		return
-	}
+	/*
 	var fm Frontmatter
-	content, err := readFront(body, &fm)
+	content, err := readFront(p.Content, &fm)
+	if err != nil {
+		log.Println(err)
+	}
 	md := markdownRender(content)
 	log.Println(md)
 	log.Println(fm.Tags)
@@ -472,23 +503,35 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		name,
 		md,
 	}
-	err = renderTemplate(w, "md.tmpl", data)
+	*/
+
+	// Get Wiki 
+	p, err := loadPage(r)
+	if err != nil {
+		log.Println(err)
+		http.NotFound(w, r)
+		return
+	}	
+	err = renderTemplate(w, "md.tmpl", p)
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println(name + " Page rendered!")
+	log.Println(p.Wiki.Title + " Page rendered!")
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "editHandler")
-	vars := mux.Vars(r)
-	title := vars["name"]
-	p, err := loadPage(title)
+	p, err := loadPage(r)
 	if err != nil {
 		log.Println(err)
-		p = &Wiki{Title: title}
+		if err.Error() == "No such file" {
+			//FIXME: Add unixtime in here as Created 
+			log.Println("No such file...creating one.")	
+			renderTemplate(w, "edit.tmpl", p)	
+		}
+	} else {
+		renderTemplate(w, "edit.tmpl", p)
 	}
-	renderTemplate(w, "edit.tmpl", p)
 }
 
 
@@ -515,7 +558,7 @@ func (wiki *Wiki) save() error {
 		fmt.Println(fmt.Sprint(err) + ": " + string(gitpushout))
 	}
 	//fmt.Println(string(gitpushout))
-    return ioutil.WriteFile(fullfilename, wiki.Content, 0600)
+    return ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0600)
 }
 
 /*
@@ -540,10 +583,10 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	txt := r.Body
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(txt)
-	bpaste := buf.String()
-	log.Print(bpaste)
+	bwiki := buf.String()
+	log.Print(bwiki)
 
-	wiki := &Wiki{Created: 123, LastModTime: 123, Title: name, Content: []byte(bpaste)}
+	wiki := &Wiki{Title: name, Content: bwiki}
 	err := wiki.save()
 	if err != nil {
 		WriteJ(w, "", false)
