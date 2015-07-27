@@ -68,10 +68,10 @@ type Base struct {
 }
 
 type Frontmatter struct {
-	Title       string 
-	Tags        []string 
-	Created     int64
-	LastModTime int64	
+	Title       string   `yaml:"title"`
+	Tags        []string `yaml:"tags,omitempty"`
+	Created     int64    `yaml:"created,omitempty"`
+	LastModTime int64	 `yaml:"lastmodtime,omitempty"`
 }
 
 type Wiki struct {
@@ -92,8 +92,7 @@ type RawPage struct {
 }
 
 type ListPage struct {
-	*Wiki
-	Wikis    []*Wiki
+	Wikis    []*WikiPage
 }
 
 //JSON Response
@@ -153,6 +152,9 @@ func Debugln(v ...interface{}) {
 }	
 
 func PrettyDate(date int64) string {
+	if date == 0 {
+		return "N/A"
+	}
 	t := time.Unix(date, 0)
 	return t.Format(timestamp)
 }
@@ -185,6 +187,86 @@ func isPrivate(list []string) bool {
 func markdownRender(content []byte) string {
 	md := markdown.New(markdown.HTML(true), markdown.Nofollow(true), markdown.Breaks(true))
 	return md.RenderToString(content)
+}
+
+func listHandler(w http.ResponseWriter, r *http.Request) {
+    searchDir := "./md/"
+
+    fileList := []string{}
+    _ = filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
+        fileList = append(fileList, path)
+        return nil
+    })
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(200)
+	var wps []*WikiPage
+    for _, file := range fileList {
+
+	   // check if the source dir exist
+	   src, err := os.Stat(file)
+	   if err != nil {
+	      panic(err)
+	   }
+	   // check if its a directory
+	   if src.IsDir() {
+	     //Do something if a directory
+		 log.Println(file + "is a directory......")
+	   } else {
+
+			_, filename := filepath.Split(file)
+			var wp *WikiPage
+			var fm *Frontmatter
+			var priv bool
+			var pagetitle string
+	        //fmt.Println(file)
+			//w.Write([]byte(file))
+			//w.Write([]byte("<br>"))		
+			
+			body, err := ioutil.ReadFile(file)
+			if err != nil {
+				log.Println(err)
+			}
+			// Read YAML frontmatter into fm
+			_, err = readFront(body, &fm)
+			if err != nil {
+				log.Println(err)
+			}
+			if fm != nil {
+				//log.Println(fm.Tags)
+				log.Println(fm)
+				
+				if isPrivate(fm.Tags) {
+					//log.Println("Private page!")
+					priv = true
+				} else {
+					priv = false
+				}
+				if fm.Title != "" {
+					pagetitle = fm.Title
+				} else {
+					pagetitle = filename
+				}
+								
+			}
+
+			wp = &WikiPage{
+				pagetitle,
+				filename,
+				fm,
+				&Wiki{	},
+				priv,
+			}
+			wps = append(wps, wp)
+			//log.Println(string(body))
+			//log.Println(string(wp.Wiki.Content))
+	    }
+		   
+	 }
+	l := &ListPage{wps}
+	err := renderTemplate(w, "list.tmpl", l)
+	if err != nil {
+		log.Println(err)
+	}	
 }
 
 func readFront(data []byte, frontmatter interface{}) (content []byte, err error) {
@@ -560,6 +642,11 @@ func (wiki *RawPage) save() error {
     filename := wiki.Name + ".md"
     fullfilename := "./md/" + filename
 	
+	// Check for and install required YAML frontmatter
+	if strings.Contains(wiki.Content, "---") {
+		
+	}
+	
 	ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0600)
 	
 	// Build raw contents
@@ -779,6 +866,7 @@ func main() {
 	//d := r.Host("go.jba.io").Subrouter()
 	r.HandleFunc("/", indexHandler).Methods("GET")
 	r.HandleFunc("/new", newHandler)
+	r.HandleFunc("/list", listHandler)
 	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats.md") })
 	r.HandleFunc("/save/{name}", saveHandler).Methods("POST")
 	r.HandleFunc("/edit/{name}", editHandler)
