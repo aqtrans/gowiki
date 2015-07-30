@@ -855,6 +855,7 @@ func main() {
 
 	new_sess := RandKey(32)
 	log.Println("Session ID: " + new_sess)
+        log.Println("Listening on port 3000")
 
 	flag.Parse()
 	flag.Set("bind", ":3000")
@@ -870,8 +871,9 @@ func main() {
 	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats.md") })
 	r.HandleFunc("/save/{name}", saveHandler).Methods("POST")
 	r.HandleFunc("/edit/{name}", editHandler)
-	r.HandleFunc("/{name}", viewHandler).Methods("GET")
+	//r.HandleFunc("/{name}", viewHandler).Methods("GET")
 	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
+        r.HandleFunc("/{name}", viewHandler).Methods("GET")
 	http.Handle("/", std.Then(r))
 	http.ListenAndServe(":3000", nil)
 }
