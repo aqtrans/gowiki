@@ -20,7 +20,7 @@
 <tbody>
 {{range .Wikis}}
     <tr>
-    <td><a href=/md/{{.Filename}}>{{.PageTitle}}</a></td>
+    <td><a href=/{{.Filename}}>{{.PageTitle}}</a></td>
     <td>{{.Frontmatter.Created | prettyDate}}</td>
     <td>{{.Frontmatter}}</td>
     <td>{{.IsPrivate}}</td>
