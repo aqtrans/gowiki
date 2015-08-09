@@ -381,7 +381,7 @@ func loadPage(r *http.Request) (*WikiPage, error) {
 	var pagetitle string
 	vars := mux.Vars(r)
 	filename := vars["name"]
-    fullfilename := "./md/" + filename + ".md"
+    fullfilename := "./md/" + filename
     body, err := ioutil.ReadFile(fullfilename)
     if err != nil {
 		//This should mean file is non-existent, so create new page
@@ -542,8 +542,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	var fm Frontmatter
 	var priv bool
 	var pagetitle string
-	filename := "index"	
-    fullfilename := "./md/" + filename + ".md"
+	filename := "index"
+    fullfilename := "./md/" + filename
     body, err := ioutil.ReadFile(fullfilename)
     if err != nil {
 		log.Println(err)
@@ -612,6 +612,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	p, err := loadPage(r)
 	if err != nil {
 		log.Println(err)
+		log.Println(err.Error())
 		http.NotFound(w, r)
 		return
 	}	
@@ -639,7 +640,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 
 func (wiki *RawPage) save() error {
 	defer timeTrack(time.Now(), "wiki.save()")
-    filename := wiki.Name + ".md"
+    filename := wiki.Name
     fullfilename := "./md/" + filename
 	
 	// Check for and install required YAML frontmatter
@@ -855,7 +856,7 @@ func main() {
 
 	new_sess := RandKey(32)
 	log.Println("Session ID: " + new_sess)
-        log.Println("Listening on port 3000")
+    log.Println("Listening on port 3000")
 
 	flag.Parse()
 	flag.Set("bind", ":3000")
@@ -868,12 +869,13 @@ func main() {
 	r.HandleFunc("/", indexHandler).Methods("GET")
 	r.HandleFunc("/new", newHandler)
 	r.HandleFunc("/list", listHandler)
-	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats.md") })
+	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats") })
 	r.HandleFunc("/save/{name}", saveHandler).Methods("POST")
 	r.HandleFunc("/edit/{name}", editHandler)
-	//r.HandleFunc("/{name}", viewHandler).Methods("GET")
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./public/")))
-        r.HandleFunc("/{name}", viewHandler).Methods("GET")
+	r.HandleFunc("/{name}", viewHandler).Methods("GET")
+	//http.Handle("/s/", http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
+	r.PathPrefix("/s/").Handler(http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
+    //r.HandleFunc("/{name}", viewHandler).Methods("GET")
 	http.Handle("/", std.Then(r))
 	http.ListenAndServe(":3000", nil)
 }
