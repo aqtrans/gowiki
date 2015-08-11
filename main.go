@@ -22,13 +22,14 @@ import (
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/opennota/markdown"
+	"github.com/libgit2/git2go"
 	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
+	//"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -763,6 +764,65 @@ func (wiki *RawPage) save() error {
 	
 	//ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0600)
 	
+	// Now using libgit2
+	gitfilename := dir + filename
+
+	signature := &git.Signature{
+		Name: "golang git wiki",
+		Email: "server@jba.io",
+		When: time.Now(),
+	}
+	
+	repo, err := git.OpenRepository("./md")
+	if err != nil {
+		panic(err)
+	}
+	defer repo.Free()
+
+	index, err := repo.Index()
+	if err != nil {
+		panic(err)
+	}
+	defer index.Free()
+	
+	err = index.AddByPath(gitfilename)
+	if err != nil {
+		panic(err)
+	}
+	
+	treeId, err := index.WriteTree()
+	if err != nil {
+		panic(err)
+	}
+	
+	err = index.Write()
+	if err != nil {
+		panic(err)
+	}
+
+	tree, err := repo.LookupTree(treeId)
+	if err != nil {
+		panic(err)
+	}
+	
+	message := "Wiki commit. Filename: " + gitfilename
+
+	currentBranch, err := repo.Head()
+	if err == nil && currentBranch != nil {
+		currentTip, err2 := repo.LookupCommit(currentBranch.Target())
+		if err2 != nil {
+			return err2
+		}
+		_, err = repo.CreateCommit("HEAD", signature, signature, message, tree, currentTip)
+	} else {
+		_, err = repo.CreateCommit("HEAD", signature, signature, message, tree)
+	}
+
+	if err != nil {
+		return err
+	}
+	
+	/*
 	gitadd := exec.Command("git", "add", fullfilename)
 	gitaddout, err := gitadd.CombinedOutput()
 	if err != nil {
@@ -781,6 +841,7 @@ func (wiki *RawPage) save() error {
 		fmt.Println(fmt.Sprint(err) + ": " + string(gitpushout))
 	}
 	//fmt.Println(string(gitpushout))
+	*/
 	
 	log.Println(fullfilename + " has been saved.")
     return nil
