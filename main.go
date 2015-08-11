@@ -209,7 +209,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	   }
 	   // check if its a directory
 	   if src.IsDir() {
-	     //Do something if a directory
+	     // Do something if a directory
+		 // FIXME: Traverse directory
 		 log.Println(file + "is a directory......")
 	   } else {
 
@@ -224,16 +225,16 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			
 			body, err := ioutil.ReadFile(file)
 			if err != nil {
-				log.Println(err)
+				log.Fatalln(err)
 			}
 			// Read YAML frontmatter into fm
 			_, err = readFront(body, &fm)
 			if err != nil {
-				log.Println(err)
+				log.Fatalln(err)
 			}
 			if fm != nil {
 				//log.Println(fm.Tags)
-				log.Println(fm)
+				//log.Println(fm)
 				
 				if isPrivate(fm.Tags) {
 					//log.Println("Private page!")
@@ -247,6 +248,14 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 					pagetitle = filename
 				}
 								
+			} else {
+				log.Println(file + " doesn't have frontmatter :( ")
+				fm = &Frontmatter{
+						file,
+						[]string{},
+						0,
+						0,
+					}				
 			}
 
 			wp = &WikiPage{
@@ -265,7 +274,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	l := &ListPage{wps}
 	err := renderTemplate(w, "list.tmpl", l)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 	}	
 }
 
@@ -408,6 +417,7 @@ func loadPage(r *http.Request) (*WikiPage, error) {
     body, err := ioutil.ReadFile(fullfilename)
     if err != nil {
 		//This should mean file is non-existent, so create new page
+		// FIXME: Use os.Stat to properly check for file existence, using IsNotExist()
 		// FIXME: Add unixtime to newly created frontmatter
 		log.Println(err)
 		errn := errors.New("No such file")
@@ -425,7 +435,7 @@ func loadPage(r *http.Request) (*WikiPage, error) {
 	// Read YAML frontmatter into fm
 	content, err := readFront(body, &fm)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 		return nil, err
 	}
 	// Render remaining content after frontmatter
@@ -572,16 +582,16 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
     fullfilename := "./md/" + filename
     body, err := ioutil.ReadFile(fullfilename)
     if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
     }
 	// Read YAML frontmatter into fm
 	content, err := readFront(body, &fm)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 	}
 	// Render remaining content after frontmatter
 	md := markdownRender(content)
-	log.Println(md)
+	//log.Println(md)
 	if fm.Title != "" {
 		pagetitle = fm.Title
 	} else {
@@ -599,9 +609,9 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	// FIXME: Fetch create date, frontmatter, etc
 	err = renderTemplate(w, "md.tmpl", wp)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 	}
-	log.Println("Index rendered!")
+	//log.Println("Index rendered!")
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
@@ -637,20 +647,25 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	// Get Wiki 
 	p, err := loadPage(r)
 	if err != nil {
-		log.Println(err)
 		if err.Error() == "No such dir index" {
 			//FIXME: Add unixtime in here as Created 
 			log.Println("No such dir index...creating one.")	
 			http.Redirect(w, r, "/edit/"+p.Filename, 302)	
 			return
-		}		
+		} else if err.Error() == "No such file" {
+			log.Println("No such file...creating one.")	
+			http.Redirect(w, r, "/edit/"+p.Filename, 302)	
+			return			
+		} else {
+			log.Fatalln(err)
+		}
 		//log.Println(err.Error())
 		http.NotFound(w, r)
 		return
 	}	
 	err = renderTemplate(w, "md.tmpl", p)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 	}
 	log.Println(p.Title + " Page rendered!")
 }
@@ -658,17 +673,24 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 func editHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "editHandler")
 	p, err := loadPage(r)
-	log.Println(p.Filename)
-	log.Println(p.PageTitle)
+	//log.Println(p.Filename)
+	//log.Println(p.PageTitle)
 	if err != nil {
-		log.Println(err)
 		if err.Error() == "No such file" {
 			//FIXME: Add unixtime in here as Created 
-			log.Println("No such file...creating one.")	
-			renderTemplate(w, "edit.tmpl", p)	
+			//log.Println("No such file...creating one.")	
+			terr := renderTemplate(w, "edit.tmpl", p)
+			if terr != nil {
+				log.Fatalln(terr)
+			}
+		} else {
+			log.Fatalln(err)
 		}
 	} else {
-		renderTemplate(w, "edit.tmpl", p)
+		terr := renderTemplate(w, "edit.tmpl", p)
+		if terr != nil {
+			log.Fatalln(terr)
+		}
 	}
 }
 
@@ -686,13 +708,18 @@ func (wiki *RawPage) save() error {
 	}
 	
 	// If directory doesn't exist, create it
-	dirpath := "./md/" + dir
-	if _, err := os.Stat(dirpath); os.IsNotExist(err) {
-		err := os.MkdirAll(dirpath, 0755)
-		if err != nil {
-			log.Println(err)
-		}
+	// - Check if dir is null first
+	if dir != "" {
+		//log.Println("Dir is not empty")
+		dirpath := "./md/" + dir
+		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
+			err := os.MkdirAll(dirpath, 0755)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}		
 	}
+	//log.Println("Dir is empty")
 	
 	ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0755)
 	
@@ -782,7 +809,8 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(txt)
 	bwiki := buf.String()
-	log.Print(bwiki)
+	
+	//log.Print(bwiki)
 
 	//wiki := &WikiPage{PageTitle: name, Content: bwiki}
 	/*
@@ -809,11 +837,13 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	err := rp.save()
 	if err != nil {
 		WriteJ(w, "", false)
-		log.Println(err)
+		log.Fatalln(err)
 		return
+	} else {
+		WriteJ(w, name, true)
+		log.Println(name + " page saved!")
 	}
-	WriteJ(w, name, true)
-	log.Println(name + " page saved!")
+
 	
 	/*
 	err := r.ParseForm()
@@ -864,8 +894,8 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 func newHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "saveHandler")	
 	pagetitle := r.FormValue("newwiki")
-	log.Println(pagetitle)
-	log.Println(r)
+	//log.Println(pagetitle)
+	//log.Println(r)
 	http.Redirect(w, r, "/edit/"+pagetitle, 301)
 
 }
