@@ -250,6 +250,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				}
 								
 			} else {
+			// If file doesn't have frontmatter, add in crap
+			// FIXME: Get created/modified date from os.Stat()
 				log.Println(file + " doesn't have frontmatter :( ")
 				fm = &Frontmatter{
 						file,
