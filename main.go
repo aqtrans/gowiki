@@ -209,7 +209,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	   }
 	   // check if its a directory
 	   if src.IsDir() {
-	     //Do something if a directory
+	     // Do something if a directory
+		 // FIXME: Traverse directory
 		 log.Println(file + "is a directory......")
 	   } else {
 
@@ -224,16 +225,16 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			
 			body, err := ioutil.ReadFile(file)
 			if err != nil {
-				log.Println(err)
+				log.Fatalln(err)
 			}
 			// Read YAML frontmatter into fm
 			_, err = readFront(body, &fm)
 			if err != nil {
-				log.Println(err)
+				log.Fatalln(err)
 			}
 			if fm != nil {
 				//log.Println(fm.Tags)
-				log.Println(fm)
+				//log.Println(fm)
 				
 				if isPrivate(fm.Tags) {
 					//log.Println("Private page!")
@@ -247,6 +248,14 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 					pagetitle = filename
 				}
 								
+			} else {
+				log.Println(file + " doesn't have frontmatter :( ")
+				fm = &Frontmatter{
+						file,
+						[]string{},
+						0,
+						0,
+					}				
 			}
 
 			wp = &WikiPage{
@@ -265,7 +274,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	l := &ListPage{wps}
 	err := renderTemplate(w, "list.tmpl", l)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 	}	
 }
 
@@ -379,18 +388,42 @@ func loadPage(r *http.Request) (*WikiPage, error) {
 	var fm Frontmatter
 	var priv bool
 	var pagetitle string
+	var body []byte
 	vars := mux.Vars(r)
-	filename := vars["name"]
-    fullfilename := "./md/" + filename
+	name := vars["name"]
+	dir, filename := filepath.Split(name)
+	//log.Println("Dir:" + dir)
+	//log.Println("Filename:" + filename)
+    fullfilename := "./md/" + name
+	// Directory without specified index
+	if dir != "" && filename == "" {
+		log.Println("This is a directory, trying to parse the index")
+		fullfilename = "./md/" + name + "index"
+		filename = name + "index"
+		title := name + " - Index"
+		errn := errors.New("No such dir index")
+		newwp := &WikiPage{
+			title,
+			filename,
+			&Frontmatter{
+				Title: title,
+			},			
+			&Wiki{},
+			false,
+		}		
+    	return newwp, errn
+	}
+	//fi, err := os.Stat(fullfilename)
     body, err := ioutil.ReadFile(fullfilename)
     if err != nil {
 		//This should mean file is non-existent, so create new page
+		// FIXME: Use os.Stat to properly check for file existence, using IsNotExist()
 		// FIXME: Add unixtime to newly created frontmatter
 		log.Println(err)
 		errn := errors.New("No such file")
 		newwp := &WikiPage{
 			filename,
-			filename,
+			name,
 			&Frontmatter{
 				Title: filename,
 			},			
@@ -402,7 +435,7 @@ func loadPage(r *http.Request) (*WikiPage, error) {
 	// Read YAML frontmatter into fm
 	content, err := readFront(body, &fm)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 		return nil, err
 	}
 	// Render remaining content after frontmatter
@@ -415,9 +448,12 @@ func loadPage(r *http.Request) (*WikiPage, error) {
 	}
 	if fm.Title != "" {
 		pagetitle = fm.Title
+	} else if dir != "" {
+		pagetitle = dir + " - " + filename		
 	} else {
 		pagetitle = filename
 	}
+	
 	wp := &WikiPage{
 		pagetitle,
 		filename,
@@ -546,16 +582,16 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
     fullfilename := "./md/" + filename
     body, err := ioutil.ReadFile(fullfilename)
     if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
     }
 	// Read YAML frontmatter into fm
 	content, err := readFront(body, &fm)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 	}
 	// Render remaining content after frontmatter
 	md := markdownRender(content)
-	log.Println(md)
+	//log.Println(md)
 	if fm.Title != "" {
 		pagetitle = fm.Title
 	} else {
@@ -573,9 +609,9 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	// FIXME: Fetch create date, frontmatter, etc
 	err = renderTemplate(w, "md.tmpl", wp)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 	}
-	log.Println("Index rendered!")
+	//log.Println("Index rendered!")
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
@@ -611,14 +647,25 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	// Get Wiki 
 	p, err := loadPage(r)
 	if err != nil {
-		log.Println(err)
-		log.Println(err.Error())
+		if err.Error() == "No such dir index" {
+			//FIXME: Add unixtime in here as Created 
+			log.Println("No such dir index...creating one.")	
+			http.Redirect(w, r, "/edit/"+p.Filename, 302)	
+			return
+		} else if err.Error() == "No such file" {
+			log.Println("No such file...creating one.")	
+			http.Redirect(w, r, "/edit/"+p.Filename, 302)	
+			return			
+		} else {
+			log.Fatalln(err)
+		}
+		//log.Println(err.Error())
 		http.NotFound(w, r)
 		return
 	}	
 	err = renderTemplate(w, "md.tmpl", p)
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 	}
 	log.Println(p.Title + " Page rendered!")
 }
@@ -626,29 +673,55 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 func editHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "editHandler")
 	p, err := loadPage(r)
+	//log.Println(p.Filename)
+	//log.Println(p.PageTitle)
 	if err != nil {
-		log.Println(err)
 		if err.Error() == "No such file" {
 			//FIXME: Add unixtime in here as Created 
-			log.Println("No such file...creating one.")	
-			renderTemplate(w, "edit.tmpl", p)	
+			//log.Println("No such file...creating one.")	
+			terr := renderTemplate(w, "edit.tmpl", p)
+			if terr != nil {
+				log.Fatalln(terr)
+			}
+		} else {
+			log.Fatalln(err)
 		}
 	} else {
-		renderTemplate(w, "edit.tmpl", p)
+		terr := renderTemplate(w, "edit.tmpl", p)
+		if terr != nil {
+			log.Fatalln(terr)
+		}
 	}
 }
 
 func (wiki *RawPage) save() error {
 	defer timeTrack(time.Now(), "wiki.save()")
-    filename := wiki.Name
-    fullfilename := "./md/" + filename
+    //filename := wiki.Name
+	dir, filename := filepath.Split(wiki.Name)
+	//log.Println("Dir: " + dir)
+	//log.Println("Filename: " + filename)	
+    fullfilename := "./md/" + dir + filename
 	
 	// Check for and install required YAML frontmatter
 	if strings.Contains(wiki.Content, "---") {
 		
 	}
 	
-	ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0600)
+	// If directory doesn't exist, create it
+	// - Check if dir is null first
+	if dir != "" {
+		//log.Println("Dir is not empty")
+		dirpath := "./md/" + dir
+		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
+			err := os.MkdirAll(dirpath, 0755)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}		
+	}
+	//log.Println("Dir is empty")
+	
+	ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0755)
 	
 	// Build raw contents
 	// Unnecessary for now as /save/ is passing the full text output, due to the use of the markdown editor
@@ -708,6 +781,8 @@ func (wiki *RawPage) save() error {
 		fmt.Println(fmt.Sprint(err) + ": " + string(gitpushout))
 	}
 	//fmt.Println(string(gitpushout))
+	
+	log.Println(fullfilename + " has been saved.")
     return nil
 }
 
@@ -734,7 +809,8 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(txt)
 	bwiki := buf.String()
-	log.Print(bwiki)
+	
+	//log.Print(bwiki)
 
 	//wiki := &WikiPage{PageTitle: name, Content: bwiki}
 	/*
@@ -761,11 +837,13 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	err := rp.save()
 	if err != nil {
 		WriteJ(w, "", false)
-		log.Println(err)
+		log.Fatalln(err)
 		return
+	} else {
+		WriteJ(w, name, true)
+		log.Println(name + " page saved!")
 	}
-	WriteJ(w, name, true)
-	log.Println(name + " page saved!")
+
 	
 	/*
 	err := r.ParseForm()
@@ -816,8 +894,8 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 func newHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "saveHandler")	
 	pagetitle := r.FormValue("newwiki")
-	log.Println(pagetitle)
-	log.Println(r)
+	//log.Println(pagetitle)
+	//log.Println(r)
 	http.Redirect(w, r, "/edit/"+pagetitle, 301)
 
 }
@@ -864,18 +942,18 @@ func main() {
 	std := alice.New(Logger)
 	//stda := alice.New(Auth, Logger)
 
-	r := mux.NewRouter().StrictSlash(true)
+	r := mux.NewRouter().StrictSlash(false)
 	//d := r.Host("go.jba.io").Subrouter()
 	r.HandleFunc("/", indexHandler).Methods("GET")
 	r.HandleFunc("/new", newHandler)
 	r.HandleFunc("/list", listHandler)
 	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats") })
-	r.HandleFunc("/save/{name}", saveHandler).Methods("POST")
-	r.HandleFunc("/edit/{name}", editHandler)
-	r.HandleFunc("/{name}", viewHandler).Methods("GET")
+	r.HandleFunc("/save/{name:.*}", saveHandler).Methods("POST")
+	r.HandleFunc("/edit/{name:.*}", editHandler)
 	//http.Handle("/s/", http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
 	r.PathPrefix("/s/").Handler(http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
     //r.HandleFunc("/{name}", viewHandler).Methods("GET")
+	r.HandleFunc("/{name:.*}", viewHandler).Methods("GET")
 	http.Handle("/", std.Then(r))
 	http.ListenAndServe(":3000", nil)
 }
