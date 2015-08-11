@@ -378,6 +378,7 @@ func ParseBool(value string) bool {
 	return boolValue
 }
 
+//////////////////////////////
 /* Get type WikiPage struct {
 	PageTitle    string
 	Filename     string
@@ -385,6 +386,7 @@ func ParseBool(value string) bool {
 	*Wiki	
 	IsPrivate    bool
 }*/
+/////////////////////////////
 func loadPage(r *http.Request) (*WikiPage, error) {
 	var fm Frontmatter
 	var priv bool
@@ -617,34 +619,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "viewHandler")
-
-	/*
-	var fm Frontmatter
-	content, err := readFront(p.Content, &fm)
-	if err != nil {
-		log.Println(err)
-	}
-	md := markdownRender(content)
-	log.Println(md)
-	log.Println(fm.Tags)
-	//mdhtml := template.HTML(md)
-	//log.Println(mdhtml)
-	if isPrivate(fm.Tags) {
-		log.Println("ITS TRUE")
-		//FIXME: CHECK FOR AUTH, REDIRECT TO LOGIN, ETC
-	}
-
-	data := struct {
-		Wiki  *Wiki
-		Title string
-		MD    string
-	}{
-		p,
-		name,
-		md,
-	}
-	*/
-
+	
 	// Get Wiki 
 	p, err := loadPage(r)
 	if err != nil {
@@ -695,6 +670,43 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func saveHandler(w http.ResponseWriter, r *http.Request) {
+	defer timeTrack(time.Now(), "saveHandler")
+	vars := mux.Vars(r)
+	name := vars["name"]	
+	txt := r.Body
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(txt)
+	bwiki := buf.String()
+	
+	//log.Print(bwiki)
+	
+	rp := &RawPage{
+		name,
+		bwiki,
+	}
+	
+	err := rp.save()
+	if err != nil {
+		WriteJ(w, "", false)
+		log.Fatalln(err)
+		return
+	} else {
+		WriteJ(w, name, true)
+		log.Println(name + " page saved!")
+	}
+
+}
+
+func newHandler(w http.ResponseWriter, r *http.Request) {
+	defer timeTrack(time.Now(), "saveHandler")	
+	pagetitle := r.FormValue("newwiki")
+	//log.Println(pagetitle)
+	//log.Println(r)
+	http.Redirect(w, r, "/edit/"+pagetitle, 301)
+
+}
+
 func (wiki *RawPage) save() error {
 	defer timeTrack(time.Now(), "wiki.save()")
     //filename := wiki.Name
@@ -716,7 +728,7 @@ func (wiki *RawPage) save() error {
 		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
 			err := os.MkdirAll(dirpath, 0755)
 			if err != nil {
-				log.Fatalln(err)
+				return err
 			}
 		}		
 	}
@@ -724,47 +736,9 @@ func (wiki *RawPage) save() error {
 	
 	ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0755)
 	
-	// Build raw contents
-	// Unnecessary for now as /save/ is passing the full text output, due to the use of the markdown editor
-	/*
-	file, err := os.Create(fullfilename)
-	if err != nil {
-		return err
-	}	
-	defer file.Close()
-	
-	f := bufio.NewWriter(file)
-	_, err = f.WriteString("---\n")
-	if err != nil {
-		return err
-	}
-	_, err = f.WriteString("title:"+ wiki.PageTitle + "\n")
-	if err != nil {
-		return err
-	}	
-	_, err = f.WriteString("tags:"+ wiki.Frontmatter.Tags + "\n")
-	if err != nil {
-		return err
-	}
-	_, err = f.WriteString("---\n")
-	if err != nil {
-		return err
-	}	
-	_, err = f.WriteString("\n")
-	if err != nil {
-		return err
-	}	
-	_, err = f.WriteString(wiki.Wiki.Content)
-	if err != nil {
-		return err
-	}	
-	f.Flush()
-	*/
-	
-	
-	//ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0600)
-	
 	// Now using libgit2
+	
+	// Filename relative to git dir, now ./md/
 	gitfilename := dir + filename
 
 	signature := &git.Signature{
@@ -775,37 +749,37 @@ func (wiki *RawPage) save() error {
 	
 	repo, err := git.OpenRepository("./md")
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer repo.Free()
 
 	index, err := repo.Index()
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer index.Free()
 	
 	err = index.AddByPath(gitfilename)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	
 	treeId, err := index.WriteTree()
 	if err != nil {
-		panic(err)
+		return err
 	}
 	
 	err = index.Write()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	tree, err := repo.LookupTree(treeId)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	
-	message := "Wiki commit. Filename: " + gitfilename
+	message := "Wiki commit. Filename: " + fullfilename
 
 	currentBranch, err := repo.Head()
 	if err == nil && currentBranch != nil {
@@ -822,143 +796,8 @@ func (wiki *RawPage) save() error {
 		return err
 	}
 	
-	/*
-	gitadd := exec.Command("git", "add", fullfilename)
-	gitaddout, err := gitadd.CombinedOutput()
-	if err != nil {
-		fmt.Println(fmt.Sprint(err) + ": " + string(gitaddout))
-	}
-	//fmt.Println(string(gitaddout))
-	gitcommit := exec.Command("git", "commit", "-m", "commit from gowiki")
-	gitcommitout, err := gitcommit.CombinedOutput()
-	if err != nil {
-		fmt.Println(fmt.Sprint(err) + ": " + string(gitcommitout))
-	}
-	//fmt.Println(string(gitcommitout))
-	gitpush := exec.Command("git", "push")
-	gitpushout, err := gitpush.CombinedOutput()
-	if err != nil {
-		fmt.Println(fmt.Sprint(err) + ": " + string(gitpushout))
-	}
-	//fmt.Println(string(gitpushout))
-	*/
-	
 	log.Println(fullfilename + " has been saved.")
     return nil
-}
-
-/*
-func saveHandler(w http.ResponseWriter, r *http.Request) {
-		title, err := getTitle(r)
-		body := r.FormValue("body")
-		wiki := &Wiki{Created: 123, LastModTime: 123, Title: title, Content: []byte(body)}
-		err = wiki.save()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		http.Redirect(w, r, "/view/"+title, http.StatusFound)
-		log.Println(title + " page saved!")
-}
-*/
-
-func saveHandler(w http.ResponseWriter, r *http.Request) {
-	defer timeTrack(time.Now(), "saveHandler")
-	vars := mux.Vars(r)
-	name := vars["name"]	
-	txt := r.Body
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(txt)
-	bwiki := buf.String()
-	
-	//log.Print(bwiki)
-
-	//wiki := &WikiPage{PageTitle: name, Content: bwiki}
-	/*
-	if fm.Title != "" {
-		pagetitle = fm.Title
-	} else {
-		pagetitle = filename
-	}	
-	wp := &WikiPage{
-		pagetitle,
-		filename,
-		&fm,
-		&Wiki{
-			Content: md,
-		},
-		priv,
-	}*/
-	
-	rp := &RawPage{
-		name,
-		bwiki,
-	}
-	
-	err := rp.save()
-	if err != nil {
-		WriteJ(w, "", false)
-		log.Fatalln(err)
-		return
-	} else {
-		WriteJ(w, name, true)
-		log.Println(name + " page saved!")
-	}
-
-	
-	/*
-	err := r.ParseForm()
-	if err != nil {
-		log.Println(err)
-		WriteJ(w, "", false)
-	}
-	
-	
-	short := r.PostFormValue("short")
-	if short != "" {
-		short = short
-	} else {
-		dictionary := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-		var bytes = make([]byte, 4)
-		rand.Read(bytes)
-		for k, v := range bytes {
-			bytes[k] = dictionary[v%byte(len(dictionary))]
-		}
-		short = string(bytes)
-	}
-	long := r.PostFormValue("long")
-	s := &Shorturl{
-		Created: time.Now().Unix(),
-		Short:   short,
-		Long:    long,
-	}
-
-	/*
-		Created string
-		Short 	string
-		Long 	string
-	*/
-	/*
-	err = s.save()
-	if err != nil {
-		log.Println(err)
-		WriteJ(w, "", false)
-	}
-	//log.Println("Short: " + s.Short)
-	//log.Println("Long: " + s.Long)
-
-	WriteJ(w, s.Short, true)
-	*/
-
-}
-
-func newHandler(w http.ResponseWriter, r *http.Request) {
-	defer timeTrack(time.Now(), "saveHandler")	
-	pagetitle := r.FormValue("newwiki")
-	//log.Println(pagetitle)
-	//log.Println(r)
-	http.Redirect(w, r, "/edit/"+pagetitle, 301)
-
 }
 	
 func main() {
