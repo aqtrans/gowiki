@@ -6,28 +6,50 @@
 <h1>Editing {{.PageTitle}}</h1>
 {{$title := .PageTitle}}
 <hr />
-<form action="/save/{{.Filename}}" method="POST">
-<div id="editor"></div>
-</form>
+<ul class="tabs" data-tab>
+  <li class="tab-title active"><a href="#panel1">Tab 1</a></li>
+  <li class="tab-title"><a href="#panel2">Tab 2</a></li>
+</ul>
+<div class="tabs-content">
+  <div class="content active" id="panel1">
+    <form action="/save/{{.Filename}}" method="POST">
+    <textarea name="editor"></textarea>
+    </form>
+  </div>
+  <div class="content" id="panel2">
+    <div id="preview" class="tab-pane active">
+  </div>
+</div>
+
 {{ end }}
 {{ define "extra_scripts" }}
 <link rel="stylesheet" href="/s/css/commonmark.editor-0.3.1.min.css" />
 <script src="http://spec.commonmark.org/js/commonmark.js"></script>
-<script src="/s//js/commonmark.editor-0.3.1.min.js"></script>
 <script type="text/javascript" charset="utf-8">
-$(function() {
-    var editor = $('#editor').commonMarkEditor({ save: true, title: {{.PageTitle}}, name: "#editor", text: {{printf "%s" .Wiki.Content}} });
-    editor[0].on.change(function(e) {
-        $.post( "/save/{{.Filename}}", e.text, function(data){
-            if(data.success){
-              $(".alerts").append("<div class=\"alert-box success\" data-alert>Wiki successfully updated! <a style='color:#fff' href=/"+data.name+"><i class='fa fa-external-link'></i>[Wiki page]</a><a class=\"close\">&times;</a></div>");
-              $(document).foundation('alert','reflow');
-            } else {
-              $(".alerts").append("<div class=\"alert-box alert\" data-alert>Failed to save page<a class=\"close\">&times;</a></div>");
-              $(document).foundation('alert','reflow');
-            }
-        });
-    });
+ 
+var commonmark = window.commonmark;
+var writer = new commonmark.HtmlRenderer({safe: false});
+var reader = new commonmark.Parser();
+
+var textarea = $("#editor");
+var initial_text = {{printf "%s" .Wiki.Content}};
+//$("#editor").val("OMG" + {{printf "%s" .Wiki.Content}} );
+document.getElementsByName("editor")[0].value = {{printf "%s" .Wiki.Content}};
+$(document).foundation(); 
+$(document).foundation('tab', 'reflow');
+
+$(document).ready(function() {
+   
+    $('#panel2').on('toggled', function (event, tab) {
+        var parsed = reader.parse(document.getElementsByName("editor")[0].value);
+        var result = writer.render(parsed);  
+        $("#preview").html(result);
+        $(document).foundation();
+        $(document).foundation('tab', 'reflow');
+        //console.log("Tab: %s", tab);
+        console.log("Res: %s", result);
+    });  
 });
+
 </script>
 {{ end }}
