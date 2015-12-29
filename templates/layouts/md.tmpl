@@ -11,6 +11,6 @@
 <p>{{ .Frontmatter.LastModTime }}</p>
 <hr />
 <div>
-{{.Wiki.Content | safeHTML}}
+{{.Wiki.Rendered | safeHTML}}
 </div>
 {{ end }}
