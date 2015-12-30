@@ -3,14 +3,22 @@
     {{ template "sidebar_nav" . }}
     {{ template "sidebar_cats" . }}
 {{ end }}
-{{ define "content" }}     
+{{ define "content" }}
 <h1>{{ .PageTitle }}</h1>
-{{$title := .PageTitle}}
-<p>{{ .Frontmatter.Tags }}</p>
-<p>{{ .Frontmatter.Created }}</p>
-<p>{{ .Frontmatter.LastModTime }}</p>
+<dl class="sub-nav">
+  <dd class="active"><a href="#">Page</a></dd>
+  <dd><a href="/edit/{{.Filename}}">Edit</a></dd>
+</dl>
 <hr />
-<div>
-{{.Wiki.Rendered | safeHTML}}
+{{$title := .PageTitle}}
+<ul class="no-bullet">
+<li>{{ .Frontmatter.Tags }}</li>
+<li>{{ .Frontmatter.Created }}</li>
+<li>{{ .Frontmatter.LastModTime }}</li>
+<li>{{ .Filename }}</li>
+<li>{{ .IsPrivate }}</li>
+</ul>
+<div class="panel">
+  {{.Wiki.Rendered | safeHTML}}
 </div>
 {{ end }}
