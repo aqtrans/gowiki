@@ -1,6 +1,8 @@
 .row {
   max-width: 100%; 
 }
+[class*="column"] + [class*="column"]:last-child {
+  float: left; }
 
 button.tiny, .button.tiny {
     padding-top: 0.25rem;
