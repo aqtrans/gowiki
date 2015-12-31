@@ -76,7 +76,8 @@ type Frontmatter struct {
 }
 
 type Wiki struct {
-	Content     string
+	Rendered     string
+    Content      string
 }
 
 type WikiPage struct {
@@ -387,6 +388,10 @@ func ParseBool(value string) bool {
 	*Frontmatter 
 	*Wiki	
 	IsPrivate    bool
+}
+type Wiki struct {
+	Rendered     string
+    Content      string
 }*/
 /////////////////////////////
 func loadPage(r *http.Request) (*WikiPage, error) {
@@ -484,7 +489,8 @@ func loadPage(r *http.Request) (*WikiPage, error) {
 		filename,
 		&fm,
 		&Wiki{
-			Content: md,
+			Rendered: md,
+            Content: string(body),
 		},
 		priv,
 	}
@@ -695,13 +701,13 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 func saveHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "saveHandler")
 	vars := mux.Vars(r)
-	name := vars["name"]	
-	txt := r.Body
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(txt)
-	bwiki := buf.String()
+	name := vars["name"]
+    r.ParseForm()	
+	//txt := r.Body
+    txt := r.FormValue("editor")
+	bwiki := txt
 	
-	//log.Print(bwiki)
+	log.Print(bwiki)
 	
 	rp := &RawPage{
 		name,
@@ -867,6 +873,7 @@ func main() {
 	r := mux.NewRouter().StrictSlash(false)
 	//d := r.Host("go.jba.io").Subrouter()
 	r.HandleFunc("/", indexHandler).Methods("GET")
+    r.HandleFunc("/favicon.ico", func (w http.ResponseWriter, r *http.Request) {fmt.Fprint(w, "")})
 	r.HandleFunc("/new", newHandler)
 	r.HandleFunc("/list", listHandler)
 	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats") })
