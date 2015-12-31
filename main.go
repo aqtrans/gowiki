@@ -103,6 +103,11 @@ type jsonresponse struct {
 	Success bool   `json:"success"`
 }
 
+type jsonfresponse struct {
+	Href    string `json:"href,omitempty"`	
+	Name    string `json:"name,omitempty"`
+}
+
 type WikiByDate []*WikiPage
 
 func (a WikiByDate) Len() int           { return len(a) }
@@ -827,6 +832,71 @@ func (wiki *RawPage) save() error {
 	log.Println(fullfilename + " has been saved.")
     return nil
 }
+
+func WriteFJ(w http.ResponseWriter, name string, success bool) error {
+	j := jsonfresponse{
+		Href: "./uploads/"+name,
+		Name:    name,
+	}
+	json, err := makeJSON(w, j)
+	if err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	if !success {
+		w.WriteHeader(400)
+		w.Write(json)
+		return nil
+	}	
+	w.WriteHeader(200)
+	w.Write(json)
+	Debugln(string(json))
+	return nil
+}
+
+func uploadFile(w http.ResponseWriter, r *http.Request) {
+	//vars := mux.Vars(r)
+	//name := vars["name"]
+	//contentLength := r.ContentLength
+	//var reader io.Reader
+	var f io.WriteCloser
+	//var err error
+	var filename string
+	//var cli bool
+	//var remote bool
+	//var uptype string
+	//fi := &File{}
+	path := "./uploads/"
+	contentType := r.Header.Get("Content-Type")
+
+	log.Println("Content-type is "+contentType)
+	err := r.ParseMultipartForm(_24K)
+	if err != nil {
+		log.Println("ParseMultiform reader error")
+		log.Println(err)
+		WriteFJ(w, "", false)
+		return
+	}
+	file, handler, err := r.FormFile("woofmark_upload")
+	filename = handler.Filename
+	defer file.Close()
+	if err != nil {
+		fmt.Println(err)
+		WriteFJ(w, "", false)
+	}
+
+	f, err = os.OpenFile(filepath.Join(path, filename), os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		fmt.Println(err)
+		WriteFJ(w, "", false)
+		return
+	}
+	defer f.Close()
+	io.Copy(f, file)
+
+	WriteFJ(w, filename, true)
+
+}
 	
 func main() {
 	/* for reference
@@ -873,7 +943,12 @@ func main() {
 	r := mux.NewRouter().StrictSlash(false)
 	//d := r.Host("go.jba.io").Subrouter()
 	r.HandleFunc("/", indexHandler).Methods("GET")
+<<<<<<< Updated upstream
     r.HandleFunc("/favicon.ico", func (w http.ResponseWriter, r *http.Request) {fmt.Fprint(w, "")})
+=======
+	r.HandleFunc("/up/{name}", uploadFile).Methods("POST", "PUT")
+	r.HandleFunc("/up", uploadFile).Methods("POST", "PUT")
+>>>>>>> Stashed changes
 	r.HandleFunc("/new", newHandler)
 	r.HandleFunc("/list", listHandler)
 	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats") })
@@ -881,6 +956,7 @@ func main() {
 	r.HandleFunc("/edit/{name:.*}", editHandler)
 	//http.Handle("/s/", http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
 	r.PathPrefix("/s/").Handler(http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
+	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
     //r.HandleFunc("/{name}", viewHandler).Methods("GET")
 	r.HandleFunc("/{name:.*}", viewHandler).Methods("GET")
 	http.Handle("/", std.Then(r))
