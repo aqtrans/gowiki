@@ -22,7 +22,7 @@ import (
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/opennota/markdown"
-	"github.com/libgit2/git2go"
+	"gopkg.in/libgit2/git2go.v23"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -833,6 +833,9 @@ func (wiki *RawPage) save() error {
     return nil
 }
 
+// Following functions unnecessary until I implement file uploading myself
+// This was for woofmark file uploading
+/*
 func WriteFJ(w http.ResponseWriter, name string, success bool) error {
 	j := jsonfresponse{
 		Href: "./uploads/"+name,
@@ -897,6 +900,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 	WriteFJ(w, filename, true)
 
 }
+*/
 	
 func main() {
 	/* for reference
@@ -943,12 +947,9 @@ func main() {
 	r := mux.NewRouter().StrictSlash(false)
 	//d := r.Host("go.jba.io").Subrouter()
 	r.HandleFunc("/", indexHandler).Methods("GET")
-<<<<<<< Updated upstream
     r.HandleFunc("/favicon.ico", func (w http.ResponseWriter, r *http.Request) {fmt.Fprint(w, "")})
-=======
-	r.HandleFunc("/up/{name}", uploadFile).Methods("POST", "PUT")
-	r.HandleFunc("/up", uploadFile).Methods("POST", "PUT")
->>>>>>> Stashed changes
+	//r.HandleFunc("/up/{name}", uploadFile).Methods("POST", "PUT")
+	//r.HandleFunc("/up", uploadFile).Methods("POST", "PUT")
 	r.HandleFunc("/new", newHandler)
 	r.HandleFunc("/list", listHandler)
 	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats") })
