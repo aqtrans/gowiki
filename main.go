@@ -144,6 +144,7 @@ func init() {
 		Debugln(files)
 		templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFiles(files...))
 	}
+    go catsHandler()
 }
 
 func Debugln(v ...interface{}) {
@@ -713,6 +714,15 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 	//log.Println(r)
 	http.Redirect(w, r, "/edit/"+pagetitle, 301)
 
+}
+
+func catsHandler() {
+    rawcats, err := ioutil.ReadFile("./md/cats")
+    if err != nil {
+        log.Fatalln(err)
+    }
+    cats := strings.Split(string(rawcats), ",")
+    log.Println(cats)
 }
 
 func (wiki *RawPage) save() error {
