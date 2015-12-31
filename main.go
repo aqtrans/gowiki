@@ -424,9 +424,27 @@ func loadPage(r *http.Request) (*WikiPage, error) {
 		}		
     	return newwp, errn
 	}
-	//fi, err := os.Stat(fullfilename)
+	_, fierr := os.Stat(fullfilename)
+	if os.IsNotExist(fierr) {
+		// NOW: Using os.Stat to properly check for file existence, using IsNotExist()		
+		// This should mean file is non-existent, so create new page
+		// FIXME: Add unixtime to newly created frontmatter
+		log.Println(fierr)
+		errn := errors.New("No such file")
+		newwp := &WikiPage{
+			filename,
+			name,
+			&Frontmatter{
+				Title: filename,
+			},			
+			&Wiki{},
+			false,
+		}		
+    	return newwp, errn
+	}
     body, err := ioutil.ReadFile(fullfilename)
     if err != nil {
+		/*
 		//This should mean file is non-existent, so create new page
 		// FIXME: Use os.Stat to properly check for file existence, using IsNotExist()
 		// FIXME: Add unixtime to newly created frontmatter
@@ -442,6 +460,8 @@ func loadPage(r *http.Request) (*WikiPage, error) {
 			false,
 		}		
     	return newwp, errn
+		*/
+		return nil, err
     }
 	// Read YAML frontmatter into fm
 	content, err := readFront(body, &fm)
