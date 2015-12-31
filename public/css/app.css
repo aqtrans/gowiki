@@ -145,6 +145,6 @@ a.gif-view-full{
     to {transform: rotate(359deg);}
 }
 
-.icon-maximize:before{;
+.icon-maximize:before{
     content: "\f0b2";
 }
