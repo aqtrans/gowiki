@@ -16,8 +16,8 @@
 {{$title := .PageTitle}}
 <div>
   <form action="/save/{{.Filename}}" method="POST" id="savewiki">
-  Title:<input type="text" name="title"><br>
-  Tags:<input type="text" name="tags"><br>
+  Title:<input type="text" name="title" value="{{.Title}}"><br>
+  Tags:<input type="text" name="tags" value="{{.Tags}}"><br>
   Note: private tag=private page.
   <textarea name="editor"></textarea>
   <input type="submit" class="button success" value="Submit">
