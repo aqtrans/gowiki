@@ -506,6 +506,9 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 		log.Fatalln(err)
 		return nil, err
 	}
+	if content == nil {
+		content = body
+	}
 	// Render remaining content after frontmatter
 	md := markdownRender(content)
 	if isPrivate(fm.Tags) {
@@ -529,7 +532,7 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 		&fm,
 		&wiki{
 			Rendered: md,
-            Content: string(body),
+            Content: string(content),
 		},
 		priv,
 	}
