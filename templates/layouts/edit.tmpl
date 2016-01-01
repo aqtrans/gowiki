@@ -1,29 +1,32 @@
 {{ define "title" }}<title>{{ .PageTitle }} - {{.PageTitle }}</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
+    {{ template "sidebar_cats" . }}    
 {{ end }}
-{{ define "content" }}     
-<h1>Editing {{.PageTitle}}</h1>
-<dl class="sub-nav">
-  <dd><a href="/{{.Filename}}">Page</a></dd>
-  <dd class="active"><a href="/edit/{{.Filename}}">Edit</a></dd>
-</dl>
+{{ define "content" }}
+<div class="panel callout radius">
+<h1>{{.PageTitle}}</h1>
+</div>
+<ul class="breadcrumbs">
+  <li><a href="/{{.Filename}}">Page</a></li>
+  <li class="current"><a href="/edit/{{.Filename}}">Edit</a></li>
+  <li><a href="#" data-reveal-id="previewModal">Preview</a></li>
+</ul>
 <hr />
 {{$title := .PageTitle}}
-<ul class="tabs" data-tab>
-  <li class="tab-title active"><a href="/edit/{{.Filename}}">Edit</a></li>
-  <li class="tab-title"><a href="#panel2">Preview</a></li>
-</ul>
-<div class="tabs-content">
-  <div class="content active" id="panel1">
-    <form action="/save/{{.Filename}}" method="POST">
-    <textarea name="editor"></textarea>
-    <button type="submit" class="button">Save Page</button>
-    </form>
-  </div>
-  <div class="content" id="panel2">
-    <div id="preview" class="tab-pane active">
-  </div>
+<div>
+  <form action="/save/{{.Filename}}" method="POST" id="savewiki">
+  Title:<input type="text" name="title"><br>
+  Tags:<input type="text" name="tags"><br>
+  Note: private tag=private page.
+  <textarea name="editor"></textarea>
+  <input type="submit" class="button success" value="Submit">
+  </form>
+</div>
+<div id="previewModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
+  <h2 id="modalTitle">{{.PageTitle }} - Preview</h2>
+  <div id="preview" class="panel callout"></div>
+  <a class="close-reveal-modal" aria-label="Close">&#215;</a>
 </div>
 
 {{ end }}
@@ -35,25 +38,19 @@ var commonmark = window.commonmark;
 var writer = new commonmark.HtmlRenderer();
 var reader = new commonmark.Parser();
 var textarea = $("#editor");
-var initial_text = {{printf "%s" .Wiki.Content}};
+var initial_text = {{printf "%s" .wiki.Content}};
 
 document.getElementsByName("editor")[0].value = initial_text;
 
 $(document).foundation(); 
-$(document).foundation('tab', 'reflow');
+//$(document).foundation('tab', 'reflow');
+$(document).foundation('reveal', 'reflow');
 
-$(function() {
-    $('#panel2').on('toggled', function (event, tab) {
-        //var parsed = reader.parse(document.getElementsByName("editor")[0].value);
-        var editortxt = document.getElementsByName("editor")[0].value;
-        var parsed = reader.parse(editortxt);
-        var result = writer.render(parsed);  
-        $("#preview").html(result);
-        $(document).foundation();
-        $(document).foundation('tab', 'reflow');
-        //console.log("Tab: %s", tab);
-        //console.log("Res: %s", result);
-    });  
+$(document).on('open.fndtn.reveal', '[data-reveal]', function () {
+    var editortxt = document.getElementsByName("editor")[0].value;
+    var parsed = reader.parse(editortxt);
+    var result = writer.render(parsed);  
+    $("#preview").html(result);
 });
 
 </script>
