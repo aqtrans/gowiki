@@ -5,7 +5,7 @@
 {{ define "content" }}
 <h1>List of things</h1>
 <hr />
-<h2>Pastes</h2>
+<h2>Wiki Pages</h2>
 <table>
 <thead>
     <tr>
@@ -18,11 +18,11 @@
 </thead>
 
 <tbody>
-{{range .Wikis}}
+{{range .wikis}}
     <tr>
     <td><a href=/{{.Filename}}>{{.PageTitle}}</a></td>
-    <td>{{.Frontmatter.Created | prettyDate}}</td>
-    <td>{{.Frontmatter}}</td>
+    <td>{{.frontmatter.Created | prettyDate}}</td>
+    <td>{{.frontmatter}}</td>
     <td>{{.IsPrivate}}</td>
     <td>{{.Filename}}</td>
     </tr>
