@@ -5,20 +5,27 @@
 {{ end }}
 {{ define "content" }}
 <h1>{{ .PageTitle }}</h1>
-<dl class="sub-nav">
-  <dd class="active"><a href="#">Page</a></dd>
-  <dd><a href="/edit/{{.Filename}}">Edit</a></dd>
-</dl>
+<ul class="breadcrumbs">
+  <li class="current"><a href="/{{.Filename}}">Page</a></li>
+  <li><a href="/edit/{{.Filename}}">Edit</a></li>
+  <li class="unavailable"><a href="#" data-reveal-id="previewModal">Preview</a></li>
+</ul>
 <hr />
 {{$title := .PageTitle}}
 <ul class="no-bullet">
-<li>{{ .Frontmatter.Tags }}</li>
-<li>{{ .Frontmatter.Created }}</li>
-<li>{{ .Frontmatter.LastModTime }}</li>
-<li>{{ .Filename }}</li>
-<li>{{ .IsPrivate }}</li>
+<li>Tags: {{ .frontmatter.Tags }}</li>
+<li>Created: {{ .frontmatter.Created }}</li>
+<li>Last Modified: {{ .frontmatter.LastModTime }}</li>
+<li>Filename: {{ .Filename }}</li>
+<li>Private: {{ .IsPrivate }}</li>
 </ul>
-<div class="panel">
-  {{.Wiki.Rendered | safeHTML}}
-</div>
+  {{if .wiki.Rendered}}
+  <div class="panel">
+    {{.wiki.Rendered | safeHTML}}
+  </div>
+  {{else}}
+  <div class="panel">
+    {{.wiki.Content}}
+  </div>
+  {{end}}
 {{ end }}

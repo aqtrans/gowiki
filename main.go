@@ -1,6 +1,11 @@
 package main
 
 //TODO:
+// - wikidata should be periodically pushed to git@jba.io:conf/gowiki-data.git
+//    - Unsure how/when to do this, possibly in a go-routine after every commit? 
+// - Implement passing of catsHandler() variable within an anonymous {} struct, to every page
+//      - This will necessitate re-doing all the {{.}} calls within the templates, but as there are not many, this is manageable.
+
 // - GUI for Tags
 // - LDAP integration
 // - Buttons
@@ -21,7 +26,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
-	"github.com/opennota/markdown"
+	"github.com/golang-commonmark/markdown"
 	"gopkg.in/libgit2/git2go.v23"
 	"html/template"
 	"io"
@@ -40,7 +45,7 @@ import (
 
 const timestamp = "2006-01-02 at 03:04:05PM"
 
-type Configuration struct {
+type configuration struct {
 	Port     string
 	Username string
 	Password string
@@ -59,42 +64,46 @@ var (
 	_24K      int64 = (1 << 20) * 24
 	fLocal    bool
 	debug 	  bool 
-	cfg       = Configuration{}
+	cfg       = configuration{}
 
 )
 
-//Base struct, Page ; has to be wrapped in a data {} strut for consistency reasons
-type Base struct {
+//Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
+type page struct {
 	SiteName    string
+	Cats 	    []string
+	UN      	string
 }
 
-type Frontmatter struct {
+type frontmatter struct {
 	Title       string   `yaml:"title"`
-	Tags        []string `yaml:"tags,omitempty"`
+	Tags        string `yaml:"tags,omitempty"`
 	Created     int64    `yaml:"created,omitempty"`
 	LastModTime int64	 `yaml:"lastmodtime,omitempty"`
 }
 
-type Wiki struct {
+type wiki struct {
 	Rendered     string
     Content      string
 }
 
-type WikiPage struct {
+type wikiPage struct {
+	*page
 	PageTitle    string
 	Filename     string
-	*Frontmatter 
-	*Wiki	
+	*frontmatter 
+	*wiki	
 	IsPrivate    bool
 }
 
-type RawPage struct {
+type rawPage struct {
 	Name     string
 	Content  string
 }
 
-type ListPage struct {
-	Wikis    []*WikiPage
+type listPage struct {
+	*page
+	Wikis    []*wikiPage
 }
 
 //JSON Response
@@ -108,17 +117,17 @@ type jsonfresponse struct {
 	Name    string `json:"name,omitempty"`
 }
 
-type WikiByDate []*WikiPage
+type wikiByDate []*wikiPage
 
-func (a WikiByDate) Len() int           { return len(a) }
-func (a WikiByDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a WikiByDate) Less(i, j int) bool { return a[i].Frontmatter.Created < a[j].Frontmatter.Created }
+func (a wikiByDate) Len() int           { return len(a) }
+func (a wikiByDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a wikiByDate) Less(i, j int) bool { return a[i].frontmatter.Created < a[j].frontmatter.Created }
 
-type WikiByModDate []*WikiPage
+type wikiByModDate []*wikiPage
 
-func (a WikiByModDate) Len() int           { return len(a) }
-func (a WikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a WikiByModDate) Less(i, j int) bool { return a[i].Frontmatter.LastModTime < a[j].Frontmatter.LastModTime }
+func (a wikiByModDate) Len() int           { return len(a) }
+func (a wikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a wikiByModDate) Less(i, j int) bool { return a[i].frontmatter.LastModTime < a[j].frontmatter.LastModTime }
 	
 	
 func init() {
@@ -149,7 +158,6 @@ func init() {
 		Debugln(files)
 		templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFiles(files...))
 	}
-    go catsHandler()
 }
 
 func Debugln(v ...interface{}) {
@@ -183,8 +191,9 @@ func timeTrack(start time.Time, name string) {
 	log.Printf("[timer] %s took %s", name, elapsed)
 }
 
-func isPrivate(list []string) bool {
-    for _, v := range list {
+func isPrivate(list string) bool {
+	tags := strings.Split(list, " ")
+    for _, v := range tags {
         if v == "private" {
             return true
         }
@@ -194,11 +203,27 @@ func isPrivate(list []string) bool {
 
 func markdownRender(content []byte) string {
 	md := markdown.New(markdown.HTML(true), markdown.Nofollow(true), markdown.Breaks(true))
-	return md.RenderToString(content)
+	mds := md.RenderToString(content)
+	//log.Println("MDS:"+ mds)
+	return mds
+}
+
+func loadPage(r *http.Request) (*page, error) {
+	//timer.Step("loadpageFunc")
+	user := GetUsername(r)
+	cats := make(chan []string)
+	go catsHandler(cats)
+	zcats := <-cats
+	//log.Println(zcats)
+	return &page{SiteName: "GoWiki", UN: user, Cats: zcats}, nil
 }
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
     searchDir := "./md/"
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
     fileList := []string{}
     _ = filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
@@ -207,7 +232,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
     })
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
-	var wps []*WikiPage
+	var wps []*wikiPage
     for _, file := range fileList {
 
 	   // check if the source dir exist
@@ -223,8 +248,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	   } else {
 
 			_, filename := filepath.Split(file)
-			var wp *WikiPage
-			var fm *Frontmatter
+			var wp *wikiPage
+			var fm *frontmatter
 			var priv bool
 			var pagetitle string
 	        //fmt.Println(file)
@@ -260,29 +285,30 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			// If file doesn't have frontmatter, add in crap
 			// FIXME: Get created/modified date from os.Stat()
 				log.Println(file + " doesn't have frontmatter :( ")
-				fm = &Frontmatter{
+				fm = &frontmatter{
 						file,
-						[]string{},
+						"",
 						0,
 						0,
 					}				
 			}
 
-			wp = &WikiPage{
+			wp = &wikiPage{
+				p,
 				pagetitle,
 				filename,
 				fm,
-				&Wiki{	},
+				&wiki{	},
 				priv,
 			}
 			wps = append(wps, wp)
 			//log.Println(string(body))
-			//log.Println(string(wp.Wiki.Content))
+			//log.Println(string(wp.wiki.Content))
 	    }
 		   
 	 }
-	l := &ListPage{wps}
-	err := renderTemplate(w, "list.tmpl", l)
+	l := &listPage{p, wps}
+	err = renderTemplate(w, "list.tmpl", l)
 	if err != nil {
 		log.Fatalln(err)
 	}	
@@ -379,7 +405,7 @@ func renderTemplate(w http.ResponseWriter, name string, data interface{}) error 
 	return nil
 }
 
-func ParseBool(value string) bool {
+func parseBool(value string) bool {
 	boolValue, err := strconv.ParseBool(value)
 	if err != nil {
 		return false
@@ -400,13 +426,17 @@ type Wiki struct {
     Content      string
 }*/
 /////////////////////////////
-func loadPage(r *http.Request) (*WikiPage, error) {
-	var fm Frontmatter
+func loadWikiPage(r *http.Request) (*wikiPage, error) {
+	var fm frontmatter
 	var priv bool
 	var pagetitle string
 	var body []byte
 	vars := mux.Vars(r)
 	name := vars["name"]
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	dir, filename := filepath.Split(name)
 	//log.Println("Dir:" + dir)
 	//log.Println("Filename:" + filename)
@@ -418,13 +448,14 @@ func loadPage(r *http.Request) (*WikiPage, error) {
 		filename = name + "index"
 		title := name + " - Index"
 		errn := errors.New("No such dir index")
-		newwp := &WikiPage{
+		newwp := &wikiPage{
+			p,
 			title,
 			filename,
-			&Frontmatter{
+			&frontmatter{
 				Title: title,
 			},			
-			&Wiki{},
+			&wiki{},
 			false,
 		}		
     	return newwp, errn
@@ -436,18 +467,19 @@ func loadPage(r *http.Request) (*WikiPage, error) {
 		// FIXME: Add unixtime to newly created frontmatter
 		log.Println(fierr)
 		errn := errors.New("No such file")
-		newwp := &WikiPage{
+		newwp := &wikiPage{
+			p,
 			filename,
 			name,
-			&Frontmatter{
+			&frontmatter{
 				Title: filename,
 			},			
-			&Wiki{},
+			&wiki{},
 			false,
 		}		
     	return newwp, errn
 	}
-    body, err := ioutil.ReadFile(fullfilename)
+    body, err = ioutil.ReadFile(fullfilename)
     if err != nil {
 		/*
 		//This should mean file is non-existent, so create new page
@@ -490,11 +522,12 @@ func loadPage(r *http.Request) (*WikiPage, error) {
 		pagetitle = filename
 	}
 	
-	wp := &WikiPage{
+	wp := &wikiPage{
+		p,
 		pagetitle,
 		filename,
 		&fm,
-		&Wiki{
+		&wiki{
 			Rendered: md,
             Content: string(body),
 		},
@@ -533,7 +566,7 @@ func (w *statusWriter) Write(b []byte) (int, error) {
 }
 
 //Custom Logging Middleware
-func Logger(next http.Handler) http.Handler {
+func logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var buf bytes.Buffer
 
@@ -574,15 +607,15 @@ func Logger(next http.Handler) http.Handler {
 }
 
 //Generate a random key of specific length
-func RandKey(leng int8) string {
+func randKey(leng int8) string {
 	dictionary := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	rb := make([]byte, leng)
 	rand.Read(rb)
 	for k, v := range rb {
 		rb[k] = dictionary[v%byte(len(dictionary))]
 	}
-	sess_id := string(rb)
-	return sess_id
+	sessID := string(rb)
+	return sessID
 }
 
 func makeJSON(w http.ResponseWriter, data interface{}) ([]byte, error) {
@@ -594,7 +627,7 @@ func makeJSON(w http.ResponseWriter, data interface{}) ([]byte, error) {
 	return jsonData, nil
 }
 
-func WriteJ(w http.ResponseWriter, name string, success bool) error {
+func writeJ(w http.ResponseWriter, name string, success bool) error {
 	j := jsonresponse{
 		Name:    name,
 		Success: success,
@@ -612,7 +645,7 @@ func WriteJ(w http.ResponseWriter, name string, success bool) error {
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "indexHandler")
-	var fm Frontmatter
+	var fm frontmatter
 	var priv bool
 	var pagetitle string
 	filename := "index"
@@ -626,6 +659,10 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	// Render remaining content after frontmatter
 	md := markdownRender(content)
 	//log.Println(md)
@@ -634,11 +671,12 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		pagetitle = filename
 	}	
-	wp := &WikiPage{
+	wp := &wikiPage{
+		p,
 		pagetitle,
 		filename,
 		&fm,
-		&Wiki{
+		&wiki{
 			Content: md,
 		},
 		priv,
@@ -655,7 +693,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "viewHandler")
 	
 	// Get Wiki 
-	p, err := loadPage(r)
+	p, err := loadWikiPage(r)
 	if err != nil {
 		if err.Error() == "No such dir index" {
 			//FIXME: Add unixtime in here as Created 
@@ -682,7 +720,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "editHandler")
-	p, err := loadPage(r)
+	p, err := loadWikiPage(r)
 	//log.Println(p.Filename)
 	//log.Println(p.PageTitle)
 	if err != nil {
@@ -710,25 +748,50 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	name := vars["name"]
     r.ParseForm()	
 	//txt := r.Body
-    txt := r.FormValue("editor")
-	bwiki := txt
+    body := r.FormValue("editor")
+	//bwiki := txt	
 	
-	log.Print(bwiki)
+	// Check for and install required YAML frontmatter	
+	title := r.FormValue("title")
+	tags := r.FormValue("tags")
+	//log.Println("TITLE: "+ title)
+	//log.Println("TAGS: "+ tags)
+	// If title or tags aren't empty, declare a buffer
+	//  And load the YAML+body into it, then override body
+	if title != "" || tags != "" {
+		var buffer bytes.Buffer
+		buffer.WriteString("---\n")
+		if title == "" {
+			title = name
+		}
+		buffer.WriteString("title: "+ title)
+		buffer.WriteString("\n")
+		if tags != "" {
+			buffer.WriteString("tags: "+ tags)
+			buffer.WriteString("\n")
+		}
+		buffer.WriteString("---\n")
+		buffer.WriteString("body")
+		body = buffer.String()
+	}
+
 	
-	rp := &RawPage{
+	//log.Print(bwiki)
+	
+	rp := &rawPage{
 		name,
-		bwiki,
+		body,
 	}
 	
 	err := rp.save()
 	if err != nil {
-		WriteJ(w, "", false)
+		writeJ(w, "", false)
 		log.Fatalln(err)
 		return
-	} else {
-		WriteJ(w, name, true)
-		log.Println(name + " page saved!")
 	}
+
+	writeJ(w, name, true)
+	log.Println(name + " page saved!")
 
 }
 
@@ -741,16 +804,18 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func catsHandler() {
+func catsHandler(cats chan []string) {
     rawcats, err := ioutil.ReadFile("./md/cats")
     if err != nil {
         log.Fatalln(err)
     }
-    cats := strings.Split(string(rawcats), ",")
-    log.Println(cats)
+    scats := strings.Split(strings.TrimSpace(string(rawcats)), "\n")
+	//log.Printf("%s", strings.TrimSpace(string(rawcats)))
+    //log.Println(scats)
+	cats <- scats
 }
 
-func (wiki *RawPage) save() error {
+func (wiki *rawPage) save() error {
 	defer timeTrack(time.Now(), "wiki.save()")
     //filename := wiki.Name
 	dir, filename := filepath.Split(wiki.Name)
@@ -759,9 +824,8 @@ func (wiki *RawPage) save() error {
     fullfilename := "./md/" + dir + filename
 	
 	// Check for and install required YAML frontmatter
-	if strings.Contains(wiki.Content, "---") {
-		
-	}
+	//if strings.Contains(wiki.Content, "---") {	
+	//}
 	
 	// If directory doesn't exist, create it
 	// - Check if dir is null first
@@ -776,6 +840,9 @@ func (wiki *RawPage) save() error {
 		}		
 	}
 	//log.Println("Dir is empty")
+	
+	log.Println(fullfilename)
+	log.Println(wiki.Content)
 	
 	ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0755)
 	
@@ -807,7 +874,7 @@ func (wiki *RawPage) save() error {
 		return err
 	}
 	
-	treeId, err := index.WriteTree()
+	treeID, err := index.WriteTree()
 	if err != nil {
 		return err
 	}
@@ -817,7 +884,7 @@ func (wiki *RawPage) save() error {
 		return err
 	}
 
-	tree, err := repo.LookupTree(treeId)
+	tree, err := repo.LookupTree(treeID)
 	if err != nil {
 		return err
 	}
@@ -944,14 +1011,14 @@ func main() {
 		port = cfg.Port
 	}
 
-	new_sess := RandKey(32)
-	log.Println("Session ID: " + new_sess)
+	newSess := randKey(32)
+	log.Println("Session ID: " + newSess)
     log.Println("Listening on port 3000")
 
 	flag.Parse()
 	flag.Set("bind", ":3000")
 
-	std := alice.New(Logger)
+	std := alice.New(logger)
 	//stda := alice.New(Auth, Logger)
 
 	r := mux.NewRouter().StrictSlash(false)
@@ -961,7 +1028,11 @@ func main() {
 	//r.HandleFunc("/up/{name}", uploadFile).Methods("POST", "PUT")
 	//r.HandleFunc("/up", uploadFile).Methods("POST", "PUT")
 	r.HandleFunc("/new", newHandler)
-	r.HandleFunc("/list", listHandler)
+	r.HandleFunc("/login", loginHandler).Methods("POST")
+	r.HandleFunc("/login", loginHandler).Methods("GET")
+	r.HandleFunc("/logout", logoutHandler).Methods("POST")
+	r.HandleFunc("/logout", logoutHandler).Methods("GET")
+	r.HandleFunc("/list", Auth(listHandler)).Methods("GET")
 	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats") })
 	r.HandleFunc("/save/{name:.*}", saveHandler).Methods("POST")
 	r.HandleFunc("/edit/{name:.*}", editHandler)
