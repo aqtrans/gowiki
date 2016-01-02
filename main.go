@@ -680,7 +680,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		filename,
 		&fm,
 		&wiki{
-			Content: md,
+            Rendered: md,
+			Content: string(content),
 		},
 		priv,
 	}
