@@ -19,13 +19,7 @@
 <li>Filename: {{ .Filename }}</li>
 <li>Private: {{ .IsPrivate }}</li>
 </ul>
-  {{if .wiki.Rendered}}
   <div class="panel">
     {{.wiki.Rendered | safeHTML}}
   </div>
-  {{else}}
-  <div class="panel">
-    {{.wiki.Content}}
-  </div>
-  {{end}}
 {{ end }}
