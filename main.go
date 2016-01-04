@@ -1,15 +1,14 @@
 package main
 
 //TODO:
+// - Check for and possibly ask to initiate new wikiDir and git repo within if it does not exist
 // - wikidata should be periodically pushed to git@jba.io:conf/gowiki-data.git
 //    - Unsure how/when to do this, possibly in a go-routine after every commit? 
-// - Implement passing of catsHandler() variable within an anonymous {} struct, to every page
-//      - This will necessitate re-doing all the {{.}} calls within the templates, but as there are not many, this is manageable.
 
-// - GUI for Tags
-// - LDAP integration
+// - GUI for Tags - taggle.js should do this for me
+// x LDAP integration
 // - Buttons
-// - Private pages
+// x Private pages
 // - Tests
 
 // YAML frontmatter based on http://godoc.org/j4k.co/fmatter
