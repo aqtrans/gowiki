@@ -1,16 +1,10 @@
 {
-	"Port": "3000",
+    "Port": "3000",
     "Username": "uid=aqtrans,ou=People,dc=jba,dc=io",
     "Password": "mC$p1cy89",
     "Email": "admin@example.com",
-    "ImgDir": "./up-imgs/",
-    "FileDir": "./up-files/",
-    "ThumbDir": "./thumbs/",
-    "GifDir": "./big-imgs/",
-    "MainTLD": "go.jba.io",
-    "ShortTLD": "es.gy",
-    "ImageTLD": "i.es.gy",
-    "GifTLD": "big.es.gy",
-	"LDAPport": 389,
-	"LDAPurl": "troy.es.gy"    
+    "WikiDir": "./md/",
+    "MainTLD": "wiki.jba.io",
+    "LDAPport": 389,
+    "LDAPurl": "troy.es.gy"    
 }
