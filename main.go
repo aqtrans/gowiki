@@ -41,21 +41,17 @@ import (
 	"time"
 	"gopkg.in/yaml.v2"
 	"unicode"
+	"jba.io/go/auth"
 )
 
 const timestamp = "2006-01-02 at 03:04:05PM"
 
 type configuration struct {
 	Port     string
-	Username string
-	Password string
 	Email    string
 	WikiDir  string
 	MainTLD  string
-	LDAPport uint16
-	LDAPurl  string
-	LDAPdn   string
-	LDAPun   string
+	Auth     auth.AuthConf
 }
 
 var (
@@ -66,7 +62,6 @@ var (
 	debug 	  bool 
 	cfg       = configuration{}
     gitPath string
-
 )
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -326,7 +321,7 @@ func markdownRender(content []byte) string {
 
 func loadPage(r *http.Request) (*page, error) {
 	//timer.Step("loadpageFunc")
-	user := GetUsername(r)
+	user := auth.GetUsername(r)
 	cats := make(chan []string)
 	go catsHandler(cats)
 	zcats := <-cats
@@ -1112,6 +1107,25 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 
 }
 */
+
+func loginPageHandler(w http.ResponseWriter, r *http.Request) {
+	defer timeTrack(time.Now(), "loginPageHandler")
+	title := "login"
+	user := auth.GetUsername(r)
+	//p, err := loadPage(title, r)
+	data := struct {
+		UN  string
+		Title string
+	}{
+		user,
+		title,
+	}
+	err := renderTemplate(w, "login.tmpl", data)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+}
 	
 func main() {
 	/* for reference
@@ -1162,11 +1176,11 @@ func main() {
 	//r.HandleFunc("/up/{name}", uploadFile).Methods("POST", "PUT")
 	//r.HandleFunc("/up", uploadFile).Methods("POST", "PUT")
 	r.HandleFunc("/new", newHandler)
-	r.HandleFunc("/login", loginHandler).Methods("POST")
-	r.HandleFunc("/login", loginHandler).Methods("GET")
-	r.HandleFunc("/logout", logoutHandler).Methods("POST")
-	r.HandleFunc("/logout", logoutHandler).Methods("GET")
-	r.HandleFunc("/list", Auth(listHandler)).Methods("GET")
+	r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
+	r.HandleFunc("/login", loginPageHandler).Methods("GET")
+	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
+	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
+	r.HandleFunc("/list", auth.Auth(listHandler)).Methods("GET")
 	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats") })
 	r.HandleFunc("/save/{name:.*}", saveHandler).Methods("POST")
 	r.HandleFunc("/edit/{name:.*}", editHandler)
