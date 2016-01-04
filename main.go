@@ -27,14 +27,14 @@ import (
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/golang-commonmark/markdown"
-	"gopkg.in/libgit2/git2go.v23"
+	//"gopkg.in/libgit2/git2go.v23"
+    "os/exec"    
 	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	//"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -65,6 +65,7 @@ var (
 	fLocal    bool
 	debug 	  bool 
 	cfg       = configuration{}
+    gitPath string
 
 )
 
@@ -158,6 +159,13 @@ func init() {
 		Debugln(files)
 		templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFiles(files...))
 	}
+
+	//var err error
+	gitPath, err = exec.LookPath("git")
+	if err != nil {
+		log.Fatal("git must be installed")
+	}
+    
 }
 
 func Debugln(v ...interface{}) {
@@ -190,6 +198,114 @@ func timeTrack(start time.Time, name string) {
 	elapsed := time.Since(start)
 	log.Printf("[timer] %s took %s", name, elapsed)
 }
+
+// CUSTOM GIT WRAPPERS
+// Construct an *exec.Cmd for `git {args}` with a workingDirectory
+func gitCommand(args ...string) *exec.Cmd {
+	c := exec.Command(gitPath, args...)
+	//c.Dir = "./md"
+    c.Dir = cfg.WikiDir
+	return c
+}
+
+// Execute `git init {directory}` in the current workingDirectory
+func gitInit() error {
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	return gitCommand(wd, "init").Run()
+}
+
+// Execute `git status -s` in directory
+// If there is output, the directory has is dirty
+func gitIsClean() error {
+	c := gitCommand("status", "-s")
+
+	o, err := c.Output()
+	if err != nil {
+		return err
+	}
+
+	if len(o) != 0 {
+		return errors.New("directory is dirty")
+	}
+
+	return nil
+}
+
+// Execute `git add {filepath}` in workingDirectory
+func gitAddFilepath(filepath string) error {
+	o, err := gitCommand("add", filepath).CombinedOutput()
+	if err != nil {
+		return errors.New(fmt.Sprintf("error during `git add`: %s\n%s", err.Error(), string(o)))
+	}
+	return nil
+}
+
+// Execute `git commit -m {msg}` in workingDirectory
+func gitCommitWithMessage(msg string) error {
+	o, err := gitCommand("commit", "-m", msg).CombinedOutput()
+	if err != nil {
+		return errors.New(fmt.Sprintf("error during `git commit`: %s\n%s", err.Error(), string(o)))
+	}
+
+	return nil
+}
+
+// Execute `git commit -m "commit from GoWiki"` in workingDirectory
+func gitCommitEmpty() error {
+	o, err := gitCommand("commit", "-m", "commit from GoWiki").CombinedOutput()
+	if err != nil {
+		return errors.New(fmt.Sprintf("error during `git commit`: %s\n%s", err.Error(), string(o)))
+	}
+
+	return nil
+}
+
+// Execute `git push` in workingDirectory
+func gitPush(msg string) error {
+	o, err := gitCommand("push").CombinedOutput()
+	if err != nil {
+		return errors.New(fmt.Sprintf("error during `git push`: %s\n%s", err.Error(), string(o)))
+	}
+
+	return nil
+}
+
+// File creation time, output to UNIX time
+// git log --diff-filter=A --follow --format=%at -1 -- [filename]
+func gitGetCtime(filename string) (int64, error) {
+    //var ctime int64
+	o, err := gitCommand("log", "--diff-filter=A", "--follow", "--format=%at", "-1", "--", filename).Output()
+	if err != nil {
+		return 0, errors.New(fmt.Sprintf("error during `git log --diff-filter=A --follow --format=%aD -1 --`: %s\n%s", err.Error(), string(o)))
+	}
+    ostring := strings.TrimSpace(string(o))
+    ctime, err := strconv.ParseInt(ostring, 10, 64)
+    if err != nil {
+        log.Println(err)
+    }
+	return ctime, nil
+}
+
+// File modification time, output to UNIX time
+// git log -1 --format=%at -- [filename]
+func gitGetMtime(filename string) (int64, error) {
+    //var mtime int64
+	o, err := gitCommand("log", "--format=%at", "-1", "--", filename).Output()
+	if err != nil {
+		return 0, errors.New(fmt.Sprintf("error during `git log -1 --format=%aD --`: %s\n%s", err.Error(), string(o)))
+	}
+    ostring := strings.TrimSpace(string(o))
+    mtime, err := strconv.ParseInt(ostring, 10, 64)
+    if err != nil {
+        log.Println(err)
+    }    
+
+	return mtime, nil
+}
+/////
 
 func isPrivate(list string) bool {
 	tags := strings.Split(list, " ")
@@ -775,7 +891,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 			buffer.WriteString("\n")
 		}
 		buffer.WriteString("---\n")
-		buffer.WriteString("body")
+		buffer.WriteString(body)
 		body = buffer.String()
 	}
 
@@ -849,9 +965,11 @@ func (wiki *rawPage) save() error {
 	log.Println(wiki.Content)
 	
 	ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0755)
+    
+    gitfilename := dir + filename
 	
 	// Now using libgit2
-	
+	/*
 	// Filename relative to git dir, now ./md/
 	gitfilename := dir + filename
 
@@ -909,6 +1027,18 @@ func (wiki *rawPage) save() error {
 	if err != nil {
 		return err
 	}
+    */
+    
+    err := gitAddFilepath(gitfilename)
+	if err != nil {
+		return err
+	} 
+        
+    // FIXME: add a message box to edit page, check for it here
+    err = gitCommitEmpty()
+	if err != nil {
+		return err
+	}    
 	
 	log.Println(fullfilename + " has been saved.")
     return nil
