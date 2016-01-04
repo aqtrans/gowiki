@@ -1,10 +1,16 @@
 {
     "Port": "3000",
-    "Username": "uid=aqtrans,ou=People,dc=jba,dc=io",
-    "Password": "mC$p1cy89",
     "Email": "admin@example.com",
     "WikiDir": "./md/",
     "MainTLD": "wiki.jba.io",
-    "LDAPport": 389,
-    "LDAPurl": "troy.es.gy"    
+    "Auth": {
+	    "Username": "aqtrans",
+	    "Password": "8489",
+	    "LdapEnabled": true,
+	    "LdapPort": 389,
+	    "LdapUrl": "frink.es.gy",
+	    "LdapUn": "uid",
+	    "LdapOu": "People",
+	    "LdapDn": "dc=jba,dc=io"
+    }
 }
