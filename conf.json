@@ -3,7 +3,7 @@
     "Email": "admin@example.com",
     "WikiDir": "./md/",
     "MainTLD": "wiki.jba.io",
-    "Auth": {
+    "AuthConf": {
 	    "Username": "aqtrans",
 	    "Password": "8489",
 	    "LdapEnabled": true,
