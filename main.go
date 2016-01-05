@@ -50,7 +50,7 @@ type configuration struct {
 	Email    string
 	WikiDir  string
 	MainTLD  string
-	Auth     auth.AuthConf
+	AuthConf auth.AuthConf
 }
 
 var (
@@ -1125,6 +1125,10 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func loginPost(w http.ResponseWriter, r *http.Request) {
+    auth.LoginPostHandler(cfg.AuthConf, w, r)
+}
 	
 func main() {
 	/* for reference
@@ -1146,6 +1150,8 @@ func main() {
 	if err != nil {
 		fmt.Println("error decoding config:", err)
 	}
+    //log.Println(cfg)
+    //log.Println(cfg.AuthConf)
 
 	//Check for essential directory existence
 	_, err = os.Stat(cfg.WikiDir)
@@ -1175,7 +1181,7 @@ func main() {
 	//r.HandleFunc("/up/{name}", uploadFile).Methods("POST", "PUT")
 	//r.HandleFunc("/up", uploadFile).Methods("POST", "PUT")
 	r.HandleFunc("/new", newHandler)
-	r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
+	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) { auth.LoginPostHandler(cfg.AuthConf, w, r) }).Methods("POST")
 	r.HandleFunc("/login", loginPageHandler).Methods("GET")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
