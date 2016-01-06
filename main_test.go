@@ -49,3 +49,42 @@ func TestMarkdownRender2(t *testing.T) {
         t.Error("Converted Markdown does not equal readymade test")
     }
 }
+
+func benchmarkIsPrivate(size int, b *testing.B) {
+    list := "testing"
+    n := size
+    for i := 0; i < n; i++ {
+        list = " " + list
+    }
+    //tags := strings.Split(list, " ")
+    for n := 0; n < b.N; n++ {
+        isPrivate(list)
+    }
+}
+
+func benchmarkIsPrivateArray(size int, b *testing.B) {
+    list := []string{"testing"}
+    n := size
+    for i := 0; i < n; i++ {
+        list = append(list, "testing")
+    }
+    //tags := strings.Split(list, " ")
+    for n := 0; n < b.N; n++ {
+        isPrivateA(list)
+    }
+}
+
+func BenchmarkIsPrivate2(b *testing.B) { benchmarkIsPrivate(2, b) }
+func BenchmarkIsPrivate10(b *testing.B) { benchmarkIsPrivate(10, b) }
+func BenchmarkIsPrivate100(b *testing.B) { benchmarkIsPrivate(100, b) }
+func BenchmarkIsPrivate1000(b *testing.B) { benchmarkIsPrivate(1000, b) }
+func BenchmarkIsPrivate10000(b *testing.B) { benchmarkIsPrivate(10000, b) }
+func BenchmarkIsPrivate100000(b *testing.B) { benchmarkIsPrivate(100000, b) }
+
+
+func BenchmarkIsPrivateArray2(b *testing.B) { benchmarkIsPrivateArray(2, b) }
+func BenchmarkIsPrivateArray10(b *testing.B) { benchmarkIsPrivateArray(10, b) }
+func BenchmarkIsPrivateArray100(b *testing.B) { benchmarkIsPrivateArray(100, b) }
+func BenchmarkIsPrivateArray1000(b *testing.B) { benchmarkIsPrivateArray(1000, b) }
+func BenchmarkIsPrivateArray10000(b *testing.B) { benchmarkIsPrivateArray(10000, b) }
+func BenchmarkIsPrivateArray100000(b *testing.B) { benchmarkIsPrivateArray(100000, b) }

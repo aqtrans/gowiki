@@ -311,6 +311,16 @@ func isPrivate(list string) bool {
     return false
 }
 
+func isPrivateA(tags []string) bool {
+	//tags := strings.Split(list, " ")
+    for _, v := range tags {
+        if v == "private" {
+            return true
+        }
+    }
+    return false
+}
+
 func markdownRender(content []byte) string {
 	md := markdown.New(markdown.HTML(true), markdown.Nofollow(true), markdown.Breaks(true))
 	mds := md.RenderToString(content)
