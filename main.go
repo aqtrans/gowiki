@@ -204,11 +204,11 @@ func gitCommand(args ...string) *exec.Cmd {
 
 // Execute `git init {directory}` in the current workingDirectory
 func gitInit() error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	return gitCommand(wd, "init").Run()
+	//wd, err := os.Getwd()
+	//if err != nil {
+	//	return err
+	//}
+	return gitCommand("init").Run()
 }
 
 // Execute `git status -s` in directory
@@ -548,8 +548,8 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 		log.Fatalln(err)
 	}
 	dir, filename := filepath.Split(name)
-	//log.Println("Dir:" + dir)
-	//log.Println("Filename:" + filename)
+	log.Println("Dir:" + dir)
+	log.Println("Filename:" + filename)
     fullfilename := "./md/" + name
 	// Directory without specified index
 	if dir != "" && filename == "" {
@@ -757,12 +757,34 @@ func writeJ(w http.ResponseWriter, name string, success bool) error {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+    log.Println(p)
+
+	wp := &wikiPage{
+		p,
+		"Index",
+		"index",
+		&frontmatter{},
+		&wiki{},
+		false,
+	}
+
+	err = renderTemplate(w, "index.tmpl", wp)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+    
+    /*
 	defer timeTrack(time.Now(), "indexHandler")
 	var fm frontmatter
 	var priv bool
 	var pagetitle string
-	filename := "index"
-    fullfilename := "./md/" + filename
+	filename := "index.md"
+    fullfilename := "./" + filename
     body, err := ioutil.ReadFile(fullfilename)
     if err != nil {
 		log.Fatalln(err)
@@ -801,6 +823,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln(err)
 	}
 	//log.Println("Index rendered!")
+    */
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
@@ -1157,6 +1180,8 @@ func main() {
 	_, err = os.Stat(cfg.WikiDir)
 	if err != nil {
 		os.Mkdir(cfg.WikiDir, 0755)
+        gitInit()
+        
 	}
 
 	port := os.Getenv("PORT")
