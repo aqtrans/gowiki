@@ -72,9 +72,9 @@ type page struct {
 
 type frontmatter struct {
 	Title       string   `yaml:"title"`
-	Tags        string `yaml:"tags,omitempty"`
-	Created     int64    `yaml:"created,omitempty"`
-	LastModTime int64	 `yaml:"lastmodtime,omitempty"`
+	Tags        string   `yaml:"tags,omitempty"`
+//	Created     int64    `yaml:"created,omitempty"`
+//	LastModTime int64	 `yaml:"lastmodtime,omitempty"`
 }
 
 type wiki struct {
@@ -89,6 +89,8 @@ type wikiPage struct {
 	*frontmatter 
 	*wiki	
 	IsPrivate    bool
+	CreateTime   int64
+	ModTime      int64
 }
 
 type rawPage struct {
@@ -116,13 +118,13 @@ type wikiByDate []*wikiPage
 
 func (a wikiByDate) Len() int           { return len(a) }
 func (a wikiByDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a wikiByDate) Less(i, j int) bool { return a[i].frontmatter.Created < a[j].frontmatter.Created }
+func (a wikiByDate) Less(i, j int) bool { return a[i].CreateTime < a[j].CreateTime }
 
 type wikiByModDate []*wikiPage
 
 func (a wikiByModDate) Len() int           { return len(a) }
 func (a wikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a wikiByModDate) Less(i, j int) bool { return a[i].frontmatter.LastModTime < a[j].frontmatter.LastModTime }
+func (a wikiByModDate) Less(i, j int) bool { return a[i].ModTime < a[j].ModTime }
 	
 	
 func init() {
@@ -403,15 +405,20 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 								
 			} else {
 			// If file doesn't have frontmatter, add in crap
-			// FIXME: Get created/modified date from os.Stat()
 				log.Println(file + " doesn't have frontmatter :( ")
 				fm = &frontmatter{
 						file,
 						"",
-						0,
-						0,
 					}				
 			}
+			ctime, err := gitGetCtime(filename)
+			if err != nil {
+				log.Panicln(err)
+			}
+			mtime, err := gitGetMtime(filename)
+			if err != nil {
+				log.Panicln(err)
+			}			
 
 			wp = &wikiPage{
 				p,
@@ -420,6 +427,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				fm,
 				&wiki{	},
 				priv,
+				ctime,
+				mtime,				
 			}
 			wps = append(wps, wp)
 			//log.Println(string(body))
@@ -567,6 +576,8 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 		fullfilename = "./md/" + name + "index"
 		filename = name + "index"
 		title := name + " - Index"
+		// FIXME: logic looks wrong here; should probably have another if/else
+		// ...Checking if file exists, before throwing an error
 		errn := errors.New("No such dir index")
 		newwp := &wikiPage{
 			p,
@@ -577,6 +588,8 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 			},			
 			&wiki{},
 			false,
+			0,
+			0,
 		}		
     	return newwp, errn
 	}
@@ -584,7 +597,6 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 	if os.IsNotExist(fierr) {
 		// NOW: Using os.Stat to properly check for file existence, using IsNotExist()		
 		// This should mean file is non-existent, so create new page
-		// FIXME: Add unixtime to newly created frontmatter
 		log.Println(fierr)
 		errn := errors.New("No such file")
 		newwp := &wikiPage{
@@ -596,28 +608,14 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 			},			
 			&wiki{},
 			false,
+			0,
+			0,
 		}		
     	return newwp, errn
 	}
     body, err = ioutil.ReadFile(fullfilename)
     if err != nil {
-		/*
-		//This should mean file is non-existent, so create new page
-		// FIXME: Use os.Stat to properly check for file existence, using IsNotExist()
-		// FIXME: Add unixtime to newly created frontmatter
-		log.Println(err)
-		errn := errors.New("No such file")
-		newwp := &WikiPage{
-			filename,
-			name,
-			&Frontmatter{
-				Title: filename,
-			},			
-			&Wiki{},
-			false,
-		}		
-    	return newwp, errn
-		*/
+		// FIXME Not sure what to do here, probably panic?
 		return nil, err
     }
 	// Read YAML frontmatter into fm
@@ -644,7 +642,14 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 	} else {
 		pagetitle = filename
 	}
-	
+	ctime, err := gitGetCtime(filename)
+	if err != nil {
+		log.Panicln(err)
+	}
+	mtime, err := gitGetMtime(filename)
+	if err != nil {
+		log.Panicln(err)
+	}	
 	wp := &wikiPage{
 		p,
 		pagetitle,
@@ -655,8 +660,9 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
             Content: string(content),
 		},
 		priv,
+		ctime,
+		mtime,		
 	}
-	// FIXME: Fetch create date, frontmatter, etc
     return wp, nil
 }
 
@@ -772,7 +778,14 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln(err)
 	}
     log.Println(p)
-
+	ctime, err := gitGetCtime("index")
+	if err != nil {
+		log.Panicln(err)
+	}
+	mtime, err := gitGetMtime("index")
+	if err != nil {
+		log.Panicln(err)
+	}
 	wp := &wikiPage{
 		p,
 		"Index",
@@ -780,6 +793,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		&frontmatter{},
 		&wiki{},
 		false,
+		ctime,
+		mtime,
 	}
 
 	err = renderTemplate(w, "index.tmpl", wp)
@@ -842,8 +857,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	// Get Wiki 
 	p, err := loadWikiPage(r)
 	if err != nil {
-		if err.Error() == "No such dir index" {
-			//FIXME: Add unixtime in here as Created 
+		if err.Error() == "No such dir index" { 
 			log.Println("No such dir index...creating one.")	
 			http.Redirect(w, r, "/edit/"+p.Filename, 302)	
 			return
@@ -872,7 +886,6 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	//log.Println(p.PageTitle)
 	if err != nil {
 		if err.Error() == "No such file" {
-			//FIXME: Add unixtime in here as Created 
 			//log.Println("No such file...creating one.")	
 			terr := renderTemplate(w, "edit.tmpl", p)
 			if terr != nil {
