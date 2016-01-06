@@ -2,6 +2,8 @@ package main
 
 //TODO:
 // - Check for and possibly ask to initiate new wikiDir and git repo within if it does not exist
+//    - For consistency and convenience, I should use some cfg.wikiGitRepo to pull down the existing wiki data in this case
+//    - For safety, so as not to nuke existing changes accidentally, I should check for an -init flag and only clone in this case, otherwise Fatalln
 // - wikidata should be periodically pushed to git@jba.io:conf/gowiki-data.git
 //    - Unsure how/when to do this, possibly in a go-routine after every commit? 
 
@@ -50,6 +52,7 @@ type configuration struct {
 	Email    string
 	WikiDir  string
 	MainTLD  string
+	GitRepo  string
 	AuthConf auth.AuthConf
 }
 
@@ -58,7 +61,8 @@ var (
 	templates map[string]*template.Template
 	_24K      int64 = (1 << 20) * 24
 	fLocal    bool
-	debug 	  bool 
+	debug 	  bool
+	fInit     bool
 	cfg       = configuration{}
     gitPath string
 )
@@ -132,6 +136,8 @@ func init() {
 	flag.BoolVar(&fLocal, "l", false, "Turn on localhost resolving for Handlers")
 	//Flag '-d' enabled debug logging
 	flag.BoolVar(&debug, "d", false, "Enabled debug logging")
+	//Flag '-init' enables pulling of remote git repo into wikiDir
+	flag.BoolVar(&fInit, "init", false, "Enable auto-cloning of remote wikiDir")
 
 	bufpool = bpool.NewBufferPool(64)
 	if templates == nil {
@@ -211,6 +217,19 @@ func gitInit() error {
 	//	return err
 	//}
 	return gitCommand("init").Run()
+}
+
+// Execute `git clone [repo]` in the current workingDirectory
+func gitClone(repo string) error {
+	//wd, err := os.Getwd()
+	//if err != nil {
+	//	return err
+	//}
+	o, err := gitCommand("clone", repo).CombinedOutput()
+	if err != nil {
+		return errors.New(fmt.Sprintf("error during `git clone`: %s\n%s", err.Error(), string(o)))
+	}
+	return nil
 }
 
 // Execute `git status -s` in directory
@@ -1200,11 +1219,16 @@ func main() {
     //log.Println(cfg.AuthConf)
 
 	//Check for essential directory existence
-	_, err = os.Stat(cfg.WikiDir)
+	_, err = os.Stat(cfg.WikiDir + ".git")
 	if err != nil {
-		os.Mkdir(cfg.WikiDir, 0755)
-        gitInit()
-        
+		log.Println(cfg.WikiDir + " is not a git repo!")
+		if fInit {
+			log.Println("-init flag is given. Cloning " + cfg.GitRepo + "into " + cfg.WikiDir + "...")
+			gitClone(cfg.GitRepo)
+		}
+		log.Fatalln("Clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo.")
+		// FIXME: clone wikidata from remote repo specified in config
+		//gitInit()
 	}
 
 	port := os.Getenv("PORT")
