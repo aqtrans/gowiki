@@ -3,6 +3,7 @@
     "Email": "admin@example.com",
     "WikiDir": "./md/",
     "MainTLD": "wiki.jba.io",
+    "GitRepo": "git@jba.io:aqtrans/wikidata.git",
     "AuthConf": {
 	    "Username": "aqtrans",
 	    "Password": "8489",
