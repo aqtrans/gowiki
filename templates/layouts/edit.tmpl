@@ -1,9 +1,11 @@
 {{ define "title" }}<title>{{ .PageTitle }} - {{.PageTitle }}</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
-    {{ template "sidebar_cats" . }}    
+    {{ template "sidebar_cats" . }}
+    {{ template "login_form" . }}
 {{ end }}
 {{ define "content" }}
+<link rel="stylesheet" href="/s/css/jquery.tagsinput.min.css">
 <div class="panel callout radius">
 <h1>{{.PageTitle}}</h1>
 </div>
@@ -17,8 +19,8 @@
 <div>
   <form action="/save/{{.Filename}}" method="POST" id="savewiki">
   Title:<input type="text" name="title" value="{{.Title}}"><br>
-  Tags:<input type="text" name="tags" value="{{.Tags}}"><br>
-  Note: private tag=private page.
+  Tags:<input type="text" name="tags" id="tags" value="{{.Tags}}"><br>
+  <h3>Note: private tag=private page.</h3>
   <textarea name="editor"></textarea>
   <input type="submit" class="button success" value="Submit">
   </form>
@@ -32,8 +34,13 @@
 {{ end }}
 {{ define "extra_scripts" }}
 <script src="/s/js/commonmark.js"></script>
+<script src="/s/js/jquery.tagsinput.min.js"></script>
 <script type="text/javascript" charset="utf-8">
  
+$('#tags').tagsInput({
+   'height':'3rem',
+   'width':'100%',
+});
 var commonmark = window.commonmark;
 var writer = new commonmark.HtmlRenderer();
 var reader = new commonmark.Parser();
