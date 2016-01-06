@@ -1,6 +1,8 @@
 {{ define "title" }}<title>Login - {{.Title}}</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
+    {{ template "sidebar_cats" . }}
+    {{ template "login_form" . }}
 {{ end }}
 {{ define "content" }}     
 <h1>Login</h1>
