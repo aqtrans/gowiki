@@ -1,7 +1,6 @@
 {{ define "title" }}<title>{{ .PageTitle }} - {{.PageTitle }}</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
-    {{ template "sidebar_cats" . }}
     {{ template "login_form" . }}
 {{ end }}
 {{ define "content" }}
@@ -15,8 +14,8 @@
 {{$title := .PageTitle}}
 <ul class="no-bullet">
 <li>Tags: {{ .frontmatter.Tags }}</li>
-<li>Created: {{ .frontmatter.Created }}</li>
-<li>Last Modified: {{ .frontmatter.LastModTime }}</li>
+<li>Created: {{ .CreateTime }}</li>
+<li>Last Modified: {{ .ModTime }}</li>
 <li>Filename: {{ .Filename }}</li>
 <li>Private: {{ .IsPrivate }}</li>
 </ul>
