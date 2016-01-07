@@ -1,13 +1,29 @@
 {{ define "sidebar_nav" }}
-        <hr />
         <ul class="side-nav">
           <li><a href="/"><span>Home</span></a></li>
           <li><a href="/list"><span>List</span></a></li>
         </ul>
+        <h6>Categories:</h6>
+        <ul class="side-nav" id="sidecats">
+        {{range .page.Cats}}
+        <li><a href="/{{.}}"><span>{{.}}</span></a></li>
+        {{end}}        
+        </ul>
         <div id="newwiki">
           <form method="post" action="/new" id="newwiki">
-            <input type="text" id="newwiki" name="newwiki" class="form-control" placeholder="New Page Name" size="8">
-            <button class="btn btn-default" type="submit">New</button>
+            <div class="row">
+                <div class="small-12 columns">
+                <div class="row collapse postfix-radius">
+                    <label>New Page Name</label>
+                    <div class="small-9 columns">
+                    <input type="text" id="newwiki" name="newwiki" class="form-control">
+                    </div>
+                    <div class="small-3 columns">
+                    <button class="button postfix" type="submit">Go!</button>
+                    </div>
+                </div>
+                </div>
+            </div>
           </form>
         </div>     
 {{ end }}
