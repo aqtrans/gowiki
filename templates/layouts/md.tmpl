@@ -15,8 +15,8 @@
 {{$title := .PageTitle}}
 <ul class="no-bullet">
 <li>Tags: {{ .frontmatter.Tags }}</li>
-<li>Created: {{ .frontmatter.Created }}</li>
-<li>Last Modified: {{ .frontmatter.LastModTime }}</li>
+<li>Created: {{ .CreateTime | prettyDate }}</li>
+<li>Last Modified: {{ .ModTime | prettyDate }}</li>
 <li>Filename: {{ .Filename }}</li>
 <li>Private: {{ .IsPrivate }}</li>
 </ul>
