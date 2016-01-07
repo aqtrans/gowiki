@@ -107,6 +107,12 @@ type listPage struct {
 	Wikis    []*wikiPage
 }
 
+type genPage struct {
+    *page
+    UN    string
+    Title string
+}
+
 //JSON Response
 type jsonresponse struct {
 	Name    string `json:"name,omitempty"`
@@ -225,7 +231,7 @@ func gitClone(repo string) error {
 	//if err != nil {
 	//	return err
 	//}
-	o, err := gitCommand("clone", repo).CombinedOutput()
+	o, err := gitCommand("clone", repo, ".").CombinedOutput()
 	if err != nil {
 		return errors.New(fmt.Sprintf("error during `git clone`: %s\n%s", err.Error(), string(o)))
 	}
@@ -368,6 +374,10 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 
     fileList := []string{}
     _ = filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
+        // check and skip .git 
+        if path == "md/.git" {
+            return filepath.SkipDir
+        }
         fileList = append(fileList, path)
         return nil
     })
@@ -385,7 +395,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	   if src.IsDir() {
 	     // Do something if a directory
 		 // FIXME: Traverse directory
-		 log.Println(file + "is a directory......")
+		 log.Println(file + " is a directory......")
 	   } else {
 
 			_, filename := filepath.Split(file)
@@ -395,8 +405,10 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			var pagetitle string
 	        //fmt.Println(file)
 			//w.Write([]byte(file))
-			//w.Write([]byte("<br>"))		
-			
+			//w.Write([]byte("<br>"))	
+            
+            pagetitle = filename	
+			log.Println(file)
 			body, err := ioutil.ReadFile(file)
 			if err != nil {
 				log.Fatalln(err)
@@ -404,7 +416,9 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			// Read YAML frontmatter into fm
 			_, err = readFront(body, &fm)
 			if err != nil {
-				log.Fatalln(err)
+                // If YAML frontmatter doesn't exist, proceed, but log it 
+				//log.Fatalln(err)
+                log.Println(err)
 			}
 			if fm != nil {
 				//log.Println(fm.Tags)
@@ -418,10 +432,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				}
 				if fm.Title != "" {
 					pagetitle = fm.Title
-				} else {
-					pagetitle = filename
 				}
-								
 			} else {
 			// If file doesn't have frontmatter, add in crap
 				log.Println(file + " doesn't have frontmatter :( ")
@@ -796,7 +807,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-    log.Println(p)
+    //log.Println(p)
 	ctime, err := gitGetCtime("index")
 	if err != nil {
 		log.Panicln(err)
@@ -988,7 +999,7 @@ func catsHandler(cats chan []string) {
     if err != nil {
         log.Fatalln(err)
     }
-    scats := strings.Split(strings.TrimSpace(string(rawcats)), "\n")
+    scats := strings.Split(strings.TrimSpace(string(rawcats)), ",")
 	//log.Printf("%s", strings.TrimSpace(string(rawcats)))
     //log.Println(scats)
 	cats <- scats
@@ -1176,15 +1187,17 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer timeTrack(time.Now(), "loginPageHandler")
 	title := "login"
 	user := auth.GetUsername(r)
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}    
 	//p, err := loadPage(title, r)
-	data := struct {
-		UN  string
-		Title string
-	}{
+	gp := &genPage {
+        p,
 		user,
 		title,
 	}
-	err := renderTemplate(w, "login.tmpl", data)
+	err = renderTemplate(w, "login.tmpl", gp)
 	if err != nil {
 		log.Println(err)
 		return
@@ -1196,6 +1209,7 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 }
 	
 func main() {
+    flag.Parse()
 	/* for reference
 	p1 := &Page{Title: "TestPage", Body: []byte("This is a sample page.")}
 	p1.save()
@@ -1218,17 +1232,21 @@ func main() {
     //log.Println(cfg)
     //log.Println(cfg.AuthConf)
 
-	//Check for essential directory existence
+	//Check for wikiDir directory + git repo existence
+	_, err = os.Stat(cfg.WikiDir)
+	if err != nil {
+		log.Println(cfg.WikiDir + " does not exist, creating it.")
+        os.Mkdir(cfg.WikiDir, 0755)
+	}    
 	_, err = os.Stat(cfg.WikiDir + ".git")
 	if err != nil {
 		log.Println(cfg.WikiDir + " is not a git repo!")
 		if fInit {
 			log.Println("-init flag is given. Cloning " + cfg.GitRepo + "into " + cfg.WikiDir + "...")
 			gitClone(cfg.GitRepo)
-		}
-		log.Fatalln("Clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo.")
-		// FIXME: clone wikidata from remote repo specified in config
-		//gitInit()
+		} else {
+      		log.Fatalln("Clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo.")            
+        }
 	}
 
 	port := os.Getenv("PORT")
@@ -1240,7 +1258,6 @@ func main() {
 	log.Println("Session ID: " + newSess)
     log.Println("Listening on port 3000")
 
-	flag.Parse()
 	flag.Set("bind", ":3000")
 
 	std := alice.New(logger)
@@ -1257,7 +1274,7 @@ func main() {
 	r.HandleFunc("/login", loginPageHandler).Methods("GET")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
-	r.HandleFunc("/list", auth.Auth(listHandler)).Methods("GET")
+	r.HandleFunc("/list", listHandler).Methods("GET")
 	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats") })
 	r.HandleFunc("/save/{name:.*}", saveHandler).Methods("POST")
 	r.HandleFunc("/edit/{name:.*}", editHandler)
