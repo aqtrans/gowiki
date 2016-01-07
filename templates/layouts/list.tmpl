@@ -1,6 +1,7 @@
 {{ define "title" }}<title>List</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
+    {{ template "login_form" . }}    
 {{ end }}
 {{ define "content" }}
 <h1>List of things</h1>
@@ -10,7 +11,8 @@
 <thead>
     <tr>
     <th width="80">Link</th>
-    <th width="100">Date</th>
+    <th width="200">Created</th>
+    <th width="200">Modified</th>
     <th width="200">Frontmatter</th>
     <th width="10">Private</th>
     <th width="80">Filename</th>
@@ -18,10 +20,11 @@
 </thead>
 
 <tbody>
-{{range .wikis}}
+{{range .Wikis}}
     <tr>
-    <td><a href=/{{.Filename}}>{{.PageTitle}}</a></td>
-    <td>{{.frontmatter.Created | prettyDate}}</td>
+    <td><a href="/{{.Filename}}">{{.PageTitle}}</a></td>
+    <td>{{.CreateTime | prettyDate}}</td>
+    <td>{{.ModTime | prettyDate}}</td>    
     <td>{{.frontmatter}}</td>
     <td>{{.IsPrivate}}</td>
     <td>{{.Filename}}</td>
