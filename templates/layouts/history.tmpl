@@ -1,0 +1,15 @@
+{{ define "title" }}<title>List</title>{{ end }}
+{{ define "sidebar" }}
+    {{ template "sidebar_nav" . }}
+    {{ template "login_form" . }}    
+{{ end }}
+{{ define "content" }}
+<h1>List of things</h1>
+<hr />
+<h2>Wiki Pages</h2>
+<div>
+{{range .History}}
+    {{.}}<br>
+{{ end }}
+</div>
+{{ end }}
