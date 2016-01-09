@@ -7,7 +7,8 @@
 <h1>{{ .PageTitle }}</h1>
 <ul class="breadcrumbs">
   <li class="current"><a href="/{{.Filename}}">Page</a></li>
-  <li><a href="/edit/{{.Filename}}">Edit</a></li>
+  <li><a href="/{{.Filename}}/edit">Edit</a></li>
+  <li><a href="/{{.Filename}}/history">History</a></li>
   <li class="unavailable"><a href="#" data-reveal-id="previewModal">Preview</a></li>
 </ul>
 <hr />

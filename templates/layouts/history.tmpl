@@ -8,8 +8,8 @@
 <hr />
 <h2>Wiki Pages</h2>
 <div>
-{{range .History}}
-    {{.}}<br>
+{{range .FileHistory}}
+    <p><a href="/{{.Filename}}/{{.Commit}}">{{ .Date|prettyDate }}</a><br>
 {{ end }}
 </div>
 {{ end }}

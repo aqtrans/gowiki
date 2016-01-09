@@ -28,11 +28,9 @@ import (
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	//"gopkg.in/libgit2/git2go.v23"
-	"gopkg.in/yaml.v2"
 	"html/template"
 	"io"
 	"io/ioutil"
-	"jba.io/go/auth"
 	"log"
 	"net/http"
 	"os"
@@ -42,6 +40,9 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"gopkg.in/yaml.v2"
+	"jba.io/go/auth"
 )
 
 const timestamp = "2006-01-02 at 03:04:05PM"
@@ -114,7 +115,14 @@ type genPage struct {
 
 type historyPage struct {
 	*page
-	History []string
+	FileHistory []*commitLog
+}
+
+type commitLog struct {
+    Filename string
+    Commit   string
+    Date     int64
+    Message  string
 }
 
 //JSON Response
@@ -332,23 +340,64 @@ func gitGetMtime(filename string) (int64, error) {
 
 // File history
 // git log --pretty=format:"commit:%H date:%at message:%s" [filename]
-func gitGetLog(filename string) ([]string, error) {
-	o, err := gitCommand("log", "--pretty=format:'commit:%H date:%at message:%s'", filename).Output()
+// git log --pretty=format:"%H,%at,%s" [filename]
+func gitGetLog(filename string) ([]*commitLog, error) {
+	o, err := gitCommand("log", "--pretty=format:%H,%at,%s", filename).Output()
 	if err != nil {
-		return []string{""}, errors.New(fmt.Sprintf("error during `git log`: %s\n%s", err.Error(), string(o)))
+		return nil, errors.New(fmt.Sprintf("error during `git log`: %s\n%s", err.Error(), string(o)))
 	}
+    // split each commit onto it's own line
 	logsplit := strings.Split(string(o), "\n")
-	return logsplit, nil
+    // now split each commit-line into it's slice
+    // format should be: [sha1],[date],[message]
+    var commits []*commitLog
+    for _, v := range logsplit {
+        //var theCommit *commitLog
+        var vs = strings.SplitN(v, ",", 3)
+        // Convert date to int64
+        var mtime, err = strconv.ParseInt(vs[1], 10, 64)
+        if err != nil {
+            log.Fatalln(err)
+        }        
+        // vs[0] = commit, vs[1] = date, vs[2] = message
+        theCommit := &commitLog {
+            Filename: filename,
+            Commit: vs[0],
+            Date: mtime,
+            Message: vs[2],
+        }
+        commits = append(commits, theCommit)
+    }
+	return commits, nil
 }
 
 // Get file as it existed at specific commit
 // git show [commit sha1]:[filename]
 func gitGetFileCommit(filename, commit string) ([]byte, error) {
-	o, err := gitCommand("show", commit, filename).Output()
+    log.Println(filename + " + " + commit )
+    // Combine these into one
+    fullcommit := commit + ":" + filename
+	o, err := gitCommand("show", fullcommit).CombinedOutput()
 	if err != nil {
 		return []byte{}, errors.New(fmt.Sprintf("error during `git show`: %s\n%s", err.Error(), string(o)))
 	}
 	return o, nil
+}
+
+// File modification time for specific commit, output to UNIX time
+// git log -1 --format=%at [commit sha1]
+func gitGetFileCommitMtime(commit string) (int64, error) {
+	//var mtime int64
+	o, err := gitCommand("log", "--format=%at", "-1", commit).Output()
+	if err != nil {
+		return 0, errors.New(fmt.Sprintf("error during `git log -1 --format=%aD --`: %s\n%s", err.Error(), string(o)))
+	}
+	ostring := strings.TrimSpace(string(o))
+	mtime, err := strconv.ParseInt(ostring, 10, 64)
+	if err != nil {
+		log.Println(err)
+	}
+	return mtime, nil
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -411,9 +460,15 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Need to figure out how I am going to call this, in what order the vars are coming, etc
-/*
-func commitHandler(w http.ResponseWriter, r *http.Request) {
+// Need to get content of the file at specified commit
+// > git show [commit sha1]:[filename]
+// As well as the date
+// > git log -1 --format=%at [commit sha1]
+
+func viewCommitHandler(w http.ResponseWriter, r *http.Request) {
+	var fm frontmatter
+	var priv bool
+	var pagetitle string    
 	vars := mux.Vars(r)
 	name := vars["name"]
 	commit := vars["commit"]
@@ -426,25 +481,57 @@ func commitHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	ctime, err := gitGetCtime(filename)
+	ctime, err := gitGetCtime(name)
 	if err != nil {
 		log.Panicln(err)
 	}
-	mtime, err := gitGetMtime(commit)
+	mtime, err := gitGetFileCommitMtime(commit)
 	if err != nil {
 		log.Panicln(err)
 	}
 
-	hp := &historyPage{
-		p,
-		history,
+	// Read YAML frontmatter into fm
+	content, err := readFront(body, &fm)
+	if err != nil {
+		log.Fatalln(err)
 	}
-	err = renderTemplate(w, "history.tmpl", hp)
+	if content == nil {
+		content = body
+	}
+	// Render remaining content after frontmatter
+	md := markdownRender(content)
+	if isPrivate(fm.Tags) {
+		log.Println("Private page!")
+		priv = true
+	} else {
+		priv = false
+	}
+	if fm.Title != "" {
+		pagetitle = fm.Title
+	} else {
+		pagetitle = name
+	}
+
+	wp := &wikiPage{
+		p,
+		pagetitle,
+		name,
+		&fm,
+		&wiki{
+			Rendered: md,
+			Content:  string(content),
+		},
+		priv,
+		ctime,
+		mtime,
+	}
+    
+	err = renderTemplate(w, "md.tmpl", wp)
 	if err != nil {
 		log.Fatalln(err)
 	}
 }
-*/
+
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	searchDir := "./md/"
@@ -705,6 +792,7 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 		return newwp, errn
 	}
 	_, fierr := os.Stat(fullfilename)
+    log.Println(fierr)
 	if os.IsNotExist(fierr) {
 		// NOW: Using os.Stat to properly check for file existence, using IsNotExist()
 		// This should mean file is non-existent, so create new page
@@ -1354,15 +1442,26 @@ func main() {
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
 	r.HandleFunc("/list", listHandler).Methods("GET")
-	r.HandleFunc("/history/{name:.*}", historyHandler).Methods("GET")
+
 	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats") })
-	r.HandleFunc("/save/{name:.*}", saveHandler).Methods("POST")
-	r.HandleFunc("/edit/{name:.*}", editHandler)
+
 	//http.Handle("/s/", http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
 	r.PathPrefix("/s/").Handler(http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
 	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
 	//r.HandleFunc("/{name}", viewHandler).Methods("GET")
-	r.HandleFunc("/{name:.*}", viewHandler).Methods("GET")
+	r.HandleFunc("/save/{name:.*}", saveHandler).Methods("POST")
+	r.HandleFunc("/edit/{name:.*}", editHandler)
+	r.HandleFunc("/history/{name:.*}", historyHandler).Methods("GET") 
+    
+    // wiki functions, should accept alphanumerical, "_", "-", "."
+	r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/edit", editHandler).Methods("GET")
+    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/save", saveHandler).Methods("POST")
+    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/history", historyHandler).Methods("GET")
+    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/{commit:[A-Za-z0-9]+}", viewCommitHandler).Methods("GET")    
+    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}", viewHandler).Methods("GET")
+
+
+            
 	http.Handle("/", std.Then(r))
 	http.ListenAndServe(":3000", nil)
 }
