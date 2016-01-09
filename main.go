@@ -17,7 +17,6 @@ package main
 
 import (
 	"bytes"
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -27,7 +26,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
-	//"gopkg.in/libgit2/git2go.v23"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -40,12 +38,10 @@ import (
 	"strings"
 	"time"
 	"unicode"
-
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
+    "jba.io/go/utils"
 )
-
-const timestamp = "2006-01-02 at 03:04:05PM"
 
 type configuration struct {
 	Port     string
@@ -61,7 +57,7 @@ var (
 	templates map[string]*template.Template
 	_24K      int64 = (1 << 20) * 24
 	fLocal    bool
-	debug     bool
+	debug     = utils.Debug
 	fInit     bool
 	cfg       = configuration{}
 	gitPath   string
@@ -125,12 +121,6 @@ type commitLog struct {
     Message  string
 }
 
-//JSON Response
-type jsonresponse struct {
-	Name    string `json:"name,omitempty"`
-	Success bool   `json:"success"`
-}
-
 type jsonfresponse struct {
 	Href string `json:"href,omitempty"`
 	Name string `json:"name,omitempty"`
@@ -152,7 +142,7 @@ func init() {
 	//Flag '-l' enables go.dev and *.dev domain resolution
 	flag.BoolVar(&fLocal, "l", false, "Turn on localhost resolving for Handlers")
 	//Flag '-d' enabled debug logging
-	flag.BoolVar(&debug, "d", false, "Enabled debug logging")
+	flag.BoolVar(&utils.Debug, "d", false, "Enabled debug logging")
 	//Flag '-init' enables pulling of remote git repo into wikiDir
 	flag.BoolVar(&fInit, "init", false, "Enable auto-cloning of remote wikiDir")
 
@@ -170,12 +160,12 @@ func init() {
 		log.Fatal(err)
 	}
 
-	funcMap := template.FuncMap{"prettyDate": PrettyDate, "safeHTML": SafeHTML, "imgClass": ImgClass}
+	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass}
 
 	for _, layout := range layouts {
 		files := append(includes, layout)
 		//DEBUG TEMPLATE LOADING
-		Debugln(files)
+		utils.Debugln(files)
 		templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFiles(files...))
 	}
 
@@ -185,37 +175,6 @@ func init() {
 		log.Fatal("git must be installed")
 	}
 
-}
-
-func Debugln(v ...interface{}) {
-	if debug {
-		d := log.New(os.Stdout, "DEBUG: ", log.Ldate)
-		d.Println(v)
-	}
-}
-
-func PrettyDate(date int64) string {
-	if date == 0 {
-		return "N/A"
-	}
-	t := time.Unix(date, 0)
-	return t.Format(timestamp)
-}
-
-func ImgClass(s string) string {
-	if strings.HasSuffix(s, ".gif") {
-		return "gifs"
-	}
-	return "imgs"
-}
-
-func SafeHTML(s string) template.HTML {
-	return template.HTML(s)
-}
-
-func timeTrack(start time.Time, name string) {
-	elapsed := time.Since(start)
-	log.Printf("[timer] %s took %s", name, elapsed)
 }
 
 // CUSTOM GIT WRAPPERS
@@ -374,7 +333,6 @@ func gitGetLog(filename string) ([]*commitLog, error) {
 // Get file as it existed at specific commit
 // git show [commit sha1]:[filename]
 func gitGetFileCommit(filename, commit string) ([]byte, error) {
-    log.Println(filename + " + " + commit )
     // Combine these into one
     fullcommit := commit + ":" + filename
 	o, err := gitCommand("show", fullcommit).CombinedOutput()
@@ -576,7 +534,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			//w.Write([]byte("<br>"))
 
 			pagetitle = filename
-			log.Println(file)
+			//log.Println(file)
 			body, err := ioutil.ReadFile(file)
 			if err != nil {
 				log.Fatalln(err)
@@ -693,22 +651,7 @@ func readFront(data []byte, frontmatter interface{}) (content []byte, err error)
 	return
 }
 
-//Hack to allow me to make full URLs due to absence of http:// from URL.Scheme in dev situations
-//When behind Nginx, use X-Forwarded-Proto header to retrieve this, then just tack on "://"
-//getScheme(r) should return http:// or https://
-func getScheme(r *http.Request) (scheme string) {
-	scheme = r.Header.Get("X-Forwarded-Proto") + "://"
-	/*
-		scheme = "http://"
-		if r.TLS != nil {
-			scheme = "https://"
-		}
-	*/
-	if scheme == "://" {
-		scheme = "http://"
-	}
-	return scheme
-}
+
 
 func renderTemplate(w http.ResponseWriter, name string, data interface{}) error {
 	tmpl, ok := templates[name]
@@ -765,8 +708,8 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 		log.Fatalln(err)
 	}
 	dir, filename := filepath.Split(name)
-	log.Println("Dir:" + dir)
-	log.Println("Filename:" + filename)
+	//log.Println("Dir:" + dir)
+	//log.Println("Filename:" + filename)
 	fullfilename := "./md/" + name
 	// Directory without specified index
 	if dir != "" && filename == "" {
@@ -792,7 +735,9 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 		return newwp, errn
 	}
 	_, fierr := os.Stat(fullfilename)
-    log.Println(fierr)
+    if fierr != nil {
+       log.Println(fierr) 
+    }
 	if os.IsNotExist(fierr) {
 		// NOW: Using os.Stat to properly check for file existence, using IsNotExist()
 		// This should mean file is non-existent, so create new page
@@ -863,112 +808,6 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 		mtime,
 	}
 	return wp, nil
-}
-
-type statusWriter struct {
-	http.ResponseWriter
-	status int
-	size   int
-}
-
-func (w *statusWriter) WriteHeader(status int) {
-	w.status = status
-	w.ResponseWriter.WriteHeader(status)
-}
-
-func (w *statusWriter) Status() int {
-	return w.status
-}
-
-func (w *statusWriter) Size() int {
-	return w.size
-}
-
-func (w *statusWriter) Write(b []byte) (int, error) {
-	if w.status == 0 {
-		w.status = 200
-	}
-	written, err := w.ResponseWriter.Write(b)
-	w.size += written
-	return written, err
-}
-
-//Custom Logging Middleware
-func logger(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var buf bytes.Buffer
-
-		start := time.Now()
-		writer := statusWriter{w, 0, 0}
-
-		buf.WriteString("Started ")
-		fmt.Fprintf(&buf, "%s ", r.Method)
-		fmt.Fprintf(&buf, "%q ", r.URL.String())
-		fmt.Fprintf(&buf, "|Host: %s |RawURL: %s |UserAgent: %s |Scheme: %s |IP: %s ", r.Host, r.Header.Get("X-Raw-URL"), r.Header.Get("User-Agent"), getScheme(r), r.Header.Get("X-Forwarded-For"))
-		buf.WriteString("from ")
-		buf.WriteString(r.RemoteAddr)
-
-		//Log to file
-		f, err := os.OpenFile("./req.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-		if err != nil {
-			log.Fatalf("error opening file: %v", err)
-		}
-		defer f.Close()
-		log.SetOutput(io.MultiWriter(os.Stdout, f))
-		log.Print(buf.String())
-		//Reset buffer to be reused by the end stuff
-		buf.Reset()
-
-		next.ServeHTTP(&writer, r)
-
-		end := time.Now()
-		latency := end.Sub(start)
-		status := writer.Status()
-
-		buf.WriteString("Returning ")
-		fmt.Fprintf(&buf, "%v", status)
-		buf.WriteString(" in ")
-		fmt.Fprintf(&buf, "%s", latency)
-		//log.SetOutput(io.MultiWriter(os.Stdout, f))
-		log.Print(buf.String())
-	})
-}
-
-//Generate a random key of specific length
-func randKey(leng int8) string {
-	dictionary := "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	rb := make([]byte, leng)
-	rand.Read(rb)
-	for k, v := range rb {
-		rb[k] = dictionary[v%byte(len(dictionary))]
-	}
-	sessID := string(rb)
-	return sessID
-}
-
-func makeJSON(w http.ResponseWriter, data interface{}) ([]byte, error) {
-	jsonData, err := json.MarshalIndent(data, "", "    ")
-	if err != nil {
-		return nil, err
-	}
-	Debugln(string(jsonData))
-	return jsonData, nil
-}
-
-func writeJ(w http.ResponseWriter, name string, success bool) error {
-	j := jsonresponse{
-		Name:    name,
-		Success: success,
-	}
-	json, err := makeJSON(w, j)
-	if err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(200)
-	w.Write(json)
-	Debugln(string(json))
-	return nil
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
@@ -1050,7 +889,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
-	defer timeTrack(time.Now(), "viewHandler")
+	defer utils.TimeTrack(time.Now(), "viewHandler")
 
 	// Get Wiki
 	p, err := loadWikiPage(r)
@@ -1078,7 +917,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
-	defer timeTrack(time.Now(), "editHandler")
+	defer utils.TimeTrack(time.Now(), "editHandler")
 	p, err := loadWikiPage(r)
 	//log.Println(p.Filename)
 	//log.Println(p.PageTitle)
@@ -1101,7 +940,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request) {
-	defer timeTrack(time.Now(), "saveHandler")
+	defer utils.TimeTrack(time.Now(), "saveHandler")
 	vars := mux.Vars(r)
 	name := vars["name"]
 	r.ParseForm()
@@ -1142,18 +981,18 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := rp.save()
 	if err != nil {
-		writeJ(w, "", false)
+		utils.WriteJ(w, "", false)
 		log.Fatalln(err)
 		return
 	}
 
-	writeJ(w, name, true)
+	utils.WriteJ(w, name, true)
 	log.Println(name + " page saved!")
 
 }
 
 func newHandler(w http.ResponseWriter, r *http.Request) {
-	defer timeTrack(time.Now(), "saveHandler")
+	defer utils.TimeTrack(time.Now(), "saveHandler")
 	pagetitle := r.FormValue("newwiki")
 	//log.Println(pagetitle)
 	//log.Println(r)
@@ -1173,7 +1012,7 @@ func catsHandler(cats chan []string) {
 }
 
 func (wiki *rawPage) save() error {
-	defer timeTrack(time.Now(), "wiki.save()")
+	defer utils.TimeTrack(time.Now(), "wiki.save()")
 	//filename := wiki.Name
 	dir, filename := filepath.Split(wiki.Name)
 	//log.Println("Dir: " + dir)
@@ -1351,7 +1190,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 */
 
 func loginPageHandler(w http.ResponseWriter, r *http.Request) {
-	defer timeTrack(time.Now(), "loginPageHandler")
+	defer utils.TimeTrack(time.Now(), "loginPageHandler")
 	title := "login"
 	user := auth.GetUsername(r)
 	p, err := loadPage(r)
@@ -1377,17 +1216,6 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	flag.Parse()
-	/* for reference
-	p1 := &Page{Title: "TestPage", Body: []byte("This is a sample page.")}
-	p1.save()
-	p2, _ := loadPage("TestPage")
-	fmt.Println(string(p2.Body))
-	*/
-	//t := time.Now().Unix()
-	//tm := time.Unix(t, 0)
-	//log.Println(t)
-	//log.Println(tm)
-	//log.Println(tm.Format(timestamp))
 
 	//Load conf.json
 	conf, _ := os.Open("conf.json")
@@ -1421,13 +1249,13 @@ func main() {
 		port = cfg.Port
 	}
 
-	newSess := randKey(32)
+	newSess := utils.RandKey(32)
 	log.Println("Session ID: " + newSess)
 	log.Println("Listening on port 3000")
 
 	flag.Set("bind", ":3000")
 
-	std := alice.New(logger)
+	std := alice.New(utils.Logger)
 	//stda := alice.New(Auth, Logger)
 
 	r := mux.NewRouter().StrictSlash(false)
