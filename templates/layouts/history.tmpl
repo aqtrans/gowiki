@@ -1,13 +1,18 @@
-{{ define "title" }}<title>List</title>{{ end }}
+{{ define "title" }}<title>{{ .PageTitle }} - Git History</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
-    {{ template "login_form" . }}    
+    {{ template "login_form" . }}
 {{ end }}
 {{ define "content" }}
-<h1>List of things</h1>
-<hr />
-<h2>Wiki Pages</h2>
-<div>
+<ul class="breadcrumbs">
+  <li><a href="/{{.Filename}}">{{ .PageTitle }}</a></li>
+  <li><a href="/{{.Filename}}/edit">Edit</a></li>
+  <li class="current"><a href="/{{.Filename}}/history">History</a></li>
+</ul>
+<div class="panel callout radius">
+  <h1>{{ .PageTitle }}'s Git History</h1>
+</div>
+<div class="panel radius">
 {{range .FileHistory}}
     <p><a href="/{{.Filename}}/{{.Commit}}">{{ .Date|prettyDate }}</a><br>
 {{ end }}
