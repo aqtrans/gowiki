@@ -1,26 +1,27 @@
-{{ define "title" }}<title>{{ .PageTitle }} - {{.PageTitle }}</title>{{ end }}
+{{ define "title" }}<title>{{ .PageTitle }}</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
     {{ template "login_form" . }}
 {{ end }}
 {{ define "content" }}
-<h1>{{ .PageTitle }}</h1>
 <ul class="breadcrumbs">
-  <li class="current"><a href="/{{.Filename}}">Page</a></li>
+  <li class="current"><a href="/{{.Filename}}">{{ .PageTitle }}</a></li>
   <li><a href="/{{.Filename}}/edit">Edit</a></li>
   <li><a href="/{{.Filename}}/history">History</a></li>
-  <li class="unavailable"><a href="#" data-reveal-id="previewModal">Preview</a></li>
 </ul>
-<hr />
-{{$title := .PageTitle}}
-<ul class="no-bullet">
-<li>Tags: {{ .frontmatter.Tags }}</li>
-<li>Created: {{ .CreateTime | prettyDate }}</li>
-<li>Last Modified: {{ .ModTime | prettyDate }}</li>
-<li>Filename: {{ .Filename }}</li>
-<li>Private: {{ .IsPrivate }}</li>
-</ul>
-  <div class="panel">
-    {{.wiki.Rendered | safeHTML}}
-  </div>
+<div class="panel callout radius">
+  <h1>{{.PageTitle}}</h1>
+</div>
+<div class="panel radius">
+    <ul class="no-bullet">
+    <li>Tags: {{ .frontmatter.Tags }}</li>
+    <li>Created: {{ .CreateTime | prettyDate }}</li>
+    <li>Last Modified: {{ .ModTime | prettyDate }}</li>
+    <li>Filename: {{ .Filename }}</li>
+    <li>Private: {{ .IsPrivate }}</li>
+    </ul>
+</div>
+<div class="panel">
+  {{.wiki.Rendered | safeHTML}}
+</div>
 {{ end }}
