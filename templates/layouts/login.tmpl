@@ -3,7 +3,11 @@
     {{ template "sidebar_nav" . }}
     {{ template "login_form" . }}
 {{ end }}
-{{ define "content" }}     
-<h1>Login</h1>
-{{ template "login_form" .}}
+{{ define "content" }}
+<div class="panel callout radius">     
+  <h1>Login</h1>
+</div>
+<div class="panel">
+  {{ template "login_form" .}}
+</div>
 {{ end }}
