@@ -1,27 +1,26 @@
-{{ define "title" }}<title>{{ .PageTitle }} - {{.PageTitle }}</title>{{ end }}
+{{ define "title" }}<title>{{ .PageTitle }} - Editing</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
     {{ template "login_form" . }}
 {{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/s/css/jquery.tagsinput.min.css">
-<div class="panel callout radius">
-<h1>{{.PageTitle}}</h1>
-</div>
 <ul class="breadcrumbs">
-  <li><a href="/{{.Filename}}">Page</a></li>
-  <li class="current"><a href="/edit/{{.Filename}}">Edit</a></li>
-  <li><a href="#" data-reveal-id="previewModal">Preview</a></li>
+  <li><a href="/{{.Filename}}">{{ .PageTitle }}</a></li>
+  <li class="current"><a href="/{{.Filename}}/edit">Edit</a></li>
+  <li><a href="/{{.Filename}}/history">History</a></li>
 </ul>
-<hr />
-{{$title := .PageTitle}}
-<div>
-  <form action="/save/{{.Filename}}" method="POST" id="savewiki">
+<div class="panel callout radius">
+  <h1>{{.PageTitle}}</h1>
+</div>
+<div class="panel radius">
+  <form action="/{{.Filename}}/save" method="POST" id="savewiki">
   Title:<input type="text" name="title" value="{{.Title}}"><br>
   Tags:<input type="text" name="tags" id="tags" value="{{.Tags}}"><br>
-  <h3>Note: private tag=private page.</h3>
+  <h5>Note: private tag=private page.</h5>
   <textarea name="editor"></textarea>
   <input type="submit" class="button success" value="Submit">
+  <a href="#" data-reveal-id="previewModal" class="button">Preview</a>
   </form>
 </div>
 <div id="previewModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
