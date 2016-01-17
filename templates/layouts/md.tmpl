@@ -9,19 +9,21 @@
   <li><a href="/{{.Filename}}/edit">Edit</a></li>
   <li><a href="/{{.Filename}}/history">History</a></li>
 </ul>
-<div class="panel callout radius">
-  <h1>{{.PageTitle}}</h1>
+<div class="row wikicontent">
+    <div class="small-6 columns panel callout radius">
+      <h1>{{.PageTitle}}</h1>
+    </div>
+    <div class="small-3 columns panel radius" id="frontmatter">
+        <span class="label">Filename: {{ .Filename }}</span><br>
+        <span class="label">Created: {{ .CreateTime | prettyDate }}</span><br>
+        <span class="label">Last Modified: {{ .ModTime | prettyDate }}</span><br>
+        <span class="label">Tags: {{ .frontmatter.Tags }}</span>
+        <span class="label">Private: {{ .IsPrivate }}</span>
+    </div>    
 </div>
-<div class="panel radius">
-    <ul class="no-bullet">
-    <li>Tags: {{ .frontmatter.Tags }}</li>
-    <li>Created: {{ .CreateTime | prettyDate }}</li>
-    <li>Last Modified: {{ .ModTime | prettyDate }}</li>
-    <li>Filename: {{ .Filename }}</li>
-    <li>Private: {{ .IsPrivate }}</li>
-    </ul>
-</div>
-<div class="panel">
-  {{.wiki.Rendered | safeHTML}}
+<div class="row wikicontent">
+    <div class="small-10 columns panel">
+    {{.wiki.Rendered | safeHTML}}
+    </div>
 </div>
 {{ end }}
