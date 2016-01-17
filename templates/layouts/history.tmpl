@@ -13,8 +13,21 @@
   <h1>{{ .Filename }}'s Git History</h1>
 </div>
 <div class="panel radius">
-{{range .FileHistory}}
-    <p><a href="/{{.Filename}}/{{.Commit}}">{{ .Date|prettyDate }}</a><br>
-{{ end }}
+<table>
+  <thead>
+    <tr>
+      <th width="200">Link</th>
+      <th width="250">Date</th>
+      <th>Message</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .FileHistory}}
+    <tr>
+        <td><a href="/{{.Filename}}/{{.Commit}}">{{.Commit}}</a></td>
+        <td>{{ .Date|prettyDate }}</td>
+        <td>{{ .Message }}</td>
+    </tr>  
+    {{ end }}
 </div>
 {{ end }}
