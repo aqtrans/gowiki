@@ -770,7 +770,6 @@ func loadWikiPage(w http.ResponseWriter, r *http.Request) (*wikiPage, error) {
         //http.Error(w, basefi.Name()+" is not a directory.", 500)
         return nil, errn        
     }
-    log.Println(basefimode)
     if basefimode.IsRegular() {
         errn := errors.New("Base is not dir")
         //http.Error(w, basefi.Name()+" is not a directory.", 500)
