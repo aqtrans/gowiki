@@ -440,7 +440,7 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 // > git show [commit sha1]:[filename]
 // As well as the date
 // > git log -1 --format=%at [commit sha1]
-
+// TODO: need to find a way to detect sha1s
 func viewCommitHandler(w http.ResponseWriter, r *http.Request) {
 	var fm frontmatter
 	var priv bool
@@ -731,6 +731,7 @@ func loadWikiPage(w http.ResponseWriter, r *http.Request) (*wikiPage, error) {
 	//log.Println("Dir:" + dir)
 	//log.Println("Filename:" + filename)
 	fullfilename := "./md/" + name
+    base := filepath.Dir(fullfilename)
 	// Directory without specified index
 	if dir != "" && filename == "" {
 		log.Println("This is a directory, trying to parse the index")
@@ -756,8 +757,30 @@ func loadWikiPage(w http.ResponseWriter, r *http.Request) (*wikiPage, error) {
 	}
 	_, fierr := os.Stat(fullfilename)
     if fierr != nil {
-       log.Println(fierr) 
+       //log.Println(fierr)
     }
+    
+    // Check if the base of the given filename is actually a file
+    // If so, bail, return 500.
+    basefile, _ := os.Open("./"+base)
+	basefi, basefierr := basefile.Stat()
+    basefimode := basefi.Mode()
+    if !basefimode.IsDir() {
+        errn := errors.New("Base is not dir")
+        //http.Error(w, basefi.Name()+" is not a directory.", 500)
+        return nil, errn        
+    }
+    log.Println(basefimode)
+    if basefimode.IsRegular() {
+        errn := errors.New("Base is not dir")
+        //http.Error(w, basefi.Name()+" is not a directory.", 500)
+        return nil, errn
+    }
+    //log.Println(base)
+    if basefierr != nil {
+       log.Println(basefierr)
+    }
+    
 	if os.IsNotExist(fierr) {
 		// NOW: Using os.Stat to properly check for file existence, using IsNotExist()
 		// This should mean file is non-existent, so create new page
@@ -922,6 +945,10 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("No such file...creating one.")
 			http.Redirect(w, r, "/edit/"+p.Filename, 302)
 			return
+        } else if err.Error() == "Base is not dir" {
+            log.Println("Cannot create subdir of a file.")
+            http.Error(w, "Cannot create subdir of a file.", 500)
+            return
 		} else {
 			log.Fatalln(err)
 		}
@@ -1305,7 +1332,7 @@ func main() {
 	r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/edit", editHandler).Methods("GET")
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/save", saveHandler).Methods("POST")
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/history", auth.Auth(historyHandler)).Methods("GET")
-    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/{commit:[A-Za-z0-9]+}", viewCommitHandler).Methods("GET")    
+    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/{commit:[a-f0-9]{40}}", viewCommitHandler).Methods("GET")    
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}", viewHandler).Methods("GET")
 
     //http.Handle("/", std.Then(r))
