@@ -1,5 +1,13 @@
 package main
 
+// Credits:
+// - jQuery-Tags-Input: https://github.com/xoxco/jQuery-Tags-Input 
+//     - Used for elegant tags UI on editing page
+// - YAML frontmatter based on http://godoc.org/j4k.co/fmatter 
+//     - Used for YAML frontmatter parsing to/from wiki pages
+// - bpool-powered template rendering based on https://elithrar.github.io/article/approximating-html-template-inheritance/
+//     - Used to catch rendering errors, so there's no half-rendered pages
+
 //TODO:
 // - Check for and possibly ask to initiate new wikiDir and git repo within if it does not exist
 //    - For consistency and convenience, I should use some cfg.wikiGitRepo to pull down the existing wiki data in this case
