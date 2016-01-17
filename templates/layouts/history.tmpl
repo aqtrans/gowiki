@@ -1,16 +1,16 @@
-{{ define "title" }}<title>{{ .PageTitle }} - Git History</title>{{ end }}
+{{ define "title" }}<title>{{ .Filename }} - Git History</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
     {{ template "login_form" . }}
 {{ end }}
 {{ define "content" }}
 <ul class="breadcrumbs">
-  <li><a href="/{{.Filename}}">{{ .PageTitle }}</a></li>
+  <li><a href="/{{.Filename}}">{{ .Filename }}</a></li>
   <li><a href="/{{.Filename}}/edit">Edit</a></li>
   <li class="current"><a href="/{{.Filename}}/history">History</a></li>
 </ul>
 <div class="panel callout radius">
-  <h1>{{ .PageTitle }}'s Git History</h1>
+  <h1>{{ .Filename }}'s Git History</h1>
 </div>
 <div class="panel radius">
 {{range .FileHistory}}
