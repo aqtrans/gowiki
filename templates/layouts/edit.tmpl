@@ -17,6 +17,7 @@
   <form action="/{{.Filename}}/save" method="POST" id="savewiki">
   Title:<input type="text" name="title" value="{{.Title}}"><br>
   Tags:<input type="text" name="tags" id="tags" value="{{.Tags}}"><br>
+  <input type="hidden" name="token" value="{{.Token}}">
   <h5>Note: private tag=private page.</h5>
   <textarea name="editor"></textarea>
   <input type="submit" class="button success" value="Submit">
