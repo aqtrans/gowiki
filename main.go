@@ -24,7 +24,8 @@ import (
 	//"bufio"
 	"github.com/golang-commonmark/markdown"
 	"github.com/gorilla/mux"
-	"github.com/justinas/alice"
+    //"github.com/gorilla/context"
+	//"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"html/template"
 	"io"
@@ -61,6 +62,7 @@ var (
 	fInit     bool
 	cfg       = configuration{}
 	gitPath   string
+    sessID   string
 )
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -68,6 +70,7 @@ type page struct {
 	SiteName string
 	Cats     []string
 	UN       string
+    Token    string
 }
 
 type frontmatter struct {
@@ -111,6 +114,7 @@ type genPage struct {
 
 type historyPage struct {
 	*page
+    Filename    string
 	FileHistory []*commitLog
 }
 
@@ -387,20 +391,25 @@ func markdownRender(content []byte) string {
 	return mds
 }
 
-func loadPage(r *http.Request) (*page, error) {
+func loadPage(w http.ResponseWriter, r *http.Request) (*page, error) {
 	//timer.Step("loadpageFunc")
 	user := auth.GetUsername(r)
+    token := auth.SetToken(w, r)
+    //log.Println(token)
+    
+    // Grab list of cats from channel
 	cats := make(chan []string)
 	go catsHandler(cats)
 	zcats := <-cats
+    
 	//log.Println(zcats)
-	return &page{SiteName: "GoWiki", UN: user, Cats: zcats}, nil
+	return &page{SiteName: "GoWiki", Cats: zcats, UN: user, Token: token}, nil
 }
 
 func historyHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
-	p, err := loadPage(r)
+	p, err := loadPage(w, r)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -410,6 +419,7 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	hp := &historyPage{
 		p,
+        name,
 		history,
 	}
 	err = renderTemplate(w, "history.tmpl", hp)
@@ -431,7 +441,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request) {
 	name := vars["name"]
 	commit := vars["commit"]
 
-	p, err := loadPage(r)
+	p, err := loadPage(w, r)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -493,7 +503,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request) {
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	searchDir := "./md/"
-	p, err := loadPage(r)
+	p, err := loadPage(w, r)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -520,8 +530,9 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		// check if its a directory
 		if src.IsDir() {
 			// Do something if a directory
-			// FIXME: Traverse directory
-			log.Println(file + " is a directory......")
+			// TODO: Do we need to do anything if it's a directory? 
+            //       The filewalk already descends automatically.
+			//log.Println(file + " is a directory.")
 		} else {
 
 			_, filename := filepath.Split(file)
@@ -544,6 +555,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				// If YAML frontmatter doesn't exist, proceed, but log it
 				//log.Fatalln(err)
+                log.Println("YAML unmarshal error in: " + filename)
 				log.Println(err)
 			}
 			if fm != nil {
@@ -696,14 +708,14 @@ type Wiki struct {
     Content      string
 }*/
 /////////////////////////////
-func loadWikiPage(r *http.Request) (*wikiPage, error) {
+func loadWikiPage(w http.ResponseWriter, r *http.Request) (*wikiPage, error) {
 	var fm frontmatter
 	var priv bool
 	var pagetitle string
 	var body []byte
 	vars := mux.Vars(r)
 	name := vars["name"]
-	p, err := loadPage(r)
+	p, err := loadPage(w, r)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -811,7 +823,7 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	p, err := loadPage(r)
+	p, err := loadPage(w, r)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -892,7 +904,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "viewHandler")
 
 	// Get Wiki
-	p, err := loadWikiPage(r)
+	p, err := loadWikiPage(w, r)
 	if err != nil {
 		if err.Error() == "No such dir index" {
 			log.Println("No such dir index...creating one.")
@@ -913,12 +925,12 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	log.Println(p.Title + " Page rendered!")
+	//log.Println(p.Title + " Page rendered!")
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "editHandler")
-	p, err := loadWikiPage(r)
+	p, err := loadWikiPage(w, r)
 	//log.Println(p.Filename)
 	//log.Println(p.PageTitle)
 	if err != nil {
@@ -951,8 +963,10 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	// Check for and install required YAML frontmatter
 	title := r.FormValue("title")
 	tags := r.FormValue("tags")
-	//log.Println("TITLE: "+ title)
-	//log.Println("TAGS: "+ tags)
+    
+    // Check for CSRF token
+    auth.CheckToken(w, r)
+    
 	// If title or tags aren't empty, declare a buffer
 	//  And load the YAML+body into it, then override body
 	if title != "" || tags != "" {
@@ -972,8 +986,6 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 		body = buffer.String()
 	}
 
-	//log.Print(bwiki)
-
 	rp := &rawPage{
 		name,
 		body,
@@ -985,9 +997,10 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln(err)
 		return
 	}
-
-	utils.WriteJ(w, name, true)
+    
+    utils.WriteJ(w, name, true)
 	log.Println(name + " page saved!")
+
 
 }
 
@@ -1035,10 +1048,9 @@ func (wiki *rawPage) save() error {
 			}
 		}
 	}
-	//log.Println("Dir is empty")
 
-	log.Println(fullfilename)
-	log.Println(wiki.Content)
+	//log.Println(fullfilename)
+	//log.Println(wiki.Content)
 
 	ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0755)
 
@@ -1193,7 +1205,7 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "loginPageHandler")
 	title := "login"
 	user := auth.GetUsername(r)
-	p, err := loadPage(r)
+	p, err := loadPage(w, r)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -1210,6 +1222,7 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Simple wrapper in order to pass auth conf to my auth lib
 func loginPost(w http.ResponseWriter, r *http.Request) {
 	auth.LoginPostHandler(cfg.AuthConf, w, r)
 }
@@ -1248,14 +1261,13 @@ func main() {
 	if port == "" {
 		port = cfg.Port
 	}
-
-	newSess := utils.RandKey(32)
-	log.Println("Session ID: " + newSess)
+	sessID = utils.RandKey(32)
+	log.Println("Session ID: " + sessID)
 	log.Println("Listening on port 3000")
 
 	flag.Set("bind", ":3000")
 
-	std := alice.New(utils.Logger)
+	//std := alice.New(utils.Logger)
 	//stda := alice.New(Auth, Logger)
 
 	r := mux.NewRouter().StrictSlash(false)
@@ -1284,12 +1296,11 @@ func main() {
     // wiki functions, should accept alphanumerical, "_", "-", "."
 	r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/edit", editHandler).Methods("GET")
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/save", saveHandler).Methods("POST")
-    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/history", historyHandler).Methods("GET")
+    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/history", auth.Auth(historyHandler)).Methods("GET")
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/{commit:[A-Za-z0-9]+}", viewCommitHandler).Methods("GET")    
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}", viewHandler).Methods("GET")
 
-
-            
-	http.Handle("/", std.Then(r))
+    //http.Handle("/", std.Then(r))
+    http.Handle("/", r)
 	http.ListenAndServe(":3000", nil)
 }
