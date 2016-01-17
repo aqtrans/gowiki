@@ -1,4 +1,4 @@
-{{ define "title" }}<title>Login - {{.Title}}</title>{{ end }}
+{{ define "title" }}<title>{{.page.SiteName}}|Login - {{.Title}}</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
     {{ template "login_form" . }}
