@@ -1,4 +1,4 @@
-{{ define "title" }}<title>{{ .PageTitle }} - Editing</title>{{ end }}
+{{ define "title" }}<title>{{.page.SiteName}}|Editing {{ .PageTitle }}</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
     {{ template "login_form" . }}
@@ -11,7 +11,7 @@
   <li><a href="/{{.Filename}}/history">History</a></li>
 </ul>
 <div class="panel callout radius">
-  <h1>{{.PageTitle}}</h1>
+  <h1>Editing "{{.PageTitle}}"</h1>
 </div>
 <div class="panel radius">
   <form action="/{{.Filename}}/save" method="POST" id="savewiki">
