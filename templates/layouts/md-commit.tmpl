@@ -1,17 +1,18 @@
-{{ define "title" }}<title>{{.page.SiteName}}|{{ .PageTitle }}</title>{{ end }}
+{{ define "title" }}<title>{{.page.SiteName}}|Commit of {{ .PageTitle }}</title>{{ end }}
 {{ define "sidebar" }}
     {{ template "sidebar_nav" . }}
     {{ template "login_form" . }}
 {{ end }}
 {{ define "content" }}
 <ul class="breadcrumbs">
-  <li class="current"><a href="/{{.Filename}}">{{ .PageTitle }}</a></li>
+  <li><a href="/{{.Filename}}">{{ .PageTitle }}</a></li>
   <li><a href="/{{.Filename}}/edit">Edit</a></li>
   <li><a href="/{{.Filename}}/history">History</a></li>
+  <li class="current"><a href="/{{.Filename}}/{{.Commit}}">{{ .PageTitle }}@{{.Commit}}</a></li>
 </ul>
 <div class="row wikicontent">
     <div class="small-6 columns panel callout radius">
-      <h1>{{.PageTitle}}</h1>
+      <h1>Commit of {{.PageTitle}}</h1>
     </div>
     <div class="small-3 columns panel radius" id="frontmatter">
         <span class="label">Filename: {{ .Filename }}</span><br>
@@ -22,8 +23,21 @@
     </div>    
 </div>
 <div class="row wikicontent">
-    <div class="small-10 columns panel">
-    {{.wiki.Rendered | safeHTML}}
+<ul class="tabs" data-tab>
+  <li class="tab-title active"><a href="#panel1">File at Commit</a></li>
+  <li class="tab-title"><a href="#panel2">Commit Diff</a></li>
+</ul>
+    <div class="tabs-content">
+        <div class="content active" id="panel1">
+            <div class="small-10 columns panel">
+            {{.wiki.Rendered | safeHTML}}
+            </div>
+        </div>
+        <div class="content" id="panel2">
+            <div class="small-10 columns panel">
+            {{.Diff | safeHTML}}
+            </div>        
+        </div>
     </div>
 </div>
 {{ end }}

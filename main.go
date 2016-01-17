@@ -104,6 +104,19 @@ type wikiPage struct {
 	ModTime    int64
 }
 
+type commitPage struct {
+	*page
+	PageTitle string
+	Filename  string
+	*frontmatter
+	*wiki
+	IsPrivate  bool
+	CreateTime int64
+	ModTime    int64
+    Diff       string
+    Commit     string
+}
+
 type rawPage struct {
 	Name    string
 	Content string
@@ -354,6 +367,16 @@ func gitGetFileCommit(filename, commit string) ([]byte, error) {
 	return o, nil
 }
 
+// Get diff for entire commit
+// git show [commit sha1]
+func gitGetFileCommitDiff(filename, commit string) ([]byte, error) {
+	o, err := gitCommand("show", commit).CombinedOutput()
+	if err != nil {
+		return []byte{}, errors.New(fmt.Sprintf("error during `git show`: %s\n%s", err.Error(), string(o)))
+	}
+	return o, nil
+}
+
 // File modification time for specific commit, output to UNIX time
 // git log -1 --format=%at [commit sha1]
 func gitGetFileCommitMtime(commit string) (int64, error) {
@@ -465,6 +488,10 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Panicln(err)
 	}
+	diff, err := gitGetFileCommitDiff(name, commit)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	// Read YAML frontmatter into fm
 	content, err := readFront(body, &fm)
@@ -487,8 +514,10 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		pagetitle = name
 	}
+    diffstring := strings.Replace(string(diff),"\n","<br>",-1)
+    //log.Println(diffstring)
 
-	wp := &wikiPage{
+	cp := &commitPage{
 		p,
 		pagetitle,
 		name,
@@ -500,9 +529,11 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request) {
 		priv,
 		ctime,
 		mtime,
+        diffstring,
+        commit,
 	}
     
-	err = renderTemplate(w, "md.tmpl", wp)
+	err = renderTemplate(w, "md-commit.tmpl", cp)
 	if err != nil {
 		log.Fatalln(err)
 	}
