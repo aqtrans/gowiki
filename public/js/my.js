@@ -87,13 +87,14 @@ $(document).ready(function(){
     //var editortxt = document.getElementsByName("editor")[0].value;
     //console.log(editortxt);
     var link = $(this).attr('action');
-    console.log( $(this).serialize() );
-    console.log( $(this).serializeArray() );
+    //console.log( $(this).serialize() );
+    //console.log( $(this).serializeArray() );
     $.post( link, $(this).serialize(), function(data){
         if(data.success){
-          $(".alerts").append("<div class=\"alert-box success\" data-alert>Wiki page successfully saved! <a style='color:#fff' href=/"+data.name+"><i class='fa fa-external-link'></i>[Page URL]</a><a class=\"close\">&times;</a></div>");
+          $(location).attr('href','/'+data.name);
+          //$(".alerts").append("<div class=\"alert-box success\" data-alert>Wiki page successfully saved! <a style='color:#fff' href=/"+data.name+"><i class='fa fa-external-link'></i>[Page URL]</a><a class=\"close\">&times;</a></div>");
           //$("#savewiki")[0].reset();
-        $(document).foundation('alert','reflow');
+          //$(document).foundation('alert','reflow');
         } else {
           $(".alerts").append("<div class=\"alert-box alert\" data-alert>Failed to save wiki page<a class=\"close\">&times;</a></div>");
         $(document).foundation('alert','reflow');
