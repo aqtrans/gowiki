@@ -4,6 +4,7 @@
     {{ template "login_form" . }}
 {{ end }}
 {{ define "content" }}
+<link rel="stylesheet" href="/s/css/diff2html.min.css">
 <ul class="breadcrumbs">
   <li><a href="/{{.Filename}}">{{ .PageTitle }}</a></li>
   <li><a href="/{{.Filename}}/edit">Edit</a></li>
@@ -30,12 +31,12 @@
     <div class="tabs-content">
         <div class="content active" id="panel1">
             <div class="small-10 columns panel">
-            {{.wiki.Rendered | safeHTML}}
+              {{.wiki.Rendered | safeHTML}}
             </div>
         </div>
         <div class="content" id="panel2">
-            <div class="small-10 columns panel">
-            {{.Diff | safeHTML}}
+            <div class="small-10 columns panel" id="diff">
+              <code>{{.Diff | safeHTML}}</code>
             </div>        
         </div>
     </div>
