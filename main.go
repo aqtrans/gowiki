@@ -9,9 +9,6 @@ package main
 //     - Used to catch rendering errors, so there's no half-rendered pages
 
 //TODO:
-// - Check for and possibly ask to initiate new wikiDir and git repo within if it does not exist
-//    - For consistency and convenience, I should use some cfg.wikiGitRepo to pull down the existing wiki data in this case
-//    - For safety, so as not to nuke existing changes accidentally, I should check for an -init flag and only clone in this case, otherwise Fatalln
 // - wikidata should be periodically pushed to git@jba.io:conf/gowiki-data.git
 //    - Unsure how/when to do this, possibly in a go-routine after every commit?
 
@@ -28,13 +25,17 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	"fmt"
+	"fmt" 
 	//"bufio"
 	"github.com/golang-commonmark/markdown"
 	"github.com/gorilla/mux"
+    "github.com/gorilla/handlers"
+    //"github.com/rs/xhandler"
     //"github.com/gorilla/context"
-	//"github.com/justinas/alice"
+	"github.com/justinas/alice"
+    //"github.com/cyclopsci/apollo"
 	"github.com/oxtoacart/bpool"
+    "github.com/thoas/stats"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -50,6 +51,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
     "jba.io/go/utils"
+    //"golang.org/x/net/context"
 )
 
 type configuration struct {
@@ -70,7 +72,7 @@ var (
 	fInit     bool
 	cfg       = configuration{}
 	gitPath   string
-    sessID   string
+    //sessID   string
 )
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -129,7 +131,6 @@ type listPage struct {
 
 type genPage struct {
 	*page
-	UN    string
 	Title string
 }
 
@@ -151,6 +152,7 @@ type jsonfresponse struct {
 	Name string `json:"name,omitempty"`
 }
 
+// Sorting functions
 type wikiByDate []*wikiPage
 
 func (a wikiByDate) Len() int           { return len(a) }
@@ -422,11 +424,30 @@ func markdownRender(content []byte) string {
 	return mds
 }
 
-func loadPage(w http.ResponseWriter, r *http.Request) (*page, error) {
+func loadPage(r *http.Request) (*page, error) {
 	//timer.Step("loadpageFunc")
-	user := auth.GetUsername(r)
-    token := auth.SetToken(w, r)
+	//user := auth.GetUsername(r)
+    //token := auth.SetToken(w, r)
     //log.Println(token)
+
+    // Auth lib middlewares should load the user and tokens into context for reading
+    user := auth.GetUsername(r)
+    token := auth.GetToken(r)
+    /*
+    user, ok := context.GetOk(r, auth.UserKey)
+    if !ok {
+        log.Println("No username in context.")
+        user = ""
+    }
+    token, ok := context.GetOk(r, auth.TokenKey)
+    if !ok {
+        log.Println("No token in context.")
+        token = ""
+    }*/
+    //fmt.Print("Token: ")
+    //log.Println(token)
+    //fmt.Print("User: ")
+    //log.Println(user)
     
     // Grab list of cats from channel
 	cats := make(chan []string)
@@ -440,7 +461,7 @@ func loadPage(w http.ResponseWriter, r *http.Request) (*page, error) {
 func historyHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
-	p, err := loadPage(w, r)
+	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -472,7 +493,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request) {
 	name := vars["name"]
 	commit := vars["commit"]
 
-	p, err := loadPage(w, r)
+	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -542,7 +563,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request) {
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	searchDir := "./md/"
-	p, err := loadPage(w, r)
+	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -747,14 +768,14 @@ type Wiki struct {
     Content      string
 }*/
 /////////////////////////////
-func loadWikiPage(w http.ResponseWriter, r *http.Request) (*wikiPage, error) {
+func loadWikiPage(r *http.Request) (*wikiPage, error) {
 	var fm frontmatter
 	var priv bool
 	var pagetitle string
 	var body []byte
 	vars := mux.Vars(r)
 	name := vars["name"]
-	p, err := loadPage(w, r)
+	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -884,7 +905,7 @@ func loadWikiPage(w http.ResponseWriter, r *http.Request) (*wikiPage, error) {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	p, err := loadPage(w, r)
+	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -965,7 +986,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "viewHandler")
 
 	// Get Wiki
-	p, err := loadWikiPage(w, r)
+	p, err := loadWikiPage(r)
 	if err != nil {
 		if err.Error() == "No such dir index" {
 			log.Println("No such dir index...creating one.")
@@ -995,7 +1016,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "editHandler")
-	p, err := loadWikiPage(w, r)
+	p, err := loadWikiPage(r)
 	//log.Println(p.Filename)
 	//log.Println(p.PageTitle)
 	if err != nil {
@@ -1028,9 +1049,6 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	// Check for and install required YAML frontmatter
 	title := r.FormValue("title")
 	tags := r.FormValue("tags")
-    
-    // Check for CSRF token
-    auth.CheckToken(w, r)
     
 	// If title or tags aren't empty, declare a buffer
 	//  And load the YAML+body into it, then override body
@@ -1269,15 +1287,13 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "loginPageHandler")
 	title := "login"
-	user := auth.GetUsername(r)
-	p, err := loadPage(w, r)
+	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	//p, err := loadPage(title, r)
 	gp := &genPage{
 		p,
-		user,
 		title,
 	}
 	err = renderTemplate(w, "login.tmpl", gp)
@@ -1293,6 +1309,7 @@ func loginPost(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
 	flag.Parse()
 
 	//Load conf.json
@@ -1326,15 +1343,18 @@ func main() {
 	if port == "" {
 		port = cfg.Port
 	}
-	sessID = utils.RandKey(32)
-	log.Println("Session ID: " + sessID)
+	//sessID = utils.RandKey(32)
+	//log.Println("Session ID: " + sessID)
 	log.Println("Listening on port 3000")
 
 	flag.Set("bind", ":3000")
+    
+    statsdata := stats.New()
 
 	//std := alice.New(utils.Logger)
 	//stda := alice.New(Auth, Logger)
-
+    s := alice.New(handlers.RecoveryHandler(), auth.UserEnvMiddle, auth.XsrfMiddle)
+    
 	r := mux.NewRouter().StrictSlash(false)
 	//d := r.Host("go.jba.io").Subrouter()
 	r.HandleFunc("/", indexHandler).Methods("GET")
@@ -1347,25 +1367,33 @@ func main() {
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
 	r.HandleFunc("/list", listHandler).Methods("GET")
+    
+    r.HandleFunc("/stats", func(w http.ResponseWriter, r *http.Request) {
+            w.Header().Set("Content-Type", "application/json")
+            stats := statsdata.Data()
+            b, _ := json.Marshal(stats)
+            w.Write(b)
+    })
 
 	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats") })
 
 	//http.Handle("/s/", http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
-	r.PathPrefix("/s/").Handler(http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
+	//r.PathPrefix("/s/").Handler(http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
 	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
 	//r.HandleFunc("/{name}", viewHandler).Methods("GET")
-	r.HandleFunc("/save/{name:.*}", saveHandler).Methods("POST")
-	r.HandleFunc("/edit/{name:.*}", editHandler)
-	r.HandleFunc("/history/{name:.*}", historyHandler).Methods("GET") 
-    
+	//r.HandleFunc("/save/{name:.*}", saveHandler).Methods("POST")
+	//r.HandleFunc("/edit/{name:.*}", editHandler)
+	//r.HandleFunc("/history/{name:.*}", historyHandler).Methods("GET") 
+
     // wiki functions, should accept alphanumerical, "_", "-", "."
 	r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/edit", editHandler).Methods("GET")
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/save", saveHandler).Methods("POST")
-    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/history", auth.Auth(historyHandler)).Methods("GET")
+    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/history", auth.AuthMiddle(historyHandler)).Methods("GET")
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/{commit:[a-f0-9]{40}}", viewCommitHandler).Methods("GET")    
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}", viewHandler).Methods("GET")
-
-    //http.Handle("/", std.Then(r))
-    http.Handle("/", r)
+    
+    assets := http.StripPrefix("/s/", http.FileServer(http.Dir("public/")))
+    http.Handle("/", s.Then(r))
+    http.Handle("/s/", assets)
 	http.ListenAndServe(":3000", nil)
 }
