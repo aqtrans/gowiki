@@ -120,10 +120,11 @@ $(document).ready(function(){
   $("#login").submit(function(event){
     event.preventDefault();   
     $.post( "login", $( this ).serialize(), function(data){
-      if(data.success){
-        $(".alerts").append("<div class=\"alert-box success\" data-alert>Successful login<a class=\"close\">&times;</a></div>");
-        $("#login-form").remove();
-        $(document).foundation('alert','reflow');
+      if(data.success){  
+        $(location).attr('href', data.name);
+        //$(".alerts").append("<div class=\"alert-box success\" data-alert>Successful login<a class=\"close\">&times;</a></div>");
+        //$("#login-form").remove();
+        //$(document).foundation('alert','reflow');
       } else {
         $(".alerts").append("<div class=\"alert-box alert\" data-alert>Failed login<a class=\"close\">&times;</a></div>");
         $(document).foundation('alert','reflow');
