@@ -27,7 +27,8 @@ import (
 	"flag"
 	"fmt" 
 	//"bufio"
-	"github.com/golang-commonmark/markdown"
+	//"github.com/golang-commonmark/markdown"
+    "github.com/russross/blackfriday"
 	"github.com/gorilla/mux"
     "github.com/gorilla/handlers"
     //"github.com/rs/xhandler"
@@ -53,6 +54,51 @@ import (
     "jba.io/go/utils"
     //"golang.org/x/net/context"
 )
+
+const (
+	EXTENSION_NO_INTRA_EMPHASIS          = 1 << iota // ignore emphasis markers inside words
+	EXTENSION_TABLES                                 // render tables
+	EXTENSION_FENCED_CODE                            // render fenced code blocks
+	EXTENSION_AUTOLINK                               // detect embedded URLs that are not explicitly marked
+	EXTENSION_STRIKETHROUGH                          // strikethrough text using ~~test~~
+	EXTENSION_LAX_HTML_BLOCKS                        // loosen up HTML block parsing rules
+	EXTENSION_SPACE_HEADERS                          // be strict about prefix header rules
+	EXTENSION_HARD_LINE_BREAK                        // translate newlines into line breaks
+	EXTENSION_TAB_SIZE_EIGHT                         // expand tabs to eight spaces instead of four
+	EXTENSION_FOOTNOTES                              // Pandoc-style footnotes
+	EXTENSION_NO_EMPTY_LINE_BEFORE_BLOCK             // No need to insert an empty line to start a (code, quote, ordered list, unordered list) block
+	EXTENSION_HEADER_IDS                             // specify header IDs  with {#id}
+	EXTENSION_TITLEBLOCK                             // Titleblock ala pandoc
+	EXTENSION_AUTO_HEADER_IDS                        // Create the header ID from the text
+	EXTENSION_BACKSLASH_LINE_BREAK                   // translate trailing backslashes into line breaks
+	EXTENSION_DEFINITION_LISTS                       // render definition lists
+        
+    commonHtmlFlags = 0 |
+		blackfriday.HTML_USE_XHTML |
+		blackfriday.HTML_USE_SMARTYPANTS |
+		blackfriday.HTML_SMARTYPANTS_FRACTIONS |
+		blackfriday.HTML_SMARTYPANTS_DASHES |
+		blackfriday.HTML_SMARTYPANTS_LATEX_DASHES
+        
+    commonExtensions = 0 |
+		EXTENSION_NO_INTRA_EMPHASIS |
+		EXTENSION_TABLES |
+		EXTENSION_FENCED_CODE |
+		EXTENSION_AUTOLINK |
+		EXTENSION_STRIKETHROUGH |
+		EXTENSION_SPACE_HEADERS |
+		EXTENSION_HEADER_IDS |
+		EXTENSION_BACKSLASH_LINE_BREAK |
+		EXTENSION_DEFINITION_LISTS |
+        EXTENSION_NO_EMPTY_LINE_BEFORE_BLOCK |
+        EXTENSION_FOOTNOTES  
+)
+
+func markdownCommon(input []byte) []byte {
+	renderer := blackfriday.HtmlRenderer(commonHtmlFlags, "", "")
+	return blackfriday.MarkdownOptions(input, renderer, blackfriday.Options{
+		Extensions: commonExtensions})    
+}
 
 type configuration struct {
 	Port     string
@@ -418,8 +464,12 @@ func isPrivateA(tags []string) bool {
 }
 
 func markdownRender(content []byte) string {
-	md := markdown.New(markdown.HTML(true), markdown.Nofollow(true), markdown.Breaks(true))
-	mds := md.RenderToString(content)
+	//md := markdown.New(markdown.HTML(true), markdown.Nofollow(true), markdown.Breaks(true))
+	//mds := md.RenderToString(content)
+    
+    md := markdownCommon(content)
+    mds := string(md)
+    
 	//log.Println("MDS:"+ mds)
 	return mds
 }
@@ -517,7 +567,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request) {
 	// Read YAML frontmatter into fm
 	content, err := readFront(body, &fm)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 	}
 	if content == nil {
 		content = body
@@ -859,8 +909,8 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 	// Read YAML frontmatter into fm
 	content, err := readFront(body, &fm)
 	if err != nil {
-		log.Fatalln(err)
-		return nil, err
+		log.Println(err)
+		//return nil, err
 	}
 	if content == nil {
 		content = body
@@ -990,11 +1040,11 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err.Error() == "No such dir index" {
 			log.Println("No such dir index...creating one.")
-			http.Redirect(w, r, "/edit/"+p.Filename, 302)
+			http.Redirect(w, r, p.Filename+"/edit", 302)
 			return
 		} else if err.Error() == "No such file" {
 			log.Println("No such file...creating one.")
-			http.Redirect(w, r, "/edit/"+p.Filename, 302)
+			http.Redirect(w, r, p.Filename+"/edit", 302)
 			return
         } else if err.Error() == "Base is not dir" {
             log.Println("Cannot create subdir of a file.")
@@ -1092,7 +1142,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 	pagetitle := r.FormValue("newwiki")
 	//log.Println(pagetitle)
 	//log.Println(r)
-	http.Redirect(w, r, "/edit/"+pagetitle, 301)
+	http.Redirect(w, r, pagetitle+"/edit", 301)
 
 }
 
