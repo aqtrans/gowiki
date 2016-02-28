@@ -24,7 +24,7 @@ func TestMarkdownRender(t *testing.T) {
     
 	rawmds := markdownRender(rawmd)
     if rawmds != rendermds {
-        t.Error("Converted Markdown does not equal readymade test")
+        t.Error("Converted Markdown does not equal test")
     }
 }
 
@@ -47,7 +47,7 @@ func TestMarkdownRender2(t *testing.T) {
     
 	rawmds := markdownRender(rawmd)
     if rawmds != rendermds {
-        t.Error("Converted Markdown does not equal readymade test")
+        t.Error("Converted Markdown does not equal test2")
     }
 }
 
