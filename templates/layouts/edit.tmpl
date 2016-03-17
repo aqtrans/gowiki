@@ -4,7 +4,7 @@
     {{ template "login_form" . }}
 {{ end }}
 {{ define "content" }}
-<link rel="stylesheet" href="/s/css/jquery.tagsinput.min.css">
+<link rel="stylesheet" href="/assets/css/jquery.tagsinput.min.css">
 <ul class="breadcrumbs">
   <li><a href="/{{.Filename}}">{{ .PageTitle }}</a></li>
   <li class="current"><a href="/{{.Filename}}/edit">Edit</a></li>
@@ -32,8 +32,8 @@
 
 {{ end }}
 {{ define "extra_scripts" }}
-<script src="/s/js/commonmark.js"></script>
-<script src="/s/js/jquery.tagsinput.min.js"></script>
+<script src="/assets/js/commonmark.js"></script>
+<script src="/assets/js/jquery.tagsinput.min.js"></script>
 <script type="text/javascript" charset="utf-8">
  
 $('#tags').tagsInput({
