@@ -825,6 +825,7 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 	var body []byte
 	vars := mux.Vars(r)
 	name := vars["name"]
+    
 	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
@@ -834,29 +835,11 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 	//log.Println("Filename:" + filename)
 	fullfilename := "./md/" + name
     base := filepath.Dir(fullfilename)
-	// Directory without specified index
-	if dir != "" && filename == "" {
-		log.Println("This is a directory, trying to parse the index")
-		fullfilename = "./md/" + name + "index"
-		filename = name + "index"
-		title := name + " - Index"
-		// FIXME: logic looks wrong here; should probably have another if/else
-		// ...Checking if file exists, before throwing an error
-		errn := errors.New("No such dir index")
-		newwp := &wikiPage{
-			p,
-			title,
-			filename,
-			&frontmatter{
-				Title: title,
-			},
-			&wiki{},
-			false,
-			0,
-			0,
-		}
-		return newwp, errn
-	}
+    
+    log.Println(base)
+    //log.Println(dir)
+    //log.Println(filename)
+
 	_, fierr := os.Stat(fullfilename)
     if fierr != nil {
        //log.Println(fierr)
@@ -880,7 +863,33 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
     //log.Println(base)
     if basefierr != nil {
        log.Println(basefierr)
-    }
+    }    
+    
+	// Directory without specified index
+	if dir != "" && filename == "" {
+		log.Println("This might be a directory, trying to parse the index")
+		fullfilename = "./md/" + name + "index"
+        
+		filename = name + "index"
+		title := name + " - Index"
+		// FIXME: logic looks wrong here; should probably have another if/else
+		// ...Checking if file exists, before throwing an error
+		errn := errors.New("No such dir index")
+		newwp := &wikiPage{
+			p,
+			title,
+			filename,
+			&frontmatter{
+				Title: title,
+			},
+			&wiki{},
+			false,
+			0,
+			0,
+		}
+		return newwp, errn
+	}
+
     
 	if os.IsNotExist(fierr) {
 		// NOW: Using os.Stat to properly check for file existence, using IsNotExist()
@@ -1034,6 +1043,15 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "viewHandler")
+    
+    // In case I want to switch to queries some time
+    /*
+    log.Println(r.URL.Query())
+    query := r.URL.RawQuery
+    if query != "" {
+      log.Println(query)
+    }
+    */
 
 	// Get Wiki
 	p, err := loadWikiPage(r)
@@ -1406,6 +1424,7 @@ func main() {
     s := alice.New(handlers.RecoveryHandler(), auth.UserEnvMiddle, auth.XsrfMiddle)
     
 	r := mux.NewRouter().StrictSlash(false)
+    //r := mux.NewRouter()
 	//d := r.Host("go.jba.io").Subrouter()
 	r.HandleFunc("/", indexHandler).Methods("GET")
 	r.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "") })
@@ -1439,11 +1458,15 @@ func main() {
 	r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/edit", editHandler).Methods("GET")
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/save", saveHandler).Methods("POST")
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/history", auth.AuthMiddle(historyHandler)).Methods("GET")
-    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/{commit:[a-f0-9]{40}}", viewCommitHandler).Methods("GET")    
+    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/{commit:[a-f0-9]{40}}", viewCommitHandler).Methods("GET") 
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}", viewHandler).Methods("GET")
     
-    assets := http.StripPrefix("/s/", http.FileServer(http.Dir("public/")))
+    
+
+    http.HandleFunc("/robots.txt", utils.RobotsHandler)
+    http.HandleFunc("/favicon.ico", utils.FaviconHandler)
+    http.HandleFunc("/favicon.png", utils.FaviconHandler)
+    http.HandleFunc("/assets/", utils.StaticHandler)
     http.Handle("/", s.Then(r))
-    http.Handle("/s/", assets)
 	http.ListenAndServe(":3000", nil)
 }
