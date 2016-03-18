@@ -836,7 +836,7 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 	fullfilename := "./md/" + name
     base := filepath.Dir(fullfilename)
     
-    log.Println(base)
+    //log.Println(base)
     //log.Println(dir)
     //log.Println(filename)
 
@@ -1158,9 +1158,12 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 func newHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "saveHandler")
 	pagetitle := r.FormValue("newwiki")
+    if pagetitle == "" {
+        http.Error(w, http.StatusText(500), http.StatusInternalServerError)
+    }
 	//log.Println(pagetitle)
 	//log.Println(r)
-	http.Redirect(w, r, pagetitle+"/edit", 301)
+	http.Redirect(w, r, pagetitle+"/edit", http.StatusTemporaryRedirect)
 
 }
 
