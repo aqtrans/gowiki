@@ -6,30 +6,59 @@
   {{ template "title" . }}
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Gowiki">
+  <meta name="description" content="Golang powered wiki">
   <link rel="shortcut icon" type="image/png" href="/assets/favicon.png"/>
   <link rel="shortcut icon" type="image/ico" href="/assets/favicon.ico" />
   <link rel="stylesheet" href="/assets/mdl/material.min.css"> 
-  <link rel="stylesheet" href="/assets/css/foundation.css"> 
-  <link rel="stylesheet" href="/assets/css/app.css">
-  <link rel="stylesheet" href="/assets/css/font-awesome.min.css">
+  <link rel="stylesheet" href="/assets/mdl/material-icons.css">
+  <link rel="stylesheet" href="/assets/css/my.material.css">
   <script src="/assets/mdl/material.min.js"></script>
   <script src="/assets/js/jquery.js"></script>
  </head>
 <body>
-<div class="row">
-  <div class="small-2 columns sidebar">
-      <h3><a href="/">Wiki</a></h3>
-      {{ template "sidebar" .}}
+<!-- The drawer is always open in large screens. The header is always shown,
+  even in small screens. -->
+<div class="mdl-layout mdl-js-layout mdl-layout--fixed-drawer
+            mdl-layout--fixed-header">
+  <header class="mdl-layout__header">
+    <div class="mdl-layout__header-row">
+    <span class="mdl-layout-title">Wiki</span>
+      <div class="mdl-layout-spacer"></div>
+        <form action="/new">
+            <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable">
+            <label class="mdl-button mdl-js-button mdl-button--icon" for="new-wiki-expandable">
+                <i class="material-icons">add</i>
+            </label>
+            <div class="mdl-textfield__expandable-holder">
+                <input class="mdl-textfield__input" type="text" name="newwiki" id="new-wiki-expandable">
+                <label class="mdl-textfield__label" for="new-wiki-expandable">Search text</label>
+            </div>
+            </div>
+        </form>    
+      <div class="mdl-textfield mdl-js-textfield mdl-textfield--expandable
+                  mdl-textfield--floating-label mdl-textfield--align-right">
+        <label class="mdl-button mdl-js-button mdl-button--icon"
+               for="fixed-header-drawer-exp">
+          <i class="material-icons">search</i>
+        </label>
+        <div class="mdl-textfield__expandable-holder">
+          <input class="mdl-textfield__input" type="text" name="sample"
+                 id="fixed-header-drawer-exp">
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="mdl-layout__drawer">
+    {{ template "sidebar" .}}
   </div>
-<div class="small-10 columns body">
-  <div class="alerts"></div>
-{{ template "content" . }}
-</div>
+  <main class="mdl-layout__content">
+    <div class="page-content">
+        {{ template "content" . }}
+    </div>
+  </main>
 </div>
 <footer>
 </footer>
-  <script> $(document).foundation(); </script>
   <script src="/assets/js/my.js"></script>
   {{ template "extra_scripts" . }}
 </body>
