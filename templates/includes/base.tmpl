@@ -9,7 +9,7 @@
   <meta name="description" content="Gowiki">
   <link rel="shortcut icon" type="image/png" href="/assets/favicon.png"/>
   <link rel="shortcut icon" type="image/ico" href="/assets/favicon.ico" />
-  <link rel="stylesheet" href="/assets/mdl/normalize.css"> 
+  <link rel="stylesheet" href="/assets/css/normalize.css"> 
   <link rel="stylesheet" href="/assets/css/foundation.css"> 
   <link rel="stylesheet" href="/assets/css/app.css">
   <link rel="stylesheet" href="/assets/css/font-awesome.min.css">
@@ -17,11 +17,34 @@
   <script src="/assets/js/jquery.js"></script>
   <script src="/assets/js/fastclick.js"></script>
   <script src="/assets/js/foundation.min.js"></script>
-  <script src="/assets/js/jquery.js"></script>
  </head>
 <body>
+<div class="sticky">
+    <nav class="top-bar" data-topbar role="navigation">
+    <ul class="title-area">
+        <li class="name">
+        <h1><a href="/">My Site</a></h1>
+        </li>
+        <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
+        <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
+    </ul>
+
+    <section class="top-bar-section">
+        <!-- Right Nav Section -->
+        <ul class="right">
+        </ul>
+        <!-- Left Nav Section -->
+        <ul class="left">
+        <li><a href="#">Left Nav Button</a></li>
+        {{ template "topnav" .}}
+        </ul>
+    </section>
+    </nav>
+</div>
+
+
 <div class="row">
-  <div class="small-2 columns sidebar">
+  <div class="small-2 show-for-medium-up columns sidebar">
       <h3><a href="/">Wiki</a></h3>
       {{ template "sidebar" .}}
   </div>
@@ -32,11 +55,12 @@
 </div>
 <footer>
 </footer>
-  <script> $(document).foundation(); </script>
+  <script type="text/javascript" charset="utf-8"> $(document).foundation(); </script>
   <script src="/assets/js/my.js"></script>
   {{ template "extra_scripts" . }}
 </body>
 </html>
 {{ end }}
+{{ define "topnav" }}{{ end }}
 {{ define "sidebar" }}{{ end }}
 {{ define "extra_scripts" }}{{ end }}

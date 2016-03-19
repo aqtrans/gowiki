@@ -3,6 +3,19 @@
     {{ template "sidebar_nav" . }}
     {{ template "login_form" . }}
 {{ end }}
+{{ define "topnav" }}
+    <li class="divider"></li>
+    <li><a href="/{{.Filename}}">View</a></li>
+    <li class="active"><a href="#">Edit</a></li>
+    <li><a href="/{{.Filename}}/history">History</a></li>    
+    <li class="has-dropdown">
+        <a href="#">Right Button Dropdown</a>
+        <ul class="dropdown">
+        <li><a href="#">First link in dropdown</a></li>
+        <li class="active"><a href="#">Active link in dropdown</a></li>
+        </ul>
+    </li>
+{{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/jquery.tagsinput.min.css">
 <ul class="breadcrumbs">
@@ -13,7 +26,7 @@
 <div class="panel callout radius">
   <h1>Editing "{{.PageTitle}}"</h1>
 </div>
-<div class="panel radius">
+<div class="panel radius mainwiki">
   <form action="/{{.Filename}}/save" method="POST" id="savewiki">
   Title:<input type="text" name="title" value="{{.Title}}"><br>
   Tags:<input type="text" name="tags" id="tags" value="{{.Tags}}"><br>
