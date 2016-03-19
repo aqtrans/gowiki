@@ -535,13 +535,13 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 // As well as the date
 // > git log -1 --format=%at [commit sha1]
 // TODO: need to find a way to detect sha1s
-func viewCommitHandler(w http.ResponseWriter, r *http.Request) {
+func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 	var fm frontmatter
 	var priv bool
 	var pagetitle string    
 	vars := mux.Vars(r)
 	name := vars["name"]
-	commit := vars["commit"]
+	//commit := vars["commit"]
 
 	p, err := loadPage(r)
 	if err != nil {
@@ -836,7 +836,7 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 	fullfilename := "./md/" + name
     base := filepath.Dir(fullfilename)
     
-    log.Println(base)
+    //log.Println(base)
     //log.Println(dir)
     //log.Println(filename)
 
@@ -1045,13 +1045,19 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "viewHandler")
     
     // In case I want to switch to queries some time
-    /*
+    
     log.Println(r.URL.Query())
     query := r.URL.RawQuery
     if query != "" {
       log.Println(query)
     }
-    */
+    if r.URL.Query().Get("commit") != "" {
+        commit := r.URL.Query().Get("commit")
+        log.Println(r.URL.Query().Get("commit"))
+        viewCommitHandler(w, r, commit)
+        return
+    }
+    
 
 	// Get Wiki
 	p, err := loadWikiPage(r)
@@ -1458,7 +1464,7 @@ func main() {
 	r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/edit", editHandler).Methods("GET")
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/save", saveHandler).Methods("POST")
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/history", auth.AuthMiddle(historyHandler)).Methods("GET")
-    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/{commit:[a-f0-9]{40}}", viewCommitHandler).Methods("GET") 
+    //r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/{commit:[a-f0-9]{40}}", viewCommitHandler).Methods("GET") 
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}", viewHandler).Methods("GET")
     
     
