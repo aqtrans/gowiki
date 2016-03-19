@@ -3,6 +3,19 @@
     {{ template "sidebar_nav" . }}
     {{ template "login_form" . }}
 {{ end }}
+{{ define "topnav" }}
+    <li class="divider"></li>
+    <li class="active"><a href="#">View</a></li>
+    <li><a href="/{{.Filename}}/edit">Edit</a></li>
+    <li><a href="/{{.Filename}}/history">History</a></li>    
+    <li class="has-dropdown">
+        <a href="#">Right Button Dropdown</a>
+        <ul class="dropdown">
+        <li><a href="#">First link in dropdown</a></li>
+        <li class="active"><a href="#">Active link in dropdown</a></li>
+        </ul>
+    </li>
+{{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/diff2html.min.css">
 <ul class="breadcrumbs">
@@ -28,7 +41,7 @@
   <li class="tab-title active"><a href="#panel1">File at Commit</a></li>
   <li class="tab-title"><a href="#panel2">Commit Diff</a></li>
 </ul>
-    <div class="tabs-content">
+    <div class="tabs-content panel radius mainwiki">
         <div class="content active" id="panel1">
             <div class="small-10 columns panel">
               {{.wiki.Rendered | safeHTML}}
