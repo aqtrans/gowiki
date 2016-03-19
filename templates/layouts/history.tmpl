@@ -3,6 +3,19 @@
     {{ template "sidebar_nav" . }}
     {{ template "login_form" . }}
 {{ end }}
+{{ define "topnav" }}
+    <li class="divider"></li>
+    <li><a href="/{{.Filename}}">View</a></li>
+    <li><a href="/{{.Filename}}/edit">Edit</a></li>
+    <li class="active"><a href="#">History</a></li>    
+    <li class="has-dropdown">
+        <a href="#">Right Button Dropdown</a>
+        <ul class="dropdown">
+        <li><a href="#">First link in dropdown</a></li>
+        <li class="active"><a href="#">Active link in dropdown</a></li>
+        </ul>
+    </li>
+{{ end }}
 {{ define "content" }}
 <ul class="breadcrumbs">
   <li><a href="/{{.Filename}}">{{ .Filename }}</a></li>
@@ -12,7 +25,7 @@
 <div class="panel callout radius">
   <h1>History of {{ .Filename }}</h1>
 </div>
-<div class="panel radius">
+<div class="panel radius mainwiki">
 <table>
   <thead>
     <tr>
@@ -24,10 +37,11 @@
   <tbody>
     {{range .FileHistory}}
     <tr>
-        <td><a href="/{{.Filename}}/{{.Commit}}">{{.Commit}}</a></td>
+        <td><a href="/{{.Filename}}?commit={{.Commit}}">{{.Commit}}</a></td>
         <td>{{ .Date|prettyDate }}</td>
         <td>{{ .Message }}</td>
     </tr>  
     {{ end }}
+    </table>
 </div>
 {{ end }}
