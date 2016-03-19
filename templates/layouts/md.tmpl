@@ -3,26 +3,34 @@
     {{ template "sidebar_nav" . }}
     {{ template "login_form" . }}
 {{ end }}
+{{ define "topnav" }}
+    <li class="divider"></li>
+    <li class="active"><a href="#">View</a></li>
+    <li><a href="/{{.Filename}}/edit">Edit</a></li>
+    <li><a href="/{{.Filename}}/history">History</a></li>    
+    <li class="has-dropdown">
+        <a href="#">Right Button Dropdown</a>
+        <ul class="dropdown">
+        <li><a href="#">First link in dropdown</a></li>
+        <li class="active"><a href="#">Active link in dropdown</a></li>
+        </ul>
+    </li>
+{{ end }}
 {{ define "content" }}
 <ul class="breadcrumbs">
   <li class="current"><a href="/{{.Filename}}">{{ .PageTitle }}</a></li>
   <li><a href="/{{.Filename}}/edit">Edit</a></li>
   <li><a href="/{{.Filename}}/history">History</a></li>
 </ul>
-<div class="row wikicontent">
-    <div class="small-6 columns panel callout radius">
-      <h1>{{.PageTitle}}</h1>
-    </div>
-    <div class="small-3 columns panel radius" id="frontmatter">
-        <span class="label">Filename: {{ .Filename }}</span><br>
-        <span class="label">Created: {{ .CreateTime | prettyDate }}</span><br>
-        <span class="label">Last Modified: {{ .ModTime | prettyDate }}</span><br>
-        <span class="label">Tags: {{ .frontmatter.Tags }}</span>
-        <span class="label">Private: {{ .IsPrivate }}</span>
-    </div>    
+<div class="panel callout radius">
+  <h1>{{.PageTitle}}</h1>
 </div>
 <div class="row wikicontent">
-    <div class="small-10 columns panel">
+    <div class="small-10 columns panel radius mainwiki">
+    Filename:<span class="info label">{{ .Filename }}</span> Private:<span class="info label">{{ .IsPrivate }}</span><br>
+    Created:<span class="info label">{{ .CreateTime | prettyDate }}</span> Last Modified:<span class="info label">{{ .ModTime | prettyDate }}</span><br>
+    Tags:<span class="info label">{{ .frontmatter.Tags }}</span>
+    <hr>    
     {{.wiki.Rendered | safeHTML}}
     </div>
 </div>
