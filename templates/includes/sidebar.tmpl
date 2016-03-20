@@ -1,0 +1,12 @@
+{{ define "sidebar" }}
+<article class="card stack">
+<a class="stack button" href="/">Home</a>
+<a class="stack button" href="/list">List</a>
+</article>
+<span class="label success"><h2>Favorites:</h2></span>
+<article class="card stack">
+{{range .page.Cats}}
+<a class="stack button catbutton" href="/{{.}}">{{.}}</a>
+{{end}}
+</article>
+{{ end }}
