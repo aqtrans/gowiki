@@ -26,7 +26,7 @@ import (
 	"errors"
 	"flag"
 	"fmt" 
-	"bufio"
+	//"bufio"
 	//"github.com/golang-commonmark/markdown"
     "github.com/russross/blackfriday"
 	"github.com/gorilla/mux"
@@ -118,6 +118,7 @@ var (
 	fInit     bool
 	cfg       = configuration{}
 	gitPath   string
+    favbuf      bytes.Buffer
     //sessID   string
 )
 
@@ -827,13 +828,177 @@ type Wiki struct {
 }*/
 /////////////////////////////
 func loadWikiPage(r *http.Request) (*wikiPage, error) {
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+    
+    return loadWikiPageHelper(r, name)
+}
+
+
+
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	defer utils.TimeTrack(time.Now(), "indexHandler")
+    
+    name := "index"
+    
+    // In case I want to switch to queries some time
+    
+    log.Println(r.URL.Query())
+    query := r.URL.RawQuery
+    if query != "" {
+      log.Println(query)
+    }
+    if r.URL.Query().Get("commit") != "" {
+        commit := r.URL.Query().Get("commit")
+        log.Println(r.URL.Query().Get("commit"))
+        viewCommitHandler(w, r, commit)
+        return
+    }
+    
+
+	// Get Wiki
+	p, err := loadWikiPageHelper(r, name)
+	if err != nil {
+		//log.Println(err.Error())
+		http.NotFound(w, r)
+		return
+	}
+	err = renderTemplate(w, "md.tmpl", p)
+	if err != nil {
+		log.Fatalln(err)
+	}    
+    /*
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//log.Println(p)
+	ctime, err := gitGetCtime("index")
+	if err != nil {
+		log.Panicln(err)
+	}
+	mtime, err := gitGetMtime("index")
+	if err != nil {
+		log.Panicln(err)
+	}
+	wp := &wikiPage{
+		p,
+		"Index",
+		"index",
+		&frontmatter{},
+		&wiki{},
+		false,
+		ctime,
+		mtime,
+	}
+
+	err = renderTemplate(w, "index.tmpl", wp)
+	if err != nil {
+		log.Fatalln(err)
+	}*/
+
+	/*
+			defer timeTrack(time.Now(), "indexHandler")
+			var fm frontmatter
+			var priv bool
+			var pagetitle string
+			filename := "index.md"
+		    fullfilename := "./" + filename
+		    body, err := ioutil.ReadFile(fullfilename)
+		    if err != nil {
+				log.Fatalln(err)
+		    }
+			// Read YAML frontmatter into fm
+			content, err := readFront(body, &fm)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			p, err := loadPage(r)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			// Render remaining content after frontmatter
+			md := markdownRender(content)
+			//log.Println(md)
+			if fm.Title != "" {
+				pagetitle = fm.Title
+			} else {
+				pagetitle = filename
+			}
+			wp := &wikiPage{
+				p,
+				pagetitle,
+				filename,
+				&fm,
+				&wiki{
+		            Rendered: md,
+					Content: string(content),
+				},
+				priv,
+			}
+			// FIXME: Fetch create date, frontmatter, etc
+			err = renderTemplate(w, "md.tmpl", wp)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			//log.Println("Index rendered!")
+	*/
+}
+
+func viewHandler(w http.ResponseWriter, r *http.Request) {
+	defer utils.TimeTrack(time.Now(), "viewHandler")
+    
+    // In case I want to switch to queries some time
+    
+    log.Println(r.URL.Query())
+    query := r.URL.RawQuery
+    if query != "" {
+      log.Println(query)
+    }
+    if r.URL.Query().Get("commit") != "" {
+        commit := r.URL.Query().Get("commit")
+        log.Println(r.URL.Query().Get("commit"))
+        viewCommitHandler(w, r, commit)
+        return
+    }
+    
+
+	// Get Wiki
+	p, err := loadWikiPage(r)
+	if err != nil {
+		if err.Error() == "No such dir index" {
+			log.Println("No such dir index...creating one.")
+			http.Redirect(w, r, p.Filename+"/edit", 302)
+			return
+		} else if err.Error() == "No such file" {
+			log.Println("No such file...creating one.")
+			http.Redirect(w, r, p.Filename+"/edit", 302)
+			return
+        } else if err.Error() == "Base is not dir" {
+            log.Println("Cannot create subdir of a file.")
+            http.Error(w, "Cannot create subdir of a file.", 500)
+            return
+		} else {
+			log.Fatalln(err)
+		}
+		//log.Println(err.Error())
+		http.NotFound(w, r)
+		return
+	}
+	err = renderTemplate(w, "md.tmpl", p)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//log.Println(p.Title + " Page rendered!")
+}
+
+func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	var fm frontmatter
 	var priv bool
 	var pagetitle string
 	var body []byte
-	vars := mux.Vars(r)
-	name := vars["name"]
-    
+        
 	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
@@ -968,132 +1133,7 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 		ctime,
 		mtime,
 	}
-	return wp, nil
-}
-
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	//log.Println(p)
-	ctime, err := gitGetCtime("index")
-	if err != nil {
-		log.Panicln(err)
-	}
-	mtime, err := gitGetMtime("index")
-	if err != nil {
-		log.Panicln(err)
-	}
-	wp := &wikiPage{
-		p,
-		"Index",
-		"index",
-		&frontmatter{},
-		&wiki{},
-		false,
-		ctime,
-		mtime,
-	}
-
-	err = renderTemplate(w, "index.tmpl", wp)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	/*
-			defer timeTrack(time.Now(), "indexHandler")
-			var fm frontmatter
-			var priv bool
-			var pagetitle string
-			filename := "index.md"
-		    fullfilename := "./" + filename
-		    body, err := ioutil.ReadFile(fullfilename)
-		    if err != nil {
-				log.Fatalln(err)
-		    }
-			// Read YAML frontmatter into fm
-			content, err := readFront(body, &fm)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			p, err := loadPage(r)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			// Render remaining content after frontmatter
-			md := markdownRender(content)
-			//log.Println(md)
-			if fm.Title != "" {
-				pagetitle = fm.Title
-			} else {
-				pagetitle = filename
-			}
-			wp := &wikiPage{
-				p,
-				pagetitle,
-				filename,
-				&fm,
-				&wiki{
-		            Rendered: md,
-					Content: string(content),
-				},
-				priv,
-			}
-			// FIXME: Fetch create date, frontmatter, etc
-			err = renderTemplate(w, "md.tmpl", wp)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			//log.Println("Index rendered!")
-	*/
-}
-
-func viewHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "viewHandler")
-    
-    // In case I want to switch to queries some time
-    
-    log.Println(r.URL.Query())
-    query := r.URL.RawQuery
-    if query != "" {
-      log.Println(query)
-    }
-    if r.URL.Query().Get("commit") != "" {
-        commit := r.URL.Query().Get("commit")
-        log.Println(r.URL.Query().Get("commit"))
-        viewCommitHandler(w, r, commit)
-        return
-    }
-    
-
-	// Get Wiki
-	p, err := loadWikiPage(r)
-	if err != nil {
-		if err.Error() == "No such dir index" {
-			log.Println("No such dir index...creating one.")
-			http.Redirect(w, r, p.Filename+"/edit", 302)
-			return
-		} else if err.Error() == "No such file" {
-			log.Println("No such file...creating one.")
-			http.Redirect(w, r, p.Filename+"/edit", 302)
-			return
-        } else if err.Error() == "Base is not dir" {
-            log.Println("Cannot create subdir of a file.")
-            http.Error(w, "Cannot create subdir of a file.", 500)
-            return
-		} else {
-			log.Fatalln(err)
-		}
-		//log.Println(err.Error())
-		http.NotFound(w, r)
-		return
-	}
-	err = renderTemplate(w, "md.tmpl", p)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	//log.Println(p.Title + " Page rendered!")
+	return wp, nil    
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
@@ -1131,25 +1171,31 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	// Check for and install required YAML frontmatter
 	title := r.FormValue("title")
 	tags := r.FormValue("tags")
+    favorite := r.FormValue("favorite")
     
-	// If title or tags aren't empty, declare a buffer
-	//  And load the YAML+body into it, then override body
-	if title != "" || tags != "" {
-		var buffer bytes.Buffer
-		buffer.WriteString("---\n")
-		if title == "" {
-			title = name
-		}
-		buffer.WriteString("title: " + title)
-		buffer.WriteString("\n")
-		if tags != "" {
-			buffer.WriteString("tags: " + tags)
-			buffer.WriteString("\n")
-		}
-		buffer.WriteString("---\n")
-		buffer.WriteString(body)
-		body = buffer.String()
-	}
+    fav := false
+    
+    if favorite == "on" {
+        fav = true
+    }
+
+    if title == "" {
+        title = name
+    }
+        
+    var buffer bytes.Buffer
+    buffer.WriteString("---\n")
+    buffer.WriteString("title: " + title)
+    buffer.WriteString("\n")
+    if tags != "" {
+        buffer.WriteString("tags: " + tags)
+        buffer.WriteString("\n")
+    }
+    buffer.WriteString("favorite: " + strconv.FormatBool(fav))
+    buffer.WriteString("\n")
+    buffer.WriteString("---\n")
+    buffer.WriteString(body)
+    body = buffer.String()
 
 	rp := &rawPage{
 		name,
@@ -1164,6 +1210,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
     // Crawl for new favorites only on startup and save
+    favbuf.Reset()
     err = filepath.Walk("./md", readFavs)
     if err != nil {
         log.Fatal(err)
@@ -1184,13 +1231,9 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// readFavs should read and populate the favs file, for showing on the sidebar
+// readFavs should read and populate favbuf, in memory
 func readFavs(path string, info os.FileInfo, err error) error {
     defer utils.TimeTrack(time.Now(), "readFavs")
-    if err != nil {
-        log.Print(err)
-        return nil
-    }
     
     if info.IsDir() {
         dir := filepath.Base(path)
@@ -1205,40 +1248,12 @@ func readFavs(path string, info os.FileInfo, err error) error {
         log.Print(err)
         return nil
     }
-
-    if _, err := os.Stat("./md/favs"); os.IsNotExist(err) {
-        log.Println("favs file doesn't exist. creating it.")
-        ioutil.WriteFile("./md/favs", []byte(""), 0755)
-    }
     
     name := info.Name()
     
-    
     // Read all files in given path, check for favorite: true tag
     if bytes.Contains(read, []byte("favorite: true")) {
-        favs, err := os.Open("./md/favs")
-        if err != nil {
-            log.Print(err)
-            return nil
-        }
-        defer favs.Close()
-        
-        scanner := bufio.NewScanner(favs)
-        for scanner.Scan() {
-            line := scanner.Text()
-            if strings.Contains(line, name) {
-                log.Println(info.Name() + " already exists in favs.")
-                return nil
-            }
-        }
-        _, err = favs.WriteString(name+"\n")
-        if err != nil {
-            log.Println(err)
-        }
-        //favss += name 
-        //ioutil.WriteFile("./md/favs", []byte(favss), 0755)
-        log.Println(info.Name() + " added to favs")
-        return nil
+        favbuf.WriteString(name+" ")
     }
     return nil
 }
@@ -1246,13 +1261,13 @@ func readFavs(path string, info os.FileInfo, err error) error {
 func favsHandler(favs chan []string) {
     defer utils.TimeTrack(time.Now(), "favsHandler")
 
-	rawfavs, err := ioutil.ReadFile("./md/favs")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	sfavs := strings.Split(strings.TrimSpace(string(rawfavs)), "\n")
-	//log.Printf("%s", strings.TrimSpace(string(rawfavs)))
-	//log.Println(sfavs)
+    favss := favbuf.String()
+    utils.Debugln("Favorites: " + favss)
+    
+    //sfavs := strings.Split(strings.TrimSpace(favss), ",")
+    sfavs := strings.Fields(favss)
+    //log.Println(sfavs)
+    
 	favs <- sfavs
 }
 
@@ -1288,67 +1303,6 @@ func (wiki *rawPage) save() error {
 
 	gitfilename := dir + filename
 
-	// Now using libgit2
-	/*
-		// Filename relative to git dir, now ./md/
-		gitfilename := dir + filename
-
-		signature := &git.Signature{
-			Name: "golang git wiki",
-			Email: "server@jba.io",
-			When: time.Now(),
-		}
-
-		repo, err := git.OpenRepository("./md")
-		if err != nil {
-			return err
-		}
-		defer repo.Free()
-
-		index, err := repo.Index()
-		if err != nil {
-			return err
-		}
-		defer index.Free()
-
-		err = index.AddByPath(gitfilename)
-		if err != nil {
-			return err
-		}
-
-		treeID, err := index.WriteTree()
-		if err != nil {
-			return err
-		}
-
-		err = index.Write()
-		if err != nil {
-			return err
-		}
-
-		tree, err := repo.LookupTree(treeID)
-		if err != nil {
-			return err
-		}
-
-		message := "Wiki commit. Filename: " + fullfilename
-
-		currentBranch, err := repo.Head()
-		if err == nil && currentBranch != nil {
-			currentTip, err2 := repo.LookupCommit(currentBranch.Target())
-			if err2 != nil {
-				return err2
-			}
-			_, err = repo.CreateCommit("HEAD", signature, signature, message, tree, currentTip)
-		} else {
-			_, err = repo.CreateCommit("HEAD", signature, signature, message, tree)
-		}
-
-		if err != nil {
-			return err
-		}
-	*/
-
 	err := gitAddFilepath(gitfilename)
 	if err != nil {
 		return err
@@ -1363,75 +1317,6 @@ func (wiki *rawPage) save() error {
 	log.Println(fullfilename + " has been saved.")
 	return nil
 }
-
-// Following functions unnecessary until I implement file uploading myself
-// This was for woofmark file uploading
-/*
-func WriteFJ(w http.ResponseWriter, name string, success bool) error {
-	j := jsonfresponse{
-		Href: "./uploads/"+name,
-		Name:    name,
-	}
-	json, err := makeJSON(w, j)
-	if err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	if !success {
-		w.WriteHeader(400)
-		w.Write(json)
-		return nil
-	}
-	w.WriteHeader(200)
-	w.Write(json)
-	Debugln(string(json))
-	return nil
-}
-
-func uploadFile(w http.ResponseWriter, r *http.Request) {
-	//vars := mux.Vars(r)
-	//name := vars["name"]
-	//contentLength := r.ContentLength
-	//var reader io.Reader
-	var f io.WriteCloser
-	//var err error
-	var filename string
-	//var cli bool
-	//var remote bool
-	//var uptype string
-	//fi := &File{}
-	path := "./uploads/"
-	contentType := r.Header.Get("Content-Type")
-
-	log.Println("Content-type is "+contentType)
-	err := r.ParseMultipartForm(_24K)
-	if err != nil {
-		log.Println("ParseMultiform reader error")
-		log.Println(err)
-		WriteFJ(w, "", false)
-		return
-	}
-	file, handler, err := r.FormFile("woofmark_upload")
-	filename = handler.Filename
-	defer file.Close()
-	if err != nil {
-		fmt.Println(err)
-		WriteFJ(w, "", false)
-	}
-
-	f, err = os.OpenFile(filepath.Join(path, filename), os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		fmt.Println(err)
-		WriteFJ(w, "", false)
-		return
-	}
-	defer f.Close()
-	io.Copy(f, file)
-
-	WriteFJ(w, filename, true)
-
-}
-*/
 
 func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "loginPageHandler")

@@ -6,9 +6,9 @@
     <h1>Editing "{{.PageTitle}}"</h1>
   </header>
   <footer>
-    <a href="/{{.Filename}}" class="pseudo button">View</a>
-    <a href="#" class="button">Edit</a>
-    <a href="/{{.Filename}}/history" class="pseudo button">History</a>  
+    <a href="/{{.Filename}}" class="pseudo button wikibutton"><i class="material-icons">visibility</i>View</a>
+    <a href="#" class="button wikibutton"><i class="material-icons">edit</i>Edit</a>
+    <a href="/{{.Filename}}/history" class="pseudo button wikibutton"><i class="material-icons">history</i>History</a>  
   </footer>    
 </article>
 
@@ -16,6 +16,12 @@
   <header>
     <form action="/{{.Filename}}/save" method="POST" id="savewiki">
     Title:<input type="text" name="title" value="{{.Title}}"><br>
+    {{ if .Favorite }}
+        <label><input type="checkbox" name="favorite" checked><span class="checkable">Favorite</span></label>
+    {{ else }}
+        <label><input type="checkbox" name="favorite"><span class="checkable">Favorite</span></label>
+    {{ end }}
+    <br>
     Tags:<input type="text" name="tags" id="tags" value="{{.Tags}}"><br>
     <input type="hidden" name="token" value="{{.Token}}">
     <h5>Note: private tag=private page.</h5>
