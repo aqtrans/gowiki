@@ -1,15 +1,15 @@
 {{ define "title" }}<title>{{.page.SiteName}}|Editing {{ .PageTitle }}</title>{{ end }}
-{{ define "topnav" }}
-    <a href="#" class="pseudo button">View</a>
-    <a href="/{{.Filename}}/edit" class="button">Edit</a>
-    <a href="/{{.Filename}}/history" class="pseudo button">History</a>
-{{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/jquery.tagsinput.min.css">
 <article class="card">
   <header>
-  <h1>Editing "{{.PageTitle}}"</h1>
+    <h1>Editing "{{.PageTitle}}"</h1>
   </header>
+  <footer>
+    <a href="/{{.Filename}}" class="pseudo button">View</a>
+    <a href="#" class="button">Edit</a>
+    <a href="/{{.Filename}}/history" class="pseudo button">History</a>  
+  </footer>    
 </article>
 
 <article class="card">

@@ -6,6 +6,7 @@
 
 #primary {
   padding-top: 3.5em;
+  width: 100%;
 }
 
 .mainwiki
@@ -23,34 +24,29 @@ nav .mainmenu
 {
 	float:left;
 	position:relative;
-	top:50%;
-	transform:translateY(-50%)
 }
 
-nav .searchmenu
+#navmenu {
+    white-space: nowrap;
+}
+
+nav .newmenu
 {
     white-space: nowrap;
 	float:left;
 	position:relative;
-	top:50%;
     padding-right: 8rem;
-	transform:translateY(-50%)
+    max-width: 20rem;
 }
 
 nav .usermenu
 {
-	float:left;
+	float:right;
 	position:relative;
-	top:50%;
-	transform:translateY(-50%)
 }
 
 #wikieditor {
     min-height: 20rem;
-}
-
-.primary {
-    width: 100%;
 }
 
 .navcard {
@@ -62,6 +58,10 @@ nav .usermenu
 .stack:last-child, .stack:last-child .toggle {
     border-bottom-left-radius: .2em;
     border-bottom-right-radius: .2em;
+}
+
+.wikibutton {
+    font-size: 0.8rem;
 }
 
 .catbutton,
