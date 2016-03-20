@@ -21,22 +21,19 @@
     </a>
     <input id="bmenub" type="checkbox" class="show">
     <label for="bmenub" class="burger pseudo button">menu</label>
-    <div class="mainmenu">
-        <a href="#" class="pseudo button">Demo</a>
-        <a href="#" class="pseudo button">Plugins</a>
-    </div>
-    <div class="searchmenu">
+    <div class="menu" id="navmenu">
+        <div class="mainmenu">
+            <a href="#" class="pseudo button">Demo</a>
+            <a href="#" class="pseudo button">Plugins</a>
+            {{ template "usernav" .}}
+        </div>    
+        <div class="newmenu">
             <form method="post" action="/new" id="newwiki">
-            <label><i class="material-icons">note_add</i></label>
-            <input type="text" placeholder="New wiki page..." id="newwiki" name="newwiki">
-            <button type="submit">Go!</button>   
-        </form>
-    </div>
-    <div class="usermenu">
-        {{ template "usernav" .}}
-    </div>    
-    <div class="menu">
-        {{ template "topnav" .}}
+                <label><i class="material-icons">note_add</i></label>
+                <input type="text" placeholder="New wiki page..." id="newwiki" name="newwiki">
+                <button type="submit">Go!</button>   
+            </form>
+        </div>
     </div>    
 </nav>
 
@@ -108,5 +105,4 @@
 </body>
 </html>
 {{ end }}
-{{ define "topnav" }}{{ end }}
 {{ define "extra_scripts" }}{{ end }}

@@ -1,14 +1,14 @@
 {{ define "title" }}<title>{{.page.SiteName}}|{{ .PageTitle }}</title>{{ end }}
-{{ define "topnav" }}
-    <a href="#" class="button">View</a>
-    <a href="/{{.Filename}}/edit" class="pseudo button">Edit</a>
-    <a href="/{{.Filename}}/history" class="pseudo button">History</a>
-{{ end }}
 {{ define "content" }}
 <article class="card">
   <header>
-    <h1>{{.PageTitle}}</h1>
+    <h1>{{.PageTitle}}</h1>    
   </header>
+  <footer>
+    <a href="#" class="button">View</a>
+    <a href="/{{.Filename}}/edit" class="pseudo button">Edit</a>
+    <a href="/{{.Filename}}/history" class="pseudo button">History</a>
+  </footer>    
 </article>
 
 <article class="card">
