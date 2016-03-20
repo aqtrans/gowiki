@@ -1,43 +1,35 @@
 {{ define "title" }}<title>{{.page.SiteName}}|History of {{ .Filename }}</title>{{ end }}
-{{ define "topnav" }}
-    <li class="divider"></li>
-    <li><a href="/{{.Filename}}">View</a></li>
-    <li><a href="/{{.Filename}}/edit">Edit</a></li>
-    <li class="active"><a href="#">History</a></li>    
-    <li class="has-dropdown">
-        <a href="#">Right Button Dropdown</a>
-        <ul class="dropdown">
-        <li><a href="#">First link in dropdown</a></li>
-        <li class="active"><a href="#">Active link in dropdown</a></li>
-        </ul>
-    </li>
-{{ end }}
 {{ define "content" }}
-<ul class="breadcrumbs">
-  <li><a href="/{{.Filename}}">{{ .Filename }}</a></li>
-  <li><a href="/{{.Filename}}/edit">Edit</a></li>
-  <li class="current"><a href="/{{.Filename}}/history">History</a></li>
-</ul>
-<div class="panel callout radius">
-  <h1>History of {{ .Filename }}</h1>
-</div>
-<div class="panel radius mainwiki">
-<table>
-  <thead>
-    <tr>
-      <th width="200">Link</th>
-      <th width="250">Date</th>
-      <th>Message</th>
-    </tr>
-  </thead>
-  <tbody>
-    {{range .FileHistory}}
-    <tr>
-        <td><a href="/{{.Filename}}?commit={{.Commit}}">{{.Commit}}</a></td>
-        <td>{{ .Date|prettyDate }}</td>
-        <td>{{ .Message }}</td>
-    </tr>  
-    {{ end }}
+<article class="card">
+  <header>
+    <h1>History of {{ .Filename }}</h1>    
+  </header>
+  <footer>
+    <a href="/{{.Filename}}" class="pseudo button">View</a>
+    <a href="/{{.Filename}}/edit" class="pseudo button">Edit</a>
+    <a href="#" class="button">History</a>
+  </footer>  
+</article>
+
+<article class="card">
+  <footer>
+    <table>
+    <thead>
+        <tr>
+        <th width="200">Link</th>
+        <th width="250">Date</th>
+        <th>Message</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .FileHistory}}
+        <tr>
+            <td><a href="/{{.Filename}}?commit={{.Commit}}">{{.Commit}}</a></td>
+            <td>{{ .Date|prettyDate }}</td>
+            <td>{{ .Message }}</td>
+        </tr>  
+        {{ end }}
     </table>
-</div>
+  </footer>
+</article>
 {{ end }}
