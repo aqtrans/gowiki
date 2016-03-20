@@ -3,11 +3,6 @@
 	"ignore": "test",
 	"package": [
 		{
-			"path": "github.com/gorilla/context",
-			"revision": "215affda49addc4c8ef7e2534915df2c8c35c6cd",
-			"revisionTime": "2014-12-17T08:02:51-08:00"
-		},
-		{
 			"path": "github.com/gorilla/handlers",
 			"revision": "8f2758070a82adb7a3ad6b223a0b91878f32d400",
 			"revisionTime": "2016-01-15T11:23:37-08:00"
@@ -18,29 +13,9 @@
 			"revisionTime": "2014-09-26T08:38:14-07:00"
 		},
 		{
-			"path": "github.com/gorilla/securecookie",
-			"revision": "e95799a481bbcc3d01c2ad5178524cb8bec9f370",
-			"revisionTime": "2015-08-20T16:29:58+08:00"
-		},
-		{
-			"path": "github.com/gorilla/sessions",
-			"revision": "aa5e036e6c44aec69a32eb41097001978b29ad31",
-			"revisionTime": "2014-06-13T12:43:57-07:00"
-		},
-		{
 			"path": "github.com/justinas/alice",
 			"revision": "f4d49920e0f2bd6aa717fccd6cfae564ce09a697",
 			"revisionTime": "2015-04-15T13:18:04+03:00"
-		},
-		{
-			"path": "github.com/mavricknz/asn1-ber",
-			"revision": "ce3c3d1d8e4190a390fc72f551222783cbd6e55a",
-			"revisionTime": "2014-11-06T21:01:22Z"
-		},
-		{
-			"path": "github.com/mavricknz/ldap",
-			"revision": "6638977d26a6bc5ac0d2a9a5dcbefe02c456ea38",
-			"revisionTime": "2014-12-06T17:11:34Z"
 		},
 		{
 			"path": "github.com/oxtoacart/bpool",
