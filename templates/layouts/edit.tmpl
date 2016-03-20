@@ -1,46 +1,49 @@
 {{ define "title" }}<title>{{.page.SiteName}}|Editing {{ .PageTitle }}</title>{{ end }}
-{{ define "sidebar" }}
-    {{ template "sidebar_nav" . }}
-    {{ template "login_form" . }}
-{{ end }}
 {{ define "topnav" }}
-    <li class="divider"></li>
-    <li><a href="/{{.Filename}}">View</a></li>
-    <li class="active"><a href="#">Edit</a></li>
-    <li><a href="/{{.Filename}}/history">History</a></li>    
-    <li class="has-dropdown">
-        <a href="#">Right Button Dropdown</a>
-        <ul class="dropdown">
-        <li><a href="#">First link in dropdown</a></li>
-        <li class="active"><a href="#">Active link in dropdown</a></li>
-        </ul>
-    </li>
+    <a href="#" class="pseudo button">View</a>
+    <a href="/{{.Filename}}/edit" class="button">Edit</a>
+    <a href="/{{.Filename}}/history" class="pseudo button">History</a>
 {{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/jquery.tagsinput.min.css">
-<ul class="breadcrumbs">
-  <li><a href="/{{.Filename}}">{{ .PageTitle }}</a></li>
-  <li class="current"><a href="/{{.Filename}}/edit">Edit</a></li>
-  <li><a href="/{{.Filename}}/history">History</a></li>
-</ul>
-<div class="panel callout radius">
+<article class="card">
+  <header>
   <h1>Editing "{{.PageTitle}}"</h1>
-</div>
-<div class="panel radius mainwiki">
-  <form action="/{{.Filename}}/save" method="POST" id="savewiki">
-  Title:<input type="text" name="title" value="{{.Title}}"><br>
-  Tags:<input type="text" name="tags" id="tags" value="{{.Tags}}"><br>
-  <input type="hidden" name="token" value="{{.Token}}">
-  <h5>Note: private tag=private page.</h5>
-  <textarea name="editor"></textarea>
-  <input type="submit" class="button success" value="Submit">
-  <a href="#" data-reveal-id="previewModal" class="button">Preview</a>
-  </form>
-</div>
-<div id="previewModal" class="reveal-modal" data-reveal aria-labelledby="modalTitle" aria-hidden="true" role="dialog">
-  <h2 id="modalTitle">{{.PageTitle }} - Preview</h2>
-  <div id="preview" class="panel callout"></div>
-  <a class="close-reveal-modal" aria-label="Close">&#215;</a>
+  </header>
+</article>
+
+<article class="card">
+  <header>
+    <form action="/{{.Filename}}/save" method="POST" id="savewiki">
+    Title:<input type="text" name="title" value="{{.Title}}"><br>
+    Tags:<input type="text" name="tags" id="tags" value="{{.Tags}}"><br>
+    <input type="hidden" name="token" value="{{.Token}}">
+    <h5>Note: private tag=private page.</h5>
+  </header>
+  <footer>  
+    <textarea name="editor" id="wikieditor"></textarea>
+    <input type="submit" class="button success" value="Submit">
+    <label for="preview_modal" id="preview" class="button">Preview</label>
+    </form>
+  </footer>
+</article>
+
+<div class="modal">
+  <input id="preview_modal" type="checkbox" />
+  <label for="preview_modal" class="overlay"></label>
+    <article id="alerts">
+        <header>
+        <h3>{{.PageTitle }} - Preview</h3>
+        <label for="preview_modal" class="close">&times;</label>
+        </header>
+        <section class="content" id="preview_content">
+        </section>
+        <footer>
+        <label for="preview_modal" class="button dangerous">
+            Okay
+        </label>
+        </footer>
+    </article>
 </div>
 
 {{ end }}
@@ -61,15 +64,12 @@ var initial_text = {{printf "%s" .wiki.Content}};
 
 document.getElementsByName("editor")[0].value = initial_text;
 
-$(document).foundation(); 
-//$(document).foundation('tab', 'reflow');
-$(document).foundation('reveal', 'reflow');
 
-$(document).on('open.fndtn.reveal', '[data-reveal]', function () {
+$("#preview").on("click", function() {
     var editortxt = document.getElementsByName("editor")[0].value;
     var parsed = reader.parse(editortxt);
-    var result = writer.render(parsed);  
-    $("#preview").html(result);
+    var result = writer.render(parsed);
+    $("#preview_content").html(result);
 });
 
 </script>
