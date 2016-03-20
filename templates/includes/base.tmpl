@@ -9,58 +9,104 @@
   <meta name="description" content="Gowiki">
   <link rel="shortcut icon" type="image/png" href="/assets/favicon.png"/>
   <link rel="shortcut icon" type="image/ico" href="/assets/favicon.ico" />
-  <link rel="stylesheet" href="/assets/css/normalize.css"> 
-  <link rel="stylesheet" href="/assets/css/foundation.css"> 
-  <link rel="stylesheet" href="/assets/css/app.css">
-  <link rel="stylesheet" href="/assets/css/font-awesome.min.css">
-  <script src="/assets/js/modernizr.js"></script>
+  <link rel="stylesheet" href="/assets/css/picnic.min.css">
+  <link rel="stylesheet" href="/assets/css/my.picnic.css">
+  <link rel="stylesheet" href="/assets/material-icons/material-icons.css">
   <script src="/assets/js/jquery.js"></script>
-  <script src="/assets/js/fastclick.js"></script>
-  <script src="/assets/js/foundation.min.js"></script>
  </head>
 <body>
-<div class="sticky">
-    <nav class="top-bar" data-topbar role="navigation">
-    <ul class="title-area">
-        <li class="name">
-        <h1><a href="/">My Site</a></h1>
-        </li>
-        <!-- Remove the class "menu-icon" to get rid of menu icon. Take out "Menu" to just have icon alone -->
-        <li class="toggle-topbar menu-icon"><a href="#"><span>Menu</span></a></li>
-    </ul>
-
-    <section class="top-bar-section">
-        <!-- Right Nav Section -->
-        <ul class="right">
-        </ul>
-        <!-- Left Nav Section -->
-        <ul class="left">
-        <li><a href="#">Left Nav Button</a></li>
+<nav class="top-bar">
+    <a class="brand" href="/">
+        <span>My Site</span>
+    </a>
+    <input id="bmenub" type="checkbox" class="show">
+    <label for="bmenub" class="burger pseudo button">menu</label>
+    <div class="mainmenu">
+        <a href="#" class="pseudo button">Demo</a>
+        <a href="#" class="pseudo button">Plugins</a>
+    </div>
+    <div class="searchmenu">
+            <form method="post" action="/new" id="newwiki">
+            <label><i class="material-icons">note_add</i></label>
+            <input type="text" placeholder="New wiki page..." id="newwiki" name="newwiki">
+            <button type="submit">Go!</button>   
+        </form>
+    </div>
+    <div class="usermenu">
+        {{ template "usernav" .}}
+    </div>    
+    <div class="menu">
         {{ template "topnav" .}}
-        </ul>
-    </section>
-    </nav>
-</div>
+    </div>    
+</nav>
 
 
-<div class="row">
-  <div class="small-2 show-for-medium-up columns sidebar">
+<div class="row" id="primary">
+  <div class="sidebar">
+  <article class="card navcard">
+  <header>
       <h3><a href="/">Wiki</a></h3>
+  </header>
+  <footer>    
       {{ template "sidebar" .}}
+  </footer>
+  </article>    
   </div>
-<div class="small-10 columns body">
-  <div class="alerts"></div>
-{{ template "content" . }}
+  <div class="body">
+  {{ template "content" . }}
+  </div>
 </div>
+
+<div class="modal">
+  <input id="alert_modal" type="checkbox" />
+  <label for="alert_modal" class="overlay"></label>
+    <article id="alerts">
+        <!--<header>
+        <h3>Great offer</h3>
+        <label for="alert_modal" class="close">&times;</label>
+        </header>
+        <section class="content">
+        We have a special offer for you. I am sure you will love it! However this does look spammy...
+        </section>
+        <footer>
+        <a class="button" href="#">See offer</a>
+        <label for="alert_modal" class="button dangerous">
+            Cancel
+        </label>
+        </footer>-->
+    </article>
 </div>
+
+<div class="modal" id="login-form">
+  <input id="login_modal" type="checkbox" />
+  <label for="login_modal" class="overlay"></label>
+  <article>
+    <header>
+      <h3>Login</h3>
+      <label for="login_modal" class="close">&times;</label>
+    </header>
+    <section class="content">
+    <form method="post" action="/login" id="login">
+    <input type="text" id="username" name="username" placeholder="Username" size="12">
+    <input type="password" id="password" name="password" placeholder="Password" size="12">
+    <input type="hidden" name="token" value="{{.Token}}">
+    </section>
+    <footer>
+      <button type="submit" class="button">Login</button>
+        </form>
+      <label for="login_modal" class="button dangerous">
+        Cancel
+      </label>
+    </footer>
+  </article>
+</div>
+
 <footer>
 </footer>
-  <script type="text/javascript" charset="utf-8"> $(document).foundation(); </script>
   <script src="/assets/js/my.js"></script>
   {{ template "extra_scripts" . }}
 </body>
 </html>
 {{ end }}
 {{ define "topnav" }}{{ end }}
-{{ define "sidebar" }}{{ end }}
 {{ define "extra_scripts" }}{{ end }}

@@ -1,8 +1,4 @@
 {{ define "title" }}<title>{{.page.SiteName}}|History of {{ .Filename }}</title>{{ end }}
-{{ define "sidebar" }}
-    {{ template "sidebar_nav" . }}
-    {{ template "login_form" . }}
-{{ end }}
 {{ define "topnav" }}
     <li class="divider"></li>
     <li><a href="/{{.Filename}}">View</a></li>
