@@ -1,53 +1,46 @@
 {{ define "title" }}<title>{{.page.SiteName}}|Commit of {{ .PageTitle }}</title>{{ end }}
-{{ define "topnav" }}
-    <li class="divider"></li>
-    <li class="active"><a href="#">View</a></li>
-    <li><a href="/{{.Filename}}/edit">Edit</a></li>
-    <li><a href="/{{.Filename}}/history">History</a></li>    
-    <li class="has-dropdown">
-        <a href="#">Right Button Dropdown</a>
-        <ul class="dropdown">
-        <li><a href="#">First link in dropdown</a></li>
-        <li class="active"><a href="#">Active link in dropdown</a></li>
-        </ul>
-    </li>
-{{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/diff2html.min.css">
-<ul class="breadcrumbs">
-  <li><a href="/{{.Filename}}">{{ .PageTitle }}</a></li>
-  <li><a href="/{{.Filename}}/edit">Edit</a></li>
-  <li><a href="/{{.Filename}}/history">History</a></li>
-  <li class="current"><a href="/{{.Filename}}/{{.Commit}}">{{ .PageTitle }}@{{.Commit}}</a></li>
-</ul>
-<div class="row wikicontent">
-    <div class="small-6 columns panel callout radius">
-      <h1>Commit of {{.PageTitle}}</h1>
-    </div>
-    <div class="small-3 columns panel radius" id="frontmatter">
-        <span class="label">Filename: {{ .Filename }}</span><br>
-        <span class="label">Created: {{ .CreateTime | prettyDate }}</span><br>
-        <span class="label">Last Modified: {{ .ModTime | prettyDate }}</span><br>
-        <span class="label">Tags: {{ .frontmatter.Tags }}</span>
-        <span class="label">Private: {{ .IsPrivate }}</span>
-    </div>    
-</div>
-<div class="row wikicontent">
-<ul class="tabs" data-tab>
-  <li class="tab-title active"><a href="#panel1">File at Commit</a></li>
-  <li class="tab-title"><a href="#panel2">Commit Diff</a></li>
-</ul>
-    <div class="tabs-content panel radius mainwiki">
-        <div class="content active" id="panel1">
-            <div class="small-10 columns panel">
-              {{.wiki.Rendered | safeHTML}}
-            </div>
+<article class="card">
+  <header>
+    <h1>{{.PageTitle}}@{{.Commit}}</h1>
+  </header>
+  <footer>
+    <a href="/{{.Filename}}" class="pseudo button wikibutton"><i class="material-icons">visibility</i></a>
+    <a href="/{{.Filename}}/edit" class="pseudo button wikibutton"><i class="material-icons">edit</i></a>
+    <a href="/{{.Filename}}/history" class="pseudo button wikibutton"><i class="material-icons">history</i></a>
+    <a href="#" class="button wikibutton"><i class="material-icons">undo</i></a>
+  </footer>  
+</article>
+
+<article class="card">
+  <header>
+    <p>Filename:<span class="info label">{{ .Filename }}</span> Private:<span class="info label">{{ .IsPrivate }}</span> 
+    Tags:<span class="info label">{{ .frontmatter.Tags }}</span></p>
+    <p>Created:<span class="info label">{{ .CreateTime | prettyDate }}</span> Last Modified:<span class="info label">{{ .ModTime | prettyDate }}</span></p>    
+  </header>
+  <footer>
+    <div class="tabs two">
+    <input id='tab-1' type='radio' name='tabgroupB' checked />
+    <label class="pseudo button toggle" for="tab-1">File at Commit</label>
+    <input id='tab-2' type='radio' name='tabgroupB'>
+    <label class="pseudo button toggle" for="tab-2">Commit Diff</label>
+    <div class="row">
+        <div>
+        <article class="card">
+        {{.wiki.Rendered | safeHTML}}
+        </article>
         </div>
-        <div class="content" id="panel2">
-            <div class="small-10 columns panel" id="diff">
-              <code>{{.Diff | safeHTML}}</code>
-            </div>        
+
+        <div id="diff">
+        <article class="card">
+        <code>{{.Diff | safeHTML}}</code>
+        </article>
         </div>
     </div>
-</div>
+    </div>
+  </footer>
+</article>
+
+
 {{ end }}
