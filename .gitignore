@@ -2,5 +2,7 @@ CommonMark.Editor/*
 .DS_Store
 tmp/*
 req.log
+http.log
+wiki
 .directory
-
+auth.json
