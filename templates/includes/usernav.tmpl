@@ -1,0 +1,10 @@
+{{ define "usernav" }}
+    <i class="material-icons">person</i>
+{{ if .UN }}
+    Hello, {{ .page.UN }}
+    <a href="/logout" class="button">Logout</a>
+    <a href="/admin" class="button">admin</a>
+{{ else }}
+<label for="login_modal" class="button">Login</label>
+{{ end }} 
+{{ end }}

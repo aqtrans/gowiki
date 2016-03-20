@@ -1,0 +1,73 @@
+.sidebar
+{
+  max-width:12rem;
+  width: 12%;
+}
+
+#primary {
+  padding-top: 3.5em;
+}
+
+.mainwiki
+{
+  z-index: 20;
+  box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);
+}
+
+.top-bar {
+    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+    padding-bottom: 0.4rem;
+}
+
+nav .mainmenu
+{
+	float:left;
+	position:relative;
+	top:50%;
+	transform:translateY(-50%)
+}
+
+nav .searchmenu
+{
+    white-space: nowrap;
+	float:left;
+	position:relative;
+	top:50%;
+    padding-right: 8rem;
+	transform:translateY(-50%)
+}
+
+nav .usermenu
+{
+	float:left;
+	position:relative;
+	top:50%;
+	transform:translateY(-50%)
+}
+
+#wikieditor {
+    min-height: 20rem;
+}
+
+.primary {
+    width: 100%;
+}
+
+.navcard {
+  /*z-index: 5;
+  box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);*/
+}
+
+.stack:last-child, .stack:last-child .toggle {
+    border-bottom-left-radius: .2em;
+    border-bottom-right-radius: .2em;
+}
+
+.catbutton,
+.catbutton:hover,
+.catbutton:active,
+.catbutton:focus {
+    font-size: .75em;
+    background: #82b1ff;
+}
