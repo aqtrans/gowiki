@@ -26,7 +26,7 @@ import (
 	"errors"
 	"flag"
 	"fmt" 
-	//"bufio"
+	"bufio"
 	//"github.com/golang-commonmark/markdown"
     "github.com/russross/blackfriday"
 	"github.com/gorilla/mux"
@@ -124,7 +124,7 @@ var (
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
 type page struct {
 	SiteName string
-	Cats     []string
+	Favs     []string
 	UN       string
     Token    string
 }
@@ -132,6 +132,7 @@ type page struct {
 type frontmatter struct {
 	Title string `yaml:"title"`
 	Tags  string `yaml:"tags,omitempty"`
+    Favorite    bool `yaml:"favorite,omitempty"`
 	//	Created     int64    `yaml:"created,omitempty"`
 	//	LastModTime int64	 `yaml:"lastmodtime,omitempty"`
 }
@@ -247,6 +248,12 @@ func init() {
 	if err != nil {
 		log.Fatal("git must be installed")
 	}
+
+    // Crawl for new favorites only on startup and save
+    err = filepath.Walk("./md", readFavs)
+    if err != nil {
+        log.Fatal(err)
+    }
 
 }
 
@@ -499,13 +506,13 @@ func loadPage(r *http.Request) (*page, error) {
     //fmt.Print("User: ")
     //log.Println(user)
     
-    // Grab list of cats from channel
-	cats := make(chan []string)
-	go catsHandler(cats)
-	zcats := <-cats
+    // Grab list of favs from channel
+	favs := make(chan []string)
+	go favsHandler(favs)
+	gofavs := <-favs
     
-	//log.Println(zcats)
-	return &page{SiteName: "GoWiki", Cats: zcats, UN: user, Token: token}, nil
+	//log.Println(gofavs)
+	return &page{SiteName: "GoWiki", Favs: gofavs, UN: user, Token: token}, nil
 }
 
 func historyHandler(w http.ResponseWriter, r *http.Request) {
@@ -685,8 +692,9 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				// If file doesn't have frontmatter, add in crap
 				log.Println(file + " doesn't have frontmatter :( ")
 				fm = &frontmatter{
-					file,
-					"",
+					Title: file,
+					Tags: "",
+                    Favorite: false,
 				}
 			}
 			ctime, err := gitGetCtime(filename)
@@ -1154,6 +1162,12 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln(err)
 		return
 	}
+
+    // Crawl for new favorites only on startup and save
+    err = filepath.Walk("./md", readFavs)
+    if err != nil {
+        log.Fatal(err)
+    }    
     
     utils.WriteJ(w, name, true)
 	log.Println(name + " page saved!")
@@ -1170,15 +1184,76 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func catsHandler(cats chan []string) {
-	rawcats, err := ioutil.ReadFile("./md/cats")
+// readFavs should read and populate the favs file, for showing on the sidebar
+func readFavs(path string, info os.FileInfo, err error) error {
+    defer utils.TimeTrack(time.Now(), "readFavs")
+    if err != nil {
+        log.Print(err)
+        return nil
+    }
+    
+    if info.IsDir() {
+        dir := filepath.Base(path)
+        if dir == ".git" {
+            return filepath.SkipDir
+        }
+        return nil
+    }
+    
+    read, err := ioutil.ReadFile(path)
+    if err != nil {
+        log.Print(err)
+        return nil
+    }
+
+    if _, err := os.Stat("./md/favs"); os.IsNotExist(err) {
+        log.Println("favs file doesn't exist. creating it.")
+        ioutil.WriteFile("./md/favs", []byte(""), 0755)
+    }
+    
+    name := info.Name()
+    
+    
+    // Read all files in given path, check for favorite: true tag
+    if bytes.Contains(read, []byte("favorite: true")) {
+        favs, err := os.Open("./md/favs")
+        if err != nil {
+            log.Print(err)
+            return nil
+        }
+        defer favs.Close()
+        
+        scanner := bufio.NewScanner(favs)
+        for scanner.Scan() {
+            line := scanner.Text()
+            if strings.Contains(line, name) {
+                log.Println(info.Name() + " already exists in favs.")
+                return nil
+            }
+        }
+        _, err = favs.WriteString(name+"\n")
+        if err != nil {
+            log.Println(err)
+        }
+        //favss += name 
+        //ioutil.WriteFile("./md/favs", []byte(favss), 0755)
+        log.Println(info.Name() + " added to favs")
+        return nil
+    }
+    return nil
+}
+
+func favsHandler(favs chan []string) {
+    defer utils.TimeTrack(time.Now(), "favsHandler")
+
+	rawfavs, err := ioutil.ReadFile("./md/favs")
 	if err != nil {
 		log.Fatalln(err)
 	}
-	scats := strings.Split(strings.TrimSpace(string(rawcats)), ",")
-	//log.Printf("%s", strings.TrimSpace(string(rawcats)))
-	//log.Println(scats)
-	cats <- scats
+	sfavs := strings.Split(strings.TrimSpace(string(rawfavs)), "\n")
+	//log.Printf("%s", strings.TrimSpace(string(rawfavs)))
+	//log.Println(sfavs)
+	favs <- sfavs
 }
 
 func (wiki *rawPage) save() error {
@@ -1450,7 +1525,7 @@ func main() {
             w.Write(b)
     })
 
-	r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats") })
+	//r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats") })
 
 	//http.Handle("/s/", http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
 	//r.PathPrefix("/s/").Handler(http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
