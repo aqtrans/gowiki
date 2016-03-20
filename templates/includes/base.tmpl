@@ -38,21 +38,21 @@
 </nav>
 
 
-<div class="row" id="primary">
-  <div class="sidebar">
-  <article class="card navcard">
-  <header>
-      <h3><a href="/">Wiki</a></h3>
-  </header>
-  <footer>    
-      {{ template "sidebar" .}}
-  </footer>
-  </article>    
-  </div>
-  <div class="body">
-  {{ template "content" . }}
-  </div>
-</div>
+<main id="primary">
+  <section class="sidebar">
+    <article class="card navcard">
+    <header>
+        <h3><a href="/">Wiki</a></h3>
+    </header>
+    <footer>    
+        {{ template "sidebar" .}}
+    </footer>
+    </article>
+  </section>
+  <section class="body">
+    {{ template "content" . }}
+  </section>
+</main>
 
 <div class="modal">
   <input id="alert_modal" type="checkbox" />
