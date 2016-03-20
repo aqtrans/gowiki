@@ -106,7 +106,6 @@ type configuration struct {
 	WikiDir  string
 	MainTLD  string
 	GitRepo  string
-	AuthConf auth.AuthConf
 }
 
 var (
@@ -532,7 +531,7 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
         name,
 		history,
 	}
-	err = renderTemplate(w, "history.tmpl", hp)
+	err = renderTemplate(w, "wiki_history.tmpl", hp)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -612,7 +611,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
         commit,
 	}
     
-	err = renderTemplate(w, "md-commit.tmpl", cp)
+	err = renderTemplate(w, "wiki_commit.tmpl", cp)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -844,14 +843,14 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
     
     // In case I want to switch to queries some time
     
-    log.Println(r.URL.Query())
+    //log.Println(r.URL.Query())
     query := r.URL.RawQuery
     if query != "" {
-      log.Println(query)
+      utils.Debugln("Query string: " + query)
     }
     if r.URL.Query().Get("commit") != "" {
         commit := r.URL.Query().Get("commit")
-        log.Println(r.URL.Query().Get("commit"))
+        utils.Debugln(r.URL.Query().Get("commit"))
         viewCommitHandler(w, r, commit)
         return
     }
@@ -864,7 +863,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	err = renderTemplate(w, "md.tmpl", p)
+	err = renderTemplate(w, "wiki_view.tmpl", p)
 	if err != nil {
 		log.Fatalln(err)
 	}    
@@ -951,14 +950,13 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
     
     // In case I want to switch to queries some time
     
-    log.Println(r.URL.Query())
     query := r.URL.RawQuery
     if query != "" {
-      log.Println(query)
+      utils.Debugln(query)
     }
     if r.URL.Query().Get("commit") != "" {
         commit := r.URL.Query().Get("commit")
-        log.Println(r.URL.Query().Get("commit"))
+        utils.Debugln(r.URL.Query().Get("commit"))
         viewCommitHandler(w, r, commit)
         return
     }
@@ -986,7 +984,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	err = renderTemplate(w, "md.tmpl", p)
+	err = renderTemplate(w, "wiki_view.tmpl", p)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -1144,7 +1142,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err.Error() == "No such file" {
 			//log.Println("No such file...creating one.")
-			terr := renderTemplate(w, "edit.tmpl", p)
+			terr := renderTemplate(w, "wiki_edit.tmpl", p)
 			if terr != nil {
 				log.Fatalln(terr)
 			}
@@ -1152,7 +1150,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 			log.Fatalln(err)
 		}
 	} else {
-		terr := renderTemplate(w, "edit.tmpl", p)
+		terr := renderTemplate(w, "wiki_edit.tmpl", p)
 		if terr != nil {
 			log.Fatalln(terr)
 		}
@@ -1337,9 +1335,52 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func signupPageHandler(w http.ResponseWriter, r *http.Request) {
+	defer utils.TimeTrack(time.Now(), "signupPageHandler")
+	title := "signup"
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//p, err := loadPage(title, r)
+	gp := &genPage{
+		p,
+		title,
+	}
+	err = renderTemplate(w, "signup.tmpl", gp)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+}
+
+func adminUserHandler(w http.ResponseWriter, r *http.Request) {
+	defer utils.TimeTrack(time.Now(), "adminUserHandler")
+	title := "admin-user"
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//p, err := loadPage(title, r)
+	gp := &genPage{
+		p,
+		title,
+	}
+	err = renderTemplate(w, "admin_user.tmpl", gp)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+}
+
 // Simple wrapper in order to pass auth conf to my auth lib
 func loginPost(w http.ResponseWriter, r *http.Request) {
-	auth.LoginPostHandler(cfg.AuthConf, w, r)
+	auth.LoginPostHandler(auth.Authcfg, w, r)
+}
+
+// Simple wrapper in order to pass auth conf to my auth lib
+func signupPost(w http.ResponseWriter, r *http.Request) {
+	auth.SignupPostHandler(w, r)
 }
 
 func main() {
@@ -1387,7 +1428,7 @@ func main() {
 
 	//std := alice.New(utils.Logger)
 	//stda := alice.New(Auth, Logger)
-    s := alice.New(handlers.RecoveryHandler(), auth.UserEnvMiddle, auth.XsrfMiddle)
+    s := alice.New(handlers.RecoveryHandler(), utils.Logger, auth.UserEnvMiddle, auth.XsrfMiddle)
     
 	r := mux.NewRouter().StrictSlash(false)
     //r := mux.NewRouter()
@@ -1397,11 +1438,19 @@ func main() {
 	//r.HandleFunc("/up/{name}", uploadFile).Methods("POST", "PUT")
 	//r.HandleFunc("/up", uploadFile).Methods("POST", "PUT")
 	r.HandleFunc("/new", newHandler)
-	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) { auth.LoginPostHandler(cfg.AuthConf, w, r) }).Methods("POST")
+	r.HandleFunc("/login", loginPost).Methods("POST")
 	r.HandleFunc("/login", loginPageHandler).Methods("GET")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
 	r.HandleFunc("/list", listHandler).Methods("GET")
+    
+    r.HandleFunc("/list2", auth.AuthAdminMiddle(listHandler)).Methods("GET")
+    
+    r.HandleFunc("/admin/users", adminUserHandler).Methods("GET")
+    r.HandleFunc("/admin/users", auth.AdminUserPostHandler).Methods("POST")
+    
+	r.HandleFunc("/signup", signupPost).Methods("POST")
+	r.HandleFunc("/signup", signupPageHandler).Methods("GET")    
     
     r.HandleFunc("/stats", func(w http.ResponseWriter, r *http.Request) {
             w.Header().Set("Content-Type", "application/json")
