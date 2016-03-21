@@ -12,7 +12,7 @@ package main
 // - wikidata should be periodically pushed to git@jba.io:conf/gowiki-data.git
 //    - Unsure how/when to do this, possibly in a go-routine after every commit?
 
-// - GUI for Tags - taggle.js should do this for me
+// x GUI for Tags - taggle.js should do this for me
 // x LDAP integration
 // - Buttons
 // x Private pages
@@ -25,17 +25,13 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
-	"fmt" 
-	//"bufio"
+	"fmt"
 	//"github.com/golang-commonmark/markdown"
     "github.com/russross/blackfriday"
 	"github.com/gorilla/mux"
     "github.com/gorilla/handlers"
     "github.com/spf13/viper"    
-    //"github.com/rs/xhandler"
-    //"github.com/gorilla/context"
 	"github.com/justinas/alice"
-    //"github.com/cyclopsci/apollo"
 	"github.com/oxtoacart/bpool"
     "github.com/thoas/stats"
 	"html/template"
@@ -53,7 +49,6 @@ import (
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
     "jba.io/go/utils"
-    //"golang.org/x/net/context"
 )
 
 const (
@@ -222,7 +217,8 @@ func init() {
     viper.AddConfigPath(".")
     err := viper.ReadInConfig() // Find and read the config file
     if err != nil { // Handle errors reading the config file
-        panic(fmt.Errorf("Fatal error config file: %s \n", err))
+        //panic(fmt.Errorf("Fatal error config file: %s \n", err))
+        fmt.Println("No configuration file loaded - using defaults")
     }
     viper.SetConfigType("json")
     viper.WatchConfig()
@@ -1477,7 +1473,7 @@ func main() {
     //r := mux.NewRouter()
 	//d := r.Host("go.jba.io").Subrouter()
 	r.HandleFunc("/", indexHandler).Methods("GET")
-	r.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "") })
+	//r.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "") })
 	//r.HandleFunc("/up/{name}", uploadFile).Methods("POST", "PUT")
 	//r.HandleFunc("/up", uploadFile).Methods("POST", "PUT")
 	r.HandleFunc("/new", newHandler)
