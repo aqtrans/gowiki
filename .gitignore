@@ -5,4 +5,5 @@ req.log
 http.log
 wiki
 .directory
-auth.json
+auth.db
+conf.json

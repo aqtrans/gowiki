@@ -3,6 +3,11 @@
 	"ignore": "test",
 	"package": [
 		{
+			"path": "github.com/boltdb/bolt",
+			"revision": "359b138d7333227aa4c76bf752881822ea21ae8a",
+			"revisionTime": "2015-01-18T07:55:06-08:00"
+		},
+		{
 			"path": "github.com/gorilla/handlers",
 			"revision": "8f2758070a82adb7a3ad6b223a0b91878f32d400",
 			"revisionTime": "2016-01-15T11:23:37-08:00"
@@ -31,6 +36,11 @@
 			"path": "github.com/shurcooL/sanitized_anchor_name",
 			"revision": "10ef21a441db47d8b13ebcc5fd2310f636973c77",
 			"revisionTime": "2015-10-27T17:19:15-07:00"
+		},
+		{
+			"path": "github.com/spf13/viper",
+			"revision": "c975dc1b4eacf4ec7fdbf0873638de5d090ba323",
+			"revisionTime": "2015-12-29T23:11:39-07:00"
 		},
 		{
 			"path": "github.com/thoas/stats",
