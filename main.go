@@ -31,6 +31,7 @@ import (
     "github.com/russross/blackfriday"
 	"github.com/gorilla/mux"
     "github.com/gorilla/handlers"
+    "github.com/spf13/viper"    
     //"github.com/rs/xhandler"
     //"github.com/gorilla/context"
 	"github.com/justinas/alice"
@@ -106,6 +107,7 @@ type configuration struct {
 	WikiDir  string
 	MainTLD  string
 	GitRepo  string
+    AuthConf auth.AuthConf
 }
 
 var (
@@ -126,6 +128,7 @@ type page struct {
 	SiteName string
 	Favs     []string
 	UN       string
+    Role     string
     Token    string
 }
 
@@ -213,6 +216,48 @@ func (a wikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a wikiByModDate) Less(i, j int) bool { return a[i].ModTime < a[j].ModTime }
 
 func init() {
+
+    // Viper config
+    viper.SetConfigName("conf")
+    viper.AddConfigPath(".")
+    err := viper.ReadInConfig() // Find and read the config file
+    if err != nil { // Handle errors reading the config file
+        panic(fmt.Errorf("Fatal error config file: %s \n", err))
+    }
+    viper.SetConfigType("json")
+    viper.WatchConfig()
+    /*
+	Port     string
+	Email    string
+	WikiDir  string
+	MainTLD  string
+	GitRepo  string
+    AuthConf struct {
+        LdapEnabled bool
+        LdapConf struct {
+            LdapPort uint16 `json:",omitempty"`
+            LdapUrl  string `json:",omitempty"`
+            LdapDn   string `json:",omitempty"`
+            LdapUn   string `json:",omitempty"`
+            LdapOu   string `json:",omitempty"`    
+        }
+    }
+    */
+    viper.SetDefault("Port", "3000")
+    viper.SetDefault("Email", "unused@the.moment")
+    viper.SetDefault("WikiDir", "./md/")
+    viper.SetDefault("MainTLD", "wiki.jba.io")
+    viper.SetDefault("GitRepo", "git@jba.io:conf/gowiki-data.git")
+    defaultauthstruct := &auth.AuthConf {
+        LdapEnabled: false,
+        LdapConf: auth.LdapConf{ },
+    }
+    viper.SetDefault("AuthConf", defaultauthstruct)
+    viper.Unmarshal(&cfg)
+    
+    log.Println(&cfg)
+
+    
 	//Flag '-l' enables go.dev and *.dev domain resolution
 	flag.BoolVar(&fLocal, "l", false, "Turn on localhost resolving for Handlers")
 	//Flag '-d' enabled debug logging
@@ -234,7 +279,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass}
+	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isAdmin": isAdmin}
 
 	for _, layout := range layouts {
 		files := append(includes, layout)
@@ -255,6 +300,15 @@ func init() {
         log.Fatal(err)
     }
 
+}
+
+func isAdmin(s string) bool {
+	if s == "User" {
+        return false
+    } else if s == "Admin" {
+        return true
+    }
+	return false
 }
 
 // CUSTOM GIT WRAPPERS
@@ -488,8 +542,10 @@ func loadPage(r *http.Request) (*page, error) {
     //log.Println(token)
 
     // Auth lib middlewares should load the user and tokens into context for reading
-    user := auth.GetUsername(r)
+    user, role := auth.GetUsername(r)
     token := auth.GetToken(r)
+    
+    log.Println("User and role: " + user + role)
     /*
     user, ok := context.GetOk(r, auth.UserKey)
     if !ok {
@@ -512,7 +568,7 @@ func loadPage(r *http.Request) (*page, error) {
 	gofavs := <-favs
     
 	//log.Println(gofavs)
-	return &page{SiteName: "GoWiki", Favs: gofavs, UN: user, Token: token}, nil
+	return &page{SiteName: "GoWiki", Favs: gofavs, UN: user, Role: role, Token: token}, nil
 }
 
 func historyHandler(w http.ResponseWriter, r *http.Request) {
@@ -1373,20 +1429,13 @@ func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Simple wrapper in order to pass auth conf to my auth lib
-func loginPost(w http.ResponseWriter, r *http.Request) {
-	auth.LoginPostHandler(auth.Authcfg, w, r)
-}
-
-// Simple wrapper in order to pass auth conf to my auth lib
-func signupPost(w http.ResponseWriter, r *http.Request) {
-	auth.SignupPostHandler(w, r)
-}
-
 func main() {
 
 	flag.Parse()
-
+    
+    defer auth.Authdb.Close()
+    
+    /*
 	//Load conf.json
 	conf, _ := os.Open("conf.json")
 	decoder := json.NewDecoder(conf)
@@ -1396,9 +1445,10 @@ func main() {
 	}
 	//log.Println(cfg)
 	//log.Println(cfg.AuthConf)
+    */
 
 	//Check for wikiDir directory + git repo existence
-	_, err = os.Stat(cfg.WikiDir)
+	_, err := os.Stat(cfg.WikiDir)
 	if err != nil {
 		log.Println(cfg.WikiDir + " does not exist, creating it.")
 		os.Mkdir(cfg.WikiDir, 0755)
@@ -1414,16 +1464,9 @@ func main() {
 		}
 	}
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = cfg.Port
-	}
 	//sessID = utils.RandKey(32)
 	//log.Println("Session ID: " + sessID)
-	log.Println("Listening on port 3000")
 
-	flag.Set("bind", ":3000")
-    
     statsdata := stats.New()
 
 	//std := alice.New(utils.Logger)
@@ -1438,7 +1481,7 @@ func main() {
 	//r.HandleFunc("/up/{name}", uploadFile).Methods("POST", "PUT")
 	//r.HandleFunc("/up", uploadFile).Methods("POST", "PUT")
 	r.HandleFunc("/new", newHandler)
-	r.HandleFunc("/login", loginPost).Methods("POST")
+	r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
 	r.HandleFunc("/login", loginPageHandler).Methods("GET")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
@@ -1449,8 +1492,8 @@ func main() {
     r.HandleFunc("/admin/users", adminUserHandler).Methods("GET")
     r.HandleFunc("/admin/users", auth.AdminUserPostHandler).Methods("POST")
     
-	r.HandleFunc("/signup", signupPost).Methods("POST")
-	r.HandleFunc("/signup", signupPageHandler).Methods("GET")    
+	r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
+	r.HandleFunc("/signup", signupPageHandler).Methods("GET")
     
     r.HandleFunc("/stats", func(w http.ResponseWriter, r *http.Request) {
             w.Header().Set("Content-Type", "application/json")
@@ -1483,5 +1526,8 @@ func main() {
     http.HandleFunc("/favicon.png", utils.FaviconHandler)
     http.HandleFunc("/assets/", utils.StaticHandler)
     http.Handle("/", s.Then(r))
-	http.ListenAndServe(":3000", nil)
+    
+    log.Println("Listening on port " + cfg.Port)
+	http.ListenAndServe("127.0.0.1:"+ cfg.Port, nil)
+    
 }
