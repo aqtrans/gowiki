@@ -1,17 +1,4 @@
 {
     "Port": "3000",
-    "Email": "admin@example.com",
-    "WikiDir": "./md/",
-    "MainTLD": "wiki.jba.io",
-    "GitRepo": "git@jba.io:conf/gowiki-data.git",
-    "AuthConf": {
-	    "Username": "aqtrans",
-	    "Password": "8489",
-	    "LdapEnabled": true,
-	    "LdapPort": 389,
-	    "LdapUrl": "frink.es.gy",
-	    "LdapUn": "uid",
-	    "LdapOu": "People",
-	    "LdapDn": "dc=jba,dc=io"
-    }
+    "GitRepo": "git@jba.io:conf/gowiki-data.git"
 }
