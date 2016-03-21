@@ -1,32 +1,40 @@
 {{ define "title" }}<title>{{.page.SiteName}}|List</title>{{ end }}
 {{ define "content" }}
-<h1>List of things</h1>
-<hr />
-<h2>Wiki Pages</h2>
-<table>
-<thead>
-    <tr>
-    <th width="80">Link</th>
-    <th width="200">Created</th>
-    <th width="200">Modified</th>
-    <th width="200">Frontmatter</th>
-    <th width="10">Private</th>
-    <th width="80">Filename</th>
-    </tr>
-</thead>
-
-<tbody>
-{{range .Wikis}}
-    <tr>
-    <td><a href="/{{.Filename}}">{{.PageTitle}}</a></td>
-    <td>{{.CreateTime | prettyDate}}</td>
-    <td>{{.ModTime | prettyDate}}</td>    
-    <td>{{.frontmatter}}</td>
-    <td>{{.IsPrivate}}</td>
-    <td>{{.Filename}}</td>
-    </tr>
-{{ end }}
-</tbody>
-
-</table>
+<article class="card">
+  <header>
+    <h1>List of things</h1>
+  </header>
+  <footer>
+    <h2>Wiki Pages</h2>
+  </footer>  
+</article>
+    
+<article class="card">
+  <footer>
+    <table>
+    <thead>
+        <tr>
+        <th width="80">Link</th>
+        <th width="200">Created</th>
+        <th width="200">Modified</th>
+        <th width="200">Frontmatter</th>
+        <th width="10">Private</th>
+        <th width="80">Filename</th>
+        </tr>
+    </thead>
+    <tbody>
+    {{range .Wikis}}
+        <tr>
+        <td><a href="/{{.Filename}}">{{.PageTitle}}</a></td>
+        <td>{{.CreateTime | prettyDate}}</td>
+        <td>{{.ModTime | prettyDate}}</td>    
+        <td>{{.frontmatter}}</td>
+        <td>{{.IsPrivate}}</td>
+        <td>{{.Filename}}</td>
+        </tr>
+    {{ end }}
+    </tbody>
+    </table>
+  </footer>
+</article>
 {{ end }}
