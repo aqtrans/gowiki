@@ -1091,26 +1091,34 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	// Directory without specified index
 	if dir != "" && filename == "" {
 		log.Println("This might be a directory, trying to parse the index")
+        filename = name + "index"
 		fullfilename = "./md/" + name + "index"
         
-		filename = name + "index"
-		title := name + " - Index"
-		// FIXME: logic looks wrong here; should probably have another if/else
-		// ...Checking if file exists, before throwing an error
-		errn := errors.New("No such dir index")
-		newwp := &wikiPage{
-			p,
-			title,
-			filename,
-			&frontmatter{
-				Title: title,
-			},
-			&wiki{},
-			false,
-			0,
-			0,
-		}
-		return newwp, errn
+        dirindex, _ := os.Open(fullfilename)
+        _, dirindexfierr := dirindex.Stat()
+        
+        if os.IsNotExist(dirindexfierr) {
+            //filename = name + "index"
+            title := name + " - Index"
+            // FIXME: logic looks wrong here; should probably have another if/else
+            // ...Checking if file exists, before throwing an error
+            errn := errors.New("No such dir index")
+            newwp := &wikiPage{
+                p,
+                title,
+                filename,
+                &frontmatter{
+                    Title: title,
+                },
+                &wiki{},
+                false,
+                0,
+                0,
+            }
+            return newwp, errn
+        }
+        
+
 	}
 
     
