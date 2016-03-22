@@ -39,13 +39,14 @@
     }
     nav .mainmenu {
         float: none !important;
+        white-space: normal;
     }
-    .usernav {
-        display: block;
-    }
-    .usernav label.button {
+    label.button {
         width: auto;
-    }    
+        display: block;
+        margin-left: auto;
+        margin-right: auto;          
+    }
 }
 
 html {
