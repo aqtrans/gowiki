@@ -23,9 +23,9 @@
     <label for="bmenub" class="burger pseudo button">menu</label>
     <div class="menu" id="navmenu">
         <div class="mainmenu">
-            <a href="#" class="pseudo button">Demo</a>
-            <a href="#" class="pseudo button">Plugins</a>
-            {{ template "usernav" .}}
+            <a href="#" class="pseudo button topbutton">Demo</a>
+            <a href="#" class="pseudo button topbutton">Plugins</a>
+            <div class="usernav">{{ template "usernav" .}}</div>
         </div>    
         <div class="newmenu">
             <form method="post" action="/new" id="newwiki">
