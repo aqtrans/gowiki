@@ -15,7 +15,10 @@
     z-index: 5;
 }
 
-@media screen and (max-width : 500px){
+/* Per github scss, default picnic-breakpoint is 60em 
+   seems reasonable, no reason to change, so just extending it 
+   Currently making body collapse under sidebar, and pretty up navbar  */
+@media screen and (max-width : 60em){
     #primary {
         display: block;
     }
@@ -25,6 +28,24 @@
         margin-left: auto;
         margin-right: auto;
     }
+    #navmenu {
+        float: none;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;    
+    }
+    .topbutton {
+        display: block;
+    }
+    nav .mainmenu {
+        float: none !important;
+    }
+    .usernav {
+        display: block;
+    }
+    .usernav label.button {
+        width: auto;
+    }    
 }
 
 html {
