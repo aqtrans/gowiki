@@ -5,11 +5,11 @@
   <header>
     <h1>{{.PageTitle}}@{{.Commit}}</h1>
   </header>
-  <footer>
-    <a href="/{{.Filename}}" class="pseudo button wikibutton"><i class="material-icons">visibility</i>View</a>
-    <a href="/{{.Filename}}/edit" class="pseudo button wikibutton"><i class="material-icons">edit</i>Edit</a>
-    <a href="/{{.Filename}}/history" class="pseudo button wikibutton"><i class="material-icons">history</i>History</a>
-    <a href="#" class="button wikibutton"><i class="material-icons">undo</i>View at commit</a>
+  <footer class="wiki-toolbar">
+    <a href="/{{.Filename}}"><button data-tooltip="View Page" class="tooltip-top pseudobutton"><i class="material-icons centericon">visibility</i></button></a>
+    <a href="/{{.Filename}}/edit"><button data-tooltip="Edit Page" class="tooltip-top pseudobutton"><i class="material-icons centericon">edit</i></button></a>
+    <a href="/{{.Filename}}/history"><button data-tooltip="Page History" class="tooltip-top pseudobutton"><i class="material-icons centericon">history</i></button></a>
+    <a href="#"><button data-tooltip="View Page Commit" class="tooltip-top"><i class="material-icons centericon">undo</i></button></a>
   </footer>  
 </article>
 
