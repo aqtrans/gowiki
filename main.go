@@ -116,6 +116,7 @@ var (
 	gitPath   string
     favbuf      bytes.Buffer
     //sessID   string
+    tagMap map[string][]string
 )
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -541,7 +542,8 @@ func loadPage(r *http.Request) (*page, error) {
     user, role := auth.GetUsername(r)
     token := auth.GetToken(r)
     
-    log.Println("User and role: " + user + role)
+    //log.Println("User and role: " + user + role)
+    
     /*
     user, ok := context.GetOk(r, auth.UserKey)
     if !ok {
@@ -743,7 +745,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			} else {
 				// If file doesn't have frontmatter, add in crap
-				log.Println(file + " doesn't have frontmatter :( ")
+				//log.Println(file + " doesn't have frontmatter :( ")
 				fm = &frontmatter{
 					Title: file,
 					Tags: "",
@@ -1292,8 +1294,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 
 // readFavs should read and populate favbuf, in memory
 func readFavs(path string, info os.FileInfo, err error) error {
-    defer utils.TimeTrack(time.Now(), "readFavs")
-    
+
     // check and skip .git
     if info.IsDir() && info.Name() == ".git" {
         return filepath.SkipDir        
@@ -1348,6 +1349,55 @@ func favsHandler(favs chan []string) {
     //log.Println(sfavs)
     
 	favs <- sfavs
+}
+
+// readTags should read and populate tagMap, in memory
+func readTags(path string, info os.FileInfo, err error) error {
+
+    // check and skip .git
+    if info.IsDir() && info.Name() == ".git" {
+        return filepath.SkipDir        
+    }
+    // Skip directories
+    if info.IsDir() {
+        return nil
+    }    
+    
+    read, err := ioutil.ReadFile(path)
+    if err != nil {
+        log.Print(err)
+        return nil
+    }
+    
+    name := info.Name()
+
+    // Read YAML frontmatter into fm
+    // If err, just return, as file should not contain frontmatter
+    var fm *frontmatter
+    _, err = readFront(read, &fm)
+	if err != nil {
+		return nil
+	}
+    if fm == nil {
+        return nil
+    }
+    
+    // TODO: finish this
+    if fm.Tags != "" {
+        stags := strings.Fields(fm.Tags)
+        for _, tag := range stags {
+            tagMap[tag] = append(tagMap[tag], name)
+        }
+    }
+    
+    /*
+    // Read all files in given path, check for favorite: true tag
+    if bytes.Contains(read, []byte("favorite: true")) {
+        favbuf.WriteString(name+" ")
+    }
+    */
+    
+    return nil
 }
 
 func (wiki *rawPage) save() error {
