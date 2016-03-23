@@ -670,6 +670,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 }
 
 
+
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	searchDir := "./md/"
 	p, err := loadPage(r)
@@ -680,9 +681,9 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	fileList := []string{}
 	_ = filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
 		// check and skip .git
-		if path == "md/.git" {
-			return filepath.SkipDir
-		}
+        if f.IsDir() && f.Name() == ".git" {
+            return filepath.SkipDir        
+        }
 		fileList = append(fileList, path)
 		return nil
 	})
@@ -1293,13 +1294,15 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 func readFavs(path string, info os.FileInfo, err error) error {
     defer utils.TimeTrack(time.Now(), "readFavs")
     
-    if info.IsDir() {
-        dir := filepath.Base(path)
-        if dir == ".git" {
-            return filepath.SkipDir
-        }
-        return nil
+    // check and skip .git
+    if info.IsDir() && info.Name() == ".git" {
+        return filepath.SkipDir        
     }
+
+    // Skip directories
+    if info.IsDir() {
+        return nil
+    }    
     
     read, err := ioutil.ReadFile(path)
     if err != nil {
@@ -1308,11 +1311,29 @@ func readFavs(path string, info os.FileInfo, err error) error {
     }
     
     name := info.Name()
+
+    // Read YAML frontmatter into fm
+    // If err, just return, as file should not contain frontmatter
+    var fm *frontmatter
+    _, err = readFront(read, &fm)
+	if err != nil {
+		return nil
+	}
+    if fm == nil {
+        return nil
+    }
     
+    if fm.Favorite {
+        favbuf.WriteString(name+" ")
+    }
+    
+    /*
     // Read all files in given path, check for favorite: true tag
     if bytes.Contains(read, []byte("favorite: true")) {
         favbuf.WriteString(name+" ")
     }
+    */
+    
     return nil
 }
 
