@@ -1,3 +1,8 @@
+/* Add a scrollbar regardless of content length, so top nav doesn't jump around */
+html {
+    overflow-y: scroll;
+}
+
 .sidebar
 {
   max-width:12rem;
@@ -12,7 +17,72 @@
     width: 100%;
     height: 100%;
     margin: 0;
-    z-index: 5;
+}
+
+/* Make View/Edit/History buttons show up as tabs */
+.wikitoolbar {
+    position: relative;
+    display: block;
+}
+.wikitoolbar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.wikitoolbar li {
+    display: inline-block;
+    border: solid;
+    border-width: 1px 1px 0 1px;
+    border-top-left-radius: .2em;
+    border-top-right-radius: .2em;
+    position: relative;
+    z-index: 0;
+    margin: 0;
+    padding: 0;
+    background: #bbb;   
+}
+
+.wikitoolbar li a {
+    margin: 0;
+    padding-left: 0.3em;
+    padding-right: 0.3em;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.wikitoolbar li.selected a {
+    color: #000;
+}
+
+.wikitoolbar li.selected, li.selected:hover {
+    z-index: 2;
+    background: #fff;
+    border-bottom-color: #fff;
+}
+
+.wikitoolbar li:hover {
+    background: #cff;
+    z-index: 2;
+}
+
+.wikitoolbar:after {
+  position: absolute;
+  content: "";
+  width: 100%;
+  bottom: 0;
+  left: 0;
+  border-bottom: 1px solid #000;
+  z-index: 1;    
+}
+
+.wikitoolbar:before {
+    z-index: 1;
+}
+
+.wikicontent {
+    border-top-width: 0px;
 }
 
 .centericon {
@@ -22,6 +92,8 @@
 .pseudobutton {
     background: transparent;
     color: #111;
+    transition: all 0.3s;
+    box-shadow: 0 0 transparent inset;    
 }
 
 .wiki-toolbar {
