@@ -1519,7 +1519,7 @@ func main() {
     // wiki functions, should accept alphanumerical, "_", "-", "."
 	r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/edit", editHandler).Methods("GET")
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/save", saveHandler).Methods("POST")
-    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/history", auth.AuthMiddle(historyHandler)).Methods("GET")
+    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/history", historyHandler).Methods("GET")
     //r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/{commit:[a-f0-9]{40}}", viewCommitHandler).Methods("GET") 
     r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}", viewHandler).Methods("GET")
     
