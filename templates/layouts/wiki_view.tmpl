@@ -4,17 +4,16 @@
   <header>
     <h1>{{.PageTitle}}</h1>    
   </header>
-  <footer>
-  <div class="wiki-toolbar">
-    <a href="#"><button data-tooltip="View Page" class="tooltip-top"><i class="material-icons centericon">visibility</i></button></a>
-    <a href="/{{.Filename}}/edit"><button data-tooltip="Edit Page" class="tooltip-top pseudobutton"><i class="material-icons centericon">edit</i></button></a>
-    <a href="/{{.Filename}}/history"><button data-tooltip="Page History" class="tooltip-top pseudobutton"><i class="material-icons centericon">history</i></button></a>
-    <button disabled><i class="material-icons centericon">undo</i></button>
-  </div>  
-  </footer>    
 </article>
 
-<article class="card">
+<div class="wikitoolbar">
+    <ul>
+        <li class="selected"><a href="#"><i class="material-icons centericon">visibility</i>View Page</a></li>
+        <li><a href="/{{.Filename}}/edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
+        <li><a href="/{{.Filename}}/history"><i class="material-icons centericon">history</i>Page History</a></li>
+   </ul>
+</div>
+<article class="card wikicontent">
   <header>
     <p><span class="wiki-metadata">Filename:<span class="label">{{ .Filename }}</span></span> <span class="wiki-metadata">Private:<span class="label">{{ .IsPrivate }}</span></span> <span class="wiki-metadata">Favorite:<span class="label">{{ .frontmatter.Favorite }}</span></span>
     <span class="wiki-metadata">Tags:<span class="label">{{ .frontmatter.Tags }}</span></p>
