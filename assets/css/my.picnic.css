@@ -15,6 +15,30 @@
     z-index: 5;
 }
 
+.centericon {
+    vertical-align: middle;
+}
+
+.pseudobutton {
+    background: transparent;
+    color: #111;
+}
+
+.wiki-toolbar {
+    display: block;
+}
+
+.wiki-metadata {
+    white-space: nowrap;
+}
+
+.material-icons.md-light { color: rgba(255, 255, 255, 1); }
+
+.newwiki {
+    vertical-align: middle;
+}
+
+
 /* Per github scss, default picnic-breakpoint is 60em 
    seems reasonable, no reason to change, so just extending it 
    Currently making body collapse under sidebar, and pretty up navbar  */

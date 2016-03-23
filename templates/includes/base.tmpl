@@ -20,17 +20,17 @@
         <span>My Site</span>
     </a>
     <input id="bmenub" type="checkbox" class="show">
-    <label for="bmenub" class="burger pseudo button">menu</label>
+    <label for="bmenub" class="burger pseudo button"><i class="material-icons md-light">menu</i></label>
     <div class="menu" id="navmenu">
         <div class="mainmenu">
-            <a href="#" class="pseudo button topbutton">Demo</a>
-            <a href="#" class="pseudo button topbutton">Plugins</a>
+            <!--<a href="#" class="pseudo button topbutton">Demo</a>
+            <a href="#" class="pseudo button topbutton">Plugins</a>-->
             {{ template "usernav" .}}
         </div>    
         <div class="newmenu">
             <form method="post" action="/new" id="newwiki">
-                <label><i class="material-icons">note_add</i></label>
-                <input type="text" placeholder="New wiki page..." id="newwiki" name="newwiki">
+                <label><i class="material-icons centericon">note_add</i></label>
+                <input type="text" placeholder="New wiki page..." id="newwiki" name="newwiki" class="newwiki">
                 <button type="submit">Go!</button>   
             </form>
         </div>
