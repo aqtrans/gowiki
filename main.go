@@ -131,7 +131,7 @@ type page struct {
 
 type frontmatter struct {
 	Title string `yaml:"title"`
-	Tags  string `yaml:"tags,omitempty"`
+	Tags  []string `yaml:"tags,omitempty"`
     Favorite    bool `yaml:"favorite,omitempty"`
     Private     bool `yaml:"private,omitempty"`
 	//	Created     int64    `yaml:"created,omitempty"`
@@ -795,7 +795,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				//log.Println(file + " doesn't have frontmatter :( ")
 				fm = &frontmatter{
 					Title: fileURL,
-					Tags: "",
+					Tags: []string{""},
                     Favorite: false,
 				}
 			}
@@ -1158,6 +1158,9 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	if err != nil {
 		log.Panicln(err)
 	}
+    
+    log.Println(fm.Tags)
+    
 	wp := &wikiPage{
 		p,
 		pagetitle,
@@ -1364,9 +1367,9 @@ func readTags(path string, info os.FileInfo, err error) error {
     }
     
     // TODO: finish this
-    if fm.Tags != "" {
-        stags := strings.Fields(fm.Tags)
-        for _, tag := range stags {
+    if fm.Tags != nil {
+        //stags := strings.Fields(fm.Tags)
+        for _, tag := range fm.Tags {
             tagMap[tag] = append(tagMap[tag], name)
             log.Println(tagMap)
         }
