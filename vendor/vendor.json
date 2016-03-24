@@ -9,6 +9,11 @@
 			"revisionTime": "2016-03-08T18:19:12-08:00"
 		},
 		{
+			"path": "github.com/Machiel/slugify",
+			"revision": "9c8f186ad6ea352ad2709ad0ec08f2ecc8a1b424",
+			"revisionTime": "2015-06-22T10:52:03+02:00"
+		},
+		{
 			"path": "github.com/gorilla/handlers",
 			"revision": "8f2758070a82adb7a3ad6b223a0b91878f32d400",
 			"revisionTime": "2016-01-15T11:23:37-08:00"
