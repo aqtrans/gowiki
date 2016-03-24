@@ -11,7 +11,7 @@
     
 <article class="card">
   <footer>
-    <table>
+    <table class="primary listtable">
     <thead>
         <tr>
         <th width="80">Link</th>
@@ -29,7 +29,7 @@
         <td>{{.CreateTime | prettyDate}}</td>
         <td>{{.ModTime | prettyDate}}</td>    
         <td>{{.frontmatter}}</td>
-        <td>{{.IsPrivate}}</td>
+        <td>{{.frontmatter.Private}}</td>
         <td>{{.Filename}}</td>
         </tr>
     {{ end }}

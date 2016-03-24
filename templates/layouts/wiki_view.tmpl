@@ -9,13 +9,13 @@
 <div class="wikitoolbar">
     <ul>
         <li class="selected"><a href="#"><i class="material-icons centericon">visibility</i>View Page</a></li>
-        <li><a href="/{{.Filename}}/edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-        <li><a href="/{{.Filename}}/history"><i class="material-icons centericon">history</i>Page History</a></li>
+        <li><a href="/{{.Filename}}?a=edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
+        <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
    </ul>
 </div>
 <article class="card wikicontent">
   <header>
-    <p><span class="wiki-metadata">Filename:<span class="label">{{ .Filename }}</span></span> <span class="wiki-metadata">Private:<span class="label">{{ .IsPrivate }}</span></span> <span class="wiki-metadata">Favorite:<span class="label">{{ .frontmatter.Favorite }}</span></span>
+    <p><span class="wiki-metadata">Filename:<span class="label">{{ .Filename }}</span></span> <span class="wiki-metadata">Private:<span class="label">{{ .frontmatter.Private }}</span></span> <span class="wiki-metadata">Favorite:<span class="label">{{ .frontmatter.Favorite }}</span></span>
     <span class="wiki-metadata">Tags:<span class="label">{{ .frontmatter.Tags }}</span></p>
     <p><span class="wiki-metadata">Created:<span class="label">{{ .CreateTime | prettyDate }}</span></span> <span class="wiki-metadata">Last Modified:<span class="label">{{ .ModTime | prettyDate }}</span></span></p>    
   </header>
