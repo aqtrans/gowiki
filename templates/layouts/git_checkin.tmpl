@@ -1,0 +1,18 @@
+{{ define "title" }}<title>{{.page.SiteName}}|Check In Files?</title>{{ end }}
+{{ define "content" }}
+<article class="card">
+  <header>
+    <h1>{{.page.SiteName}}</h1>
+    <p>The following files were found to be modified outside of Git.</p>
+    <p>Would you like to check them in now?</p>
+  </header>
+  <footer>
+    {{.GitFiles | safeHTML}}
+  </footer>
+ <form action="/gitadd" method="post">
+  <input type="hidden" name="token" value="{{.Token}}">
+  <button type="submit">Submit</button>
+</form>   
+</article>
+</div>
+{{ end }}

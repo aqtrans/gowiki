@@ -10,14 +10,14 @@
 <div class="wikitoolbar">
     <ul>
         <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
-        <li><a href="/{{.Filename}}/edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-        <li><a href="/{{.Filename}}/history"><i class="material-icons centericon">history</i>Page History</a></li>
+        <li><a href="/{{.Filename}}?a=edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
+        <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
         <li class="selected"><a href="#"><i class="material-icons centericon">undo</i></button>View Page Commit</a></li>
    </ul>
 </div>
 <article class="card wikicontent">
   <header>
-    <p>Filename:<span class="info label">{{ .Filename }}</span> Private:<span class="info label">{{ .IsPrivate }}</span> Favorite:<span class="info label">{{ .frontmatter.Favorite }}</span>
+    <p>Filename:<span class="info label">{{ .Filename }}</span> Private:<span class="info label">{{ .frontmatter.Private }}</span> Favorite:<span class="info label">{{ .frontmatter.Favorite }}</span>
     Tags:<span class="info label">{{ .frontmatter.Tags }}</span></p>
     <p>Created:<span class="info label">{{ .CreateTime | prettyDate }}</span> Last Modified:<span class="info label">{{ .ModTime | prettyDate }}</span></p>    
   </header>

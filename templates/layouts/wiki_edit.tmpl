@@ -11,12 +11,12 @@
     <ul>
         <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
         <li class="selected"><a href="#"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-        <li><a href="/{{.Filename}}/history"><i class="material-icons centericon">history</i>Page History</a></li>
+        <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
    </ul>
 </div>
 <article class="card wikicontent">
   <header>
-    <form action="/{{.Filename}}/save" method="POST" id="savewiki">
+    <form action="/{{.Filename}}?a=save" method="POST" id="savewiki">
     Title:<input type="text" name="title" value="{{.Title}}"><br>
     {{ if .Favorite }}
         <label><input type="checkbox" name="favorite" checked><span class="checkable">Favorite</span></label>
