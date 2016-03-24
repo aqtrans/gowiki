@@ -32,6 +32,7 @@ import (
     "github.com/gorilla/handlers"
     "github.com/spf13/viper"    
 	"github.com/justinas/alice"
+    "github.com/Machiel/slugify"
 	"github.com/oxtoacart/bpool"
     "github.com/thoas/stats"
 	"html/template"
@@ -132,6 +133,7 @@ type frontmatter struct {
 	Title string `yaml:"title"`
 	Tags  string `yaml:"tags,omitempty"`
     Favorite    bool `yaml:"favorite,omitempty"`
+    Private     bool `yaml:"private,omitempty"`
 	//	Created     int64    `yaml:"created,omitempty"`
 	//	LastModTime int64	 `yaml:"lastmodtime,omitempty"`
 }
@@ -147,7 +149,6 @@ type wikiPage struct {
 	Filename  string
 	*frontmatter
 	*wiki
-	IsPrivate  bool
 	CreateTime int64
 	ModTime    int64
 }
@@ -158,7 +159,6 @@ type commitPage struct {
 	Filename  string
 	*frontmatter
 	*wiki
-	IsPrivate  bool
 	CreateTime int64
 	ModTime    int64
     Diff       string
@@ -180,6 +180,12 @@ type genPage struct {
 	Title string
 }
 
+type gitPage struct {
+	*page
+	Title string
+    GitFiles string
+}
+
 type historyPage struct {
 	*page
     Filename    string
@@ -198,6 +204,24 @@ type jsonfresponse struct {
 	Name string `json:"name,omitempty"`
 }
 
+var urlSlugifier = slugify.New(slugify.Configuration{
+        IsValidCharacterChecker: func(c rune) bool {
+            if c >= 'a' && c <= 'z' {
+                return true
+            }
+                
+            if c >= '0' && c <= '9' {
+                return true
+            }
+            
+            if c == '/' {
+                return true
+            }
+
+            return false
+        },
+    })
+
 // Sorting functions
 type wikiByDate []*wikiPage
 
@@ -212,7 +236,7 @@ func (a wikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a wikiByModDate) Less(i, j int) bool { return a[i].ModTime < a[j].ModTime }
 
 func init() {
-
+    
     // Viper config
     viper.SetConfigName("conf")
     viper.AddConfigPath(".")
@@ -297,6 +321,12 @@ func init() {
         log.Fatal(err)
     }
 
+    // Crawl for tags only on startup and save
+    err = filepath.Walk("./md", readTags)
+    if err != nil {
+        log.Fatal(err)
+    }
+
 }
 
 func isAdmin(s string) bool {
@@ -341,19 +371,19 @@ func gitClone(repo string) error {
 
 // Execute `git status -s` in directory
 // If there is output, the directory has is dirty
-func gitIsClean() error {
-	c := gitCommand("status", "-s")
+func gitIsClean() ([]byte, error) {
+	c := gitCommand("status", "-z")
 
 	o, err := c.Output()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(o) != 0 {
-		return errors.New("directory is dirty")
+		return o, errors.New("directory is dirty")
 	}
 
-	return nil
+	return nil, nil
 }
 
 // Execute `git add {filepath}` in workingDirectory
@@ -404,6 +434,11 @@ func gitGetCtime(filename string) (int64, error) {
 		return 0, errors.New(fmt.Sprintf("error during `git log --diff-filter=A --follow --format=%aD -1 --`: %s\n%s", err.Error(), string(o)))
 	}
 	ostring := strings.TrimSpace(string(o))
+    // If output is blank, no point in wasting CPU doing the rest
+    if ostring == "" {
+        log.Println(filename + " is not checked into Git")
+        return 0, nil
+    }
 	ctime, err := strconv.ParseInt(ostring, 10, 64)
 	if err != nil {
 		log.Println(err)
@@ -418,8 +453,13 @@ func gitGetMtime(filename string) (int64, error) {
 	o, err := gitCommand("log", "--format=%at", "-1", "--", filename).Output()
 	if err != nil {
 		return 0, errors.New(fmt.Sprintf("error during `git log -1 --format=%aD --`: %s\n%s", err.Error(), string(o)))
-	}
+	} 
 	ostring := strings.TrimSpace(string(o))
+    // If output is blank, no point in wasting CPU doing the rest
+    if ostring == "" {
+        log.Println(filename + " is not checked into Git")
+        return 0, nil
+    }    
 	mtime, err := strconv.ParseInt(ostring, 10, 64)
 	if err != nil {
 		log.Println(err)
@@ -500,6 +540,17 @@ func gitGetFileCommitMtime(commit string) (int64, error) {
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
+/*
+func isPrivate(list string) bool {
+	tags := strings.Split(list, " ")
+	for _, v := range tags {
+		if v == "private" {
+			return true
+		}
+	}
+	return false
+}
+*/
 
 func isPrivate(list string) bool {
 	tags := strings.Split(list, " ")
@@ -598,7 +649,6 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 // TODO: need to find a way to detect sha1s
 func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 	var fm frontmatter
-	var priv bool
 	var pagetitle string    
 	vars := mux.Vars(r)
 	name := vars["name"]
@@ -635,11 +685,8 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 	}
 	// Render remaining content after frontmatter
 	md := markdownRender(content)
-	if isPrivate(fm.Tags) {
+	if fm.Private  {
 		log.Println("Private page!")
-		priv = true
-	} else {
-		priv = false
 	}
 	if fm.Title != "" {
 		pagetitle = fm.Title
@@ -658,7 +705,6 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 			Rendered: md,
 			Content:  string(content),
 		},
-		priv,
 		ctime,
 		mtime,
         diffstring,
@@ -708,9 +754,12 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		} else {
 
 			_, filename := filepath.Split(file)
+            
+            // If this is an absolute path, including the md/, trim it
+            fileURL := strings.TrimPrefix(file, "md/")
+            
 			var wp *wikiPage
 			var fm *frontmatter
-			var priv bool
 			var pagetitle string
 			//fmt.Println(file)
 			//w.Write([]byte(file))
@@ -727,18 +776,16 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				// If YAML frontmatter doesn't exist, proceed, but log it
 				//log.Fatalln(err)
-                log.Println("YAML unmarshal error in: " + filename)
+                log.Println("YAML unmarshal error in: " + file)
 				log.Println(err)
 			}
 			if fm != nil {
 				//log.Println(fm.Tags)
 				//log.Println(fm)
-
-				if isPrivate(fm.Tags) {
+                
+                // TODO: improve this so private pages are actually protected
+                if fm.Private {
 					//log.Println("Private page!")
-					priv = true
-				} else {
-					priv = false
 				}
 				if fm.Title != "" {
 					pagetitle = fm.Title
@@ -747,7 +794,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				// If file doesn't have frontmatter, add in crap
 				//log.Println(file + " doesn't have frontmatter :( ")
 				fm = &frontmatter{
-					Title: file,
+					Title: fileURL,
 					Tags: "",
                     Favorite: false,
 				}
@@ -764,10 +811,9 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			wp = &wikiPage{
 				p,
 				pagetitle,
-				filename,
+				fileURL,
 				fm,
 				&wiki{},
-				priv,
 				ctime,
 				mtime,
 			}
@@ -874,7 +920,6 @@ func parseBool(value string) bool {
 	Filename     string
 	*Frontmatter
 	*Wiki
-	IsPrivate    bool
 }
 type Wiki struct {
 	Rendered     string
@@ -886,6 +931,9 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 	vars := mux.Vars(r)
 	name := vars["name"]
     
+    slugName := urlSlugifier.Slugify(name)
+    log.Println(slugName)
+    
     return loadWikiPageHelper(r, name)
 }
 
@@ -893,8 +941,6 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "indexHandler")
-    
-    name := "index"
     
     // In case I want to switch to queries some time
     
@@ -912,7 +958,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
     
 
 	// Get Wiki
-	p, err := loadWikiPageHelper(r, name)
+	p, err := loadWikiPageHelper(r, "index")
 	if err != nil {
 		//log.Println(err.Error())
 		http.NotFound(w, r)
@@ -921,90 +967,24 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	err = renderTemplate(w, "wiki_view.tmpl", p)
 	if err != nil {
 		log.Fatalln(err)
-	}    
-    /*
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
 	}
-	//log.Println(p)
-	ctime, err := gitGetCtime("index")
-	if err != nil {
-		log.Panicln(err)
-	}
-	mtime, err := gitGetMtime("index")
-	if err != nil {
-		log.Panicln(err)
-	}
-	wp := &wikiPage{
-		p,
-		"Index",
-		"index",
-		&frontmatter{},
-		&wiki{},
-		false,
-		ctime,
-		mtime,
-	}
-
-	err = renderTemplate(w, "index.tmpl", wp)
-	if err != nil {
-		log.Fatalln(err)
-	}*/
-
-	/*
-			defer timeTrack(time.Now(), "indexHandler")
-			var fm frontmatter
-			var priv bool
-			var pagetitle string
-			filename := "index.md"
-		    fullfilename := "./" + filename
-		    body, err := ioutil.ReadFile(fullfilename)
-		    if err != nil {
-				log.Fatalln(err)
-		    }
-			// Read YAML frontmatter into fm
-			content, err := readFront(body, &fm)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			p, err := loadPage(r)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			// Render remaining content after frontmatter
-			md := markdownRender(content)
-			//log.Println(md)
-			if fm.Title != "" {
-				pagetitle = fm.Title
-			} else {
-				pagetitle = filename
-			}
-			wp := &wikiPage{
-				p,
-				pagetitle,
-				filename,
-				&fm,
-				&wiki{
-		            Rendered: md,
-					Content: string(content),
-				},
-				priv,
-			}
-			// FIXME: Fetch create date, frontmatter, etc
-			err = renderTemplate(w, "md.tmpl", wp)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			//log.Println("Index rendered!")
-	*/
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "viewHandler")
     
-    // In case I want to switch to queries some time
+    // Turn the given URL into a slug
+    // Redirect to slugURL if it is different from input
+	vars := mux.Vars(r)
+	name := vars["name"]    
+    slugName := urlSlugifier.Slugify(name)
+    if name != slugName {
+        log.Println(name + " and " + slugName + " differ.")
+        http.Redirect(w, r, slugName, http.StatusTemporaryRedirect)
+        return
+    }
     
+    // In case I want to switch to queries some time
     query := r.URL.RawQuery
     if query != "" {
       utils.Debugln(query)
@@ -1016,17 +996,16 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
     
-
 	// Get Wiki
 	p, err := loadWikiPage(r)
 	if err != nil {
 		if err.Error() == "No such dir index" {
 			log.Println("No such dir index...creating one.")
-			http.Redirect(w, r, p.Filename+"/edit", 302)
+			http.Redirect(w, r, p.Filename+"?a=edit", 302)
 			return
 		} else if err.Error() == "No such file" {
 			log.Println("No such file...creating one.")
-			http.Redirect(w, r, p.Filename+"/edit", 302)
+			http.Redirect(w, r, p.Filename+"?a=edit", 302)
 			return
         } else if err.Error() == "Base is not dir" {
             log.Println("Cannot create subdir of a file.")
@@ -1048,7 +1027,6 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	var fm frontmatter
-	var priv bool
 	var pagetitle string
 	var body []byte
         
@@ -1056,6 +1034,8 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+    
 	dir, filename := filepath.Split(name)
 	//log.Println("Dir:" + dir)
 	//log.Println("Filename:" + filename)
@@ -1114,7 +1094,6 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
                     Title: title,
                 },
                 &wiki{},
-                false,
                 0,
                 0,
             }
@@ -1138,7 +1117,6 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 				Title: filename,
 			},
 			&wiki{},
-			false,
 			0,
 			0,
 		}
@@ -1160,11 +1138,10 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	}
 	// Render remaining content after frontmatter
 	md := markdownRender(content)
-	if isPrivate(fm.Tags) {
+    
+    // TODO: improve this so private pages are actually protected
+	if fm.Private {
 		log.Println("Private page!")
-		priv = true
-	} else {
-		priv = false
 	}
 	if fm.Title != "" {
 		pagetitle = fm.Title
@@ -1190,7 +1167,6 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 			Rendered: md,
 			Content:  string(content),
 		},
-		priv,
 		ctime,
 		mtime,
 	}
@@ -1286,9 +1262,10 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 func newHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "saveHandler")
 	pagetitle := r.FormValue("newwiki")
+    
 	//log.Println(pagetitle)
 	//log.Println(r)
-	http.Redirect(w, r, pagetitle+"/edit", 301)
+	http.Redirect(w, r, pagetitle+"?a=edit", 301)
 
 }
 
@@ -1303,7 +1280,7 @@ func readFavs(path string, info os.FileInfo, err error) error {
     // Skip directories
     if info.IsDir() {
         return nil
-    }    
+    }
     
     read, err := ioutil.ReadFile(path)
     if err != nil {
@@ -1353,6 +1330,10 @@ func favsHandler(favs chan []string) {
 
 // readTags should read and populate tagMap, in memory
 func readTags(path string, info os.FileInfo, err error) error {
+    
+    if tagMap == nil {
+        tagMap = make(map[string][]string)
+    }
 
     // check and skip .git
     if info.IsDir() && info.Name() == ".git" {
@@ -1387,6 +1368,7 @@ func readTags(path string, info os.FileInfo, err error) error {
         stags := strings.Fields(fm.Tags)
         for _, tag := range stags {
             tagMap[tag] = append(tagMap[tag], name)
+            log.Println(tagMap)
         }
     }
     
@@ -1504,11 +1486,68 @@ func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
+	defer utils.TimeTrack(time.Now(), "gitCheckinHandler")
+    title := "Git Checkin"
+    p, err := loadPage(r)
+    if err != nil {
+        log.Fatalln(err)
+    }
+    
+    o, err := gitIsClean()
+    if err != nil {
+        log.Fatalln(err)
+    }    
+
+    owithnewlines := bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
+
+    gp := gitPage {
+        p,
+        title,
+        string(owithnewlines),
+    }
+    err = renderTemplate(w, "git_checkin.tmpl", gp)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+}
+
+func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
+	defer utils.TimeTrack(time.Now(), "gitCheckinPostHandler")
+    err := gitAddFilepath(".")
+    if err != nil {
+        log.Fatalln(err)
+    }
+    err = gitCommitEmpty()
+    if err != nil {
+        log.Fatalln(err)
+    }    
+}
+
+// Middleware to check for "dirty" git repo
+func checkWikiGit(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+    _, err := gitIsClean()
+    if err != nil {
+        log.Println("There are wiki files waiting to be checked in.")
+        http.Redirect(w, r, "/gitadd", http.StatusTemporaryRedirect)
+        return
+    }
+    
+    next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 
 	flag.Parse()
     
     defer auth.Authdb.Close()
+
+
+
     
     /*
 	//Load conf.json
@@ -1548,7 +1587,11 @@ func main() {
 	//stda := alice.New(Auth, Logger)
     s := alice.New(handlers.RecoveryHandler(), utils.Logger, auth.UserEnvMiddle, auth.XsrfMiddle)
     
+    //wiki := s.Append(checkWikiGit)
+    //wikiauth := wiki.Append(auth.AuthMiddleAlice)
+    
 	r := mux.NewRouter().StrictSlash(false)
+    
     //r := mux.NewRouter()
 	//d := r.Host("go.jba.io").Subrouter()
 	r.HandleFunc("/", indexHandler).Methods("GET")
@@ -1569,7 +1612,11 @@ func main() {
     
 	r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
 	r.HandleFunc("/signup", signupPageHandler).Methods("GET")
-    
+
+
+	r.HandleFunc("/gitadd", gitCheckinPostHandler).Methods("POST")
+	r.HandleFunc("/gitadd", gitCheckinHandler).Methods("GET")    
+        
     r.HandleFunc("/stats", func(w http.ResponseWriter, r *http.Request) {
             w.Header().Set("Content-Type", "application/json")
             stats := statsdata.Data()
@@ -1585,14 +1632,14 @@ func main() {
 	//r.HandleFunc("/{name}", viewHandler).Methods("GET")
 	//r.HandleFunc("/save/{name:.*}", saveHandler).Methods("POST")
 	//r.HandleFunc("/edit/{name:.*}", editHandler)
-	//r.HandleFunc("/history/{name:.*}", historyHandler).Methods("GET") 
+	//r.HandleFunc("/history/{name:.*}", historyHandler).Methods("GET")
 
-    // wiki functions, should accept alphanumerical, "_", "-", "."
-	r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/edit", editHandler).Methods("GET")
-    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/save", saveHandler).Methods("POST")
-    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/history", historyHandler).Methods("GET")
+    // wiki functions, should accept alphanumerical, "_", "-", ".", "@"
+	r.HandleFunc("/{name:.*}", editHandler).Methods("GET").Queries("a", "edit")
+    r.HandleFunc("/{name:.*}", saveHandler).Methods("POST").Queries("a", "save")
+    r.HandleFunc("/{name:.*}", historyHandler).Methods("GET").Queries("a", "history")
     //r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/{commit:[a-f0-9]{40}}", viewCommitHandler).Methods("GET") 
-    r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}", viewHandler).Methods("GET")
+    r.HandleFunc("/{name:.*}", viewHandler).Methods("GET")
     
     
 
