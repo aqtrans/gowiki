@@ -9,6 +9,7 @@ html {
     padding-right: 1rem;
     float: left;
     width: auto;
+    min-width: 70%;
 }
 
 .sidebar
@@ -127,6 +128,9 @@ html {
    seems reasonable, no reason to change, so just extending it 
    Currently making body collapse under sidebar, and pretty up navbar  */
 @media screen and (max-width : 60em){
+    .body {
+        min-width: 100%;
+    }
     #primary {
         display: block;
     }
