@@ -14,7 +14,7 @@
         <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
    </ul>
 </div>
-<article class="card wikicontent">
+<article class="card wikicontent editorcard">
   <header>
     <form action="/{{.Filename}}?a=save" method="POST" id="savewiki">
     Title:<input type="text" name="title" value="{{.Title}}"><br>
@@ -24,9 +24,14 @@
         <label><input type="checkbox" name="favorite"><span class="checkable">Favorite</span></label>
     {{ end }}
     <br>
-    Tags:<input type="text" name="tags" id="tags" value="{{.Tags}}"><br>
+    {{ if .Private }}
+        <label><input type="checkbox" name="private" checked><span class="checkable">Private</span></label>
+    {{ else }}
+        <label><input type="checkbox" name="private"><span class="checkable">Private</span></label>
+    {{ end }}
+    <br>    
+    Tags:<input type="text" name="tags" id="tags" value="{{ range .Tags }} {{ . }}, {{end }}"><br>
     <input type="hidden" name="token" value="{{.Token}}">
-    <h5>Note: private tag=private page.</h5>
   </header>
   <footer>  
     <textarea name="editor" id="wikieditor"></textarea>

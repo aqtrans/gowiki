@@ -16,7 +16,7 @@
 <article class="card wikicontent">
   <header>
     <p><span class="wiki-metadata">Filename:<span class="label">{{ .Filename }}</span></span> <span class="wiki-metadata">Private:<span class="label">{{ .frontmatter.Private }}</span></span> <span class="wiki-metadata">Favorite:<span class="label">{{ .frontmatter.Favorite }}</span></span>
-    <span class="wiki-metadata">Tags:<span class="label">{{ .frontmatter.Tags }}</span></p>
+    <span class="wiki-metadata">Tags:{{ range .frontmatter.Tags }}<span class="label">{{ . }}</span>{{ end }}</p>
     <p><span class="wiki-metadata">Created:<span class="label">{{ .CreateTime | prettyDate }}</span></span> <span class="wiki-metadata">Last Modified:<span class="label">{{ .ModTime | prettyDate }}</span></span></p>    
   </header>
   <footer>
