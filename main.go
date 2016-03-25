@@ -118,6 +118,7 @@ var (
     favbuf      bytes.Buffer
     //sessID   string
     tagMap map[string][]string
+    tagsBuf     bytes.Buffer
 )
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -131,7 +132,7 @@ type page struct {
 
 type frontmatter struct {
 	Title string `yaml:"title"`
-	Tags  string `yaml:"tags,omitempty"`
+	Tags  []string `yaml:"tags,omitempty"`
     Favorite    bool `yaml:"favorite,omitempty"`
     Private     bool `yaml:"private,omitempty"`
 	//	Created     int64    `yaml:"created,omitempty"`
@@ -585,31 +586,10 @@ func markdownRender(content []byte) string {
 
 func loadPage(r *http.Request) (*page, error) {
 	//timer.Step("loadpageFunc")
-	//user := auth.GetUsername(r)
-    //token := auth.SetToken(w, r)
-    //log.Println(token)
-
+    
     // Auth lib middlewares should load the user and tokens into context for reading
     user, role := auth.GetUsername(r)
     token := auth.GetToken(r)
-    
-    //log.Println("User and role: " + user + role)
-    
-    /*
-    user, ok := context.GetOk(r, auth.UserKey)
-    if !ok {
-        log.Println("No username in context.")
-        user = ""
-    }
-    token, ok := context.GetOk(r, auth.TokenKey)
-    if !ok {
-        log.Println("No token in context.")
-        token = ""
-    }*/
-    //fmt.Print("Token: ")
-    //log.Println(token)
-    //fmt.Print("User: ")
-    //log.Println(user)
     
     // Grab list of favs from channel
 	favs := make(chan []string)
@@ -795,7 +775,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				//log.Println(file + " doesn't have frontmatter :( ")
 				fm = &frontmatter{
 					Title: fileURL,
-					Tags: "",
+					Tags: []string{},
                     Favorite: false,
                     Private: false,
 				}
@@ -1371,20 +1351,13 @@ func readTags(path string, info os.FileInfo, err error) error {
     }
     
     // TODO: finish this
-    if fm.Tags != "" {
-        stags := strings.Fields(fm.Tags)
-        for _, tag := range stags {
+    if fm.Tags != nil {
+        //stags := strings.Fields(fm.Tags)
+        for _, tag := range fm.Tags {
             tagMap[tag] = append(tagMap[tag], name)
             log.Println(tagMap)
         }
     }
-    
-    /*
-    // Read all files in given path, check for favorite: true tag
-    if bytes.Contains(read, []byte("favorite: true")) {
-        favbuf.WriteString(name+" ")
-    }
-    */
     
     return nil
 }
@@ -1547,6 +1520,20 @@ func checkWikiGit(next http.Handler) http.Handler {
 	})
 }
 
+func tagMapHandler(w http.ResponseWriter, r *http.Request) {
+	defer utils.TimeTrack(time.Now(), "tagMapHandler")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(200)
+    log.Println(tagMap)
+    for k, v := range tagMap {
+        w.Write([]byte(k))
+        for _, v2 := range v {
+            w.Write([]byte(v2))
+        }
+    }
+    
+}
+
 func main() {
 
 	flag.Parse()
@@ -1602,6 +1589,9 @@ func main() {
     //r := mux.NewRouter()
 	//d := r.Host("go.jba.io").Subrouter()
 	r.HandleFunc("/", indexHandler).Methods("GET")
+    
+    r.HandleFunc("/tags", tagMapHandler)
+    
 	//r.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "") })
 	//r.HandleFunc("/up/{name}", uploadFile).Methods("POST", "PUT")
 	//r.HandleFunc("/up", uploadFile).Methods("POST", "PUT")
