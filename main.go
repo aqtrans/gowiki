@@ -797,6 +797,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 					Title: fileURL,
 					Tags: "",
                     Favorite: false,
+                    Private: false,
 				}
 			}
 			ctime, err := gitGetCtime(filename)
@@ -980,7 +981,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
     slugName := urlSlugifier.Slugify(name)
     if name != slugName {
         log.Println(name + " and " + slugName + " differ.")
-        http.Redirect(w, r, slugName, http.StatusTemporaryRedirect)
+        http.Redirect(w, r, "/"+slugName, http.StatusTemporaryRedirect)
         return
     }
     
@@ -1001,11 +1002,11 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err.Error() == "No such dir index" {
 			log.Println("No such dir index...creating one.")
-			http.Redirect(w, r, p.Filename+"?a=edit", 302)
+			http.Redirect(w, r, "/"+name+"?a=edit", http.StatusTemporaryRedirect)
 			return
 		} else if err.Error() == "No such file" {
 			log.Println("No such file...creating one.")
-			http.Redirect(w, r, p.Filename+"?a=edit", 302)
+			http.Redirect(w, r, "/"+name+"?a=edit", http.StatusTemporaryRedirect)
 			return
         } else if err.Error() == "Base is not dir" {
             log.Println("Cannot create subdir of a file.")
@@ -1209,12 +1210,16 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	title := r.FormValue("title")
 	tags := r.FormValue("tags")
     favorite := r.FormValue("favorite")
+    private := r.FormValue("private")
     
     fav := false
-    
     if favorite == "on" {
         fav = true
     }
+    priv := false
+    if private == "on" {
+        priv = true
+    } 
 
     if title == "" {
         title = name
@@ -1225,10 +1230,12 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
     buffer.WriteString("title: " + title)
     buffer.WriteString("\n")
     if tags != "" {
-        buffer.WriteString("tags: " + tags)
+        buffer.WriteString("tags: [ " + tags + " ]")
         buffer.WriteString("\n")
     }
     buffer.WriteString("favorite: " + strconv.FormatBool(fav))
+    buffer.WriteString("\n")    
+    buffer.WriteString("private: " + strconv.FormatBool(priv))
     buffer.WriteString("\n")
     buffer.WriteString("---\n")
     buffer.WriteString(body)
