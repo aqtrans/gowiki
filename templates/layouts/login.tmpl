@@ -1,9 +1,19 @@
 {{ define "title" }}<title>{{.page.SiteName}}|Login - {{.Title}}</title>{{ end }}
 {{ define "content" }}
-<div class="panel callout radius">     
-  <h1>Login</h1>
-</div>
-<div class="panel">
-  {{ template "login_form" . }}
-</div>
+<article class="card">
+    <header>
+      <h3>Login</h3>
+    </header>
+</article>
+    
+<article class="card">
+      <footer>
+        <form method="post" action="/auth/login" id="login">
+        <input class="stack" type="text" id="username" name="username" placeholder="Username" size="12">
+        <input class="stack" type="password" id="password" name="password" placeholder="Password" size="12">
+        <input type="hidden" name="token" value="{{.Token}}">
+        <button class="stack" type="submit" class="button">Login</button>
+        </form>
+    </footer>
+  </article>
 {{ end }}

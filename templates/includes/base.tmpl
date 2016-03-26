@@ -54,24 +54,8 @@
   </section>
 </main>
 
-<div class="modal">
-  <input id="alert_modal" type="checkbox" />
-  <label for="alert_modal" class="overlay"></label>
-    <article id="alerts">
-        <!--<header>
-        <h3>Great offer</h3>
-        <label for="alert_modal" class="close">&times;</label>
-        </header>
-        <section class="content">
-        We have a special offer for you. I am sure you will love it! However this does look spammy...
-        </section>
-        <footer>
-        <a class="button" href="#">See offer</a>
-        <label for="alert_modal" class="button dangerous">
-            Cancel
-        </label>
-        </footer>-->
-    </article>
+<div class="modal" id="alert-modal">
+    {{ .page.FlashMsg |safeHTML }}
 </div>
 
 <div class="modal" id="login-form">

@@ -1,3 +1,4 @@
+/*
 $(document).ready(function(){
   $("#savewiki").submit(function(event){
     event.preventDefault();
@@ -51,3 +52,4 @@ $(document).ready(function(){
   });
 
 });
+*/
