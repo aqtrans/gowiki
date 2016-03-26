@@ -1,0 +1,32 @@
+{{ define "title" }}<title>{{.page.SiteName}}|Tag List</title>{{ end }}
+{{ define "content" }}
+<article class="card">
+  <header>
+    <h1>List of things</h1>
+  </header>
+  <footer>
+    <h2>Wiki Pages</h2>
+  </footer>  
+</article>
+    
+<article class="card">
+  <footer>
+    <table class="primary listtable">
+    <thead>
+        <tr>
+        <th width="80">Tag</th>
+        <th width="800">Pages</th>
+        </tr>
+    </thead>
+    <tbody>
+    {{range $index, $element := .TagKeys}}
+        <tr>
+            <td>{{ $index }}</td>
+            <td>{{ range $element }}<a href="/{{ . }}"> {{ . }} </a> {{ end }}</td> 
+        </tr>
+    {{ end }}
+    </tbody>
+    </table>
+  </footer>
+</article>
+{{ end }}
