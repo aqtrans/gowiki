@@ -127,6 +127,7 @@ type page struct {
 	UN       string
     Role     string
     Token    string
+    FlashMsg string
 }
 
 type frontmatter struct {
@@ -599,8 +600,35 @@ func loadPage(r *http.Request) (*page, error) {
 	//timer.Step("loadpageFunc")
     
     // Auth lib middlewares should load the user and tokens into context for reading
-    user, role := auth.GetUsername(r)
+    user, role, msg := auth.GetUsername(r)
     token := auth.GetToken(r)
+    
+    log.Println("Message: ")
+    log.Println(msg)
+    
+    var message string
+    if msg != "" {
+        message = `
+    <input id="alert_modal" type="checkbox" checked />
+    <label for="alert_modal" class="overlay"></label>
+        <article id="alerts">
+            <header>
+            <h3>Alert!</h3>
+            <label for="alert_modal" class="close">&times;</label>
+            </header>
+            <section class="content">
+                `+ msg + `
+            </section>
+            <footer>
+            <label for="alert_modal" class="button dangerous">
+                Cancel
+            </label>
+            </footer>
+        </article>        
+        `
+    } else {
+        message = ""
+    }
     
     // Grab list of favs from channel
 	favs := make(chan []string)
@@ -608,7 +636,7 @@ func loadPage(r *http.Request) (*page, error) {
 	gofavs := <-favs
     
 	//log.Println(gofavs)
-	return &page{SiteName: "GoWiki", Favs: gofavs, UN: user, Role: role, Token: token}, nil
+	return &page{SiteName: "GoWiki", Favs: gofavs, UN: user, Role: role, Token: token, FlashMsg: message}, nil
 }
 
 func historyHandler(w http.ResponseWriter, r *http.Request) {
@@ -1660,6 +1688,12 @@ func main() {
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
 	r.HandleFunc("/list", listHandler).Methods("GET")
+    
+    a := r.PathPrefix("/auth").Subrouter()
+    a.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
+    a.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
+	a.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
+    a.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
     
     r.HandleFunc("/admin/users", auth.AuthAdminMiddle(adminUserHandler)).Methods("GET")
     r.HandleFunc("/admin/users", auth.AuthAdminMiddle(auth.AdminUserPostHandler)).Methods("POST")
