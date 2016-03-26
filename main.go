@@ -134,6 +134,7 @@ type frontmatter struct {
 	Tags  []string `yaml:"tags,omitempty"`
     Favorite    bool `yaml:"favorite,omitempty"`
     Private     bool `yaml:"private,omitempty"`
+    Admin       bool `yaml:"admin,omitempty"`
 	//	Created     int64    `yaml:"created,omitempty"`
 	//	LastModTime int64	 `yaml:"lastmodtime,omitempty"`
 }
@@ -1350,7 +1351,7 @@ func readTags(path string, info os.FileInfo, err error) error {
     
     read, err := ioutil.ReadFile(path)
     if err != nil {
-        log.Print(err)
+        log.Println(err)
         return nil
     }
     
@@ -1367,12 +1368,9 @@ func readTags(path string, info os.FileInfo, err error) error {
         return nil
     }
     
-    // TODO: finish this
     if fm.Tags != nil {
-        //stags := strings.Fields(fm.Tags)
         for _, tag := range fm.Tags {
             tagMap[tag] = append(tagMap[tag], name)
-            log.Println(tagMap)
         }
     }
     
@@ -1383,8 +1381,6 @@ func (wiki *rawPage) save() error {
 	defer utils.TimeTrack(time.Now(), "wiki.save()")
 	//filename := wiki.Name
 	dir, filename := filepath.Split(wiki.Name)
-	//log.Println("Dir: " + dir)
-	//log.Println("Filename: " + filename)
 	fullfilename := "./md/" + dir + filename
 
 	// Check for and install required YAML frontmatter
@@ -1394,7 +1390,6 @@ func (wiki *rawPage) save() error {
 	// If directory doesn't exist, create it
 	// - Check if dir is null first
 	if dir != "" {
-		//log.Println("Dir is not empty")
 		dirpath := "./md/" + dir
 		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
 			err := os.MkdirAll(dirpath, 0755)
@@ -1404,8 +1399,6 @@ func (wiki *rawPage) save() error {
 		}
 	}
 
-	//log.Println(fullfilename)
-	//log.Println(wiki.Content)
 
 	ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0755)
 
@@ -1541,36 +1534,10 @@ func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "tagMapHandler")
     a := &tagMap
 
-    //title := "Tag List"
     p, err := loadPage(r)
     if err != nil {
         log.Fatalln(err)
-    }    
-    
-    /*
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(200)
-    log.Println(a)
-    for k, v := range *a {
-        w.Write([]byte("k : "+ k + "<br>"))
-        for _, v2 := range v {
-            w.Write([]byte("v2: "+ v2 + "<br>"))
-        }
     }
-    
-    
-    var tagkeys []string
-    var tagvalues []string
-    for k, v := range *a {
-        tagkeys = append(tagkeys, k)
-        for _, v2 := range v {
-            tagvalues = append(tagvalues, v2)
-        }
-    }    
-    */
-    
-    //log.Println(tagkeys)
-    //log.Println(tagvalues)
 
     tagpage := &tagMapPage{
         page: p,
@@ -1583,6 +1550,50 @@ func tagMapHandler(w http.ResponseWriter, r *http.Request) {
     }
 
 
+}
+
+func wikiAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+        wikipage := cfg.WikiDir + r.URL.Path
+        log.Println(wikipage)
+        
+	_, fierr := os.Stat(wikipage)
+    if fierr != nil {
+       //log.Println(fierr)
+       next.ServeHTTP(w, r)
+       return
+    }
+    
+    if os.IsNotExist(fierr) {
+        next.ServeHTTP(w, r)
+        return
+    }
+    
+    read, err := ioutil.ReadFile(wikipage)
+    if err != nil {
+        log.Println(err)
+    }
+
+    // Read YAML frontmatter into fm
+    // If err, just return, as file should not contain frontmatter
+    var fm *frontmatter
+    _, err = readFront(read, &fm)
+	if err != nil {
+		return
+	}
+    
+    if fm.Private {
+        auth.AuthMiddleAlice(next)
+        return
+    }
+    if fm.Admin {
+        auth.AuthAdminMiddleAlice(next)
+        return
+    }
+    
+    next.ServeHTTP(w, r)
+	})
 }
 
 func main() {
@@ -1632,8 +1643,8 @@ func main() {
 	//stda := alice.New(Auth, Logger)
     s := alice.New(handlers.RecoveryHandler(), utils.Logger, auth.UserEnvMiddle, auth.XsrfMiddle)
     
-    //wiki := s.Append(checkWikiGit)
-    //wikiauth := wiki.Append(auth.AuthMiddleAlice)
+    wiki := s.Append(checkWikiGit)
+    wikiauth := wiki.Append(wikiAuth)
     
 	r := mux.NewRouter().StrictSlash(false)
     
@@ -1643,27 +1654,21 @@ func main() {
     
     r.HandleFunc("/tags", tagMapHandler)
     
-	//r.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) { fmt.Fprint(w, "") })
-	//r.HandleFunc("/up/{name}", uploadFile).Methods("POST", "PUT")
-	//r.HandleFunc("/up", uploadFile).Methods("POST", "PUT")
-	r.HandleFunc("/new", newHandler)
+	r.HandleFunc("/new", auth.AuthMiddle(newHandler))
 	r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
 	r.HandleFunc("/login", loginPageHandler).Methods("GET")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
 	r.HandleFunc("/list", listHandler).Methods("GET")
     
-    r.HandleFunc("/list2", auth.AuthAdminMiddle(listHandler)).Methods("GET")
-    
-    r.HandleFunc("/admin/users", adminUserHandler).Methods("GET")
-    r.HandleFunc("/admin/users", auth.AdminUserPostHandler).Methods("POST")
+    r.HandleFunc("/admin/users", auth.AuthAdminMiddle(adminUserHandler)).Methods("GET")
+    r.HandleFunc("/admin/users", auth.AuthAdminMiddle(auth.AdminUserPostHandler)).Methods("POST")
     
 	r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
 	r.HandleFunc("/signup", signupPageHandler).Methods("GET")
 
-
-	r.HandleFunc("/gitadd", gitCheckinPostHandler).Methods("POST")
-	r.HandleFunc("/gitadd", gitCheckinHandler).Methods("GET")    
+	r.HandleFunc("/gitadd", auth.AuthMiddle(gitCheckinPostHandler)).Methods("POST")
+	r.HandleFunc("/gitadd", auth.AuthMiddle(gitCheckinHandler)).Methods("GET")    
         
     r.HandleFunc("/stats", func(w http.ResponseWriter, r *http.Request) {
             w.Header().Set("Content-Type", "application/json")
@@ -1672,24 +1677,14 @@ func main() {
             w.Write(b)
     })
 
-	//r.HandleFunc("/cats", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, "./md/cats") })
-
-	//http.Handle("/s/", http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
-	//r.PathPrefix("/s/").Handler(http.StripPrefix("/s/", http.FileServer(http.Dir("public"))))
 	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
-	//r.HandleFunc("/{name}", viewHandler).Methods("GET")
-	//r.HandleFunc("/save/{name:.*}", saveHandler).Methods("POST")
-	//r.HandleFunc("/edit/{name:.*}", editHandler)
-	//r.HandleFunc("/history/{name:.*}", historyHandler).Methods("GET")
 
     // wiki functions, should accept alphanumerical, "_", "-", ".", "@"
-	r.HandleFunc("/{name:.*}", editHandler).Methods("GET").Queries("a", "edit")
-    r.HandleFunc("/{name:.*}", saveHandler).Methods("POST").Queries("a", "save")
-    r.HandleFunc("/{name:.*}", historyHandler).Methods("GET").Queries("a", "history")
-    //r.HandleFunc("/{name:[A-Za-z0-9_/.-]+}/{commit:[a-f0-9]{40}}", viewCommitHandler).Methods("GET") 
-    r.HandleFunc("/{name:.*}", viewHandler).Methods("GET")
+	r.HandleFunc("/{name:.*}", auth.AuthMiddle(editHandler)).Methods("GET").Queries("a", "edit")
+    r.HandleFunc("/{name:.*}", auth.AuthMiddle(saveHandler)).Methods("POST").Queries("a", "save")
     
-    
+    r.Handle("/{name:.*}", wikiauth.ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
+    r.Handle("/{name:.*}", wikiauth.ThenFunc(viewHandler)).Methods("GET")
 
     http.HandleFunc("/robots.txt", utils.RobotsHandler)
     http.HandleFunc("/favicon.ico", utils.FaviconHandler)

@@ -38,6 +38,14 @@ $(document).ready(function(){
         $("#alerts").append("<section class=\"content\">Please try to login again.</section>");
         $("#alerts").append("<footer><label for=\"alert_modal\" class=\"button dangerous\">Okay</label></footer></article>");
         $( "#alert_modal" ).prop( "checked", true );
+        $("#alert_modal :checkbox").click(function() {
+                            var $this = $(this);
+                            if ($this.is(':checked')) {
+                                
+                            } else {
+                                location.reload();
+                            }
+                        });
       }
     });
   });
