@@ -2,7 +2,7 @@
     <i class="material-icons centericon">person</i>
 {{ if .UN }}
     Hello, {{ .page.UN }}|{{ .page.Role }}
-    <a href="/logout" class="button">Logout</a>
+    <a href="/auth/logout" class="button">Logout</a>
     {{ if .page.Role|isAdmin }}    
         <a href="/admin" class="button">admin</a>
     {{ end }}    
