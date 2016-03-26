@@ -83,7 +83,6 @@ const (
 		EXTENSION_FENCED_CODE |
 		EXTENSION_AUTOLINK |
 		EXTENSION_STRIKETHROUGH |
-		EXTENSION_SPACE_HEADERS |
 		EXTENSION_HEADER_IDS |
 		EXTENSION_BACKSLASH_LINE_BREAK |
 		EXTENSION_DEFINITION_LISTS |
@@ -193,6 +192,13 @@ type historyPage struct {
 	FileHistory []*commitLog
 }
 
+type tagMapPage struct {
+	*page
+	TagKeys    map[string][]string
+}
+
+
+
 type commitLog struct {
     Filename string
     Commit   string
@@ -218,6 +224,10 @@ var urlSlugifier = slugify.New(slugify.Configuration{
             if c == '/' {
                 return true
             }
+
+            if c == '.' {
+                return true
+            }            
 
             return false
         },
@@ -1235,7 +1245,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
     // Crawl for new favorites only on startup and save
     favbuf.Reset()
-    err = filepath.Walk("./md", readFavs)
+    err = filepath.Walk(cfg.WikiDir, readFavs)
     if err != nil {
         log.Fatal(err)
     }    
@@ -1254,6 +1264,12 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 	//log.Println(r)
 	http.Redirect(w, r, pagetitle+"?a=edit", 301)
 
+}
+
+
+func urlFromPath(path string) string {
+    url := filepath.Clean(cfg.WikiDir) + "/"
+    return strings.TrimPrefix(path, url)
 }
 
 // readFavs should read and populate favbuf, in memory
@@ -1275,7 +1291,7 @@ func readFavs(path string, info os.FileInfo, err error) error {
         return nil
     }
     
-    name := info.Name()
+    name := urlFromPath(path)
 
     // Read YAML frontmatter into fm
     // If err, just return, as file should not contain frontmatter
@@ -1319,6 +1335,7 @@ func favsHandler(favs chan []string) {
 func readTags(path string, info os.FileInfo, err error) error {
     
     if tagMap == nil {
+        log.Println("tagMap is blank")
         tagMap = make(map[string][]string)
     }
 
@@ -1337,7 +1354,7 @@ func readTags(path string, info os.FileInfo, err error) error {
         return nil
     }
     
-    name := info.Name()
+    name := urlFromPath(path)
 
     // Read YAML frontmatter into fm
     // If err, just return, as file should not contain frontmatter
@@ -1481,7 +1498,7 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 
     owithnewlines := bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
 
-    gp := gitPage {
+    gp := &gitPage{
         p,
         title,
         string(owithnewlines),
@@ -1522,16 +1539,50 @@ func checkWikiGit(next http.Handler) http.Handler {
 
 func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "tagMapHandler")
+    a := &tagMap
+
+    //title := "Tag List"
+    p, err := loadPage(r)
+    if err != nil {
+        log.Fatalln(err)
+    }    
+    
+    /*
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
-    log.Println(tagMap)
-    for k, v := range tagMap {
-        w.Write([]byte(k))
+    log.Println(a)
+    for k, v := range *a {
+        w.Write([]byte("k : "+ k + "<br>"))
         for _, v2 := range v {
-            w.Write([]byte(v2))
+            w.Write([]byte("v2: "+ v2 + "<br>"))
         }
     }
     
+    
+    var tagkeys []string
+    var tagvalues []string
+    for k, v := range *a {
+        tagkeys = append(tagkeys, k)
+        for _, v2 := range v {
+            tagvalues = append(tagvalues, v2)
+        }
+    }    
+    */
+    
+    //log.Println(tagkeys)
+    //log.Println(tagvalues)
+
+    tagpage := &tagMapPage{
+        page: p,
+        TagKeys: *a,
+    }
+    err = renderTemplate(w, "tag_list.tmpl", tagpage)
+    if err != nil {
+        log.Println(err)
+        return
+    }
+
+
 }
 
 func main() {
