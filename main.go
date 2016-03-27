@@ -626,8 +626,8 @@ func loadPage(r *http.Request) (*page, error) {
                 `+ msg + `
             </section>
             <footer>
-            <label for="alert_modal" class="button dangerous">
-                Cancel
+            <label for="alert_modal" class="button">
+                Okay
             </label>
             </footer>
         </article>        
