@@ -8,14 +8,15 @@ import (
     //"github.com/drewolson/testflight"
     "net/http/httptest"
     "net/http"
-    "github.com/gorilla/context"
+    //"github.com/gorilla/context"
     //"fmt"
-    "log"
+    //"log"
     "net/url"
     //"os"
     //"jba.io/go/auth"
     "strings"
     "github.com/gorilla/mux"
+    //"github.com/stretchr/testify/assert"
 )
 
 type key int
@@ -28,17 +29,108 @@ var (
     serverUrl string
     m   *mux.Router
     req *http.Request
-    respRec *httptest.ResponseRecorder
+    rr *httptest.ResponseRecorder
 )
 
+
 func setup() {
+    /*
+    // Open and initialize auth database
+    // Retrieve a temporary path.
+    f, err := ioutil.TempFile("", "")
+    if err != nil {
+        panic(err)
+    }
+    path := f.Name()
+    
+    auth.Open(path)
+    auth.AuthDbInit()
+    
+
     //mux router with added question routes
     m = mux.NewRouter()
     m.HandleFunc("/new", newHandler)
-    Router(m)
-
+    //Router(m)
+    server = httptest.NewServer(Router(m))
+    serverUrl = server.URL
+    */
     //The response recorder used to record HTTP responses
-    respRec = httptest.NewRecorder()
+    rr = httptest.NewRecorder()
+}
+
+
+func TestHealthCheckHandler(t *testing.T) {
+    //assert := assert.New(t)
+    setup()
+    // Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+    // pass 'nil' as the third parameter.
+    req, err := http.NewRequest("GET", "/health", nil)
+    if err != nil {
+        t.Fatal(err)
+    }
+
+    // We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+    handler := http.HandlerFunc(HealthCheckHandler)
+
+    // Our handlers satisfy http.Handler, so we can call their ServeHTTP method 
+    // directly and pass in our Request and ResponseRecorder.
+    handler.ServeHTTP(rr, req)
+
+    // Check the status code is what we expect.
+    if status := rr.Code; status != http.StatusOK {
+        t.Errorf("handler returned wrong status code: got %v want %v",
+            status, http.StatusOK)
+    }
+    //assert.Equal(rr.Code, http.StatusOK, "HealthCheckHandler not returning 200")
+
+    // Check the response body is what we expect.
+    expected := `{"alive": true}`
+    if rr.Body.String() != expected {
+        t.Errorf("handler returned unexpected body: got %v want %v",
+            rr.Body.String(), expected)
+    }
+}
+
+func TestNewHandler(t *testing.T) {
+    setup()
+
+    // Create a request to pass to our handler.
+    form := url.Values{}
+    form.Add("newwiki", "omg/yeah/what")
+    //log.Println(form)
+    reader = strings.NewReader(form.Encode())
+    req, err := http.NewRequest("POST", "/new", reader)
+    if err != nil {
+        t.Fatal(err)
+    }
+    //log.Println(reader)
+    
+    req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+    // We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+    handler := http.HandlerFunc(newHandler)
+
+    // Our handlers satisfy http.Handler, so we can call their ServeHTTP method 
+    // directly and pass in our Request and ResponseRecorder.
+    handler.ServeHTTP(rr, req)
+
+    //log.Println(rr.Header())
+    
+    // Check the status code is what we expect.
+    if status := rr.Code; status != http.StatusCreated {
+        t.Errorf("handler returned wrong status code: got %v want %v",
+            status, http.StatusCreated)
+    }
+    
+    //log.Println(rr.Header().Get("Location"))
+
+    // Check the response body is what we expect.
+    expected := `/omg/yeah/what?a=edit`
+    if rr.Header().Get("Location") != expected {
+        t.Errorf("handler returned unexpected body: got %v want %v",
+            rr.Body.String(), expected)
+    }
+
 }
 
 /*
@@ -57,9 +149,7 @@ func TestSetUser(t *testing.T) {
     if err != nil {
         log.Println(err) //Something is wrong while sending request
     }
-    
-    
-    
+
     r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
     auth.SetContext(r, "admin", "Admin", "")
     
@@ -73,7 +163,6 @@ func TestSetUser(t *testing.T) {
     if w.StatusCode != http.StatusCreated {
         t.Errorf("Success expected: %d %s", w.StatusCode, w.Header) //Uh-oh this means our test failed
     }
-    
 }
 
 type TestDB struct {
@@ -142,7 +231,7 @@ func TestCreateUser(t *testing.T) {
     
 }
 */
-
+/*
 func testUserEnvMiddle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         context.Set(r, UserKey, "admin")
@@ -163,10 +252,11 @@ func TestNewHandler(t *testing.T) {
     
     req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
     
-    m.ServeHTTP(respRec, req)
-    log.Println(respRec.Code)
-    log.Println(respRec.Header())
+    m.ServeHTTP(rr, req)
+    log.Println(rr.Code)
+    log.Println(rr.Header())
 }
+*/
 
 func TestMarkdownRender(t *testing.T) {
     // Read raw Markdown

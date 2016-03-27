@@ -249,6 +249,10 @@ func (a wikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a wikiByModDate) Less(i, j int) bool { return a[i].ModTime < a[j].ModTime }
 
 func init() {
+
+
+    
+    
     
     // Viper config
     viper.SetConfigName("conf")
@@ -283,13 +287,15 @@ func init() {
     viper.SetDefault("MainTLD", "wiki.jba.io")
     viper.SetDefault("GitRepo", "git@jba.io:conf/gowiki-data.git")
     defaultauthstruct := &auth.AuthConf {
+        AuthDbPath: "./auth.db",
         LdapEnabled: false,
         LdapConf: auth.LdapConf{ },
     }
     viper.SetDefault("AuthConf", defaultauthstruct)
     viper.Unmarshal(&cfg)
     
-    log.Println(&cfg)
+    //log.Println(&cfg)
+    
 
     
 	//Flag '-l' enables go.dev and *.dev domain resolution
@@ -1282,13 +1288,12 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
     utils.WriteJ(w, name, true)
 	log.Println(name + " page saved!")
 
-
 }
 
 func newHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "newHandler")
 	pagetitle := r.FormValue("newwiki")
-
+    
 	_, fierr := os.Stat(pagetitle)    
     if os.IsNotExist(fierr) {
         http.Redirect(w, r, pagetitle+"?a=edit", http.StatusCreated)
@@ -1298,13 +1303,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
     }
     
     http.Redirect(w, r, pagetitle, http.StatusTemporaryRedirect)
-    return
-
-    
-	//log.Println(pagetitle)
-	//log.Println(r)
-	
-    
+    return   
 
 }
 
@@ -1377,7 +1376,7 @@ func favsHandler(favs chan []string) {
 func readTags(path string, info os.FileInfo, err error) error {
     
     if tagMap == nil {
-        log.Println("tagMap is blank")
+        //log.Println("tagMap is blank")
         tagMap = make(map[string][]string)
     }
 
@@ -1637,14 +1636,23 @@ func wikiAuth(next http.Handler) http.Handler {
 	})
 }
 
+func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
+    // A very simple health check.
+    w.WriteHeader(http.StatusOK)
+    w.Header().Set("Content-Type", "application/json")
+
+    // In the future we could report back on the status of our DB, or our cache 
+    // (e.g. Redis) by performing a simple PING, and include them in the response.
+    io.WriteString(w, `{"alive": true}`)
+}
+
 
 func Router(r *mux.Router) *mux.Router {
     statsdata := stats.New()
 
     //wiki := s.Append(checkWikiGit)
     //wikiauth := wiki.Append(wikiAuth)
-    
-	
+
     
     //r := mux.NewRouter()
 	//d := r.Host("go.jba.io").Subrouter()
@@ -1662,6 +1670,7 @@ func Router(r *mux.Router) *mux.Router {
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
 	r.HandleFunc("/list", listHandler).Methods("GET")
+    r.HandleFunc("/health", HealthCheckHandler).Methods("GET")
     
     a := r.PathPrefix("/auth").Subrouter()
     a.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
@@ -1697,12 +1706,15 @@ func Router(r *mux.Router) *mux.Router {
     return r
 }
 
-
 func main() {
 
 	flag.Parse()
     
+    // Open and initialize auth database
+    auth.Open(cfg.AuthConf.AuthDbPath)
+    auth.AuthDbInit()    
     defer auth.Authdb.Close()
+    
 
     /*
 	//Load conf.json
