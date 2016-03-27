@@ -3,8 +3,170 @@ package main
 import (
     "testing"
     "io/ioutil"
+    "io"
     "bytes"
+    //"github.com/drewolson/testflight"
+    "net/http/httptest"
+    "net/http"
+    "github.com/gorilla/context"
+    //"fmt"
+    "log"
+    "net/url"
+    //"os"
+    //"jba.io/go/auth"
+    "strings"
+    "github.com/gorilla/mux"
 )
+
+type key int
+const UserKey  key = 1
+const RoleKey  key = 2
+
+var (
+    server   *httptest.Server
+    reader   io.Reader //Ignore this for now
+    serverUrl string
+    m   *mux.Router
+    req *http.Request
+    respRec *httptest.ResponseRecorder
+)
+
+func setup() {
+    //mux router with added question routes
+    m = mux.NewRouter()
+    m.HandleFunc("/new", newHandler)
+    Router(m)
+
+    //The response recorder used to record HTTP responses
+    respRec = httptest.NewRecorder()
+}
+
+/*
+
+func setup() {
+    router := Router() //Creating new server with the user handlers
+}
+
+
+
+func TestSetUser(t *testing.T) {
+    
+    userJson := url.Values{"newwiki": {"omg/yeah/stuff"}}
+    reader = strings.NewReader(userJson.Encode())
+    r, err := http.NewRequest("GET", serverUrl+"/new", reader)
+    if err != nil {
+        log.Println(err) //Something is wrong while sending request
+    }
+    
+    
+    
+    r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+    auth.SetContext(r, "admin", "Admin", "")
+    
+    w, err := http.DefaultClient.Do(r)
+
+    if err != nil {
+        log.Println(err) //Something is wrong while sending request
+    }
+    log.Println(context.GetAll(r))
+    
+    if w.StatusCode != http.StatusCreated {
+        t.Errorf("Success expected: %d %s", w.StatusCode, w.Header) //Uh-oh this means our test failed
+    }
+    
+}
+
+type TestDB struct {
+    *auth.DB
+}
+
+// NewTestDB returns a TestDB using a temporary path.
+func NewTestDB() *TestDB {
+    // Retrieve a temporary path.
+    f, err := ioutil.TempFile("", "")
+    if err != nil {
+        panic(err)
+    }
+    path := f.Name()
+    f.Close()
+    os.Remove(path)
+
+    // Open the database.
+    db, err := auth.Open(path, 0600)
+    if err != nil {
+        panic(err)
+    }
+
+    // Return wrapped type.
+    return &TestDB{db}
+}
+
+// Close and delete Bolt database.
+func (db *TestDB) Close() {
+    defer os.Remove(db.Path())
+    db.DB.Close()
+}
+
+
+func TestCreateUser(t *testing.T) {
+    
+    //setUser()
+    
+    db := NewTestDB()
+    defer db.Close()    
+
+    //server = httptest.NewServer(Router())
+    //router := Router()
+    //w := httptest.NewRecorder()   
+
+    userJson := `{"newwiki": "omg-yeah/omg/omg"}`
+
+    reader = strings.NewReader(userJson) //Convert string to reader
+    //log.Println(serverUrl)
+    r, err := http.NewRequest("POST", serverUrl+"/new", reader) //Create request with JSON body
+
+    if err != nil {
+        t.Error(err) //Something is wrong while sending request
+    }
+
+    w, err := http.DefaultClient.Do(r)
+
+    if err != nil {
+        t.Error(err) //Something is wrong while sending request
+    }
+    
+    if w.StatusCode != http.StatusCreated {
+        log.Println(context.GetAll(r))
+        t.Errorf("Success expected: %d %s", w.StatusCode, w.Header) //Uh-oh this means our test failed
+    }
+    
+}
+*/
+
+func testUserEnvMiddle(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        context.Set(r, UserKey, "admin")
+        context.Set(r, RoleKey, "Admin")
+        log.Println(context.Get(r, UserKey))
+        log.Println(context.Get(r, RoleKey))
+        next.ServeHTTP(w, r)
+	})
+}
+
+func TestNewHandler(t *testing.T) {
+    setup()
+    
+    userJson := url.Values{"newwiki": {"omg/yeah/stuff"}}
+    reader = strings.NewReader(userJson.Encode())
+    
+    req, _ = http.NewRequest("POST", serverUrl+"/new", reader)
+    
+    req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+    
+    m.ServeHTTP(respRec, req)
+    log.Println(respRec.Code)
+    log.Println(respRec.Header())
+}
 
 func TestMarkdownRender(t *testing.T) {
     // Read raw Markdown

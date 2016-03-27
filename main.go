@@ -603,8 +603,8 @@ func loadPage(r *http.Request) (*page, error) {
     user, role, msg := auth.GetUsername(r)
     token := auth.GetToken(r)
     
-    log.Println("Message: ")
-    log.Println(msg)
+    //log.Println("Message: ")
+    //log.Println(msg)
     
     var message string
     if msg != "" {
@@ -986,7 +986,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = renderTemplate(w, "wiki_view.tmpl", p)
 	if err != nil {
-		log.Fatalln(err)
+		panic(err)
 	}
 }
 
@@ -1032,7 +1032,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
             http.Error(w, "Cannot create subdir of a file.", 500)
             return
 		} else {
-			log.Fatalln(err)
+			panic(err)
 		}
 		//log.Println(err.Error())
 		http.NotFound(w, r)
@@ -1040,7 +1040,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = renderTemplate(w, "wiki_view.tmpl", p)
 	if err != nil {
-		log.Fatalln(err)
+		panic(err)
 	}
 	//log.Println(p.Title + " Page rendered!")
 }
@@ -1286,12 +1286,25 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func newHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "saveHandler")
+	defer utils.TimeTrack(time.Now(), "newHandler")
 	pagetitle := r.FormValue("newwiki")
+
+	_, fierr := os.Stat(pagetitle)    
+    if os.IsNotExist(fierr) {
+        http.Redirect(w, r, pagetitle+"?a=edit", http.StatusCreated)
+        return
+    } else if fierr != nil {
+        panic(fierr)
+    }
+    
+    http.Redirect(w, r, pagetitle, http.StatusTemporaryRedirect)
+    return
+
     
 	//log.Println(pagetitle)
 	//log.Println(r)
-	http.Redirect(w, r, pagetitle+"?a=edit", 301)
+	
+    
 
 }
 
@@ -1584,7 +1597,7 @@ func wikiAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
         wikipage := cfg.WikiDir + r.URL.Path
-        log.Println(wikipage)
+        //log.Println(wikipage)
         
 	_, fierr := os.Stat(wikipage)
     if fierr != nil {
@@ -1624,15 +1637,73 @@ func wikiAuth(next http.Handler) http.Handler {
 	})
 }
 
+
+func Router(r *mux.Router) *mux.Router {
+    statsdata := stats.New()
+
+    //wiki := s.Append(checkWikiGit)
+    //wikiauth := wiki.Append(wikiAuth)
+    
+	
+    
+    //r := mux.NewRouter()
+	//d := r.Host("go.jba.io").Subrouter()
+	r.HandleFunc("/", indexHandler).Methods("GET")
+    
+    r.HandleFunc("/tags", tagMapHandler)
+    r.HandleFunc("/panic", func(w http.ResponseWriter, r *http.Request) {
+        panic("Unexpected error!")
+        //http.Error(w, panic("Unexpected error!"), http.StatusInternalServerError)
+    })
+    
+	r.HandleFunc("/new", auth.AuthMiddle(newHandler))
+	r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
+	r.HandleFunc("/login", loginPageHandler).Methods("GET")
+	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
+	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
+	r.HandleFunc("/list", listHandler).Methods("GET")
+    
+    a := r.PathPrefix("/auth").Subrouter()
+    a.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
+    a.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
+	a.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
+    a.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
+    
+    r.HandleFunc("/admin/users", auth.AuthAdminMiddle(adminUserHandler)).Methods("GET")
+    r.HandleFunc("/admin/users", auth.AuthAdminMiddle(auth.AdminUserPostHandler)).Methods("POST")
+    
+	r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
+	r.HandleFunc("/signup", signupPageHandler).Methods("GET")
+
+	r.HandleFunc("/gitadd", auth.AuthMiddle(gitCheckinPostHandler)).Methods("POST")
+	r.HandleFunc("/gitadd", auth.AuthMiddle(gitCheckinHandler)).Methods("GET")    
+        
+    r.HandleFunc("/stats", func(w http.ResponseWriter, r *http.Request) {
+            w.Header().Set("Content-Type", "application/json")
+            stats := statsdata.Data()
+            b, _ := json.Marshal(stats)
+            w.Write(b)
+    })
+
+	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
+
+    // wiki functions, should accept alphanumerical, "_", "-", ".", "@"
+	r.HandleFunc("/{name:.*}", auth.AuthMiddle(editHandler)).Methods("GET").Queries("a", "edit")
+    r.HandleFunc("/{name:.*}", auth.AuthMiddle(saveHandler)).Methods("POST").Queries("a", "save")
+    
+    r.Handle("/{name:.*}", alice.New(wikiAuth).ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
+    r.Handle("/{name:.*}", alice.New(wikiAuth).ThenFunc(viewHandler)).Methods("GET")
+    
+    return r
+}
+
+
 func main() {
 
 	flag.Parse()
     
     defer auth.Authdb.Close()
 
-
-
-    
     /*
 	//Load conf.json
 	conf, _ := os.Open("conf.json")
@@ -1662,17 +1733,16 @@ func main() {
 		}
 	}
 
-	//sessID = utils.RandKey(32)
-	//log.Println("Session ID: " + sessID)
+    s := alice.New(handlers.RecoveryHandler(handlers.PrintRecoveryStack(true)), utils.Logger, auth.UserEnvMiddle, auth.XsrfMiddle)
 
+    r := mux.NewRouter().StrictSlash(false)
+    
+
+    /*
     statsdata := stats.New()
 
-	//std := alice.New(utils.Logger)
-	//stda := alice.New(Auth, Logger)
-    s := alice.New(handlers.RecoveryHandler(), utils.Logger, auth.UserEnvMiddle, auth.XsrfMiddle)
-    
-    wiki := s.Append(checkWikiGit)
-    wikiauth := wiki.Append(wikiAuth)
+    //wiki := s.Append(checkWikiGit)
+    //wikiauth := wiki.Append(wikiAuth)
     
 	r := mux.NewRouter().StrictSlash(false)
     
@@ -1717,14 +1787,15 @@ func main() {
 	r.HandleFunc("/{name:.*}", auth.AuthMiddle(editHandler)).Methods("GET").Queries("a", "edit")
     r.HandleFunc("/{name:.*}", auth.AuthMiddle(saveHandler)).Methods("POST").Queries("a", "save")
     
-    r.Handle("/{name:.*}", wikiauth.ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
-    r.Handle("/{name:.*}", wikiauth.ThenFunc(viewHandler)).Methods("GET")
+    r.Handle("/{name:.*}", alice.New(wikiAuth).ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
+    r.Handle("/{name:.*}", alice.New(wikiAuth).ThenFunc(viewHandler)).Methods("GET")
+    */
 
     http.HandleFunc("/robots.txt", utils.RobotsHandler)
     http.HandleFunc("/favicon.ico", utils.FaviconHandler)
     http.HandleFunc("/favicon.png", utils.FaviconHandler)
     http.HandleFunc("/assets/", utils.StaticHandler)
-    http.Handle("/", s.Then(r))
+    http.Handle("/", s.Then(Router(r)))
     
     log.Println("Listening on port " + cfg.Port)
 	http.ListenAndServe("127.0.0.1:"+ cfg.Port, nil)
