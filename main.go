@@ -287,7 +287,6 @@ func init() {
     viper.SetDefault("MainTLD", "wiki.jba.io")
     viper.SetDefault("GitRepo", "git@jba.io:conf/gowiki-data.git")
     defaultauthstruct := &auth.AuthConf {
-        AuthDbPath: "./auth.db",
         LdapEnabled: false,
         LdapConf: auth.LdapConf{ },
     }
@@ -1711,7 +1710,7 @@ func main() {
 	flag.Parse()
     
     // Open and initialize auth database
-    auth.Open(cfg.AuthConf.AuthDbPath)
+    auth.Open("./auth.db")
     auth.AuthDbInit()    
     defer auth.Authdb.Close()
     
