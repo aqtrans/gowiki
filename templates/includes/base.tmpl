@@ -28,9 +28,10 @@
             {{ template "usernav" .}}
         </div>    
         <div class="newmenu">
-            <form method="post" action="/new" id="newwiki">
+            <form method="get" action="/new" id="newwiki">
                 <label><i class="material-icons centericon">note_add</i></label>
                 <input type="text" placeholder="New wiki page..." id="newwiki" name="newwiki" class="newwiki">
+                <input type="hidden" name="token" value="{{.Token}}">
                 <button type="submit">Go!</button>   
             </form>
         </div>

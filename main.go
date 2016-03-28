@@ -136,8 +136,6 @@ type frontmatter struct {
     Favorite    bool `yaml:"favorite,omitempty"`
     Private     bool `yaml:"private,omitempty"`
     Admin       bool `yaml:"admin,omitempty"`
-	//	Created     int64    `yaml:"created,omitempty"`
-	//	LastModTime int64	 `yaml:"lastmodtime,omitempty"`
 }
 
 type wiki struct {
@@ -318,7 +316,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isAdmin": isAdmin}
+	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isAdmin": isAdmin, "isLoggedIn": isLoggedIn}
 
 	for _, layout := range layouts {
 		files := append(includes, layout)
@@ -354,6 +352,13 @@ func isAdmin(s string) bool {
         return true
     }
 	return false
+}
+
+func isLoggedIn(s string) bool {
+	if s == "" {
+        return false
+    }
+	return true
 }
 
 // CUSTOM GIT WRAPPERS
@@ -1295,7 +1300,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
     
 	_, fierr := os.Stat(pagetitle)    
     if os.IsNotExist(fierr) {
-        http.Redirect(w, r, pagetitle+"?a=edit", http.StatusCreated)
+        http.Redirect(w, r, pagetitle+"?a=edit", http.StatusTemporaryRedirect)
         return
     } else if fierr != nil {
         panic(fierr)
@@ -1663,7 +1668,7 @@ func Router(r *mux.Router) *mux.Router {
         //http.Error(w, panic("Unexpected error!"), http.StatusInternalServerError)
     })
     
-	r.HandleFunc("/new", auth.AuthMiddle(newHandler))
+	r.HandleFunc("/new", auth.AuthMiddle(newHandler)).Methods("GET")
 	r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
 	r.HandleFunc("/login", loginPageHandler).Methods("GET")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
