@@ -50,6 +50,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
     "jba.io/go/utils"
+    //"net/url"
 )
 
 const (
@@ -351,12 +352,13 @@ func slugURL(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
     //log.Println(name)
-    log.Println(r.URL.RawPath)
+    //log.Println(r.URL.String())
     slugName := urlSlugifier.Slugify(name)
     if name != slugName {
-        log.Println(name + " and " + slugName + " differ.")
+        //log.Println(name + " and " + slugName + " differ.")
+        //log.Println(strings.Replace(r.URL.String(), name, slugName, 1))
         //log.Println(r.URL.RequestURI())
-        //http.Redirect(w, r, "/"+slugName+r.URL.RawQuery, http.StatusTemporaryRedirect)
+        http.Redirect(w, r, "/"+slugName+"?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
         return
     }
     //log.Println(r.URL)
@@ -1734,11 +1736,11 @@ func Router(r *mux.Router) *mux.Router {
     //r.HandleFunc("/{name:.*}", wikiHandler)
 
     // wiki functions, should accept alphanumerical, "_", "-", ".", "@"
-	r.HandleFunc(`/{name:[a-zA-Z0-9\-\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, auth.AuthMiddle(editHandler)).Methods("GET").Queries("a", "edit")
-    r.HandleFunc(`/{name:[a-zA-Z0-9\-\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, auth.AuthMiddle(saveHandler)).Methods("POST").Queries("a", "save")
+	r.HandleFunc(`/{name:[a-zA-Z0-9\-\_\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, auth.AuthMiddle(editHandler)).Methods("GET").Queries("a", "edit")
+    r.HandleFunc(`/{name:[a-zA-Z0-9\-\_\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, auth.AuthMiddle(saveHandler)).Methods("POST").Queries("a", "save")
     
-    r.Handle(`/{name:[a-zA-Z0-9\-\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, alice.New(wikiAuth).ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
-    r.Handle(`/{name:[a-zA-Z0-9\-\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, alice.New(wikiAuth).ThenFunc(viewHandler)).Methods("GET")
+    r.Handle(`/{name:[a-zA-Z0-9\-\_\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, alice.New(wikiAuth).ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
+    r.Handle(`/{name:[a-zA-Z0-9\-\_\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, alice.New(wikiAuth).ThenFunc(viewHandler)).Methods("GET")
     //r.NotFoundHandler = alice.New(wikiAuth).ThenFunc(viewHandler)
     return r
 }
