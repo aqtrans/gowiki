@@ -117,7 +117,7 @@ func TestNewHandler(t *testing.T) {
     //log.Println(rr.Header())
     
     // Check the status code is what we expect.
-    if status := rr.Code; status != http.StatusCreated {
+    if status := rr.Code; status != http.StatusTemporaryRedirect {
         t.Errorf("handler returned wrong status code: got %v want %v",
             status, http.StatusCreated)
     }
