@@ -345,6 +345,24 @@ func init() {
 
 }
 
+// Turn the given URL into a slug
+// Redirect to slugURL if it is different from input
+func slugURL(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+    //log.Println(name)
+    log.Println(r.URL.RawPath)
+    slugName := urlSlugifier.Slugify(name)
+    if name != slugName {
+        log.Println(name + " and " + slugName + " differ.")
+        //log.Println(r.URL.RequestURI())
+        //http.Redirect(w, r, "/"+slugName+r.URL.RawQuery, http.StatusTemporaryRedirect)
+        return
+    }
+    //log.Println(r.URL)
+    //log.Println(r.URL.RawQuery)
+}
+
 func isAdmin(s string) bool {
 	if s == "User" {
         return false
@@ -650,6 +668,9 @@ func loadPage(r *http.Request) (*page, error) {
 }
 
 func historyHandler(w http.ResponseWriter, r *http.Request) {
+    
+    slugURL(w, r)
+    
 	vars := mux.Vars(r)
 	name := vars["name"]
 	p, err := loadPage(r)
@@ -678,7 +699,10 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 // TODO: need to find a way to detect sha1s
 func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 	var fm frontmatter
-	var pagetitle string    
+	var pagetitle string
+    
+    slugURL(w, r)
+    
 	vars := mux.Vars(r)
 	name := vars["name"]
 	//commit := vars["commit"]
@@ -961,9 +985,6 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 	vars := mux.Vars(r)
 	name := vars["name"]
     
-    slugName := urlSlugifier.Slugify(name)
-    log.Println(slugName)
-    
     return loadWikiPageHelper(r, name)
 }
 
@@ -1003,16 +1024,16 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "viewHandler")
     
-    // Turn the given URL into a slug
-    // Redirect to slugURL if it is different from input
+    slugURL(w, r)
+    
 	vars := mux.Vars(r)
 	name := vars["name"]    
-    slugName := urlSlugifier.Slugify(name)
-    if name != slugName {
+    //slugName := urlSlugifier.Slugify(name)
+    /*if name != slugName {
         log.Println(name + " and " + slugName + " differ.")
         http.Redirect(w, r, "/"+slugName, http.StatusTemporaryRedirect)
         return
-    }
+    }*/
     
     // In case I want to switch to queries some time
     query := r.URL.RawQuery
@@ -1205,6 +1226,9 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "editHandler")
+    
+    slugURL(w, r)
+    
 	p, err := loadWikiPage(r)
 	//log.Println(p.Filename)
 	//log.Println(p.PageTitle)
@@ -1228,6 +1252,9 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 
 func saveHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "saveHandler")
+    
+    slugURL(w, r)
+    
 	vars := mux.Vars(r)
 	name := vars["name"]
 	r.ParseForm()
@@ -1297,6 +1324,11 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 func newHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "newHandler")
 	pagetitle := r.FormValue("newwiki")
+    
+    slugName := urlSlugifier.Slugify(pagetitle)
+    if slugName != pagetitle {
+        pagetitle = slugName
+    }
     
 	_, fierr := os.Stat(pagetitle)    
     if os.IsNotExist(fierr) {
@@ -1650,7 +1682,6 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
     io.WriteString(w, `{"alive": true}`)
 }
 
-
 func Router(r *mux.Router) *mux.Router {
     statsdata := stats.New()
 
@@ -1681,10 +1712,10 @@ func Router(r *mux.Router) *mux.Router {
     a.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	a.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
     a.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
-    
+
     r.HandleFunc("/admin/users", auth.AuthAdminMiddle(adminUserHandler)).Methods("GET")
     r.HandleFunc("/admin/users", auth.AuthAdminMiddle(auth.AdminUserPostHandler)).Methods("POST")
-    
+
 	r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
 	r.HandleFunc("/signup", signupPageHandler).Methods("GET")
 
@@ -1699,14 +1730,16 @@ func Router(r *mux.Router) *mux.Router {
     })
 
 	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
+    
+    //r.HandleFunc("/{name:.*}", wikiHandler)
 
     // wiki functions, should accept alphanumerical, "_", "-", ".", "@"
-	r.HandleFunc("/{name:.*}", auth.AuthMiddle(editHandler)).Methods("GET").Queries("a", "edit")
-    r.HandleFunc("/{name:.*}", auth.AuthMiddle(saveHandler)).Methods("POST").Queries("a", "save")
+	r.HandleFunc(`/{name:[a-zA-Z0-9\-\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, auth.AuthMiddle(editHandler)).Methods("GET").Queries("a", "edit")
+    r.HandleFunc(`/{name:[a-zA-Z0-9\-\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, auth.AuthMiddle(saveHandler)).Methods("POST").Queries("a", "save")
     
-    r.Handle("/{name:.*}", alice.New(wikiAuth).ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
-    r.Handle("/{name:.*}", alice.New(wikiAuth).ThenFunc(viewHandler)).Methods("GET")
-    
+    r.Handle(`/{name:[a-zA-Z0-9\-\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, alice.New(wikiAuth).ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
+    r.Handle(`/{name:[a-zA-Z0-9\-\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, alice.New(wikiAuth).ThenFunc(viewHandler)).Methods("GET")
+    //r.NotFoundHandler = alice.New(wikiAuth).ThenFunc(viewHandler)
     return r
 }
 
