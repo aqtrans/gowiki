@@ -1,26 +1,24 @@
 {{ define "title" }}<title>{{.page.SiteName}}|{{ .PageTitle }}</title>{{ end }}
 {{ define "content" }}
 <article class="card">
-  <header>
-    <h1>{{.PageTitle}}</h1>    
-  </header>
+  <header>{{.PageTitle}}</header>
+  <div class="tooltip-item">
+  <i class="material-icons centericon tooltip-item">info</i>
+    <div class="tooltip">
+      <p><span class="wiki-metadata">Filename:<span class="label">{{ .Filename }}</span></span> <span class="wiki-metadata">Private:<span class="label">{{ .frontmatter.Private }}</span></span> <span class="wiki-metadata">Favorite:<span class="label">{{ .frontmatter.Favorite }}</span></span>
+      <span class="wiki-metadata">Tags:{{ range .frontmatter.Tags }}<span class="label">{{ . }}</span>{{ end }}</p>
+      <p><span class="wiki-metadata">Created:<span class="label">{{ .CreateTime | prettyDate }}</span></span> <span class="wiki-metadata">Last Modified:<span class="label">{{ .ModTime | prettyDate }}</span></span></p>
+    </div>
+  </div>
 </article>
 
-<div class="wikitoolbar">
-    <ul>
-        <li class="selected"><a href="#"><i class="material-icons centericon">visibility</i>View Page</a></li>
-        <li><a href="/{{.Filename}}?a=edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-        <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
-   </ul>
-</div>
-<article class="card wikicontent">
-  <header>
-    <p><span class="wiki-metadata">Filename:<span class="label">{{ .Filename }}</span></span> <span class="wiki-metadata">Private:<span class="label">{{ .frontmatter.Private }}</span></span> <span class="wiki-metadata">Favorite:<span class="label">{{ .frontmatter.Favorite }}</span></span>
-    <span class="wiki-metadata">Tags:{{ range .frontmatter.Tags }}<span class="label">{{ . }}</span>{{ end }}</p>
-    <p><span class="wiki-metadata">Created:<span class="label">{{ .CreateTime | prettyDate }}</span></span> <span class="wiki-metadata">Last Modified:<span class="label">{{ .ModTime | prettyDate }}</span></span></p>    
-  </header>
-  <footer>
+<ul class="tabs">
+  <li><a href="#" class="is-active"><i class="material-icons centericon">visibility</i>View Page</a></li>
+  <li><a href="/{{.Filename}}?a=edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
+  <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
+</ul>
+
+<article class="card">
     {{.wiki.Rendered | safeHTML}}
-  </footer>
 </article>
 {{ end }}
