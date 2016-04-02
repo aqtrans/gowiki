@@ -10,9 +10,9 @@
 {{end}}
 </ul>
 <form method="get" action="/new" id="newwiki">
-    <input type="text" placeholder="New wiki page..." id="newwiki" name="newwiki" class="newwiki">
+    <input type="text" placeholder="Add page" id="newwiki" name="newwiki" class="newwiki">
     <input type="hidden" name="token" value="{{.Token}}">
-    <button type="submit">Go!</button>
+    <button type="submit"><i class="material-icons">add_box</i></button>
 </form>
     {{ template "usernav" .}}
 {{ end }}
