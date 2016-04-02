@@ -1,6 +1,6 @@
 {{ define "title" }}<title>{{.page.SiteName}}|{{ .PageTitle }}</title>{{ end }}
 {{ define "content" }}
-<article class="card">
+<article>
   <header>{{.PageTitle}}</header>
 </article>
 
@@ -10,7 +10,7 @@
   <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
 </ul>
 
-<article class="card">
+<article>
   <section>
     <p><span class="wiki-metadata">Filename:<span class="label">{{ .Filename }}</span></span> <span class="wiki-metadata">Private:<span class="label">{{ .frontmatter.Private }}</span></span> <span class="wiki-metadata">Favorite:<span class="label">{{ .frontmatter.Favorite }}</span></span>
     <span class="wiki-metadata">Tags:{{ range .frontmatter.Tags }}<span class="label">{{ . }}</span>{{ end }}</p>
