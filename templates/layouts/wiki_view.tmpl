@@ -17,10 +17,13 @@
       <li>{{ .frontmatter.Private }}<span>Private</span></li>
       <li>{{ .frontmatter.Favorite }}<span>Favorite</span></li>
       <li>{{ range .frontmatter.Tags }}<span class="badge-alert">{{ . }}</span>{{ end }}<span>Tags</span></li>
-      <li>{{ .CreateTime | prettyDate }}<span>Created</span></li>
-      <li>{{ .ModTime | prettyDate }}<span>Last Modified</span></li>
     </ul>
   </div>
+  <main>
+      <p class="date">Created: {{ .CreateTime | prettyDate }}</p>
+      <p class="date">Last Modified: {{ .ModTime | prettyDate }}</p> 
+      <hr>
     {{.wiki.Rendered | safeHTML}}
+  </main>
 </article>
 {{ end }}
