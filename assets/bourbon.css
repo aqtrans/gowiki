@@ -1,5 +1,5 @@
 @charset "UTF-8";
-button, input[type="button"], input[type="reset"], input[type="submit"] {
+button, .button, input[type="button"], input[type="reset"], input[type="submit"] {
   appearance: none;
   background-color: #1565c0;
   border: 0;
@@ -18,13 +18,13 @@ button, input[type="button"], input[type="reset"], input[type="submit"] {
   user-select: none;
   vertical-align: middle;
   white-space: nowrap; }
-  button:hover, button:focus, input[type="button"]:hover, input[type="button"]:focus, input[type="reset"]:hover, input[type="reset"]:focus, input[type="submit"]:hover, input[type="submit"]:focus {
+  button:hover, .button:hover, button:focus, .button:focus, input[type="button"]:hover, input[type="button"]:focus, input[type="reset"]:hover, input[type="reset"]:focus, input[type="submit"]:hover, input[type="submit"]:focus {
     background-color: #11519a;
     color: #fff; }
-  button:disabled, input[type="button"]:disabled, input[type="reset"]:disabled, input[type="submit"]:disabled {
+  button:disabled, .button:disabled, input[type="button"]:disabled, input[type="reset"]:disabled, input[type="submit"]:disabled {
     cursor: not-allowed;
     opacity: 0.5; }
-    button:disabled:hover, input[type="button"]:disabled:hover, input[type="reset"]:disabled:hover, input[type="submit"]:disabled:hover {
+    button:disabled:hover, .button:disabled:hover, input[type="button"]:disabled:hover, input[type="reset"]:disabled:hover, input[type="submit"]:disabled:hover {
       background-color: #1565c0; }
 
 fieldset {
@@ -237,7 +237,7 @@ section {
         width: 100%; }
         section main:last-child {
           margin-right: 0; } }
-    section main article.card {
+    section main article {
       padding: 0;
       width: 100%;
       border-top-left-radius: 0;
@@ -296,7 +296,7 @@ section {
                 border-bottom-color: #f6f6f6;
                 margin-bottom: -1px; } }
 
-.card {
+.card, section main article, .modal article {
   background-color: #f6f6f6;
   border-radius: 3px;
   border: 1px solid gainsboro;
@@ -357,5 +357,65 @@ header {
       margin-left: -8px;
       text-align: center;
       text-shadow: 0 2px 2px silver; }
+
+.modal {
+  text-align: center; }
+  .modal > input {
+    display: none; }
+    .modal > input ~ * {
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden; }
+  .modal .overlay {
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    position: fixed;
+    margin: 0;
+    border-radius: 0;
+    background: rgba(17, 17, 17, 0.6);
+    transition: all .3s;
+    z-index: 99; }
+    .modal .overlay:before, .modal .overlay:after {
+      display: none; }
+    .modal .overlay ~ * {
+      border: 0;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translateX(-50%) translateY(-50%) scale(0.2, 0.2);
+      z-index: 100;
+      transition: all .3s; }
+  .modal > input:checked ~ * {
+    display: block;
+    opacity: 1;
+    max-height: 10000px;
+    transition: all .3s; }
+  .modal > input:checked ~ .overlay ~ * {
+    max-height: 90%;
+    overflow: auto;
+    -webkit-transform: translateX(-50%) translateY(-50%) scale(1, 1);
+    transform: translateX(-50%) translateY(-50%) scale(1, 1); }
+
+@media (max-width: 40em) {
+  .modal .overlay ~ * {
+    min-width: 90%; } }
+.close {
+  position: absolute;
+  top: .4em;
+  right: .3em;
+  font-size: 1.2em;
+  padding: 0 .5em;
+  cursor: pointer;
+  width: auto; }
+  .close:hover {
+    color: #85144B; }
+
+.dangerous {
+  background-color: #FF4136; }
+  .dangerous:hover, .dangerous:focus {
+    background-color: #cc342b;
+    color: #fff; }
 
 /*# sourceMappingURL=bourbon.css.map */

@@ -641,19 +641,14 @@ func loadPage(r *http.Request) (*page, error) {
         message = `
     <input id="alert_modal" type="checkbox" checked />
     <label for="alert_modal" class="overlay"></label>
-        <article id="alerts">
-            <header>
-            <h3>Alert!</h3>
+        <article>
+            <header>Alert!</header>
             <label for="alert_modal" class="close">&times;</label>
-            </header>
-            <section class="content">
                 `+ msg + `
-            </section>
-            <footer>
+                <hr>
             <label for="alert_modal" class="button">
                 Okay
             </label>
-            </footer>
         </article>        
         `
     } else {
