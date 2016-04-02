@@ -40,46 +40,44 @@
 <div class="modal">
   <input id="preview_modal" type="checkbox" />
   <label for="preview_modal" class="overlay"></label>
-    <article id="alerts">
-        <header>
-        <h3>{{.PageTitle }} - Preview</h3>
-        <label for="preview_modal" class="close">&times;</label>
-        </header>
+    <article>
+        <header>{{.PageTitle }} - Preview</header>
+          <label for="preview_modal" class="close">&times;</label>
         <section class="content" id="preview_content">
         </section>
-        <footer>
         <label for="preview_modal" class="button dangerous">
             Close
         </label>
-        </footer>
     </article>
 </div>
 
 {{ end }}
 {{ define "extra_scripts" }}
 <script src="/assets/js/commonmark.js"></script>
-<script src="/assets/js/jquery.tagsinput.min.js"></script>
+<!--<script src="/assets/js/jquery.tagsinput.min.js"></script>-->
 <script type="text/javascript" charset="utf-8">
  
-$('#tags').tagsInput({
+/*$('#tags').tagsInput({
    'height':'3rem',
    'width':'100%',
 });
+*/
+
 var commonmark = window.commonmark;
 var writer = new commonmark.HtmlRenderer();
 var reader = new commonmark.Parser();
-var textarea = $("#editor");
+var textarea = document.getElementById("editor");
 var initial_text = {{printf "%s" .wiki.Content}};
 
 document.getElementsByName("editor")[0].value = initial_text;
 
 
-$("#preview").on("click", function() {
+document.getElementById("preview").onclick = function() {
     var editortxt = document.getElementsByName("editor")[0].value;
     var parsed = reader.parse(editortxt);
     var result = writer.render(parsed);
-    $("#preview_content").html(result);
-});
+    document.getElementById("preview_content").innerHTML=result;
+};
 
 </script>
 {{ end }}
