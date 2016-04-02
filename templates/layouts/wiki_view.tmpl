@@ -2,14 +2,6 @@
 {{ define "content" }}
 <article class="card">
   <header>{{.PageTitle}}</header>
-  <div class="tooltip-item">
-  <i class="material-icons centericon tooltip-item">info</i>
-    <div class="tooltip">
-      <p><span class="wiki-metadata">Filename:<span class="label">{{ .Filename }}</span></span> <span class="wiki-metadata">Private:<span class="label">{{ .frontmatter.Private }}</span></span> <span class="wiki-metadata">Favorite:<span class="label">{{ .frontmatter.Favorite }}</span></span>
-      <span class="wiki-metadata">Tags:{{ range .frontmatter.Tags }}<span class="label">{{ . }}</span>{{ end }}</p>
-      <p><span class="wiki-metadata">Created:<span class="label">{{ .CreateTime | prettyDate }}</span></span> <span class="wiki-metadata">Last Modified:<span class="label">{{ .ModTime | prettyDate }}</span></span></p>
-    </div>
-  </div>
 </article>
 
 <ul class="tabs">
@@ -19,6 +11,11 @@
 </ul>
 
 <article class="card">
+  <section>
+    <p><span class="wiki-metadata">Filename:<span class="label">{{ .Filename }}</span></span> <span class="wiki-metadata">Private:<span class="label">{{ .frontmatter.Private }}</span></span> <span class="wiki-metadata">Favorite:<span class="label">{{ .frontmatter.Favorite }}</span></span>
+    <span class="wiki-metadata">Tags:{{ range .frontmatter.Tags }}<span class="label">{{ . }}</span>{{ end }}</p>
+    <p><span class="wiki-metadata">Created:<span class="label">{{ .CreateTime | prettyDate }}</span></span> <span class="wiki-metadata">Last Modified:<span class="label">{{ .ModTime | prettyDate }}</span></span></p>
+  </section>
     {{.wiki.Rendered | safeHTML}}
 </article>
 {{ end }}
