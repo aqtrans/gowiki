@@ -11,11 +11,16 @@
 </ul>
 
 <article>
-  <section>
-    <p><span class="wiki-metadata">Filename:<span class="label">{{ .Filename }}</span></span> <span class="wiki-metadata">Private:<span class="label">{{ .frontmatter.Private }}</span></span> <span class="wiki-metadata">Favorite:<span class="label">{{ .frontmatter.Favorite }}</span></span>
-    <span class="wiki-metadata">Tags:{{ range .frontmatter.Tags }}<span class="label">{{ . }}</span>{{ end }}</p>
-    <p><span class="wiki-metadata">Created:<span class="label">{{ .CreateTime | prettyDate }}</span></span> <span class="wiki-metadata">Last Modified:<span class="label">{{ .ModTime | prettyDate }}</span></span></p>
-  </section>
+  <div class="stats">
+    <ul>
+      <li>{{ .Filename }}<span>Filename</span></li>
+      <li>{{ .frontmatter.Private }}<span>Private</span></li>
+      <li>{{ .frontmatter.Favorite }}<span>Favorite</span></li>
+      <li>{{ range .frontmatter.Tags }}<span class="badge-alert">{{ . }}</span>{{ end }}<span>Tags</span></li>
+      <li>{{ .CreateTime | prettyDate }}<span>Created</span></li>
+      <li>{{ .ModTime | prettyDate }}<span>Last Modified</span></li>
+    </ul>
+  </div>
     {{.wiki.Rendered | safeHTML}}
 </article>
 {{ end }}
