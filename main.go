@@ -643,12 +643,14 @@ func loadPage(r *http.Request) (*page, error) {
     <label for="alert_modal" class="overlay"></label>
         <article>
             <header>Alert!</header>
+            <section>
             <label for="alert_modal" class="close">&times;</label>
                 `+ msg + `
                 <hr>
             <label for="alert_modal" class="button">
                 Okay
             </label>
+            </section>
         </article>        
         `
     } else {
