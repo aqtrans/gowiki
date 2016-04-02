@@ -1,44 +1,40 @@
 {{ define "title" }}<title>{{.page.SiteName}}|Editing {{ .PageTitle }}</title>{{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/jquery.tagsinput.min.css">
-<article class="card">
-  <header>
-    <h1>Editing "{{.PageTitle}}"</h1>
-  </header>  
+<article>
+  <header>Editing {{.PageTitle}}</header>
 </article>
 
-<div class="wikitoolbar">
-    <ul>
-        <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
-        <li class="selected"><a href="#"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-        <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
-   </ul>
-</div>
-<article class="card wikicontent editorcard">
-  <header>
+<ul class="tabs">
+  <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
+  <li><a href="#" class="is-active"><i class="material-icons centericon">edit</i>Edit Page</a></li>
+  <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
+</ul>
+
+<article>
+  <section>
     <form action="/{{.Filename}}?a=save" method="POST" id="savewiki">
-    Title:<input type="text" name="title" value="{{.Title}}"><br>
+    Title:<input type="text" name="title" value="{{.Title}}">
+    <div>
     {{ if .Favorite }}
-        <label><input type="checkbox" name="favorite" checked><span class="checkable">Favorite</span></label>
+        <label class="label-switch">Favorite:<input type="checkbox" name="favorite" checked /><div class="checkbox"></div></label>
     {{ else }}
-        <label><input type="checkbox" name="favorite"><span class="checkable">Favorite</span></label>
+        <label class="label-switch">Favorite:<input type="checkbox" name="favorite" /><div class="checkbox"></div></label>
     {{ end }}
-    <br>
     {{ if .Private }}
-        <label><input type="checkbox" name="private" checked><span class="checkable">Private</span></label>
+        <label class="label-switch">Private:<input type="checkbox" name="private" checked /><div class="checkbox"></div></label>
     {{ else }}
-        <label><input type="checkbox" name="private"><span class="checkable">Private</span></label>
+        <label class="label-switch">Private:<input type="checkbox" name="private" /><div class="checkbox"></div></label>
     {{ end }}
+    </div>
     <br>    
     Tags:<input type="text" name="tags" id="tags" value="{{ range .Tags }} {{ . }}, {{end }}"><br>
-    <input type="hidden" name="token" value="{{.Token}}">
-  </header>
-  <footer>  
+    <input type="hidden" name="token" value="{{.Token}}"> 
     <textarea name="editor" id="wikieditor"></textarea>
     <input type="submit" class="button success" value="Submit">
     <label for="preview_modal" id="preview" class="button">Preview</label>
     </form>
-  </footer>
+  </section>
 </article>
 
 <div class="modal">
