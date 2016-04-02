@@ -396,11 +396,41 @@ header {
     max-height: 90%;
     overflow: auto;
     -webkit-transform: translateX(-50%) translateY(-50%) scale(1, 1);
-    transform: translateX(-50%) translateY(-50%) scale(1, 1); }
+    transform: translateX(-50%) translateY(-50%) scale(1, 1);
+    -webkit-transition: opacity 0.25s ease;
+    -moz-transition: opacity 0.25s ease;
+    transition: opacity 0.25s ease;
+    background: #f6f6f6;
+    border-radius: 3px;
+    margin-top: 0;
+    margin: auto;
+    padding: 1.5em / 2;
+    width: 95%; }
+    @media screen and (min-width: 40em) {
+      .modal > input:checked ~ .overlay ~ * {
+        max-height: 70%;
+        padding: 1.5em;
+        width: 60%; } }
+    @media screen and (min-width: 64em) {
+      .modal > input:checked ~ .overlay ~ * {
+        width: 50%; } }
+    .modal > input:checked ~ .overlay ~ * h1 {
+      color: #333;
+      text-align: left;
+      text-transform: capitalize; }
+    .modal > input:checked ~ .overlay ~ * p {
+      color: #333;
+      line-height: 1.5; }
+    .modal > input:checked ~ .overlay ~ * header {
+      margin-bottom: 1em; }
+    .modal > input:checked ~ .overlay ~ * section {
+      color: #333; }
+      @media screen and (min-width: 40em) {
+        .modal > input:checked ~ .overlay ~ * section {
+          -webkit-columns: 2 8em;
+          -moz-columns: 2 8em;
+          columns: 2 8em; } }
 
-@media (max-width: 40em) {
-  .modal .overlay ~ * {
-    min-width: 90%; } }
 .close {
   position: absolute;
   top: .4em;
@@ -488,5 +518,78 @@ header {
         transform: scale(0); }
       .label-switch input[type="checkbox"]:checked + .checkbox:after {
         left: 22px; }
+
+.badge {
+  background-color: #999;
+  border-radius: 3.5em;
+  color: black;
+  display: inline;
+  font-size: 0.7em;
+  line-height: 1;
+  padding: 0.4em 1.2em; }
+
+.badge-alert {
+  background-color: #fff6bf;
+  border-radius: 3.5em;
+  color: #8c7800;
+  display: inline;
+  font-size: 0.7em;
+  line-height: 1;
+  padding: 0.4em 1.2em; }
+
+.badge-error {
+  background-color: #fbe3e4;
+  border-radius: 3.5em;
+  color: #97161b;
+  display: inline;
+  font-size: 0.7em;
+  line-height: 1;
+  padding: 0.4em 1.2em; }
+
+.badge-notice {
+  background-color: #e5edf8;
+  border-radius: 3.5em;
+  color: #244e87;
+  display: inline;
+  font-size: 0.7em;
+  line-height: 1;
+  padding: 0.4em 1.2em; }
+
+.badge-success {
+  background-color: #e6efc2;
+  border-radius: 3.5em;
+  color: #56651a;
+  display: inline;
+  font-size: 0.7em;
+  line-height: 1;
+  padding: 0.4em 1.2em; }
+
+.stats {
+  display: block;
+  padding: 0.75em;
+  border-bottom: 1px solid gainsboro; }
+  .stats::after {
+    clear: both;
+    content: "";
+    display: table; }
+  .stats ul {
+    padding: 0; }
+  .stats li {
+    border-right: 1px solid rgba(51, 51, 51, 0.2);
+    color: #217ee7;
+    display: inline;
+    float: left;
+    font-size: 1.2em;
+    line-height: 1.1em;
+    padding: 0 0.7em; }
+    .stats li:first-child {
+      padding-left: 0; }
+    .stats li:last-child {
+      border-right: 0; }
+  .stats span:not(.badge-alert) {
+    color: #333;
+    display: block;
+    font-size: 0.7em;
+    font-weight: normal; }
 
 /*# sourceMappingURL=bourbon.css.map */
