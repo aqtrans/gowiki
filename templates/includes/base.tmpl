@@ -20,12 +20,34 @@
 
   <main>
     {{ template "content" . }}
-  </main>
+  </main>  
 </section>
+
+<div class="modal" id="alert-modal">
+    {{ .page.FlashMsg |safeHTML }}
+</div>
+
+<div class="modal" id="login-form">
+  <input id="login_modal" type="checkbox" />
+  <label for="login_modal" class="overlay"></label>
+  <article>
+    <header>Login</header>
+      <label for="login_modal" class="close">&times;</label>
+    <form method="post" action="/login" id="login">
+    <input type="text" id="username" name="username" placeholder="Username">
+    <input type="password" id="password" name="password" placeholder="Password">
+    <input type="hidden" name="token" value="{{.Token}}">
+      <button type="submit" class="button">Login</button>
+        </form>
+      <label for="login_modal" class="button dangerous">
+        Cancel
+      </label>
+  </article>
+</div>
+
 <footer>
 </footer>
   {{ template "extra_scripts" . }}
-
 </html>
 {{ end }}
 {{ define "extra_scripts" }}{{ end }}

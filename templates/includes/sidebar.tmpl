@@ -6,8 +6,9 @@
 <h2>Favorites:</h2>
 <ul>
 {{range .page.Favs}}
-<li><a href="/{{.}}">{{.}}</a>
+<li><a href="/{{.}}">{{.}}</a></li>
 {{end}}
+</ul>
 <form method="get" action="/new" id="newwiki">
     <input type="text" placeholder="New wiki page..." id="newwiki" name="newwiki" class="newwiki">
     <input type="hidden" name="token" value="{{.Token}}">
