@@ -1,5 +1,5 @@
 @charset "UTF-8";
-button, .button, input[type="button"], input[type="reset"], input[type="submit"] {
+button, .button, .button-dangerous, .button-success, input[type="button"], input[type="reset"], input[type="submit"] {
   appearance: none;
   background-color: #1565c0;
   border: 0;
@@ -18,13 +18,13 @@ button, .button, input[type="button"], input[type="reset"], input[type="submit"]
   user-select: none;
   vertical-align: middle;
   white-space: nowrap; }
-  button:hover, .button:hover, button:focus, .button:focus, input[type="button"]:hover, input[type="button"]:focus, input[type="reset"]:hover, input[type="reset"]:focus, input[type="submit"]:hover, input[type="submit"]:focus {
+  button:hover, .button:hover, .button-dangerous:hover, .button-success:hover, button:focus, .button:focus, .button-dangerous:focus, .button-success:focus, input[type="button"]:hover, input[type="button"]:focus, input[type="reset"]:hover, input[type="reset"]:focus, input[type="submit"]:hover, input[type="submit"]:focus {
     background-color: #11519a;
     color: #fff; }
-  button:disabled, .button:disabled, input[type="button"]:disabled, input[type="reset"]:disabled, input[type="submit"]:disabled {
+  button:disabled, .button:disabled, .button-dangerous:disabled, .button-success:disabled, input[type="button"]:disabled, input[type="reset"]:disabled, input[type="submit"]:disabled {
     cursor: not-allowed;
     opacity: 0.5; }
-    button:disabled:hover, .button:disabled:hover, input[type="button"]:disabled:hover, input[type="reset"]:disabled:hover, input[type="submit"]:disabled:hover {
+    button:disabled:hover, .button:disabled:hover, .button-dangerous:disabled:hover, .button-success:disabled:hover, input[type="button"]:disabled:hover, input[type="reset"]:disabled:hover, input[type="submit"]:disabled:hover {
       background-color: #1565c0; }
 
 fieldset {
@@ -221,54 +221,56 @@ section {
       font-size: 1.2rem;
       vertical-align: middle;
       margin: 0; }
-  section main {
+  section section {
     float: right;
     float: left;
     display: block;
     margin-right: 2.35765%;
     width: 80.38145%; }
-    section main:last-child {
+    section section:last-child {
       margin-right: 0; }
     @media screen and (max-width: 40em) {
-      section main {
+      section section {
         float: left;
         display: block;
         margin-right: 7.42297%;
         width: 100%; }
-        section main:last-child {
+        section section:last-child {
           margin-right: 0; } }
-    section main article {
+    section section article {
       padding: 0;
       width: 100%;
       border-top-left-radius: 0;
       border-top-right-radius: 0; }
-    section main ul.tabs {
+      section section article main {
+        padding: 0.5em; }
+    section section ul.tabs {
       line-height: 1.5;
       padding: 10px 0 0 0; }
-      section main ul.tabs::after {
+      section section ul.tabs::after {
         clear: both;
         content: "";
         display: table; }
       @media screen and (max-width: 40em) {
-        section main ul.tabs {
+        section section ul.tabs {
           border: 1px solid gainsboro;
           border-radius: 3px; } }
-      section main ul.tabs li {
+      section section ul.tabs li {
         list-style: none; }
         @media screen and (min-width: 40em) {
-          section main ul.tabs li {
+          section section ul.tabs li {
             display: inline; } }
-        section main ul.tabs li:first-child a {
+        section section ul.tabs li:first-child a {
           border-top-left-radius: 3px;
           border-top-right-radius: 3px; }
           @media screen and (max-width: 40em) {
-            section main ul.tabs li:first-child a {
+            section section ul.tabs li:first-child a {
               border-top: 0; } }
         @media screen and (max-width: 40em) {
-          section main ul.tabs li:last-child a {
+          section section ul.tabs li:last-child a {
             border-bottom-left-radius: 3px;
             border-bottom-right-radius: 3px; } }
-        section main ul.tabs li a {
+        section section ul.tabs li a {
           background-color: #fff;
           border-top: 1px solid gainsboro;
           color: #333;
@@ -277,26 +279,36 @@ section {
           padding: 0.75em 0.809em;
           text-decoration: none; }
           @media screen and (min-width: 40em) {
-            section main ul.tabs li a {
+            section section ul.tabs li a {
               border-top-left-radius: 3px;
               border-top-right-radius: 3px;
               border-top: 0;
               display: inline-block; } }
-          section main ul.tabs li a:hover {
+          section section ul.tabs li a:hover {
             color: #1565c0;
             background-color: gainsboro; }
-          section main ul.tabs li a:focus {
+          section section ul.tabs li a:focus {
             outline: none; }
-          section main ul.tabs li a.is-active {
+          section section ul.tabs li a.is-active {
             background-color: #f6f6f6; }
             @media screen and (min-width: 40em) {
-              section main ul.tabs li a.is-active {
+              section section ul.tabs li a.is-active {
                 background-color: #f6f6f6;
                 border: 1px solid gainsboro;
                 border-bottom-color: #f6f6f6;
                 margin-bottom: -1px; } }
 
-.card, section main article, .modal article {
+textarea#wikieditor {
+  height: 500px; }
+
+div.stack {
+  display: inline-block; }
+  div.stack > * {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0; }
+
+.card, section nav, section section article, .modal article {
   background-color: #f6f6f6;
   border-radius: 3px;
   border: 1px solid gainsboro;
@@ -405,7 +417,8 @@ header {
     margin-top: 0;
     margin: auto;
     padding: 1.5em / 2;
-    width: 95%; }
+    width: 95%;
+    height: auto; }
     @media screen and (min-width: 40em) {
       .modal > input:checked ~ .overlay ~ * {
         max-height: 70%;
@@ -425,11 +438,6 @@ header {
       margin-bottom: 1em; }
     .modal > input:checked ~ .overlay ~ * section {
       color: #333; }
-      @media screen and (min-width: 40em) {
-        .modal > input:checked ~ .overlay ~ * section {
-          -webkit-columns: 2 8em;
-          -moz-columns: 2 8em;
-          columns: 2 8em; } }
 
 .close {
   position: absolute;
@@ -446,6 +454,18 @@ header {
   background-color: #FF4136; }
   .dangerous:hover, .dangerous:focus {
     background-color: #cc342b;
+    color: #fff; }
+
+.button-dangerous {
+  background-color: #FF4136; }
+  .button-dangerous:hover, .button-dangerous:focus {
+    background-color: #cc342b;
+    color: #fff; }
+
+.button-success {
+  background-color: #2ECC40 !important; }
+  .button-success:hover, .button-success:focus {
+    background-color: #25a333 !important;
     color: #fff; }
 
 .label-switch {
@@ -591,5 +611,133 @@ header {
     display: block;
     font-size: 0.7em;
     font-weight: normal; }
+
+form#newwiki {
+  position: relative; }
+  form#newwiki input[type=text] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    -ms-appearance: none;
+    -o-appearance: none;
+    appearance: none;
+    -webkit-transition: border-color;
+    -moz-transition: border-color;
+    transition: border-color;
+    background-color: white;
+    border: 1px solid #ddd;
+    box-sizing: border-box;
+    display: block;
+    font-size: 1em;
+    font-style: italic;
+    margin: 0;
+    padding: 0.5em 0.5em;
+    position: relative;
+    width: 100%; }
+  form#newwiki button[type=submit], form#newwiki [type=submit].button, form#newwiki [type=submit].button-dangerous, form#newwiki [type=submit].button-success {
+    position: absolute;
+    top: 0em;
+    right: 0em;
+    bottom: 0em;
+    outline: none;
+    padding: 5px 10px; }
+    form#newwiki button[type=submit] i, form#newwiki [type=submit].button i, form#newwiki [type=submit].button-dangerous i, form#newwiki [type=submit].button-success i {
+      height: 12px;
+      opacity: 0.7; }
+
+main {
+  font-family: "Roboto Slab", serif;
+  text-align: left; }
+  main::after {
+    clear: both;
+    content: "";
+    display: table; }
+  main h1, main h2, main h3, main p {
+    margin: 0; }
+  main hr {
+    border-bottom: 1px solid #ddd;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    margin: 1.5em 0; }
+  main p {
+    color: #333;
+    line-height: 1.5; }
+  main a {
+    color: #1565c0;
+    text-decoration: none; }
+  main .type {
+    border-bottom: 1px solid;
+    display: inline-block;
+    font-family: "Open Sans", sans-serif;
+    font-size: 0.7em;
+    font-weight: 600;
+    margin-bottom: 2em;
+    padding: 0.1em 0;
+    text-align: left;
+    text-transform: uppercase; }
+  main h1 {
+    font-family: "Roboto Slab", serif;
+    font-size: 1.6em;
+    font-weight: 400;
+    margin-bottom: 0.6em; }
+    @media screen and (min-width: 40em) {
+      main h1 {
+        font-size: 2.4em; } }
+  main h2 {
+    font-family: "Open Sans", sans-serif;
+    font-size: 1.1em;
+    font-weight: 400;
+    line-height: 1.5em;
+    margin-bottom: 1.2em; }
+    @media screen and (min-width: 40em) {
+      main h2 {
+        font-size: 1.3em; } }
+  main code {
+    background: #F7F7F7;
+    border-radius: 4.5px;
+    border: 1px solid #E0E0E0;
+    font-size: 0.8em;
+    font-style: normal;
+    padding: 0.1em 0.4em;
+    white-space: nowrap; }
+  main h3 {
+    font-family: "Roboto Slab", serif;
+    font-size: 1em;
+    font-weight: 600;
+    line-height: 1.4em;
+    margin-bottom: 0.5em;
+    text-transform: uppercase; }
+  main p.date {
+    color: rgba(51, 51, 51, 0.4);
+    font-family: "Roboto Slab", serif;
+    font-size: 0.8em;
+    margin-bottom: 0.5em; }
+  main p {
+    font-family: "Roboto Slab", serif;
+    font-weight: 300;
+    letter-spacing: 1;
+    margin-bottom: 1.5em; }
+    main p span {
+      font-family: "Open Sans", sans-serif;
+      font-size: 0.8em;
+      font-weight: 600;
+      text-transform: uppercase; }
+  main a.read-more {
+    display: inline-block;
+    font-family: "Roboto Slab", serif;
+    font-size: 0.8em;
+    font-weight: 700;
+    margin-left: 0.2em;
+    position: relative;
+    text-transform: uppercase; }
+    main a.read-more span {
+      font-size: 1.8em;
+      position: absolute;
+      right: -12px;
+      top: -2px; }
+  main hr {
+    width: 3em; }
+  main p.author {
+    font-family: "Roboto Slab", serif; }
 
 /*# sourceMappingURL=bourbon.css.map */

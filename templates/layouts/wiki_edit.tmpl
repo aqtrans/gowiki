@@ -12,7 +12,7 @@
 </ul>
 
 <article>
-  <section>
+  <main>
     <form action="/{{.Filename}}?a=save" method="POST" id="savewiki">
     Title:<input type="text" name="title" value="{{.Title}}">
     <div>
@@ -31,10 +31,12 @@
     Tags:<input type="text" name="tags" id="tags" value="{{ range .Tags }} {{ . }}, {{end }}"><br>
     <input type="hidden" name="token" value="{{.Token}}"> 
     <textarea name="editor" id="wikieditor"></textarea>
-    <input type="submit" class="button success" value="Submit">
-    <label for="preview_modal" id="preview" class="button">Preview</label>
+    <div class="stack">
+        <input type="submit" class="button-success" value="Submit">
+        <label for="preview_modal" id="preview" class="button-dangerous">Preview</label>
+    </div>
     </form>
-  </section>
+  </main>
 </article>
 
 <div class="modal">
@@ -45,7 +47,7 @@
           <label for="preview_modal" class="close">&times;</label>
         <section class="content" id="preview_content">
         </section>
-        <label for="preview_modal" class="button dangerous">
+        <label for="preview_modal" class="button-dangerous">
             Close
         </label>
     </article>
