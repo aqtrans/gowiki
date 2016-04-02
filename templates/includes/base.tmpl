@@ -13,14 +13,14 @@
  </head>
 
 <section>
-  <nav class="card">
+  <nav>
     <header><a href="/">Wiki</a></header>
       {{ template "sidebar" .}}
   </nav>
 
-  <main>
+  <section>
     {{ template "content" . }}
-  </main>  
+  </section>
 </section>
 
 <div class="modal" id="alert-modal">
@@ -40,7 +40,7 @@
     <input type="hidden" name="token" value="{{.Token}}">
       <button type="submit" class="button">Login</button>
         </form>
-      <label for="login_modal" class="button dangerous">
+      <label for="login_modal" class="button-dangerous">
         Cancel
       </label>
      </section> 
