@@ -1,5 +1,10 @@
 {{ define "title" }}<title>{{.page.SiteName}}|{{ .PageTitle }}</title>{{ end }}
 {{ define "content" }}
+<style>
+ section section article {
+   border-top-left-radius: 0;
+ }
+</style>
 <article>
   <header>{{.PageTitle}}</header>
 </article>
