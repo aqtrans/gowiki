@@ -1,48 +1,54 @@
 {{ define "title" }}<title>{{.page.SiteName}}|Commit of {{ .PageTitle }}</title>{{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/diff2html.min.css">
-<article class="card">
-  <header>
-    <h1>{{.PageTitle}}@{{.Commit}}</h1>
-  </header>
+<article>
+  <header>{{.PageTitle}}@{{.Commit}}</header>
 </article>
 
-<div class="wikitoolbar">
+<ul class="tabs">
+  <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
+  <li><a href="/{{.Filename}}?a=edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
+  <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
+  <li><a href="#" class="is-active"><i class="material-icons centericon">undo</i>View Page Commit</a></li>
+</ul>
+
+<article>
+  <div class="stats">
     <ul>
-        <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
-        <li><a href="/{{.Filename}}?a=edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-        <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
-        <li class="selected"><a href="#"><i class="material-icons centericon">undo</i></button>View Page Commit</a></li>
-   </ul>
-</div>
-<article class="card wikicontent">
-  <header>
-    <p>Filename:<span class="info label">{{ .Filename }}</span> Private:<span class="info label">{{ .frontmatter.Private }}</span> Favorite:<span class="info label">{{ .frontmatter.Favorite }}</span>
-    Tags:<span class="info label">{{ .frontmatter.Tags }}</span></p>
-    <p>Created:<span class="info label">{{ .CreateTime | prettyDate }}</span> Last Modified:<span class="info label">{{ .ModTime | prettyDate }}</span></p>    
-  </header>
-  <footer>
-    <div class="tabs two">
-    <input id='tab-1' type='radio' name='tabgroupB' checked />
-    <label class="pseudo button toggle" for="tab-1">File at Commit</label>
-    <input id='tab-2' type='radio' name='tabgroupB'>
-    <label class="pseudo button toggle" for="tab-2">Commit Diff</label>
-    <div class="row">
+      <li>{{ .Filename }}<span>Filename</span></li>
+      <li>{{ .frontmatter.Private }}<span>Private</span></li>
+      <li>{{ .frontmatter.Favorite }}<span>Favorite</span></li>
+      <li>{{ range .frontmatter.Tags }}<span class="badge-alert">{{ . }}</span>{{ end }}<span>Tags</span></li>
+    </ul>
+  </div>
+  <div class="breadcrumbs" id="breadcrumbs">
+    <a href="/{{.Filename}}?commit={{.Commit}}">File at Commit</a>
+    <a href="/{{.Filename}}?commit={{.Commit}}&a=diff">Commit Diff</a>
+  </div>
         <div>
-        <article class="card">
-        {{.wiki.Rendered | safeHTML}}
-        </article>
-        </div>
-
-        <div id="diff">
-        <article class="card">
-        <code>{{.Diff | safeHTML}}</code>
-        </article>
+        <main>
+            <p class="date">Created: {{ .CreateTime | prettyDate }}</p>
+            <p class="date">Last Modified: {{ .ModTime | prettyDate }}</p> 
+            <hr>
+            {{.Content | safeHTML}}
+        </main>
         </div>
     </div>
     </div>
-  </footer>
 </article>
+{{ end }}
 
+{{ define "extra_scripts" }}
+<script type="text/javascript" charset="utf-8">
 
+function setActive() {
+  aObj = document.getElementById('breadcrumbs').getElementsByTagName('a');
+  for(i=0;i<aObj.length;i++) {
+      if(document.location.href == aObj[i].href) {
+          aObj[i].className='active';
+      }
+  }
+}
+window.onload = setActive;
+</script>
 {{ end }}
