@@ -1085,12 +1085,6 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
     
 	vars := mux.Vars(r)
 	name := vars["name"]    
-    //slugName := urlSlugifier.Slugify(name)
-    /*if name != slugName {
-        log.Println(name + " and " + slugName + " differ.")
-        http.Redirect(w, r, "/"+slugName, http.StatusTemporaryRedirect)
-        return
-    }*/
     
     // In case I want to switch to queries some time
     query := r.URL.RawQuery
@@ -1368,7 +1362,8 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := rp.save()
 	if err != nil {
-		utils.WriteJ(w, "", false)
+        auth.SetSession("flash", "Failed to save page.", w, r)
+        http.Redirect(w, r, "/", http.StatusSeeOther)
 		log.Fatalln(err)
 		return
 	}
@@ -1380,9 +1375,10 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
         log.Fatal(err)
     }    
     
-    utils.WriteJ(w, name, true)
+    auth.SetSession("flash", "Wiki page successfully saved.", w, r)
+    log.Println(name)
+    http.Redirect(w, r, "/"+name, http.StatusSeeOther)
 	log.Println(name + " page saved!")
-
 }
 
 func newHandler(w http.ResponseWriter, r *http.Request) {
@@ -1662,7 +1658,7 @@ func checkWikiGit(next http.Handler) http.Handler {
     _, err := gitIsClean()
     if err != nil {
         log.Println("There are wiki files waiting to be checked in.")
-        http.Redirect(w, r, "/gitadd", http.StatusTemporaryRedirect)
+        http.Redirect(w, r, "/gitadd", http.StatusSeeOther)
         return
     }
     
