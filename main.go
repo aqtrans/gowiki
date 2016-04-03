@@ -162,8 +162,8 @@ type commitPage struct {
 	*wiki
 	CreateTime int64
 	ModTime    int64
-    Diff       string
     Commit     string
+    Content    string
 }
 
 type rawPage struct {
@@ -531,11 +531,14 @@ func gitGetLog(filename string) ([]*commitLog, error) {
         var mtime, err = strconv.ParseInt(vs[1], 10, 64)
         if err != nil {
             log.Fatalln(err)
-        }        
+        }
+        // Now shortening the SHA1 to 7 digits, supposed to be the default git short sha output
+        shortsha := vs[0][0:7]
+        //log.Println(shortsha)
         // vs[0] = commit, vs[1] = date, vs[2] = message
         theCommit := &commitLog {
             Filename: filename,
-            Commit: vs[0],
+            Commit: shortsha,
             Date: mtime,
             Message: vs[2],
         }
@@ -699,6 +702,7 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 	var fm frontmatter
 	var pagetitle string
+    var pageContent string
     
     slugURL(w, r)
     
@@ -747,6 +751,19 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 	}
     diffstring := strings.Replace(string(diff),"\n","<br>",-1)
     //log.Println(diffstring)
+    
+    pageContent = md
+
+    // Check for ?a={file,diff} and toss either the file or diff
+    if r.URL.Query().Get("a") != "" {
+        action := r.URL.Query().Get("a")
+        //log.Println(action)
+        if action == "diff" {
+            pageContent = "<code>" + diffstring + "</code>"
+        } else {
+            pageContent = md
+        }
+    }
 
 	cp := &commitPage{
 		p,
@@ -759,8 +776,8 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 		},
 		ctime,
 		mtime,
-        diffstring,
         commit,
+        pageContent,
 	}
     
 	err = renderTemplate(w, "wiki_commit.tmpl", cp)
@@ -997,11 +1014,11 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
     //log.Println(r.URL.Query())
     query := r.URL.RawQuery
     if query != "" {
-      utils.Debugln("Query string: " + query)
+      //utils.Debugln("Query string: " + query)
     }
     if r.URL.Query().Get("commit") != "" {
         commit := r.URL.Query().Get("commit")
-        utils.Debugln(r.URL.Query().Get("commit"))
+        //utils.Debugln(r.URL.Query().Get("commit"))
         viewCommitHandler(w, r, commit)
         return
     }
@@ -1037,11 +1054,11 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
     // In case I want to switch to queries some time
     query := r.URL.RawQuery
     if query != "" {
-      utils.Debugln(query)
+      //utils.Debugln(query)
     }
     if r.URL.Query().Get("commit") != "" {
         commit := r.URL.Query().Get("commit")
-        utils.Debugln(r.URL.Query().Get("commit"))
+        //utils.Debugln(r.URL.Query().Get("commit"))
         viewCommitHandler(w, r, commit)
         return
     }
