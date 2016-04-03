@@ -178,8 +178,11 @@ html {
 *, *::after, *::before {
   box-sizing: inherit; }
 
+html {
+  overflow-y: scroll; }
+
 section {
-  max-width: 100%;
+  max-width: 95%;
   margin-left: auto;
   margin-right: auto;
   display: block; }
@@ -297,6 +300,44 @@ section {
                 border: 1px solid gainsboro;
                 border-bottom-color: #f6f6f6;
                 margin-bottom: -1px; } }
+    section section article div.tabs {
+      position: relative;
+      overflow: hidden; }
+      section section article div.tabs label {
+        display: inline;
+        border: 1px solid gainsboro;
+        border-bottom-color: #f6f6f6; }
+      section section article div.tabs > .row {
+        width: calc(100% + 2 * .6em);
+        display: table;
+        table-layout: fixed;
+        position: relative;
+        padding-left: 0;
+        transition: all .3s;
+        border-spacing: 0;
+        margin: 0; }
+        section section article div.tabs > .row:before, section section article div.tabs > .row:after {
+          display: none; }
+        section section article div.tabs > .row > *,
+        section section article div.tabs > .row img {
+          display: table-cell;
+          vertical-align: top;
+          margin: 0;
+          width: 100%; }
+      section section article div.tabs > input {
+        display: none; }
+        section section article div.tabs > input + * {
+          width: 100%; }
+        section section article div.tabs > input + label {
+          width: auto; }
+      section section article div.tabs.two > .row {
+        width: 200%;
+        left: -100%; }
+      section section article div.tabs.two > input:nth-of-type(1):checked ~ .row {
+        margin-left: 100%; }
+      section section article div.tabs.two > label img {
+        width: 48%;
+        margin: 4% 0 4% 4%; }
 
 textarea#wikieditor {
   height: 500px; }
@@ -739,5 +780,117 @@ main {
     width: 3em; }
   main p.author {
     font-family: "Roboto Slab", serif; }
+  main table {
+    border-collapse: separate;
+    border-left: 0px;
+    border-radius: 3px;
+    border-spacing: 0;
+    border: 1px solid #ddd;
+    width: 100%; }
+    main table tbody {
+      background-color: #fcfcfc; }
+      main table tbody tr:hover > td, main table tbody tr:hover > th {
+        background-color: #efefef; }
+      main table tbody tr:nth-child(even) {
+        background-color: #f7f7f7; }
+        main table tbody tr:nth-child(even):hover > td {
+          background-color: #eaeaea; }
+    main table thead:first-of-type tr:first-child > th:first-child {
+      border-top-left-radius: 3px; }
+    main table thead:first-of-type tr:first-child > th:last-child {
+      border-top-right-radius: 3px; }
+    main table tbody:last-child tr:last-child > td:first-child {
+      border-bottom-left-radius: 3px; }
+    main table tbody:last-child tr:last-child > td:last-child {
+      border-bottom-right-radius: 3px; }
+    main table thead th {
+      background-color: white;
+      border-bottom: 0px;
+      border-left: 1px solid #ddd;
+      padding: 0.75em 1em;
+      text-align: left; }
+      main table thead th:first-child {
+        border-left: none; }
+    main table tbody {
+      background-color: #fcfcfc; }
+      main table tbody td {
+        border-bottom: 0px;
+        border-left: 1px solid #ddd;
+        border-top: 1px solid #ddd;
+        padding: 0.75em 1em; }
+        main table tbody td:first-child {
+          border-left: none; }
+        main table tbody td button, main table tbody td .button, main table tbody td .button-dangerous, main table tbody td .button-success {
+          display: inline-block;
+          font-size: 0.7em;
+          line-height: 1.5;
+          margin-bottom: 0.3em;
+          margin-right: 0.5em;
+          outline: none;
+          padding: 0.3em 1em;
+          width: 100%; }
+          @media screen and (min-width: 40em) {
+            main table tbody td button, main table tbody td .button, main table tbody td .button-dangerous, main table tbody td .button-success {
+              margin-bottom: 0;
+              width: auto; } }
+
+.breadcrumbs {
+  display: inline-block;
+  margin-bottom: 1.5em;
+  text-align: left; }
+  .breadcrumbs a {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-left: 0;
+    color: #999;
+    display: inline-block;
+    font-size: 0.8em;
+    line-height: 2.25em;
+    margin-bottom: 2px;
+    margin-right: -5px;
+    padding: 0 0.5625em 0 1.125em;
+    position: relative;
+    text-decoration: none; }
+    .breadcrumbs a:first-child {
+      border-bottom-left-radius: 3px;
+      border-left: 1px solid #ddd;
+      border-top-left-radius: 3px;
+      padding-left: 1.125em; }
+    .breadcrumbs a:last-child {
+      background-color: #fff;
+      border-bottom-right-radius: 3px;
+      border-top-right-radius: 3px;
+      color: #999;
+      padding-right: 1.125em; }
+    .breadcrumbs a:focus, .breadcrumbs a:hover {
+      background-color: #fff;
+      color: #1565c0; }
+    .breadcrumbs a.active {
+      background-color: gray;
+      color: #1565c0; }
+    .breadcrumbs a:after, .breadcrumbs a:before {
+      position: absolute;
+      top: 0px;
+      right: auto;
+      bottom: 0px;
+      left: 100%;
+      border-bottom: 2.25em solid transparent;
+      border-top: 2.25em solid transparent;
+      content: '';
+      display: block;
+      margin: auto;
+      z-index: 2; }
+    .breadcrumbs a:last-child:after, .breadcrumbs a:last-child:before {
+      border: none; }
+    .breadcrumbs a:before {
+      border-left-color: #ddd;
+      margin-left: 1px;
+      z-index: 1; }
+    .breadcrumbs a:after {
+      border-left-color: #fff; }
+    @media screen and (min-width: 40em) {
+      .breadcrumbs a {
+        font-size: 1em;
+        padding: 0 1.125em 0 1.5em; } }
 
 /*# sourceMappingURL=bourbon.css.map */
