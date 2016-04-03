@@ -1,0 +1,89 @@
+.tagdog-field {
+  position : relative;
+  cursor : text;
+}
+
+.tagdog-field:before,
+.tagdog-field:after,
+.tagdog-container:before,
+.tagdog-container:after {
+  content : "";
+  display : table;
+}
+
+.tagdog-field:after,
+.tagdog-container:after {
+  clear : both;
+}
+
+.tagdog-field * {
+	box-sizing: border-box;
+}
+
+.tagdog-tag {
+  position : relative;
+  float : left;
+  transition : 200ms all ease-in-out;
+  background-color : #333;
+  color : #F8F8F8;
+	border-radius : 2px;
+	font-size : 0.9375em;
+	line-height : 1.6;
+	padding : 0.266666666em 0.6em;
+	margin : 0 0.133333333em 0.133333333em 0;
+  cursor : pointer;
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	    -ms-user-select: none;
+	        user-select: none;
+}
+
+.tagdog-tag:focus {
+  background-color : #555;
+  color : #FFF;
+}
+
+.tagdog-tag:hover {
+  background-color : #555;
+}
+
+.tagdog-container {
+	speak: none;
+	margin : 0.25em 0;
+}
+
+/*
+ * Make the tooltip's visible on low-resolution screens only
+ **/
+@media screen and (-webkit-max-device-pixel-ratio: 1), screen and (max-resolution: 96dpi) {
+	.tagdog-tag:hover:before,
+	.tagdog-tag:hover:after {
+		position : absolute;
+		display : block;
+		left : 0;
+		z-index : 1000;
+	}
+
+	.tagdog-tag:hover:before {
+		content : attr(data-title);
+		top : -2.25em;
+		background-color : #E0E0E0;
+		color : #333;
+		font-size : 0.75em;
+		line-height : 2;
+		white-space: nowrap;
+		padding : 0 0.5em;
+	}
+
+	.tagdog-tag:hover:after {
+		content : "";
+		top : -0.25em;
+		width : 0px;
+		height : 0px;
+		box-sizing : content-box;
+		background-color : transparent;
+		border-left: 0.5em solid transparent;
+		border-right: 0.5em solid transparent;
+		border-top: 0.5em solid #E0E0E0;
+	}
+}
