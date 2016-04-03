@@ -1,6 +1,6 @@
 {{ define "title" }}<title>{{.page.SiteName}}|Editing {{ .PageTitle }}</title>{{ end }}
 {{ define "content" }}
-<link rel="stylesheet" href="/assets/css/jquery.tagsinput.min.css">
+<link rel="stylesheet" href="/assets/css/tagdog.css">
 <article>
   <header>Editing {{.PageTitle}}</header>
 </article>
@@ -22,13 +22,21 @@
         <label class="label-switch">Favorite:<input type="checkbox" name="favorite" /><div class="checkbox"></div></label>
     {{ end }}
     {{ if .Private }}
-        <label class="label-switch">Private:<input type="checkbox" name="private" checked /><div class="checkbox"></div></label>
+        <label class="label-switch">Users Only:<input type="checkbox" name="private" checked /><div class="checkbox"></div></label>
     {{ else }}
-        <label class="label-switch">Private:<input type="checkbox" name="private" /><div class="checkbox"></div></label>
+        <label class="label-switch">Users Only:<input type="checkbox" name="private" /><div class="checkbox"></div></label>
     {{ end }}
+    {{ if .Admin }}
+        <label class="label-switch">Admin Only:<input type="checkbox" name="admin" checked /><div class="checkbox"></div></label>
+    {{ else }}
+        <label class="label-switch">Admin Only:<input type="checkbox" name="admin" /><div class="checkbox"></div></label>
+    {{ end }}    
     </div>
-    <br>    
-    Tags:<input type="text" name="tags" id="tags" value="{{ range .Tags }} {{ . }}, {{end }}"><br>
+    <br>
+    <div class="tag-field">
+        <label for="tags">Tags</label>
+        <input type="text" id="tags" name="tags" placeholder="Separate tags with commas" value="{{ .Tags|jsTags }}" />
+    </div>
     <input type="hidden" name="token" value="{{.Token}}"> 
     <textarea name="editor" id="wikieditor"></textarea>
     <div class="stack">
@@ -45,8 +53,8 @@
     <article>
         <header>{{.PageTitle }} - Preview</header>
           <label for="preview_modal" class="close">&times;</label>
-        <section class="content" id="preview_content">
-        </section>
+        <main class="content" id="preview_content">
+        </main>
         <label for="preview_modal" class="button-dangerous">
             Close
         </label>
@@ -56,6 +64,7 @@
 {{ end }}
 {{ define "extra_scripts" }}
 <script src="/assets/js/commonmark.js"></script>
+<script src="/assets/js/tagdog.min.js"></script>
 <!--<script src="/assets/js/jquery.tagsinput.min.js"></script>-->
 <script type="text/javascript" charset="utf-8">
  
@@ -64,6 +73,12 @@
    'width':'100%',
 });
 */
+
+(function() {
+    "use strict";
+    var tagFields = tagdog('.tag-field');
+    console.log(tagFields);
+}).call(this);
 
 var commonmark = window.commonmark;
 var writer = new commonmark.HtmlRenderer();
@@ -80,6 +95,8 @@ document.getElementById("preview").onclick = function() {
     var result = writer.render(parsed);
     document.getElementById("preview_content").innerHTML=result;
 };
+
+
 
 </script>
 {{ end }}

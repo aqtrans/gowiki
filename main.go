@@ -173,7 +173,9 @@ type rawPage struct {
 
 type listPage struct {
 	*page
-	Wikis []*wikiPage
+	Wikis        []*wikiPage
+    PrivateWikis []*wikiPage
+    AdminWikis   []*wikiPage
 }
 
 type genPage struct {
@@ -317,7 +319,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isAdmin": isAdmin, "isLoggedIn": isLoggedIn}
+	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isAdmin": isAdmin, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
 
 	for _, layout := range layouts {
 		files := append(includes, layout)
@@ -379,6 +381,17 @@ func isLoggedIn(s string) bool {
         return false
     }
 	return true
+}
+
+func jsTags(tagS []string) string {
+    var tags string
+    for _, v := range tagS {
+        tags = tags + ", " + v
+    }
+    tags = strings.TrimPrefix(tags, ", ")
+    tags = strings.TrimSuffix(tags, ", ")
+    log.Println(tags)
+    return tags
 }
 
 // CUSTOM GIT WRAPPERS
@@ -807,6 +820,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
 	var wps []*wikiPage
+    var privatewps []*wikiPage
+    var adminwps []*wikiPage
 	for _, file := range fileList {
 
 		// check if the source dir exist
@@ -877,23 +892,49 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				log.Panicln(err)
 			}
-
-			wp = &wikiPage{
-				p,
-				pagetitle,
-				fileURL,
-				fm,
-				&wiki{},
-				ctime,
-				mtime,
-			}
-			wps = append(wps, wp)
+            
+            // If pages are Admin or Private, add to a separate wikiPage slice
+            //   So we only check on rendering
+            if fm.Admin {
+                wp = &wikiPage{
+                    p,
+                    pagetitle,
+                    fileURL,
+                    fm,
+                    &wiki{},
+                    ctime,
+                    mtime,
+                }
+                adminwps = append(adminwps, wp)
+            } else if fm.Private {
+                wp = &wikiPage{
+                    p,
+                    pagetitle,
+                    fileURL,
+                    fm,
+                    &wiki{},
+                    ctime,
+                    mtime,
+                }
+                privatewps = append(privatewps, wp)                
+            } else {
+                wp = &wikiPage{
+                    p,
+                    pagetitle,
+                    fileURL,
+                    fm,
+                    &wiki{},
+                    ctime,
+                    mtime,
+                }
+                wps = append(wps, wp)
+            }
 			//log.Println(string(body))
 			//log.Println(string(wp.wiki.Content))
 		}
 
 	}
-	l := &listPage{p, wps}
+	l := &listPage{p, wps, privatewps, adminwps}
 	err = renderTemplate(w, "list.tmpl", l)
 	if err != nil {
 		log.Fatalln(err)
@@ -1283,6 +1324,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	tags := r.FormValue("tags")
     favorite := r.FormValue("favorite")
     private := r.FormValue("private")
+    admin := r.FormValue("admin")
     
     fav := false
     if favorite == "on" {
@@ -1291,7 +1333,11 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
     priv := false
     if private == "on" {
         priv = true
-    } 
+    }
+    adminpage := false
+    if admin == "on" {
+        adminpage = true
+    }     
 
     if title == "" {
         title = name
@@ -1309,6 +1355,8 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
     buffer.WriteString("\n")    
     buffer.WriteString("private: " + strconv.FormatBool(priv))
     buffer.WriteString("\n")
+    buffer.WriteString("admin: " + strconv.FormatBool(adminpage))
+    buffer.WriteString("\n")    
     buffer.WriteString("---\n")
     buffer.WriteString(body)
     body = buffer.String()
