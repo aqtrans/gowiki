@@ -1562,7 +1562,6 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	//p, err := loadPage(title, r)
 	gp := &genPage{
 		p,
 		title,
@@ -1581,7 +1580,6 @@ func signupPageHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	//p, err := loadPage(title, r)
 	gp := &genPage{
 		p,
 		title,
@@ -1600,7 +1598,6 @@ func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	//p, err := loadPage(title, r)
 	gp := &genPage{
 		p,
 		title,
@@ -1760,10 +1757,11 @@ func Router(r *mux.Router) *mux.Router {
     })
     
 	r.HandleFunc("/new", auth.AuthMiddle(newHandler)).Methods("GET")
-	r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
+	//r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
 	r.HandleFunc("/login", loginPageHandler).Methods("GET")
-	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
+	//r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
+	r.HandleFunc("/signup", signupPageHandler).Methods("GET")
 	r.HandleFunc("/list", listHandler).Methods("GET")
     r.HandleFunc("/health", HealthCheckHandler).Methods("GET")
     
@@ -1776,8 +1774,8 @@ func Router(r *mux.Router) *mux.Router {
     r.HandleFunc("/admin/users", auth.AuthAdminMiddle(adminUserHandler)).Methods("GET")
     r.HandleFunc("/admin/users", auth.AuthAdminMiddle(auth.AdminUserPostHandler)).Methods("POST")
 
-	r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
-	r.HandleFunc("/signup", signupPageHandler).Methods("GET")
+	//r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
+	
 
 	r.HandleFunc("/gitadd", auth.AuthMiddle(gitCheckinPostHandler)).Methods("POST")
 	r.HandleFunc("/gitadd", auth.AuthMiddle(gitCheckinHandler)).Methods("GET")    
