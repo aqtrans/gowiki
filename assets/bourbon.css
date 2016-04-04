@@ -245,6 +245,8 @@ section {
       width: 100%;
       border-top-left-radius: 0;
       border-top-right-radius: 0; }
+      section section article:first-child {
+        margin-bottom: 1em; }
       section section article main {
         padding: 0.5em; }
     section section ul.tabs {
