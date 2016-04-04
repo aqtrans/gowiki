@@ -355,6 +355,13 @@ func slugURL(w http.ResponseWriter, r *http.Request) {
 	name := vars["name"]
     //log.Println(name)
     //log.Println(r.URL.String())
+    
+    // In case a non-slugified filename was created outside, check for existence before we react
+    fullfilename := "./md/" + name
+    if _, err := os.Stat(fullfilename); err == nil {
+        return
+    }
+    
     slugName := urlSlugifier.Slugify(name)
     if name != slugName {
         //log.Println(name + " and " + slugName + " differ.")
