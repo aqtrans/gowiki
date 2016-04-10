@@ -1,4 +1,5 @@
 @charset "UTF-8";
+@import url(//fonts.googleapis.com/css?family=Khand|Open+Sans|Roboto+Condensed:300italic,400italic,700italic,400,700,300|Roboto:400,100,100italic,300,300italic,400italic,500,500italic,700,700italic);
 button, .button, .button-dangerous, .button-success, input[type="button"], input[type="reset"], input[type="submit"] {
   appearance: none;
   background-color: #1565c0;
@@ -178,8 +179,43 @@ html {
 *, *::after, *::before {
   box-sizing: inherit; }
 
+.material-icons {
+  vertical-align: middle; }
+
 html {
   overflow-y: scroll; }
+
+footer {
+  width: 100%;
+  display: inline-block;
+  text-align: center;
+  color: rgba(238, 232, 213, 0.4);
+  font-family: 'Roboto Condensed', serif;
+  font-weight: 300; }
+  footer ul {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    text-align: center; }
+    footer ul li {
+      display: inline;
+      list-style: none;
+      font-size: 0.8em; }
+    footer ul li + li:before {
+      content: " | "; }
+
+@media (min-width: 38em) {
+  html {
+    font-size: 100%; } }
+@media (min-width: 48em) {
+  html {
+    font-size: 110%; } }
+@media (min-width: 58em) {
+  html {
+    font-size: 135%; } }
+body {
+  background-color: #073642;
+  color: #eee8d5; }
 
 section {
   max-width: 95%;
@@ -214,12 +250,16 @@ section {
       section nav ul li {
         display: block; }
         section nav ul li a {
+          padding-left: 0.3em;
+          color: #999;
           display: inline-block;
           width: 100%; }
           section nav ul li a:hover {
-            background-color: white; }
+            color: #000;
+            background-color: #a0a0a0; }
           section nav ul li a.active {
-            background-color: #767676; }
+            color: #000;
+            background-color: #eee8d5; }
     section nav h2 {
       font-size: 1.2rem;
       vertical-align: middle;
@@ -245,20 +285,54 @@ section {
       width: 100%;
       border-top-left-radius: 0;
       border-top-right-radius: 0; }
-      section section article:first-child {
+      section section article:nth-of-type(1) {
         margin-bottom: 1em; }
+      section section article ul.pager {
+        display: inline;
+        margin: 0;
+        padding: 0;
+        text-align: center; }
+        section section article ul.pager li {
+          display: inline;
+          list-style: none; }
+          section section article ul.pager li:first-child {
+            float: left; }
+          section section article ul.pager li:last-child {
+            float: right; }
       section section article main {
         padding: 0.5em; }
+        section section article main ul {
+          list-style-type: disc;
+          margin-bottom: 0.75em;
+          padding-left: 1.5em; }
+        section section article main ol {
+          list-style-type: decimal;
+          margin-bottom: 0.75em;
+          padding-left: 1.5em; }
+        section section article main ul.list li header {
+          border: 1px solid gainsboro;
+          border-radius: 25px; }
+          section section article main ul.list li header a {
+            color: #eee8d5;
+            text-decoration: none; }
+            section section article main ul.list li header a:hover, section section article main ul.list li header a:active {
+              color: #dc322f;
+              text-decoration: underline; }
+            section section article main ul.list li header a:visited {
+              color: #B58900; }
+        section section article main ul.list {
+          list-style-type: none;
+          margin-bottom: 0;
+          padding-left: 0; }
     section section ul.tabs {
       line-height: 1.5;
-      padding: 10px 0 0 0; }
+      padding: 0; }
       section section ul.tabs::after {
         clear: both;
         content: "";
         display: table; }
       @media screen and (max-width: 40em) {
         section section ul.tabs {
-          border: 1px solid gainsboro;
           border-radius: 3px; } }
       section section ul.tabs li {
         list-style: none; }
@@ -276,9 +350,9 @@ section {
             border-bottom-left-radius: 3px;
             border-bottom-right-radius: 3px; } }
         section section ul.tabs li a {
-          background-color: #fff;
+          background-color: #535353;
           border-top: 1px solid gainsboro;
-          color: #333;
+          color: #eee8d5;
           display: block;
           font-weight: bold;
           padding: 0.75em 0.809em;
@@ -291,24 +365,22 @@ section {
               display: inline-block; } }
           section section ul.tabs li a:hover {
             color: #1565c0;
-            background-color: gainsboro; }
+            background-color: #070707; }
           section section ul.tabs li a:focus {
             outline: none; }
           section section ul.tabs li a.is-active {
-            background-color: #f6f6f6; }
+            background-color: #202020; }
             @media screen and (min-width: 40em) {
               section section ul.tabs li a.is-active {
-                background-color: #f6f6f6;
-                border: 1px solid gainsboro;
-                border-bottom-color: #f6f6f6;
+                background-color: #202020;
+                border-bottom-color: #202020;
                 margin-bottom: -1px; } }
     section section article div.tabs {
       position: relative;
       overflow: hidden; }
       section section article div.tabs label {
         display: inline;
-        border: 1px solid gainsboro;
-        border-bottom-color: #f6f6f6; }
+        border-bottom-color: #202020; }
       section section article div.tabs > .row {
         width: calc(100% + 2 * .6em);
         display: table;
@@ -352,15 +424,16 @@ div.stack {
     margin: 0; }
 
 .card, section nav, section section article, .modal article {
-  background-color: #f6f6f6;
+  background-color: #202020;
   border-radius: 3px;
-  border: 1px solid gainsboro;
-  box-shadow: 0 2px 4px #b3b3b3; }
+  box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22); }
 
 header {
+  font-family: 'Khand', sans-serif;
+  font-weight: 400;
   font-size: 3rem;
   text-decoration: none;
-  border-bottom: 1px solid gainsboro; }
+  padding-left: 0.2em; }
   header a, header a:hover {
     color: unset; }
 
@@ -386,7 +459,7 @@ header {
     background: #fff;
     border-radius: 3px;
     box-shadow: 0 2px 2px silver;
-    color: #333;
+    color: #eee8d5;
     font-size: 0.9em;
     line-height: 1.5em;
     margin: 0 auto;
@@ -397,7 +470,7 @@ header {
     visibility: hidden;
     z-index: 10; }
     .tooltip-item .tooltip p {
-      color: #333;
+      color: #eee8d5;
       line-height: 1.5;
       margin: 0; }
     .tooltip-item .tooltip:after {
@@ -455,7 +528,7 @@ header {
     -webkit-transition: opacity 0.25s ease;
     -moz-transition: opacity 0.25s ease;
     transition: opacity 0.25s ease;
-    background: #f6f6f6;
+    background: #202020;
     border-radius: 3px;
     margin-top: 0;
     margin: auto;
@@ -471,16 +544,16 @@ header {
       .modal > input:checked ~ .overlay ~ * {
         width: 50%; } }
     .modal > input:checked ~ .overlay ~ * h1 {
-      color: #333;
+      color: #eee8d5;
       text-align: left;
       text-transform: capitalize; }
     .modal > input:checked ~ .overlay ~ * p {
-      color: #333;
+      color: #eee8d5;
       line-height: 1.5; }
     .modal > input:checked ~ .overlay ~ * header {
       margin-bottom: 1em; }
     .modal > input:checked ~ .overlay ~ * section {
-      color: #333; }
+      color: #eee8d5; }
 
 .close {
   position: absolute;
@@ -640,7 +713,7 @@ header {
   .stats ul {
     padding: 0; }
   .stats li {
-    border-right: 1px solid rgba(51, 51, 51, 0.2);
+    border-right: 1px solid rgba(238, 232, 213, 0.2);
     color: #217ee7;
     display: inline;
     float: left;
@@ -652,7 +725,7 @@ header {
     .stats li:last-child {
       border-right: 0; }
   .stats span:not(.badge-alert) {
-    color: #333;
+    color: #eee8d5;
     display: block;
     font-size: 0.7em;
     font-weight: normal; }
@@ -690,7 +763,7 @@ form#newwiki {
       opacity: 0.7; }
 
 main {
-  font-family: "Roboto Slab", serif;
+  font-family: "Roboto Condensed", serif;
   text-align: left; }
   main::after {
     clear: both;
@@ -705,11 +778,16 @@ main {
     border-top: none;
     margin: 1.5em 0; }
   main p {
-    color: #333;
+    color: #eee8d5;
     line-height: 1.5; }
   main a {
     color: #1565c0;
     text-decoration: none; }
+    main a:hover, main a:active main a.active {
+      color: #dc322f;
+      text-decoration: underline; }
+    main a:visited {
+      color: #B58900; }
   main .type {
     border-bottom: 1px solid;
     display: inline-block;
@@ -721,7 +799,7 @@ main {
     text-align: left;
     text-transform: uppercase; }
   main h1 {
-    font-family: "Roboto Slab", serif;
+    font-family: 'Khand', sans-serif;
     font-size: 1.6em;
     font-weight: 400;
     margin-bottom: 0.6em; }
@@ -737,28 +815,27 @@ main {
     @media screen and (min-width: 40em) {
       main h2 {
         font-size: 1.3em; } }
-  main code {
-    background: #F7F7F7;
+  main pre {
+    background: #868686;
     border-radius: 4.5px;
     border: 1px solid #E0E0E0;
     font-size: 0.8em;
     font-style: normal;
-    padding: 0.1em 0.4em;
-    white-space: nowrap; }
+    padding: 0.1em 0.4em; }
   main h3 {
-    font-family: "Roboto Slab", serif;
+    font-family: "Roboto Condensed", serif;
     font-size: 1em;
     font-weight: 600;
     line-height: 1.4em;
     margin-bottom: 0.5em;
     text-transform: uppercase; }
   main p.date {
-    color: rgba(51, 51, 51, 0.4);
-    font-family: "Roboto Slab", serif;
+    color: rgba(238, 232, 213, 0.4);
+    font-family: "Roboto Condensed", serif;
     font-size: 0.8em;
     margin-bottom: 0.5em; }
   main p {
-    font-family: "Roboto Slab", serif;
+    font-family: "Roboto Condensed", serif;
     font-weight: 300;
     letter-spacing: 1;
     margin-bottom: 1.5em; }
@@ -769,7 +846,7 @@ main {
       text-transform: uppercase; }
   main a.read-more {
     display: inline-block;
-    font-family: "Roboto Slab", serif;
+    font-family: "Roboto Condensed", serif;
     font-size: 0.8em;
     font-weight: 700;
     margin-left: 0.2em;
@@ -783,7 +860,7 @@ main {
   main hr {
     width: 3em; }
   main p.author {
-    font-family: "Roboto Slab", serif; }
+    font-family: "Roboto Condensed", serif; }
   main table {
     border-collapse: separate;
     border-left: 0px;
