@@ -139,6 +139,14 @@ type frontmatter struct {
     Admin       bool `yaml:"admin,omitempty"`
 }
 
+type badFrontmatter struct {
+	Title string `yaml:"title"`
+	Tags  string `yaml:"tags,omitempty"`
+    Favorite    bool `yaml:"favorite,omitempty"`
+    Private     bool `yaml:"private,omitempty"`
+    Admin       bool `yaml:"admin,omitempty"`
+}
+
 type wiki struct {
 	Rendered string
 	Content  string
@@ -800,10 +808,30 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
         pageContent,
 	}
     
-	err = renderTemplate(w, "wiki_commit.tmpl", cp)
-	if err != nil {
-		log.Fatalln(err)
+
+    // Check for ?a={file,diff} and toss either the file or diff
+    if r.URL.Query().Get("a") != "" {
+        action := r.URL.Query().Get("a")
+        //log.Println(action)
+        if action == "diff" {
+			err = renderTemplate(w, "wiki_commit_diff.tmpl", cp)
+			if err != nil {
+				log.Fatalln(err)
+			}
+        } else {
+			err = renderTemplate(w, "wiki_commit.tmpl", cp)
+			if err != nil {
+				log.Fatalln(err)
+			}
+        }
+    } else {
+		err = renderTemplate(w, "wiki_commit.tmpl", cp)
+		if err != nil {
+			log.Fatalln(err)
+		}		
 	}
+	
+
 }
 
 
@@ -850,7 +878,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
             fileURL := strings.TrimPrefix(file, "md/")
             
 			var wp *wikiPage
-			var fm *frontmatter
+			fm := &frontmatter{}
 			var pagetitle string
 			//fmt.Println(file)
 			//w.Write([]byte(file))
@@ -863,33 +891,33 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				log.Fatalln(err)
 			}
 			// Read YAML frontmatter into fm
-			_, err = readFront(body, &fm)
+			_, err = readFront(body, fm)
 			if err != nil {
 				// If YAML frontmatter doesn't exist, proceed, but log it
 				//log.Fatalln(err)
                 log.Println("YAML unmarshal error in: " + file)
 				log.Println(err)
 			}
-			if fm != nil {
-				//log.Println(fm.Tags)
-				//log.Println(fm)
-                
-                // TODO: improve this so private pages are actually protected
-                if fm.Private {
-					//log.Println("Private page!")
-				}
-				if fm.Title != "" {
-					pagetitle = fm.Title
-				}
-			} else {
-				// If file doesn't have frontmatter, add in crap
-				//log.Println(file + " doesn't have frontmatter :( ")
-				fm = &frontmatter{
-					Title: fileURL,
-					Tags: []string{},
-                    Favorite: false,
-                    Private: false,
-				}
+			if fm.Private {
+				//log.Println("Private page!")
+			}
+			if fm.Title != "" {
+				pagetitle = fm.Title
+			}
+			if fm.Title == "" {
+				fm.Title = fileURL
+			}				
+			if fm.Private != true {
+				fm.Private = false
+			}
+			if fm.Admin != true {
+				fm.Admin = false
+			}
+			if fm.Favorite != true {
+				fm.Favorite = false
+			}
+			if fm.Tags == nil {
+				fm.Tags = []string{}
 			}
 			ctime, err := gitGetCtime(filename)
 			if err != nil {
@@ -948,7 +976,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func readFront(data []byte, frontmatter interface{}) (content []byte, err error) {
+func readFront(data []byte, frontmatter *frontmatter) (content []byte, err error) {
 	r := bytes.NewBuffer(data)
 
 	// eat away starting whitespace
@@ -993,6 +1021,29 @@ func readFront(data []byte, frontmatter interface{}) (content []byte, err error)
 
 	err = yaml.Unmarshal(data[yamlStart:yamlEnd], frontmatter)
 	if err != nil {
+		// Try to catch and "fix" tags
+		if strings.HasSuffix(err.Error(), "into []string") {
+			var badFM struct {
+				Title string `yaml:"title"`
+				Tags  string `yaml:"tags,omitempty"`
+				Favorite    bool `yaml:"favorite,omitempty"`
+				Private     bool `yaml:"private,omitempty"`
+				Admin       bool `yaml:"admin,omitempty"`
+			}
+			err = yaml.Unmarshal(data[yamlStart:yamlEnd], &badFM)
+			if err != nil {
+				return nil, err
+			}
+			frontmatter.Title = badFM.Title
+			fixedTags := strings.Split(badFM.Tags, ",")
+			frontmatter.Tags = fixedTags
+			frontmatter.Favorite = badFM.Favorite
+			frontmatter.Private = badFM.Private
+			frontmatter.Admin = badFM.Admin
+			content = data[yamlEnd:]
+			err = nil
+			return			
+		}
 		return nil, err
 	}
 	content = data[yamlEnd:]
@@ -1439,14 +1490,11 @@ func readFavs(path string, info os.FileInfo, err error) error {
 
     // Read YAML frontmatter into fm
     // If err, just return, as file should not contain frontmatter
-    var fm *frontmatter
+    fm := frontmatter{}
     _, err = readFront(read, &fm)
 	if err != nil {
 		return nil
 	}
-    if fm == nil {
-        return nil
-    }
     
     if fm.Favorite {
         favbuf.WriteString(name+" ")
@@ -1502,14 +1550,11 @@ func readTags(path string, info os.FileInfo, err error) error {
 
     // Read YAML frontmatter into fm
     // If err, just return, as file should not contain frontmatter
-    var fm *frontmatter
+    fm := frontmatter{}
     _, err = readFront(read, &fm)
 	if err != nil {
 		return nil
 	}
-    if fm == nil {
-        return nil
-    }
     
     if fm.Tags != nil {
         for _, tag := range fm.Tags {
@@ -1717,7 +1762,7 @@ func wikiAuth(next http.Handler) http.Handler {
 
     // Read YAML frontmatter into fm
     // If err, just return, as file should not contain frontmatter
-    var fm *frontmatter
+    fm := frontmatter{}
     _, err = readFront(read, &fm)
 	if err != nil {
 		return
