@@ -508,7 +508,7 @@ func gitGetCtime(filename string) (int64, error) {
     // If output is blank, no point in wasting CPU doing the rest
     if ostring == "" {
         log.Println(filename + " is not checked into Git")
-        return 0, nil
+        return 0, errors.New("NOT_IN_GIT")
     }
 	ctime, err := strconv.ParseInt(ostring, 10, 64)
 	if err != nil {
@@ -747,7 +747,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 		log.Fatalln(err)
 	}
 	ctime, err := gitGetCtime(name)
-	if err != nil {
+	if err != nil && err.Error() != "NOT_IN_GIT" {
 		log.Panicln(err)
 	}
 	mtime, err := gitGetFileCommitMtime(commit)
@@ -920,7 +920,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				fm.Tags = []string{}
 			}
 			ctime, err := gitGetCtime(filename)
-			if err != nil {
+			if err != nil && err.Error() != "NOT_IN_GIT" {
 				log.Panicln(err)
 			}
 			mtime, err := gitGetMtime(filename)
@@ -1171,6 +1171,10 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
             log.Println("Cannot create subdir of a file.")
             http.Error(w, "Cannot create subdir of a file.", 500)
             return
+		// If gitGetCtime returns NOT_IN_GIT, we handle it here	
+		} else if err.Error() == "NOT_IN_GIT" {
+			http.Redirect(w, r, "/gitadd?file="+name, http.StatusSeeOther)
+			return
 		} else {
 			panic(err)
 		}
@@ -1312,6 +1316,10 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	}
 	ctime, err := gitGetCtime(filename)
 	if err != nil {
+		// If not in git, redirect to gitadd
+		if err.Error() == "NOT_IN_GIT" {
+			return nil, err
+		}
 		log.Panicln(err)
 	}
 	mtime, err := gitGetMtime(filename)
@@ -1668,13 +1676,19 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
     if err != nil {
         log.Fatalln(err)
     }
-    
-    o, err := gitIsClean()
-    if err != nil {
-        log.Fatalln(err)
-    }    
+	var owithnewlines []byte
 
-    owithnewlines := bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
+    if r.URL.Query().Get("file") != "" {
+        file := r.URL.Query().Get("file")
+        //log.Println(action)
+        owithnewlines = []byte(file)
+	} else {
+		o, err := gitIsClean()
+		if err != nil && err.Error() != "directory is dirty" {
+			log.Fatalln(err)
+		}
+		owithnewlines = bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
+	}
 
     gp := &gitPage{
         p,
@@ -1690,14 +1704,33 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 
 func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "gitCheckinPostHandler")
-    err := gitAddFilepath(".")
+	
+	var path string
+	
+    if r.URL.Query().Get("file") != "" {
+        //file := r.URL.Query().Get("file")
+        //log.Println(action)
+        path = r.URL.Query().Get("file")
+	} else {
+		path = "."
+	}
+	
+    err := gitAddFilepath(path)
     if err != nil {
         log.Fatalln(err)
+		return
     }
     err = gitCommitEmpty()
     if err != nil {
         log.Fatalln(err)
-    }    
+		return
+    }
+	if path != "." {
+		http.Redirect(w, r, "/"+path, http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+	
 }
 
 // Middleware to check for "dirty" git repo
