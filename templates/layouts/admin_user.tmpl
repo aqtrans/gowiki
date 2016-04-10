@@ -2,7 +2,8 @@
 {{ define "content" }}
   <article>
     <header>>Admin User Panel</header>
-    <section>
+  </article>
+  <article>  
     <main>
         <form method="post" action="/auth/signup" id="signup">
         User:<input class="stack" type="text" id="username" name="username" placeholder="Username" size="12">
@@ -15,6 +16,5 @@
         <button class="stack" type="submit" class="button">Add User</button>
         </form>
     </main>
-    </section>
   </article>
 {{ end }}
