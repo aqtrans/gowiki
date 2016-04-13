@@ -26,9 +26,13 @@
     <a class="active" href="/{{.Filename}}?commit={{.Commit}}&a=diff">Commit Diff</a>
   </div>
   <main>
-      <p class="date">Created: {{ .CreateTime | prettyDate }}</p>
-      <p class="date">Last Modified: {{ .ModTime | prettyDate }}</p>
       {{.Content | safeHTML}}
+      <footer>
+        <ul>
+          <li>Created: {{ .CreateTime | prettyDate }}</li>
+          <li>Last Modified: {{ .ModTime | prettyDate }}</li>
+        </ul>
+      </footer>
   </main>
 </article>
 {{ end }}
