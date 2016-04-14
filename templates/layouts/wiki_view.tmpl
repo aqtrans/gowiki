@@ -25,10 +25,13 @@
     </ul>
   </div>
   <main>
-      <p class="date">Created: {{ .CreateTime | prettyDate }}</p>
-      <p class="date">Last Modified: {{ .ModTime | prettyDate }}</p> 
-      <hr>
     {{.wiki.Rendered | safeHTML}}
+      <footer>
+        <ul>
+          <li>Created: {{ .CreateTime | prettyDate }}</li>
+          <li>Last Modified: {{ .ModTime | prettyDate }}</li>
+        </ul>
+      </footer>
   </main>
 </article>
 {{ end }}
