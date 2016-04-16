@@ -16,6 +16,7 @@ stages:
   - install-environment
   - build
   - test
+  - deploy  
 
 install-go:
   stage: install-environment
@@ -45,3 +46,16 @@ test-my-project:
     - export GOPATH=$HOME/gopath
     - export PATH=$PATH:$GOPATH/bin
     - go test
+
+deploy-it:
+  stage: deploy
+  script:
+    - export GOPATH=$HOME/gopath
+    - export PATH=$PATH:$GOPATH/bin:/usr/local/go/bin
+    - cd $CI_PROJECT_DIR
+    - mkdir deploy
+    - go get -d
+    - go build -o ./deploy/wiki
+    - cp -r templates CHANGELOG.md README.md assets deploy/
+    - rsync -av --delete --exclude auth.db --exclude conf.json --exclude md --exclude uploads --exclude http.log deploy/ aqtrans@localhost:/home/aqtrans/production_apps/wiki/
+#    - ssh aqtrans@localhost /home/aqtrans/production_apps/finish_wiki.sh
