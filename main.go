@@ -1815,16 +1815,17 @@ func wikiAuth(next http.Handler) http.Handler {
                 panic("AuthMiddle is in an endless redirect loop")
                 return
             }
+			auth.SetSession("flash", "Please login to view that page.", w, r)
 			http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
 			return
-		}		
+		}
 	}
 	if fm.Admin {
 		if role != "Admin" {
             log.Println(username + " attempting to access restricted URL.")
             auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
             http.Redirect(w, r, "/", http.StatusSeeOther)
-            return			
+            return
 		}
 	}
     
