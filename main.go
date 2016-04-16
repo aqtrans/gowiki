@@ -1798,17 +1798,35 @@ func wikiAuth(next http.Handler) http.Handler {
     fm := frontmatter{}
     _, err = readFront(read, &fm)
 	if err != nil {
+		log.Println(err)
 		return
 	}
-    
-    if fm.Private {
-        auth.AuthMiddleAlice(next)
-        return
-    }
-    if fm.Admin {
-        auth.AuthAdminMiddleAlice(next)
-        return
-    }
+	
+	username, role, _ := auth.GetUsername(r)
+
+	if fm.Private || fm.Admin {
+		if username == "" {
+            rurl := r.URL.String()
+			utils.Debugln("AuthMiddleware mitigating: " + r.Host + rurl)
+			//w.Write([]byte("OMG"))
+            
+            // Detect if we're in an endless loop, if so, just panic
+            if strings.HasPrefix(rurl, "login?url=/login") {
+                panic("AuthMiddle is in an endless redirect loop")
+                return
+            }
+			http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+			return
+		}		
+	}
+	if fm.Admin {
+		if role != "Admin" {
+            log.Println(username + " attempting to access restricted URL.")
+            auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
+            http.Redirect(w, r, "/", http.StatusSeeOther)
+            return			
+		}
+	}
     
     next.ServeHTTP(w, r)
 	})
