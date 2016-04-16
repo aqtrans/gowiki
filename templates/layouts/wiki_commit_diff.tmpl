@@ -22,8 +22,8 @@
     </ul>
   </div>
   <div>
-    <a class="active" href="/{{.Filename}}?commit={{.Commit}}">File at Commit</a>|
-    <a href="/{{.Filename}}?commit={{.Commit}}&a=diff">Commit Diff</a>
+    <a href="/{{.Filename}}?commit={{.Commit}}">File at Commit</a>|
+    <a class="active" href="/{{.Filename}}?commit={{.Commit}}&a=diff">Commit Diff</a>
   </div>
   <main>
       {{.Content | safeHTML}}

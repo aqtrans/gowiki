@@ -8,9 +8,31 @@
 
 {
 	"version": "0.1.0",
-	"command": "go",
+	"command": "bash",
 	"isShellCommand": true,
-    "args": ["run", "main.go"],
-    "isBuildCommand": true,
-    "showOutput": "always"
+    "args": [
+        "-c"
+    ],
+    "tasks": [
+        {
+            "taskName": "run",
+            "suppressTaskName": true,
+            "args": [
+              "go build -o ./vscodetmp && ./vscodetmp -d"
+            ],
+            "isWatching": true,
+            "isBuildCommand": true,
+            "showOutput": "always"
+        },
+        {
+            "taskName": "kill",
+            "suppressTaskName": true,
+            "args": [
+              "pkill -6 -f './vscodetmp -d'"
+            ],
+            "isWatching": false,
+            "isBuildCommand": false,
+            "showOutput": "always"
+        }        
+    ]
 }
