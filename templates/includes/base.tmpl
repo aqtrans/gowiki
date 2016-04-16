@@ -1,6 +1,5 @@
 {{ define "base" }}
 <!DOCTYPE html>
-<!--[if IE 9]><html class="lt-ie10" lang="en" > <![endif]--> 
 <html class="no-js" lang="en" >
 <head>
   {{ template "title" . }}
@@ -9,51 +8,20 @@
   <meta name="description" content="Gowiki">
   <link rel="shortcut icon" type="image/png" href="/assets/favicon.png"/>
   <link rel="shortcut icon" type="image/ico" href="/assets/favicon.ico" />
-  <link rel="stylesheet" href="/assets/css/picnic.min.css">
-  <link rel="stylesheet" href="/assets/css/my.picnic.css">
-  <link rel="stylesheet" href="/assets/material-icons/material-icons.css">
-  <script src="/assets/js/jquery.js"></script>
+  <link rel="stylesheet" href="//static.jba.io/bourbon.css">
+  <link rel="stylesheet" href="//static.jba.io/material-icons/material-icons.css">
  </head>
-<body>
-<nav class="top-bar">
-    <a class="brand" href="/">
-        <span>My Site</span>
-    </a>
-    <input id="bmenub" type="checkbox" class="show">
-    <label for="bmenub" class="burger pseudo button"><i class="material-icons md-light">menu</i></label>
-    <div class="menu" id="navmenu">
-        <div class="mainmenu">
-            <!--<a href="#" class="pseudo button topbutton">Demo</a>
-            <a href="#" class="pseudo button topbutton">Plugins</a>-->
-            {{ template "usernav" .}}
-        </div>    
-        <div class="newmenu">
-            <form method="get" action="/new" id="newwiki">
-                <label><i class="material-icons centericon">note_add</i></label>
-                <input type="text" placeholder="New wiki page..." id="newwiki" name="newwiki" class="newwiki">
-                <input type="hidden" name="token" value="{{.Token}}">
-                <button type="submit">Go!</button>   
-            </form>
-        </div>
-    </div>    
-</nav>
 
+<section>
+  <nav>
+    <header><a href="/">Wiki</a></header>
+      {{ template "sidebar" .}}
+  </nav>
 
-<main id="primary">
-  <section class="sidebar">
-    <article class="card navcard">
-    <header>
-        <h3><a href="/">Wiki</a></h3>
-    </header>
-    <footer>    
-        {{ template "sidebar" .}}
-    </footer>
-    </article>
-  </section>
-  <section class="body">
+  <section>
     {{ template "content" . }}
   </section>
-</main>
+</section>
 
 <div class="modal" id="alert-modal">
     {{ .page.FlashMsg |safeHTML }}
@@ -63,31 +31,25 @@
   <input id="login_modal" type="checkbox" />
   <label for="login_modal" class="overlay"></label>
   <article>
-    <header>
-      <h3>Login</h3>
+    <header>Login</header>
       <label for="login_modal" class="close">&times;</label>
-    </header>
-    <section class="content">
+    <section>
     <form method="post" action="/login" id="login">
-    <input type="text" id="username" name="username" placeholder="Username" size="12">
-    <input type="password" id="password" name="password" placeholder="Password" size="12">
+    <input type="text" id="username" name="username" placeholder="Username">
+    <input type="password" id="password" name="password" placeholder="Password">
     <input type="hidden" name="token" value="{{.Token}}">
-    </section>
-    <footer>
       <button type="submit" class="button">Login</button>
         </form>
-      <label for="login_modal" class="button dangerous">
+      <label for="login_modal" class="button-dangerous">
         Cancel
       </label>
-    </footer>
+     </section> 
   </article>
 </div>
 
 <footer>
 </footer>
-  <script src="/assets/js/my.js"></script>
   {{ template "extra_scripts" . }}
-</body>
 </html>
 {{ end }}
 {{ define "extra_scripts" }}{{ end }}
