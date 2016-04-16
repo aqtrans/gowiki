@@ -139,6 +139,14 @@ type frontmatter struct {
     Admin       bool `yaml:"admin,omitempty"`
 }
 
+type badFrontmatter struct {
+	Title string `yaml:"title"`
+	Tags  string `yaml:"tags,omitempty"`
+    Favorite    bool `yaml:"favorite,omitempty"`
+    Private     bool `yaml:"private,omitempty"`
+    Admin       bool `yaml:"admin,omitempty"`
+}
+
 type wiki struct {
 	Rendered string
 	Content  string
@@ -162,8 +170,8 @@ type commitPage struct {
 	*wiki
 	CreateTime int64
 	ModTime    int64
-    Diff       string
     Commit     string
+    Content    string
 }
 
 type rawPage struct {
@@ -173,7 +181,9 @@ type rawPage struct {
 
 type listPage struct {
 	*page
-	Wikis []*wikiPage
+	Wikis        []*wikiPage
+    PrivateWikis []*wikiPage
+    AdminWikis   []*wikiPage
 }
 
 type genPage struct {
@@ -317,7 +327,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isAdmin": isAdmin, "isLoggedIn": isLoggedIn}
+	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isAdmin": isAdmin, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
 
 	for _, layout := range layouts {
 		files := append(includes, layout)
@@ -353,6 +363,13 @@ func slugURL(w http.ResponseWriter, r *http.Request) {
 	name := vars["name"]
     //log.Println(name)
     //log.Println(r.URL.String())
+    
+    // In case a non-slugified filename was created outside, check for existence before we react
+    fullfilename := "./md/" + name
+    if _, err := os.Stat(fullfilename); err == nil {
+        return
+    }
+    
     slugName := urlSlugifier.Slugify(name)
     if name != slugName {
         //log.Println(name + " and " + slugName + " differ.")
@@ -379,6 +396,17 @@ func isLoggedIn(s string) bool {
         return false
     }
 	return true
+}
+
+func jsTags(tagS []string) string {
+    var tags string
+    for _, v := range tagS {
+        tags = tags + ", " + v
+    }
+    tags = strings.TrimPrefix(tags, ", ")
+    tags = strings.TrimSuffix(tags, ", ")
+    log.Println(tags)
+    return tags
 }
 
 // CUSTOM GIT WRAPPERS
@@ -480,7 +508,7 @@ func gitGetCtime(filename string) (int64, error) {
     // If output is blank, no point in wasting CPU doing the rest
     if ostring == "" {
         log.Println(filename + " is not checked into Git")
-        return 0, nil
+        return 0, errors.New("NOT_IN_GIT")
     }
 	ctime, err := strconv.ParseInt(ostring, 10, 64)
 	if err != nil {
@@ -531,11 +559,14 @@ func gitGetLog(filename string) ([]*commitLog, error) {
         var mtime, err = strconv.ParseInt(vs[1], 10, 64)
         if err != nil {
             log.Fatalln(err)
-        }        
+        }
+        // Now shortening the SHA1 to 7 digits, supposed to be the default git short sha output
+        shortsha := vs[0][0:7]
+        //log.Println(shortsha)
         // vs[0] = commit, vs[1] = date, vs[2] = message
         theCommit := &commitLog {
             Filename: filename,
-            Commit: vs[0],
+            Commit: shortsha,
             Date: mtime,
             Message: vs[2],
         }
@@ -641,19 +672,16 @@ func loadPage(r *http.Request) (*page, error) {
         message = `
     <input id="alert_modal" type="checkbox" checked />
     <label for="alert_modal" class="overlay"></label>
-        <article id="alerts">
-            <header>
-            <h3>Alert!</h3>
+        <article>
+            <header>Alert!</header>
+            <section>
             <label for="alert_modal" class="close">&times;</label>
-            </header>
-            <section class="content">
                 `+ msg + `
-            </section>
-            <footer>
+                <hr>
             <label for="alert_modal" class="button">
                 Okay
             </label>
-            </footer>
+            </section>
         </article>        
         `
     } else {
@@ -702,6 +730,7 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 	var fm frontmatter
 	var pagetitle string
+    var pageContent string
     
     slugURL(w, r)
     
@@ -718,7 +747,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 		log.Fatalln(err)
 	}
 	ctime, err := gitGetCtime(name)
-	if err != nil {
+	if err != nil && err.Error() != "NOT_IN_GIT" {
 		log.Panicln(err)
 	}
 	mtime, err := gitGetFileCommitMtime(commit)
@@ -750,6 +779,19 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 	}
     diffstring := strings.Replace(string(diff),"\n","<br>",-1)
     //log.Println(diffstring)
+    
+    pageContent = md
+
+    // Check for ?a={file,diff} and toss either the file or diff
+    if r.URL.Query().Get("a") != "" {
+        action := r.URL.Query().Get("a")
+        //log.Println(action)
+        if action == "diff" {
+            pageContent = "<code>" + diffstring + "</code>"
+        } else {
+            pageContent = md
+        }
+    }
 
 	cp := &commitPage{
 		p,
@@ -762,14 +804,34 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 		},
 		ctime,
 		mtime,
-        diffstring,
         commit,
+        pageContent,
 	}
     
-	err = renderTemplate(w, "wiki_commit.tmpl", cp)
-	if err != nil {
-		log.Fatalln(err)
+
+    // Check for ?a={file,diff} and toss either the file or diff
+    if r.URL.Query().Get("a") != "" {
+        action := r.URL.Query().Get("a")
+        //log.Println(action)
+        if action == "diff" {
+			err = renderTemplate(w, "wiki_commit_diff.tmpl", cp)
+			if err != nil {
+				log.Fatalln(err)
+			}
+        } else {
+			err = renderTemplate(w, "wiki_commit.tmpl", cp)
+			if err != nil {
+				log.Fatalln(err)
+			}
+        }
+    } else {
+		err = renderTemplate(w, "wiki_commit.tmpl", cp)
+		if err != nil {
+			log.Fatalln(err)
+		}		
 	}
+	
+
 }
 
 
@@ -793,6 +855,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
 	var wps []*wikiPage
+    var privatewps []*wikiPage
+    var adminwps []*wikiPage
 	for _, file := range fileList {
 
 		// check if the source dir exist
@@ -814,7 +878,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
             fileURL := strings.TrimPrefix(file, "md/")
             
 			var wp *wikiPage
-			var fm *frontmatter
+			fm := &frontmatter{}
 			var pagetitle string
 			//fmt.Println(file)
 			//w.Write([]byte(file))
@@ -827,66 +891,92 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				log.Fatalln(err)
 			}
 			// Read YAML frontmatter into fm
-			_, err = readFront(body, &fm)
+			_, err = readFront(body, fm)
 			if err != nil {
 				// If YAML frontmatter doesn't exist, proceed, but log it
 				//log.Fatalln(err)
                 log.Println("YAML unmarshal error in: " + file)
 				log.Println(err)
 			}
-			if fm != nil {
-				//log.Println(fm.Tags)
-				//log.Println(fm)
-                
-                // TODO: improve this so private pages are actually protected
-                if fm.Private {
-					//log.Println("Private page!")
-				}
-				if fm.Title != "" {
-					pagetitle = fm.Title
-				}
-			} else {
-				// If file doesn't have frontmatter, add in crap
-				//log.Println(file + " doesn't have frontmatter :( ")
-				fm = &frontmatter{
-					Title: fileURL,
-					Tags: []string{},
-                    Favorite: false,
-                    Private: false,
-				}
+			if fm.Private {
+				//log.Println("Private page!")
+			}
+			if fm.Title != "" {
+				pagetitle = fm.Title
+			}
+			if fm.Title == "" {
+				fm.Title = fileURL
+			}				
+			if fm.Private != true {
+				fm.Private = false
+			}
+			if fm.Admin != true {
+				fm.Admin = false
+			}
+			if fm.Favorite != true {
+				fm.Favorite = false
+			}
+			if fm.Tags == nil {
+				fm.Tags = []string{}
 			}
 			ctime, err := gitGetCtime(filename)
-			if err != nil {
+			if err != nil && err.Error() != "NOT_IN_GIT" {
 				log.Panicln(err)
 			}
 			mtime, err := gitGetMtime(filename)
 			if err != nil {
 				log.Panicln(err)
 			}
-
-			wp = &wikiPage{
-				p,
-				pagetitle,
-				fileURL,
-				fm,
-				&wiki{},
-				ctime,
-				mtime,
-			}
-			wps = append(wps, wp)
+            
+            // If pages are Admin or Private, add to a separate wikiPage slice
+            //   So we only check on rendering
+            if fm.Admin {
+                wp = &wikiPage{
+                    p,
+                    pagetitle,
+                    fileURL,
+                    fm,
+                    &wiki{},
+                    ctime,
+                    mtime,
+                }
+                adminwps = append(adminwps, wp)
+            } else if fm.Private {
+                wp = &wikiPage{
+                    p,
+                    pagetitle,
+                    fileURL,
+                    fm,
+                    &wiki{},
+                    ctime,
+                    mtime,
+                }
+                privatewps = append(privatewps, wp)                
+            } else {
+                wp = &wikiPage{
+                    p,
+                    pagetitle,
+                    fileURL,
+                    fm,
+                    &wiki{},
+                    ctime,
+                    mtime,
+                }
+                wps = append(wps, wp)
+            }
 			//log.Println(string(body))
 			//log.Println(string(wp.wiki.Content))
 		}
 
 	}
-	l := &listPage{p, wps}
+	l := &listPage{p, wps, privatewps, adminwps}
 	err = renderTemplate(w, "list.tmpl", l)
 	if err != nil {
 		log.Fatalln(err)
 	}
 }
 
-func readFront(data []byte, frontmatter interface{}) (content []byte, err error) {
+func readFront(data []byte, frontmatter *frontmatter) (content []byte, err error) {
 	r := bytes.NewBuffer(data)
 
 	// eat away starting whitespace
@@ -931,6 +1021,29 @@ func readFront(data []byte, frontmatter interface{}) (content []byte, err error)
 
 	err = yaml.Unmarshal(data[yamlStart:yamlEnd], frontmatter)
 	if err != nil {
+		// Try to catch and "fix" tags
+		if strings.HasSuffix(err.Error(), "into []string") {
+			var badFM struct {
+				Title string `yaml:"title"`
+				Tags  string `yaml:"tags,omitempty"`
+				Favorite    bool `yaml:"favorite,omitempty"`
+				Private     bool `yaml:"private,omitempty"`
+				Admin       bool `yaml:"admin,omitempty"`
+			}
+			err = yaml.Unmarshal(data[yamlStart:yamlEnd], &badFM)
+			if err != nil {
+				return nil, err
+			}
+			frontmatter.Title = badFM.Title
+			fixedTags := strings.Split(badFM.Tags, ",")
+			frontmatter.Tags = fixedTags
+			frontmatter.Favorite = badFM.Favorite
+			frontmatter.Private = badFM.Private
+			frontmatter.Admin = badFM.Admin
+			content = data[yamlEnd:]
+			err = nil
+			return			
+		}
 		return nil, err
 	}
 	content = data[yamlEnd:]
@@ -1000,11 +1113,11 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
     //log.Println(r.URL.Query())
     query := r.URL.RawQuery
     if query != "" {
-      utils.Debugln("Query string: " + query)
+      //utils.Debugln("Query string: " + query)
     }
     if r.URL.Query().Get("commit") != "" {
         commit := r.URL.Query().Get("commit")
-        utils.Debugln(r.URL.Query().Get("commit"))
+        //utils.Debugln(r.URL.Query().Get("commit"))
         viewCommitHandler(w, r, commit)
         return
     }
@@ -1030,21 +1143,15 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
     
 	vars := mux.Vars(r)
 	name := vars["name"]    
-    //slugName := urlSlugifier.Slugify(name)
-    /*if name != slugName {
-        log.Println(name + " and " + slugName + " differ.")
-        http.Redirect(w, r, "/"+slugName, http.StatusTemporaryRedirect)
-        return
-    }*/
     
     // In case I want to switch to queries some time
     query := r.URL.RawQuery
     if query != "" {
-      utils.Debugln(query)
+      //utils.Debugln(query)
     }
     if r.URL.Query().Get("commit") != "" {
         commit := r.URL.Query().Get("commit")
-        utils.Debugln(r.URL.Query().Get("commit"))
+        //utils.Debugln(r.URL.Query().Get("commit"))
         viewCommitHandler(w, r, commit)
         return
     }
@@ -1064,6 +1171,10 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
             log.Println("Cannot create subdir of a file.")
             http.Error(w, "Cannot create subdir of a file.", 500)
             return
+		// If gitGetCtime returns NOT_IN_GIT, we handle it here	
+		} else if err.Error() == "NOT_IN_GIT" {
+			http.Redirect(w, r, "/gitadd?file="+name, http.StatusSeeOther)
+			return
 		} else {
 			panic(err)
 		}
@@ -1205,6 +1316,10 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	}
 	ctime, err := gitGetCtime(filename)
 	if err != nil {
+		// If not in git, redirect to gitadd
+		if err.Error() == "NOT_IN_GIT" {
+			return nil, err
+		}
 		log.Panicln(err)
 	}
 	mtime, err := gitGetMtime(filename)
@@ -1269,6 +1384,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	tags := r.FormValue("tags")
     favorite := r.FormValue("favorite")
     private := r.FormValue("private")
+    admin := r.FormValue("admin")
     
     fav := false
     if favorite == "on" {
@@ -1277,7 +1393,11 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
     priv := false
     if private == "on" {
         priv = true
-    } 
+    }
+    adminpage := false
+    if admin == "on" {
+        adminpage = true
+    }     
 
     if title == "" {
         title = name
@@ -1295,6 +1415,8 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
     buffer.WriteString("\n")    
     buffer.WriteString("private: " + strconv.FormatBool(priv))
     buffer.WriteString("\n")
+    buffer.WriteString("admin: " + strconv.FormatBool(adminpage))
+    buffer.WriteString("\n")    
     buffer.WriteString("---\n")
     buffer.WriteString(body)
     body = buffer.String()
@@ -1306,7 +1428,8 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := rp.save()
 	if err != nil {
-		utils.WriteJ(w, "", false)
+        auth.SetSession("flash", "Failed to save page.", w, r)
+        http.Redirect(w, r, "/", http.StatusSeeOther)
 		log.Fatalln(err)
 		return
 	}
@@ -1318,9 +1441,10 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
         log.Fatal(err)
     }    
     
-    utils.WriteJ(w, name, true)
+    auth.SetSession("flash", "Wiki page successfully saved.", w, r)
+    log.Println(name)
+    http.Redirect(w, r, "/"+name, http.StatusSeeOther)
 	log.Println(name + " page saved!")
-
 }
 
 func newHandler(w http.ResponseWriter, r *http.Request) {
@@ -1374,14 +1498,11 @@ func readFavs(path string, info os.FileInfo, err error) error {
 
     // Read YAML frontmatter into fm
     // If err, just return, as file should not contain frontmatter
-    var fm *frontmatter
+    fm := frontmatter{}
     _, err = readFront(read, &fm)
 	if err != nil {
 		return nil
 	}
-    if fm == nil {
-        return nil
-    }
     
     if fm.Favorite {
         favbuf.WriteString(name+" ")
@@ -1437,14 +1558,11 @@ func readTags(path string, info os.FileInfo, err error) error {
 
     // Read YAML frontmatter into fm
     // If err, just return, as file should not contain frontmatter
-    var fm *frontmatter
+    fm := frontmatter{}
     _, err = readFront(read, &fm)
 	if err != nil {
 		return nil
 	}
-    if fm == nil {
-        return nil
-    }
     
     if fm.Tags != nil {
         for _, tag := range fm.Tags {
@@ -1504,7 +1622,6 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	//p, err := loadPage(title, r)
 	gp := &genPage{
 		p,
 		title,
@@ -1523,7 +1640,6 @@ func signupPageHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	//p, err := loadPage(title, r)
 	gp := &genPage{
 		p,
 		title,
@@ -1542,7 +1658,6 @@ func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	//p, err := loadPage(title, r)
 	gp := &genPage{
 		p,
 		title,
@@ -1561,13 +1676,19 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
     if err != nil {
         log.Fatalln(err)
     }
-    
-    o, err := gitIsClean()
-    if err != nil {
-        log.Fatalln(err)
-    }    
+	var owithnewlines []byte
 
-    owithnewlines := bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
+    if r.URL.Query().Get("file") != "" {
+        file := r.URL.Query().Get("file")
+        //log.Println(action)
+        owithnewlines = []byte(file)
+	} else {
+		o, err := gitIsClean()
+		if err != nil && err.Error() != "directory is dirty" {
+			log.Fatalln(err)
+		}
+		owithnewlines = bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
+	}
 
     gp := &gitPage{
         p,
@@ -1583,14 +1704,33 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 
 func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "gitCheckinPostHandler")
-    err := gitAddFilepath(".")
+	
+	var path string
+	
+    if r.URL.Query().Get("file") != "" {
+        //file := r.URL.Query().Get("file")
+        //log.Println(action)
+        path = r.URL.Query().Get("file")
+	} else {
+		path = "."
+	}
+	
+    err := gitAddFilepath(path)
     if err != nil {
         log.Fatalln(err)
+		return
     }
     err = gitCommitEmpty()
     if err != nil {
         log.Fatalln(err)
-    }    
+		return
+    }
+	if path != "." {
+		http.Redirect(w, r, "/"+path, http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+	
 }
 
 // Middleware to check for "dirty" git repo
@@ -1600,7 +1740,7 @@ func checkWikiGit(next http.Handler) http.Handler {
     _, err := gitIsClean()
     if err != nil {
         log.Println("There are wiki files waiting to be checked in.")
-        http.Redirect(w, r, "/gitadd", http.StatusTemporaryRedirect)
+        http.Redirect(w, r, "/gitadd", http.StatusSeeOther)
         return
     }
     
@@ -1655,7 +1795,7 @@ func wikiAuth(next http.Handler) http.Handler {
 
     // Read YAML frontmatter into fm
     // If err, just return, as file should not contain frontmatter
-    var fm *frontmatter
+    fm := frontmatter{}
     _, err = readFront(read, &fm)
 	if err != nil {
 		return
@@ -1702,10 +1842,11 @@ func Router(r *mux.Router) *mux.Router {
     })
     
 	r.HandleFunc("/new", auth.AuthMiddle(newHandler)).Methods("GET")
-	r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
+	//r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
 	r.HandleFunc("/login", loginPageHandler).Methods("GET")
-	r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
+	//r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
+	r.HandleFunc("/signup", signupPageHandler).Methods("GET")
 	r.HandleFunc("/list", listHandler).Methods("GET")
     r.HandleFunc("/health", HealthCheckHandler).Methods("GET")
     
@@ -1718,8 +1859,8 @@ func Router(r *mux.Router) *mux.Router {
     r.HandleFunc("/admin/users", auth.AuthAdminMiddle(adminUserHandler)).Methods("GET")
     r.HandleFunc("/admin/users", auth.AuthAdminMiddle(auth.AdminUserPostHandler)).Methods("POST")
 
-	r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
-	r.HandleFunc("/signup", signupPageHandler).Methods("GET")
+	//r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
+	
 
 	r.HandleFunc("/gitadd", auth.AuthMiddle(gitCheckinPostHandler)).Methods("POST")
 	r.HandleFunc("/gitadd", auth.AuthMiddle(gitCheckinHandler)).Methods("GET")    

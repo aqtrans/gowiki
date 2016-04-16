@@ -1,21 +1,16 @@
 {{ define "title" }}<title>{{.page.SiteName}}|Tag List</title>{{ end }}
 {{ define "content" }}
-<article class="card">
-  <header>
-    <h1>List of things</h1>
-  </header>
-  <footer>
-    <h2>Wiki Pages</h2>
-  </footer>  
+<article>
+  <header>>List of Wiki Tags</header>
 </article>
     
-<article class="card">
-  <footer>
-    <table class="primary listtable">
+<article>
+  <main>
+    <table>
     <thead>
         <tr>
-        <th width="80">Tag</th>
-        <th width="800">Pages</th>
+        <th>Tag</th>
+        <th>Pages</th>
         </tr>
     </thead>
     <tbody>
@@ -27,6 +22,6 @@
     {{ end }}
     </tbody>
     </table>
-  </footer>
+  </main>
 </article>
 {{ end }}
