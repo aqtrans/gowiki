@@ -1,12 +1,19 @@
 {{ define "sidebar" }}
-<article class="card stack">
-<a class="stack button" href="/">Home</a>
-<a class="stack button" href="/list">List</a>
-</article>
-<span><h4>Favorites:</h4></span>
-<article class="card stack">
+<ul>
+    <li><a href="/">Home</a></li>
+    <li><a href="/list">List</a></li>
+    <li><a href="/gitadd">Git Add</a></li>
+</ul>
+<h2>Favorites:</h2>
+<ul>
 {{range .page.Favs}}
-<a class="stack button catbutton" href="/{{.}}">{{.}}</a>
+<li><a href="/{{.}}">{{.}}</a></li>
 {{end}}
-</article>
+</ul>
+<form method="get" action="/new" id="newwiki">
+    <input type="text" placeholder="Add page" id="newwiki" name="newwiki" class="newwiki">
+    <input type="hidden" name="token" value="{{.Token}}">
+    <button type="submit"><i class="material-icons">add_box</i></button>
+</form>
+    {{ template "usernav" .}}
 {{ end }}

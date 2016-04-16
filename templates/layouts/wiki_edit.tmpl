@@ -1,89 +1,102 @@
 {{ define "title" }}<title>{{.page.SiteName}}|Editing {{ .PageTitle }}</title>{{ end }}
 {{ define "content" }}
-<link rel="stylesheet" href="/assets/css/jquery.tagsinput.min.css">
-<article class="card">
-  <header>
-    <h1>Editing "{{.PageTitle}}"</h1>
-  </header>  
+<link rel="stylesheet" href="/assets/css/tagdog.css">
+<article>
+  <header>Editing {{.PageTitle}}</header>
 </article>
 
-<div class="wikitoolbar">
-    <ul>
-        <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
-        <li class="selected"><a href="#"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-        <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
-   </ul>
-</div>
-<article class="card wikicontent editorcard">
-  <header>
+<ul class="tabs">
+  <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
+  <li><a href="#" class="is-active"><i class="material-icons centericon">edit</i>Edit Page</a></li>
+  <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
+</ul>
+
+<article>
+  <main>
     <form action="/{{.Filename}}?a=save" method="POST" id="savewiki">
-    Title:<input type="text" name="title" value="{{.Title}}"><br>
+    Title:<input type="text" name="title" value="{{.Title}}">
+    <div>
     {{ if .Favorite }}
-        <label><input type="checkbox" name="favorite" checked><span class="checkable">Favorite</span></label>
+        <label class="label-switch">Favorite:<input type="checkbox" name="favorite" checked /><div class="checkbox"></div></label>
     {{ else }}
-        <label><input type="checkbox" name="favorite"><span class="checkable">Favorite</span></label>
+        <label class="label-switch">Favorite:<input type="checkbox" name="favorite" /><div class="checkbox"></div></label>
     {{ end }}
-    <br>
     {{ if .Private }}
-        <label><input type="checkbox" name="private" checked><span class="checkable">Private</span></label>
+        <label class="label-switch">Users Only:<input type="checkbox" name="private" checked /><div class="checkbox"></div></label>
     {{ else }}
-        <label><input type="checkbox" name="private"><span class="checkable">Private</span></label>
+        <label class="label-switch">Users Only:<input type="checkbox" name="private" /><div class="checkbox"></div></label>
     {{ end }}
-    <br>    
-    Tags:<input type="text" name="tags" id="tags" value="{{ range .Tags }} {{ . }}, {{end }}"><br>
-    <input type="hidden" name="token" value="{{.Token}}">
-  </header>
-  <footer>  
+    {{ if .Admin }}
+        <label class="label-switch">Admin Only:<input type="checkbox" name="admin" checked /><div class="checkbox"></div></label>
+    {{ else }}
+        <label class="label-switch">Admin Only:<input type="checkbox" name="admin" /><div class="checkbox"></div></label>
+    {{ end }}    
+    </div>
+    <br>
+    <div class="tag-field">
+        <label for="tags">Tags</label>
+        <input type="text" id="tags" name="tags" placeholder="Separate tags with commas" value="{{ .Tags|jsTags }}" />
+    </div>
+    <input type="hidden" name="token" value="{{.Token}}"> 
     <textarea name="editor" id="wikieditor"></textarea>
-    <input type="submit" class="button success" value="Submit">
-    <label for="preview_modal" id="preview" class="button">Preview</label>
+    <div class="stack">
+        <input type="submit" class="button-success" value="Submit">
+        <label for="preview_modal" id="preview" class="button-dangerous">Preview</label>
+    </div>
     </form>
-  </footer>
+  </main>
 </article>
 
 <div class="modal">
   <input id="preview_modal" type="checkbox" />
   <label for="preview_modal" class="overlay"></label>
-    <article id="alerts">
-        <header>
-        <h3>{{.PageTitle }} - Preview</h3>
-        <label for="preview_modal" class="close">&times;</label>
-        </header>
-        <section class="content" id="preview_content">
-        </section>
-        <footer>
-        <label for="preview_modal" class="button dangerous">
+    <article>
+        <header>{{.PageTitle }} - Preview</header>
+          <label for="preview_modal" class="close">&times;</label>
+        <main class="content" id="preview_content">
+        </main>
+        <label for="preview_modal" class="button-dangerous">
             Close
         </label>
-        </footer>
     </article>
 </div>
 
 {{ end }}
 {{ define "extra_scripts" }}
 <script src="/assets/js/commonmark.js"></script>
-<script src="/assets/js/jquery.tagsinput.min.js"></script>
+<script src="/assets/js/tagdog.min.js"></script>
+<!--<script src="/assets/js/jquery.tagsinput.min.js"></script>-->
 <script type="text/javascript" charset="utf-8">
  
-$('#tags').tagsInput({
+/*$('#tags').tagsInput({
    'height':'3rem',
    'width':'100%',
 });
+*/
+
+(function() {
+    "use strict";
+    var tagFields = tagdog('.tag-field');
+    console.log(tagFields);
+}).call(this);
+
 var commonmark = window.commonmark;
 var writer = new commonmark.HtmlRenderer();
 var reader = new commonmark.Parser();
-var textarea = $("#editor");
+var textarea = document.getElementById("editor");
 var initial_text = {{printf "%s" .wiki.Content}};
 
 document.getElementsByName("editor")[0].value = initial_text;
 
 
-$("#preview").on("click", function() {
+document.getElementById("preview").onclick = function() {
     var editortxt = document.getElementsByName("editor")[0].value;
     var parsed = reader.parse(editortxt);
     var result = writer.render(parsed);
-    $("#preview_content").html(result);
-});
+    document.getElementById("preview_content").innerHTML=result;
+};
+
+
 
 </script>
 {{ end }}
