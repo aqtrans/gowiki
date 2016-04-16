@@ -1,12 +1,15 @@
 {{ define "usernav" }}
-    <i class="material-icons centericon">person</i>
+<br>
+<ul>
+    
 {{ if .UN }}
-    Hello, {{ .page.UN }}|{{ .page.Role }}
-    <a href="/auth/logout" class="button">Logout</a>
+    <li><i class="material-icons centericon">person</i>{{ .page.UN }}|{{ .page.Role }}<br></li>
+    <li><a href="/auth/logout">Logout</a></li>
     {{ if .page.Role|isAdmin }}    
-        <a href="/admin" class="button">admin</a>
+        <li><a href="/admin">Admin Panel</a></li>
     {{ end }}    
 {{ else }}
-<label for="login_modal" class="button">Login</label>
-{{ end }} 
+<li><a href="/login">Login</a></li>
+<li><a href="/signup">Sign Up</a></li>
+{{ end }}
 {{ end }}
