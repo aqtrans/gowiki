@@ -176,7 +176,7 @@ type commitPage struct {
 
 type rawPage struct {
 	Name    string
-	Content string
+	Content []byte
 }
 
 type listPage struct {
@@ -356,11 +356,20 @@ func init() {
 
 }
 
+func fullName(r *http.Request) string {
+	vars := mux.Vars(r)
+	name := vars["name"]
+	dir := vars["dir"]
+	if dir != "" {
+		name = dir + "/" + name
+	}
+	return name
+}
+
 // Turn the given URL into a slug
 // Redirect to slugURL if it is different from input
 func slugURL(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	name := vars["name"]
+	name := fullName(r)
     //log.Println(name)
     //log.Println(r.URL.String())
     
@@ -701,8 +710,8 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
     
     slugURL(w, r)
     
-	vars := mux.Vars(r)
-	name := vars["name"]
+	name := fullName(r)
+	
 	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
@@ -734,8 +743,8 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
     
     slugURL(w, r)
     
-	vars := mux.Vars(r)
-	name := vars["name"]
+	name := fullName(r)
+	
 	//commit := vars["commit"]
 
 	p, err := loadPage(r)
@@ -760,7 +769,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 	}
 
 	// Read YAML frontmatter into fm
-	content, err := readFront(body, &fm)
+	fm, content, err := readFront(body)
 	if err != nil {
 		log.Println(err)
 	}
@@ -837,7 +846,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
-	searchDir := "./md/"
+	searchDir := cfg.WikiDir
 	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
@@ -870,15 +879,17 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			// TODO: Do we need to do anything if it's a directory? 
             //       The filewalk already descends automatically.
 			//log.Println(file + " is a directory.")
+						
 		} else {
 
 			_, filename := filepath.Split(file)
             
-            // If this is an absolute path, including the md/, trim it
-            fileURL := strings.TrimPrefix(file, "md/")
+            // If this is an absolute path, including the cfg.WikiDir, trim it
+			withoutWikidir := strings.TrimPrefix(cfg.WikiDir, "./")
+            fileURL := strings.TrimPrefix(file, withoutWikidir)
             
 			var wp *wikiPage
-			fm := &frontmatter{}
+			var fm frontmatter
 			var pagetitle string
 			//fmt.Println(file)
 			//w.Write([]byte(file))
@@ -891,7 +902,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				log.Fatalln(err)
 			}
 			// Read YAML frontmatter into fm
-			_, err = readFront(body, fm)
+			fm, _, err = readFront(body)
 			if err != nil {
 				// If YAML frontmatter doesn't exist, proceed, but log it
 				//log.Fatalln(err)
@@ -919,11 +930,11 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			if fm.Tags == nil {
 				fm.Tags = []string{}
 			}
-			ctime, err := gitGetCtime(filename)
+			ctime, err := gitGetCtime(fileURL)
 			if err != nil && err.Error() != "NOT_IN_GIT" {
 				log.Panicln(err)
 			}
-			mtime, err := gitGetMtime(filename)
+			mtime, err := gitGetMtime(fileURL)
 			if err != nil {
 				log.Panicln(err)
 			}
@@ -935,7 +946,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
                     p,
                     pagetitle,
                     fileURL,
-                    fm,
+                    &fm,
                     &wiki{},
                     ctime,
                     mtime,
@@ -946,7 +957,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
                     p,
                     pagetitle,
                     fileURL,
-                    fm,
+                    &fm,
                     &wiki{},
                     ctime,
                     mtime,
@@ -957,7 +968,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
                     p,
                     pagetitle,
                     fileURL,
-                    fm,
+                    &fm,
                     &wiki{},
                     ctime,
                     mtime,
@@ -976,7 +987,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func readFront(data []byte, frontmatter *frontmatter) (content []byte, err error) {
+func readFront(data []byte) (fm frontmatter, content []byte, err error) {
+	defer utils.TimeTrack(time.Now(), "readFront")
 	r := bytes.NewBuffer(data)
 
 	// eat away starting whitespace
@@ -985,7 +997,7 @@ func readFront(data []byte, frontmatter *frontmatter) (content []byte, err error
 		ch, _, err = r.ReadRune()
 		if err != nil {
 			// file is just whitespace
-			return []byte{}, nil
+			return frontmatter{}, []byte{}, nil
 		}
 	}
 	r.UnreadRune()
@@ -993,12 +1005,12 @@ func readFront(data []byte, frontmatter *frontmatter) (content []byte, err error
 	// check if first line is ---
 	line, err := r.ReadString('\n')
 	if err != nil && err != io.EOF {
-		return nil, err
+		return frontmatter{}, nil, err
 	}
 
 	if strings.TrimSpace(line) != "---" {
 		// no front matter, just content
-		return data, nil
+		return frontmatter{}, data, nil
 	}
 
 	yamlStart := len(data) - r.Len()
@@ -1008,9 +1020,9 @@ func readFront(data []byte, frontmatter *frontmatter) (content []byte, err error
 		line, err = r.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
-				return data, nil
+				return frontmatter{}, data, nil
 			}
-			return nil, err
+			return frontmatter{}, nil, err
 		}
 
 		if strings.TrimSpace(line) == "---" {
@@ -1018,40 +1030,42 @@ func readFront(data []byte, frontmatter *frontmatter) (content []byte, err error
 			break
 		}
 	}
-
-	err = yaml.Unmarshal(data[yamlStart:yamlEnd], frontmatter)
+	
+	m := map[string]interface{}{}
+	err = yaml.Unmarshal(data[yamlStart:yamlEnd], &fm)
 	if err != nil {
-		// Try to catch and "fix" tags
-		if strings.HasSuffix(err.Error(), "into []string") {
-			var badFM struct {
-				Title string `yaml:"title"`
-				Tags  string `yaml:"tags,omitempty"`
-				Favorite    bool `yaml:"favorite,omitempty"`
-				Private     bool `yaml:"private,omitempty"`
-				Admin       bool `yaml:"admin,omitempty"`
-			}
-			err = yaml.Unmarshal(data[yamlStart:yamlEnd], &badFM)
-			if err != nil {
-				return nil, err
-			}
-			frontmatter.Title = badFM.Title
-			fixedTags := strings.Split(badFM.Tags, ",")
-			frontmatter.Tags = fixedTags
-			frontmatter.Favorite = badFM.Favorite
-			frontmatter.Private = badFM.Private
-			frontmatter.Admin = badFM.Admin
-			content = data[yamlEnd:]
-			err = nil
-			return			
+		err = yaml.Unmarshal(data[yamlStart:yamlEnd], &m)
+		if err != nil {
+			return frontmatter{}, nil, err
 		}
-		return nil, err
+		
+		title, found := m["title"].(string)
+		if found {
+			fm.Title = title
+		}
+		switch v := m["Tags"].(type) {
+			case string:
+				fm.Tags = strings.Split(v, ",")
+			case []string:
+				fm.Tags = v
+			default:
+				fm.Tags = []string{}
+		}
+		favorite, found := m["favorite"].(bool)
+		if found {
+			fm.Favorite = favorite
+		}
+		private, found := m["private"].(bool)
+		if found {
+			fm.Private = private
+		}
+		admin, found := m["admin"].(bool)
+		if found {
+			fm.Admin = admin
+		}
 	}
-	content = data[yamlEnd:]
-	err = nil
-	return
+	return fm, data[yamlEnd:], nil
 }
-
-
 
 func renderTemplate(w http.ResponseWriter, name string, data interface{}) error {
 	tmpl, ok := templates[name]
@@ -1097,8 +1111,7 @@ type Wiki struct {
 /////////////////////////////
 func loadWikiPage(r *http.Request) (*wikiPage, error) {
 
-	vars := mux.Vars(r)
-	name := vars["name"]
+	name := fullName(r)
     
     return loadWikiPageHelper(r, name)
 }
@@ -1140,9 +1153,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "viewHandler")
     
     slugURL(w, r)
-    
-	vars := mux.Vars(r)
-	name := vars["name"]    
+    name := fullName(r)
     
     // In case I want to switch to queries some time
     query := r.URL.RawQuery
@@ -1199,10 +1210,8 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 		log.Fatalln(err)
 	}
 
-    
-	dir, filename := filepath.Split(name)
-	//log.Println("Dir:" + dir)
-	//log.Println("Filename:" + filename)
+	log.Println("Filename:" + name)
+	
 	fullfilename := cfg.WikiDir + name
     base := filepath.Dir(fullfilename)
     
@@ -1236,9 +1245,10 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
     }    
     
 	// Directory without specified index
-	if dir != "" && filename == "" {
+	if strings.HasSuffix(name, "/") {
+	//if dir != "" && name == "" {
 		log.Println("This might be a directory, trying to parse the index")
-        filename = name + "index"
+        filename := name + "index"
 		fullfilename = cfg.WikiDir + name + "index"
         
         dirindex, _ := os.Open(fullfilename)
@@ -1275,10 +1285,10 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 		errn := errors.New("No such file")
 		newwp := &wikiPage{
 			p,
-			filename,
+			name,
 			name,
 			&frontmatter{
-				Title: filename,
+				Title: name,
 			},
 			&wiki{},
 			0,
@@ -1292,10 +1302,10 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 		return nil, err
 	}
 	// Read YAML frontmatter into fm
-	content, err := readFront(body, &fm)
+	fm, content, err := readFront(body)
 	if err != nil {
+		log.Println("YAML unmarshal error in: " + name)
 		log.Println(err)
-		//return nil, err
 	}
 	if content == nil {
 		content = body
@@ -1309,12 +1319,10 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	}
 	if fm.Title != "" {
 		pagetitle = fm.Title
-	} else if dir != "" {
-		pagetitle = dir + " - " + filename
 	} else {
-		pagetitle = filename
+		pagetitle = name
 	}
-	ctime, err := gitGetCtime(filename)
+	ctime, err := gitGetCtime(name)
 	if err != nil {
 		// If not in git, redirect to gitadd
 		if err.Error() == "NOT_IN_GIT" {
@@ -1322,14 +1330,14 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 		}
 		log.Panicln(err)
 	}
-	mtime, err := gitGetMtime(filename)
+	mtime, err := gitGetMtime(name)
 	if err != nil {
 		log.Panicln(err)
 	}
 	wp := &wikiPage{
 		p,
 		pagetitle,
-		filename,
+		name,
 		&fm,
 		&wiki{
 			Rendered: md,
@@ -1371,12 +1379,11 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "saveHandler")
     
     slugURL(w, r)
-    
-	vars := mux.Vars(r)
-	name := vars["name"]
+    name := fullName(r)
+	
 	r.ParseForm()
 	//txt := r.Body
-	body := r.FormValue("editor")
+	content := r.FormValue("editor")
 	//bwiki := txt
 
 	// Check for and install required YAML frontmatter
@@ -1386,24 +1393,53 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
     private := r.FormValue("private")
     admin := r.FormValue("admin")
     
-    fav := false
+    favoritebool := false
     if favorite == "on" {
-        fav = true
+        favoritebool = true
     }
-    priv := false
+    privatebool := false
     if private == "on" {
-        priv = true
+        privatebool = true
     }
-    adminpage := false
+    adminbool := false
     if admin == "on" {
-        adminpage = true
+        adminbool = true
     }     
 
     if title == "" {
         title = name
     }
         
-    var buffer bytes.Buffer
+    //var buffer bytes.Buffer
+	buffer := new(bytes.Buffer)
+	
+	bfm := &frontmatter{
+		Title: title,
+		Tags: strings.Split(tags, ","),
+		Favorite: favoritebool,
+		Private: privatebool,
+		Admin: adminbool,
+	}
+	_, err := buffer.Write([]byte("---\n"))
+	if err != nil {
+		log.Fatalln(err)
+		return		
+	}
+	yamlBuffer, err := yaml.Marshal(bfm)
+	if err != nil {
+		log.Fatalln(err)
+		return		
+	}
+	buffer.Write(yamlBuffer)
+	
+	_, err = buffer.Write([]byte("---\n"))
+	if err != nil {
+		log.Fatalln(err)
+		return		
+	}	
+	buffer.Write([]byte(content))
+	
+	/*
     buffer.WriteString("---\n")
     buffer.WriteString("title: " + title)
     buffer.WriteString("\n")
@@ -1411,22 +1447,25 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
         buffer.WriteString("tags: [ " + tags + " ]")
         buffer.WriteString("\n")
     }
-    buffer.WriteString("favorite: " + strconv.FormatBool(fav))
+    buffer.WriteString("favorite: " + strconv.FormatBool(favoritebool))
     buffer.WriteString("\n")    
-    buffer.WriteString("private: " + strconv.FormatBool(priv))
+    buffer.WriteString("private: " + strconv.FormatBool(privatebool))
     buffer.WriteString("\n")
-    buffer.WriteString("admin: " + strconv.FormatBool(adminpage))
+    buffer.WriteString("admin: " + strconv.FormatBool(adminbool))
     buffer.WriteString("\n")    
     buffer.WriteString("---\n")
-    buffer.WriteString(body)
-    body = buffer.String()
+    buffer.WriteString(content)
+	body := buffer.String()
+	*/
+	
+    
 
 	rp := &rawPage{
 		name,
-		body,
+		buffer.Bytes(),
 	}
 
-	err := rp.save()
+	err = rp.save()
 	if err != nil {
         auth.SetSession("flash", "Failed to save page.", w, r)
         http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -1498,8 +1537,8 @@ func readFavs(path string, info os.FileInfo, err error) error {
 
     // Read YAML frontmatter into fm
     // If err, just return, as file should not contain frontmatter
-    fm := frontmatter{}
-    _, err = readFront(read, &fm)
+    var fm frontmatter
+    fm, _, err = readFront(read)
 	if err != nil {
 		return nil
 	}
@@ -1523,10 +1562,7 @@ func favsHandler(favs chan []string) {
 
     favss := favbuf.String()
     utils.Debugln("Favorites: " + favss)
-    
-    //sfavs := strings.Split(strings.TrimSpace(favss), ",")
     sfavs := strings.Fields(favss)
-    //log.Println(sfavs)
     
 	favs <- sfavs
 }
@@ -1558,8 +1594,8 @@ func readTags(path string, info os.FileInfo, err error) error {
 
     // Read YAML frontmatter into fm
     // If err, just return, as file should not contain frontmatter
-    fm := frontmatter{}
-    _, err = readFront(read, &fm)
+    var fm frontmatter
+    fm, _, err = readFront(read)
 	if err != nil {
 		return nil
 	}
@@ -1575,13 +1611,9 @@ func readTags(path string, info os.FileInfo, err error) error {
 
 func (wiki *rawPage) save() error {
 	defer utils.TimeTrack(time.Now(), "wiki.save()")
-	//filename := wiki.Name
+
 	dir, filename := filepath.Split(wiki.Name)
 	fullfilename := cfg.WikiDir + dir + filename
-
-	// Check for and install required YAML frontmatter
-	//if strings.Contains(wiki.Content, "---") {
-	//}
 
 	// If directory doesn't exist, create it
 	// - Check if dir is null first
@@ -1596,7 +1628,7 @@ func (wiki *rawPage) save() error {
 	}
 
 
-	ioutil.WriteFile(fullfilename, []byte(wiki.Content), 0755)
+	ioutil.WriteFile(fullfilename, wiki.Content, 0755)
 
 	gitfilename := dir + filename
 
@@ -1772,64 +1804,123 @@ func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 
 func wikiAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		name := vars["name"]
+		dir := vars["dir"]
+		log.Println("Name " + name)
+		log.Println("Dir " + dir)
 
         wikipage := cfg.WikiDir + r.URL.Path
         //log.Println(wikipage)
         
-	_, fierr := os.Stat(wikipage)
-    if fierr != nil {
-       //log.Println(fierr)
-       next.ServeHTTP(w, r)
-       return
-    }
-    
-    if os.IsNotExist(fierr) {
-        next.ServeHTTP(w, r)
-        return
-    }
-    
-    read, err := ioutil.ReadFile(wikipage)
-    if err != nil {
-        log.Println(err)
-    }
-
-    // Read YAML frontmatter into fm
-    // If err, just return, as file should not contain frontmatter
-    fm := frontmatter{}
-    _, err = readFront(read, &fm)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	
-	username, role, _ := auth.GetUsername(r)
-
-	if fm.Private || fm.Admin {
-		if username == "" {
-            rurl := r.URL.String()
-			utils.Debugln("AuthMiddleware mitigating: " + r.Host + rurl)
-			//w.Write([]byte("OMG"))
-            
-            // Detect if we're in an endless loop, if so, just panic
-            if strings.HasPrefix(rurl, "login?url=/login") {
-                panic("AuthMiddle is in an endless redirect loop")
-                return
-            }
-			auth.SetSession("flash", "Please login to view that page.", w, r)
-			http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+		_, fierr := os.Stat(wikipage)
+		if fierr != nil {
+			//log.Println(fierr)
+			next.ServeHTTP(w, r)
 			return
 		}
-	}
-	if fm.Admin {
-		if role != "Admin" {
-            log.Println(username + " attempting to access restricted URL.")
-            auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
-            http.Redirect(w, r, "/", http.StatusSeeOther)
-            return
+		
+		if os.IsNotExist(fierr) {
+			next.ServeHTTP(w, r)
+			return
 		}
-	}
-    
-    next.ServeHTTP(w, r)
+		
+		read, err := ioutil.ReadFile(wikipage)
+		if err != nil {
+			log.Println(err)
+		}
+
+		// Read YAML frontmatter into fm
+		// If err, just return, as file should not contain frontmatter
+		var fm frontmatter
+		fm, _, err = readFront(read)
+		if err != nil {
+			log.Println("YAML unmarshal error in: " + dir + "/" + name)
+			log.Println(err)
+			return
+		}
+		
+		username, role, _ := auth.GetUsername(r)
+
+		if fm.Private || fm.Admin {
+			if username == "" {
+				rurl := r.URL.String()
+				utils.Debugln("AuthMiddleware mitigating: " + r.Host + rurl)
+				//w.Write([]byte("OMG"))
+				
+				// Detect if we're in an endless loop, if so, just panic
+				if strings.HasPrefix(rurl, "login?url=/login") {
+					panic("AuthMiddle is in an endless redirect loop")
+					return
+				}
+				auth.SetSession("flash", "Please login to view that page.", w, r)
+				http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+				return
+			}
+		}
+		if fm.Admin {
+			if role != "Admin" {
+				log.Println(username + " attempting to access restricted URL.")
+				auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+				return
+			}
+		}
+		
+		// Directory checking
+		// Check dir/index for a private or admin flag, and use this for the entire directory contents
+		if dir != "" {
+			fi, _ := os.Stat(cfg.WikiDir+dir)
+			if fi.IsDir() {
+				dirindex, _ := os.Open(cfg.WikiDir + dir + "/" + "index")
+        		_, dirindexfierr := dirindex.Stat()
+				if !os.IsNotExist(dirindexfierr) {
+					dread, err := ioutil.ReadFile(cfg.WikiDir + dir + "/" + "index")
+					if err != nil {
+						log.Println(err)
+					}
+
+					// Read YAML frontmatter into fm
+					// If err, just return, as file should not contain frontmatter
+					var dfm frontmatter
+					dfm, _, err = readFront(dread)
+					if err != nil {
+						log.Println(err)
+						return
+					}
+					
+					username, role, _ := auth.GetUsername(r)
+
+					if dfm.Private || dfm.Admin {
+						if username == "" {
+							rurl := r.URL.String()
+							utils.Debugln("AuthMiddleware mitigating due to " + dir + "/index: " + r.Host + rurl)
+							//w.Write([]byte("OMG"))
+							
+							// Detect if we're in an endless loop, if so, just panic
+							if strings.HasPrefix(rurl, "login?url=/login") {
+								panic("AuthMiddle is in an endless redirect loop")
+								return
+							}
+							auth.SetSession("flash", "This directory is private. You must login to view any pages within.", w, r)
+							http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+							return
+						}
+					}
+					if dfm.Admin {
+						if role != "Admin" {
+							log.Println(username + " attempting to access restricted URL.")
+							auth.SetSession("flash", "Sorry, this directory is private.", w, r)
+							http.Redirect(w, r, "/", http.StatusSeeOther)
+							return
+						}
+					}					
+				}
+			}
+			
+		}
+		
+		next.ServeHTTP(w, r)
 	})
 }
 
@@ -1896,11 +1987,17 @@ func Router(r *mux.Router) *mux.Router {
     //r.HandleFunc("/{name:.*}", wikiHandler)
 
     // wiki functions, should accept alphanumerical, "_", "-", ".", "@"
-	r.HandleFunc(`/{name:[a-zA-Z0-9\-\_\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, auth.AuthMiddle(editHandler)).Methods("GET").Queries("a", "edit")
-    r.HandleFunc(`/{name:[a-zA-Z0-9\-\_\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, auth.AuthMiddle(saveHandler)).Methods("POST").Queries("a", "save")
-    
-    r.Handle(`/{name:[a-zA-Z0-9\-\_\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, alice.New(wikiAuth).ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
-    r.Handle(`/{name:[a-zA-Z0-9\-\_\/\.\@\"\'\>\<\;\:\)\(\^\,\!]+}`, alice.New(wikiAuth).ThenFunc(viewHandler)).Methods("GET")
+	r.HandleFunc(`/{name}`, auth.AuthMiddle(editHandler)).Methods("GET").Queries("a", "edit")
+    r.HandleFunc(`/{name}`, auth.AuthMiddle(saveHandler)).Methods("POST").Queries("a", "save")
+    r.Handle(`/{name}`, alice.New(wikiAuth).ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
+    r.Handle(`/{name}`, alice.New(wikiAuth).ThenFunc(viewHandler)).Methods("GET")
+
+	// With dirs:
+	r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(editHandler)).Methods("GET").Queries("a", "edit")
+    r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(saveHandler)).Methods("POST").Queries("a", "save")
+    r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
+    r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(viewHandler)).Methods("GET")
+			
     //r.NotFoundHandler = alice.New(wikiAuth).ThenFunc(viewHandler)
     return r
 }
