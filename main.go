@@ -365,7 +365,7 @@ func slugURL(w http.ResponseWriter, r *http.Request) {
     //log.Println(r.URL.String())
     
     // In case a non-slugified filename was created outside, check for existence before we react
-    fullfilename := "./md/" + name
+    fullfilename := cfg.WikiDir + name
     if _, err := os.Stat(fullfilename); err == nil {
         return
     }
@@ -1203,7 +1203,7 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	dir, filename := filepath.Split(name)
 	//log.Println("Dir:" + dir)
 	//log.Println("Filename:" + filename)
-	fullfilename := "./md/" + name
+	fullfilename := cfg.WikiDir + name
     base := filepath.Dir(fullfilename)
     
     //log.Println(base)
@@ -1239,7 +1239,7 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	if dir != "" && filename == "" {
 		log.Println("This might be a directory, trying to parse the index")
         filename = name + "index"
-		fullfilename = "./md/" + name + "index"
+		fullfilename = cfg.WikiDir + name + "index"
         
         dirindex, _ := os.Open(fullfilename)
         _, dirindexfierr := dirindex.Stat()
@@ -1577,7 +1577,7 @@ func (wiki *rawPage) save() error {
 	defer utils.TimeTrack(time.Now(), "wiki.save()")
 	//filename := wiki.Name
 	dir, filename := filepath.Split(wiki.Name)
-	fullfilename := "./md/" + dir + filename
+	fullfilename := cfg.WikiDir + dir + filename
 
 	// Check for and install required YAML frontmatter
 	//if strings.Contains(wiki.Content, "---") {
@@ -1586,7 +1586,7 @@ func (wiki *rawPage) save() error {
 	// If directory doesn't exist, create it
 	// - Check if dir is null first
 	if dir != "" {
-		dirpath := "./md/" + dir
+		dirpath := cfg.WikiDir + dir
 		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
 			err := os.MkdirAll(dirpath, 0755)
 			if err != nil {
