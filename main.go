@@ -1199,6 +1199,13 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	log.Println("Filename:" + name)
 	
 	fullfilename := cfg.WikiDir + name
+	rel, err := filepath.Rel(cfg.WikiDir, fullfilename)
+	if err != nil {
+		return nil,err
+	}
+	if strings.HasPrefix(rel, "../") {
+		return nil, errors.New("BAD_PATH")
+	}
     base := filepath.Dir(fullfilename)
     
     //log.Println(base)
@@ -1480,6 +1487,20 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 func newHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "newHandler")
 	pagetitle := r.FormValue("newwiki")
+
+	fullfilename := cfg.WikiDir + pagetitle
+	rel, err := filepath.Rel(cfg.WikiDir, fullfilename)
+	if err != nil {
+        auth.SetSession("flash", "Failed to create page.", w, r)
+        http.Redirect(w, r, "/", http.StatusSeeOther)
+		log.Fatalln(err)
+		return
+	}
+	if strings.HasPrefix(rel, "../") {
+        auth.SetSession("flash", "Failed to create page.", w, r)
+        http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
     
     slugName := urlSlugifier.Slugify(pagetitle)
     if slugName != pagetitle {
