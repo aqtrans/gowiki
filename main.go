@@ -671,7 +671,7 @@ func loadPage(r *http.Request) (*page, error) {
             <header>Alert!</header>
             <section>
             <label for="alert_modal" class="close">&times;</label>
-                `+ msg + `
+                `+ template.HTMLEscapeString(msg) + `
                 <hr>
             <label for="alert_modal" class="button">
                 Okay
@@ -1484,6 +1484,10 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println(name + " page saved!")
 }
 
+func setFlash(msg string, w http.ResponseWriter, r *http.Request) {
+	auth.SetSession("flash", msg, w, r)
+}
+
 func newHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "newHandler")
 	pagetitle := r.FormValue("newwiki")
@@ -2118,6 +2122,6 @@ func main() {
     http.Handle("/", s.Then(Router(r)))
     
     log.Println("Listening on port " + cfg.Port)
-	http.ListenAndServe("127.0.0.1:"+ cfg.Port, nil)
+	http.ListenAndServe("0.0.0.0:"+ cfg.Port, nil)
     
 }
