@@ -1,6 +1,6 @@
 {{ define "base" }}
 <!DOCTYPE html>
-<html class="no-js" lang="en" >
+<html lang="en" >
 <head>
   {{ template "title" . }}
   <meta charset="utf-8">
@@ -12,10 +12,10 @@
  </head>
 
 <section>
-  <nav>
+  <aside>
     <header><a href="/">Wiki</a></header>
       {{ template "sidebar" .}}
-  </nav>
+  </aside>
 
   <section>
     {{ template "content" . }}
