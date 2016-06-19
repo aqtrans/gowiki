@@ -1,3 +1,28 @@
+<nav>
+<ul>
+<li><a href="#markdown-basics">Markdown: Basics</a>
+<ul>
+<li><a href="#getting-the-gist-of-markdown-s-formatting-syntax">Getting the Gist of Markdown&rsquo;s Formatting Syntax</a></li>
+<li><a href="#paragraphs-headers-blockquotes">Paragraphs, Headers, Blockquotes</a>
+<ul>
+<li><a href="#phrase-emphasis">Phrase Emphasis</a></li>
+</ul></li>
+<li><a href="#lists">Lists</a>
+<ul>
+<li><a href="#links">Links</a></li>
+<li><a href="#images">Images</a></li>
+<li><a href="#code">Code</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#markdown-syntax">Markdown: Syntax</a>
+<ul>
+<li><a href="#unordered">Unordered</a></li>
+<li><a href="#ordered">Ordered</a></li>
+<li><a href="#nested">Nested</a></li>
+</ul></li>
+</ul>
+</nav>
+
 <p>AT&amp;T has an ampersand in their name.</p>
 
 <p>AT&amp;T is another way to write it.</p>
@@ -8,26 +33,26 @@
 
 <p>6 &gt; 5.</p>
 
-<p>Here&rsquo;s a <a href="http://docutils.sourceforge.net/mirror/setext.html">link</a> with an ampersand in the URL.</p>
+<p>Here&rsquo;s a <a href="http://docutils.sourceforge.net/mirror/setext.html" rel="nofollow">link</a> with an ampersand in the URL.</p>
 
-<p>Here&rsquo;s a link with an amersand in the link text: <a href="http://www.aaronsw.com/2002/atx/">AT&amp;T</a>.</p>
-
-<p>Here&rsquo;s an inline <a href="/script?foo=1&amp;bar=2">link</a>.</p>
+<p>Here&rsquo;s a link with an amersand in the link text: <a href="http://www.aaronsw.com/2002/atx/" rel="nofollow">AT&amp;T</a>.</p>
 
 <p>Here&rsquo;s an inline <a href="/script?foo=1&amp;bar=2">link</a>.</p>
 
-<p><a href="http://www.aaronsw.com/2002/atx/">2</a>: <a href="http://att.com/">http://att.com/</a>  &ldquo;AT&amp;T&rdquo;Link: <a href="http://example.com/">http://example.com/</a>.</p>
+<p>Here&rsquo;s an inline <a href="/script?foo=1&amp;bar=2">link</a>.</p>
 
-<p>With an ampersand: <a href="http://example.com/?foo=1&amp;bar=2">http://example.com/?foo=1&amp;bar=2</a></p>
+<p><a href="http://www.aaronsw.com/2002/atx/" rel="nofollow">2</a>: <a href="http://att.com/" rel="nofollow">http://att.com/</a>  &ldquo;AT&amp;T&rdquo;Link: <a href="http://example.com/" rel="nofollow">http://example.com/</a>.</p>
+
+<p>With an ampersand: <a href="http://example.com/?foo=1&amp;bar=2" rel="nofollow">http://example.com/?foo=1&amp;bar=2</a></p>
 
 <ul>
 <li>In a list?</li>
-<li><a href="http://example.com/">http://example.com/</a></li>
+<li><a href="http://example.com/" rel="nofollow">http://example.com/</a></li>
 <li>It should.</li>
 </ul>
 
 <blockquote>
-<p>Blockquoted: <a href="http://example.com/">http://example.com/</a></p>
+<p>Blockquoted: <a href="http://example.com/" rel="nofollow">http://example.com/</a></p>
 </blockquote>
 
 <p>Auto-links should not occur here: <code>&lt;http://example.com/&gt;</code></p>
@@ -221,72 +246,72 @@ list item.</li>
 Dashes:</li>
 </ul>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
 <pre><code>---
 </code></pre>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
 <pre><code>- - -
 </code></pre>
 
 <p>Asterisks:</p>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
 <pre><code>***
 </code></pre>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
 <pre><code>* * *
 </code></pre>
 
 <p>Underscores:</p>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
 <pre><code>___
 </code></pre>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
-<hr />
+<hr>
 
 <pre><code>_ _ _
 </code></pre>
@@ -403,11 +428,11 @@ Just a <a href="/url/">URL</a>.</p>
 <p><a href="/url/" title="title has spaces afterward">URL and title</a>.</p>
 
 <p>[Empty]().
-Foo <a href="http://docutils.sourceforge.net/mirror/setext.html">bar</a>.</p>
+Foo <a href="http://docutils.sourceforge.net/mirror/setext.html" rel="nofollow">bar</a>.</p>
 
-<p>Foo <a href="http://docutils.sourceforge.net/mirror/setext.html">bar</a>.</p>
+<p>Foo <a href="http://docutils.sourceforge.net/mirror/setext.html" rel="nofollow">bar</a>.</p>
 
-<p>Foo <a href="http://docutils.sourceforge.net/mirror/setext.html">bar</a>.</p>
+<p>Foo <a href="http://docutils.sourceforge.net/mirror/setext.html" rel="nofollow">bar</a>.</p>
 
 <p>With <a href="/url/">embedded [brackets]</a>.</p>
 
@@ -422,7 +447,7 @@ Foo <a href="http://docutils.sourceforge.net/mirror/setext.html">bar</a>.</p>
 <pre><code>[four]: /url
 </code></pre>
 
-<hr />
+<hr>
 
 <p><a href="/this">this</a> should work</p>
 
@@ -448,7 +473,7 @@ Foo <a href="http://docutils.sourceforge.net/mirror/setext.html">bar</a>.</p>
 
 <p>Backslashing should suppress [this] and [this].</p>
 
-<hr />
+<hr>
 
 <p>Here&rsquo;s one where the <a href="/url/">link
 breaks</a> across lines.</p>
@@ -470,7 +495,7 @@ break</a> with a line-ending space.</p>
 
 <p>Foo <a href="/url/" title="Title with &quot;quotes&quot; inside">bar</a>.</p>
 
-<h1>Markdown: Basics</h1>
+<h1 id="markdown-basics">Markdown: Basics</h1>
 
 <ul id="ProjectSubmenu">
     <li><a href="/projects/markdown/" title="Markdown Project Page">Main</a></li>
@@ -480,7 +505,7 @@ break</a> with a line-ending space.</p>
     <li><a href="/projects/markdown/dingus" title="Online Markdown Web Form">Dingus</a></li>
 </ul>
 
-<h2>Getting the Gist of Markdown&rsquo;s Formatting Syntax</h2>
+<h2 id="getting-the-gist-of-markdown-s-formatting-syntax">Getting the Gist of Markdown&rsquo;s Formatting Syntax</h2>
 
 <p>This page offers a brief overview of what it&rsquo;s like to use Markdown.
 The <a href="/projects/markdown/syntax" title="Markdown Syntax">syntax page</a> provides complete, detailed documentation for
@@ -496,7 +521,7 @@ and translate it to XHTML.</p>
 <p><strong>Note:</strong> This document is itself written using Markdown; you
 can <a href="/projects/markdown/syntax.text">see the source for it by adding &lsquo;.text&rsquo; to the URL</a>.</p>
 
-<h2>Paragraphs, Headers, Blockquotes</h2>
+<h2 id="paragraphs-headers-blockquotes">Paragraphs, Headers, Blockquotes</h2>
 
 <p>A paragraph is simply one or more consecutive lines of text, separated
 by one or more blank lines. (A blank line is any line that looks like a
@@ -560,7 +585,7 @@ dog's back.&lt;/p&gt;
 &lt;/blockquote&gt;
 </code></pre>
 
-<h3>Phrase Emphasis</h3>
+<h3 id="phrase-emphasis">Phrase Emphasis</h3>
 
 <p>Markdown uses asterisks and underscores to indicate spans of emphasis.</p>
 
@@ -582,7 +607,7 @@ Some of these words &lt;em&gt;are emphasized also&lt;/em&gt;.&lt;/p&gt;
 Or, if you prefer, &lt;strong&gt;use two underscores instead&lt;/strong&gt;.&lt;/p&gt;
 </code></pre>
 
-<h2>Lists</h2>
+<h2 id="lists">Lists</h2>
 
 <p>Unordered (bulleted) lists use asterisks, pluses, and hyphens (<code>*</code>,
 <code>+</code>, and <code>-</code>) as list markers. These three markers are
@@ -653,7 +678,7 @@ the paragraphs by 4 spaces or 1 tab:</p>
 &lt;/ul&gt;
 </code></pre>
 
-<h3>Links</h3>
+<h3 id="links">Links</h3>
 
 <p>Markdown supports two styles for creating links: <em>inline</em> and
 <em>reference</em>. With both styles, you use square brackets to delimit the
@@ -716,7 +741,7 @@ numbers and spaces, but are <em>not</em> case sensitive:</p>
 &lt;a href=&quot;http://www.nytimes.com/&quot;&gt;The New York Times&lt;/a&gt;.&lt;/p&gt;
 </code></pre>
 
-<h3>Images</h3>
+<h3 id="images">Images</h3>
 
 <p>Image syntax is very much like link syntax.</p>
 
@@ -737,7 +762,7 @@ numbers and spaces, but are <em>not</em> case sensitive:</p>
 <pre><code>&lt;img src=&quot;/path/to/img.jpg&quot; alt=&quot;alt text&quot; title=&quot;Title&quot; /&gt;
 </code></pre>
 
-<h3>Code</h3>
+<h3 id="code">Code</h3>
 
 <p>In a regular paragraph, you can create code span by wrapping text in
 backtick quotes. Any ampersands (<code>&amp;</code>) and angle brackets (<code>&lt;</code> or
@@ -785,7 +810,7 @@ you've got to put paragraph tags in your blockquotes:&lt;/p&gt;
 &lt;/code&gt;&lt;/pre&gt;
 </code></pre>
 
-<h1>Markdown: Syntax</h1>
+<h1 id="markdown-syntax">Markdown: Syntax</h1>
 
 <ul id="ProjectSubmenu">
     <li><a href="/projects/markdown/" title="Markdown Project Page">Main</a></li>
@@ -832,7 +857,7 @@ you've got to put paragraph tags in your blockquotes:&lt;/p&gt;
 <p><strong>Note:</strong> This document is itself written using Markdown; you
 can <a href="/projects/markdown/syntax.text">see the source for it by adding &lsquo;.text&rsquo; to the URL</a>.</p>
 
-<hr />
+<hr>
 
 <h2 id="overview">Overview</h2>
 
@@ -844,8 +869,8 @@ can <a href="/projects/markdown/syntax.text">see the source for it by adding &ls
 document should be publishable as-is, as plain text, without looking
 like it&rsquo;s been marked up with tags or formatting instructions. While
 Markdown&rsquo;s syntax has been influenced by several existing text-to-HTML
-filters &ndash; including <a href="http://docutils.sourceforge.net/mirror/setext.html">Setext</a>, <a href="http://www.aaronsw.com/2002/atx/">atx</a>, <a href="http://textism.com/tools/textile/">Textile</a>, <a href="http://docutils.sourceforge.net/rst.html">reStructuredText</a>,
-<a href="http://www.triptico.com/software/grutatxt.html">Grutatext</a>, and <a href="http://ettext.taint.org/doc/">EtText</a> &ndash; the single biggest source of
+filters &ndash; including <a href="http://docutils.sourceforge.net/mirror/setext.html" rel="nofollow">Setext</a>, <a href="http://www.aaronsw.com/2002/atx/" rel="nofollow">atx</a>, <a href="http://textism.com/tools/textile/" rel="nofollow">Textile</a>, <a href="http://docutils.sourceforge.net/rst.html" rel="nofollow">reStructuredText</a>,
+<a href="http://www.triptico.com/software/grutatxt.html" rel="nofollow">Grutatext</a>, and <a href="http://ettext.taint.org/doc/" rel="nofollow">EtText</a> &ndash; the single biggest source of
 inspiration for Markdown&rsquo;s syntax is the format of plain text email.</p>
 
 <p>To this end, Markdown&rsquo;s syntax is comprised entirely of punctuation
@@ -968,7 +993,7 @@ Markdown to write about HTML code. (As opposed to raw HTML, which is a
 terrible format for writing about HTML syntax, because every single <code>&lt;</code>
 and <code>&amp;</code> in your example code needs to be escaped.)</p>
 
-<hr />
+<hr>
 
 <h2 id="block">Block Elements</h2>
 
@@ -995,7 +1020,7 @@ work best &ndash; and look better &ndash; when you format them with hard breaks.
 
 <h3 id="header">Headers</h3>
 
-<p>Markdown supports two styles of headers, <a href="http://docutils.sourceforge.net/mirror/setext.html">Setext</a> and <a href="http://www.aaronsw.com/2002/atx/">atx</a>.</p>
+<p>Markdown supports two styles of headers, <a href="http://docutils.sourceforge.net/mirror/setext.html" rel="nofollow">Setext</a> and <a href="http://www.aaronsw.com/2002/atx/" rel="nofollow">atx</a>.</p>
 
 <p>Setext-style headers are &ldquo;underlined&rdquo; using equal signs (for first-level
 headers) and dashes (for second-level headers). For example:</p>
@@ -1350,7 +1375,7 @@ following lines will produce a horizontal rule:</p>
 _ _ _
 </code></pre>
 
-<hr />
+<hr>
 
 <h2 id="span">Span Elements</h2>
 
@@ -1666,7 +1691,7 @@ are defined using syntax identical to link references:</p>
 dimensions of an image; if this is important to you, you can simply
 use regular HTML <code>&lt;img&gt;</code> tags.</p>
 
-<hr />
+<hr>
 
 <h2 id="misc">Miscellaneous</h2>
 
@@ -1741,7 +1766,7 @@ _   underscore
 
 <p>foo</p>
 
-<h2>Unordered</h2>
+<h2 id="unordered">Unordered</h2>
 </blockquote>
 
 <p>Asterisks tight:</p>
@@ -1762,7 +1787,7 @@ _   underscore
 <li><p>asterisk 3</p></li>
 </ul>
 
-<hr />
+<hr>
 
 <p>Pluses tight:</p>
 
@@ -1782,7 +1807,7 @@ _   underscore
 <li><p>Plus 3</p></li>
 </ul>
 
-<hr />
+<hr>
 
 <p>Minuses tight:</p>
 
@@ -1802,7 +1827,7 @@ _   underscore
 <li><p>Minus 3</p></li>
 </ul>
 
-<h2>Ordered</h2>
+<h2 id="ordered">Ordered</h2>
 
 <p>Tight:</p>
 
@@ -1853,7 +1878,7 @@ back.</p></li>
 <li><p>Item 3.</p></li>
 </ol>
 
-<h2>Nested</h2>
+<h2 id="nested">Nested</h2>
 
 <ul>
 <li>Tab
