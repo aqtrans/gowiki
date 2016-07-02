@@ -7,6 +7,14 @@
 </style>
 <article>
   <header>{{.PageTitle}}</header>
+  <div class="stats">
+    <ul>
+      <li>{{ .Filename }}<span>Filename</span></li>
+      <li>{{ .frontmatter.Private }}<span>Private</span></li>
+      <li>{{ .frontmatter.Favorite }}<span>Favorite</span></li>
+      <li>{{ range .frontmatter.Tags }}<span class="badge-alert">{{ . }}</span>{{ end }}<span>Tags</span></li>
+    </ul>
+  </div>  
 </article>
 
 <ul class="tabs">
@@ -16,14 +24,6 @@
 </ul>
 
 <article>
-  <div class="stats">
-    <ul>
-      <li>{{ .Filename }}<span>Filename</span></li>
-      <li>{{ .frontmatter.Private }}<span>Private</span></li>
-      <li>{{ .frontmatter.Favorite }}<span>Favorite</span></li>
-      <li>{{ range .frontmatter.Tags }}<span class="badge-alert">{{ . }}</span>{{ end }}<span>Tags</span></li>
-    </ul>
-  </div>
   <main>
     {{.wiki.Rendered | safeHTML}}
       <footer>
