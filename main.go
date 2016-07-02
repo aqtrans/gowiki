@@ -1679,9 +1679,85 @@ func signupPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func adminUsersHandler(w http.ResponseWriter, r *http.Request) {
+	defer utils.TimeTrack(time.Now(), "adminUsersHandler")
+	title := "admin-users"
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	userlist, err := auth.Userlist()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	data := struct {
+		*page
+		Title string
+		Users []string
+	}{
+		p,
+		title,
+		userlist,
+	}
+	/*gp := &genPage{
+		p,
+		title,
+	}*/
+	err = renderTemplate(w, "admin_users.tmpl", data)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+}
+
 func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "adminUserHandler")
 	title := "admin-user"
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	userlist, err := auth.Userlist()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	vars := mux.Vars(r)
+	selectedUser := vars["username"]
+
+	data := struct {
+		*page
+		Title string
+		Users []string
+		User  string
+	}{
+		p,
+		title,
+		userlist,
+		selectedUser,
+	}
+	/*gp := &genPage{
+		p,
+		title,
+	}*/
+	err = renderTemplate(w, "admin_user.tmpl", data)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+}
+
+// Function to take a <select><option> value and redirect to a URL based on it
+func adminUserPostHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	selectedUser := r.FormValue("user")
+	http.Redirect(w, r, "/admin/user/"+selectedUser, http.StatusSeeOther)
+}
+
+func adminMainHandler(w http.ResponseWriter, r *http.Request) {
+	defer utils.TimeTrack(time.Now(), "adminMainHandler")
+	title := "admin-main"
 	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
@@ -1690,7 +1766,7 @@ func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 	}
-	err = renderTemplate(w, "admin_user.tmpl", gp)
+	err = renderTemplate(w, "admin_main.tmpl", gp)
 	if err != nil {
 		log.Println(err)
 		return
@@ -1954,14 +2030,19 @@ func Router(r *mux.Router) *mux.Router {
 	r.HandleFunc("/list", listHandler).Methods("GET")
 	r.HandleFunc("/health", HealthCheckHandler).Methods("GET")
 
+	admin := r.PathPrefix("/admin").Subrouter()
+	admin.HandleFunc("/", auth.AuthAdminMiddle(adminMainHandler)).Methods("GET")
+	admin.HandleFunc("/users", auth.AuthAdminMiddle(adminUsersHandler)).Methods("GET")
+	admin.HandleFunc("/users", auth.AuthAdminMiddle(auth.UserSignupPostHandler)).Methods("POST")
+	admin.HandleFunc("/user", auth.AuthAdminMiddle(adminUserPostHandler)).Methods("POST")
+	admin.HandleFunc("/user/{username}", auth.AuthAdminMiddle(adminUserHandler)).Methods("GET")
+	admin.HandleFunc("/user/{username}", auth.AuthAdminMiddle(adminUserHandler)).Methods("POST")
+
 	a := r.PathPrefix("/auth").Subrouter()
 	a.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
 	a.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	a.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
 	a.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
-
-	r.HandleFunc("/admin/users", auth.AuthAdminMiddle(adminUserHandler)).Methods("GET")
-	r.HandleFunc("/admin/users", auth.AuthAdminMiddle(auth.AdminUserPostHandler)).Methods("POST")
 
 	//r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
 
@@ -2038,7 +2119,7 @@ func main() {
 
 	s := alice.New(handlers.RecoveryHandler(handlers.PrintRecoveryStack(true)), utils.Logger, auth.UserEnvMiddle, auth.XsrfMiddle)
 
-	r := mux.NewRouter().StrictSlash(false)
+	r := mux.NewRouter().StrictSlash(true)
 
 	/*
 		    statsdata := stats.New()
