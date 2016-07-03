@@ -1,38 +1,37 @@
 {{ define "title" }}<title>{{.page.SiteName}}|Commit of {{ .PageTitle }}</title>{{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/diff2html.min.css">
-<article>
-  <header>{{.PageTitle}}@{{.Commit}}</header>
-</article>
+<main>
+  <article>
+    <header>{{.PageTitle}}@{{.Commit}}</header>
+    </article>
+  <ul class="tabs">
+    <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
+    <li><a href="/{{.Filename}}?a=edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
+    <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
+    <li><a href="#" class="is-active"><i class="material-icons centericon">undo</i>View Page Commit</a></li>
+  </ul>
 
-<ul class="tabs">
-  <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
-  <li><a href="/{{.Filename}}?a=edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-  <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
-  <li><a href="#" class="is-active"><i class="material-icons centericon">undo</i>View Page Commit</a></li>
-</ul>
-
-<article>
-  <div class="stats">
-    <ul>
-      <li>{{ .Filename }}<span>Filename</span></li>
-      <li>{{ .frontmatter.Private }}<span>Private</span></li>
-      <li>{{ .frontmatter.Favorite }}<span>Favorite</span></li>
-      <li>{{ range .frontmatter.Tags }}<span class="badge-alert">{{ . }}</span>{{ end }}<span>Tags</span></li>
-    </ul>
-  </div>
-  <div>
-    <a href="/{{.Filename}}?commit={{.Commit}}">File at Commit</a>|
-    <a class="active" href="/{{.Filename}}?commit={{.Commit}}&a=diff">Commit Diff</a>
-  </div>
-  <main>
-      {{.Content | safeHTML}}
-      <footer>
-        <ul>
-          <li>Created: {{ .CreateTime | prettyDate }}</li>
-          <li>Last Modified: {{ .ModTime | prettyDate }}</li>
-        </ul>
-      </footer>
-  </main>
-</article>
+  <article>
+    <div class="stats">
+      <ul>
+        <li>{{ .Filename }}<span>Filename</span></li>
+        <li>{{ .frontmatter.Private }}<span>Private</span></li>
+        <li>{{ .frontmatter.Favorite }}<span>Favorite</span></li>
+        <li>{{ range .frontmatter.Tags }}<span class="badge-alert">{{ . }}</span>{{ end }}<span>Tags</span></li>
+      </ul>
+    </div>
+    <div>
+      <a href="/{{.Filename}}?commit={{.Commit}}">File at Commit</a>|
+      <a class="active" href="/{{.Filename}}?commit={{.Commit}}&a=diff">Commit Diff</a>
+    </div>
+        {{.Content | safeHTML}}
+        <footer>
+          <ul>
+            <li>Created: {{ .CreateTime | prettyDate }}</li>
+            <li>Last Modified: {{ .ModTime | prettyDate }}</li>
+          </ul>
+        </footer>
+  </article>
+</main>
 {{ end }}
