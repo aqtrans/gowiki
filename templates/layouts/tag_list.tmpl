@@ -1,27 +1,26 @@
 {{ define "title" }}<title>{{.page.SiteName}}|Tag List</title>{{ end }}
 {{ define "content" }}
-<article>
+<main>
+  <article>
   <header>>List of Wiki Tags</header>
-</article>
-    
-<article>
-  <main>
-    <table>
-    <thead>
-        <tr>
-        <th>Tag</th>
-        <th>Pages</th>
-        </tr>
-    </thead>
-    <tbody>
-    {{range $index, $element := .TagKeys}}
-        <tr>
-            <td>{{ $index }}</td>
-            <td>{{ range $element }}<a href="/{{ . }}"> {{ . }} </a> {{ end }}</td> 
-        </tr>
-    {{ end }}
-    </tbody>
-    </table>
-  </main>
-</article>
+  </article>    
+  <article>
+      <table>
+      <thead>
+          <tr>
+          <th>Tag</th>
+          <th>Pages</th>
+          </tr>
+      </thead>
+      <tbody>
+      {{range $index, $element := .TagKeys}}
+          <tr>
+              <td>{{ $index }}</td>
+              <td>{{ range $element }}<a href="/{{ . }}"> {{ . }} </a> {{ end }}</td> 
+          </tr>
+      {{ end }}
+      </tbody>
+      </table>
+  </article>
+</main>
 {{ end }}
