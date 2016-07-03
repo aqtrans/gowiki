@@ -1,10 +1,11 @@
 {{ define "title" }}<title>{{.SiteName}}|Admin User Panel</title>{{ end }}
 {{ define "content" }}
-  <article>
+<main>
+<article>
     <header>Admin User Panel</header>
-  </article>
+</article>    
   <article>  
-    <main>
+    
         <h1>Editing User {{.User}}</h1>
         <br>
         <form method="post" action="/admin/user" id="user">
@@ -16,7 +17,6 @@
         </select>
         <button class="stack" type="submit" class="button">Submit</button>
         </form>
-    </main>
   </article>
 
   <article>
@@ -53,5 +53,5 @@
     <footer>
     </footer>
   </article>
-
+</main>
 {{ end }}

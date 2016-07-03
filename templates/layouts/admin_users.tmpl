@@ -1,10 +1,11 @@
 {{ define "title" }}<title>{{.SiteName}}|Admin User Panel</title>{{ end }}
 {{ define "content" }}
-  <article>
+<main>
+<article>
     <header>Admin User Panel</header>
-  </article>
+</article>    
   <article>  
-    <main>
+    
         <form method="post" action="/admin/user" id="user">
         <input type="hidden" name="token" value="{{.Token}}">
         <select name="user">
@@ -25,7 +26,7 @@
         </select>
         <button class="stack" type="submit" class="button">Add User</button>
         </form>
-    </main>
+    
   </article>
-
+</main>
 {{ end }}
