@@ -1,51 +1,52 @@
 {{ define "title" }}<title>{{.page.SiteName}}|Editing {{ .PageTitle }}</title>{{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/tagdog.css">
-<article>
-  <header>Editing {{.PageTitle}}</header>
-</article>
+<main>
+    <article>
+        <header>Editing {{.PageTitle}}</header> 
+    </article>
+              
+        <ul class="tabs">
+        <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
+        <li><a href="#" class="is-active"><i class="material-icons centericon">edit</i>Edit Page</a></li>
+        <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
+        </ul>
+    
 
-<ul class="tabs">
-  <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
-  <li><a href="#" class="is-active"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-  <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
-</ul>
-
-<article>
-  <main>
-    <form action="/{{.Filename}}?a=save" method="POST" id="savewiki">
-    Title:<input type="text" name="title" value="{{.Title}}">
-    <div>
-    {{ if .Favorite }}
-        <label class="label-switch">Favorite:<input type="checkbox" name="favorite" checked /><div class="checkbox"></div></label>
-    {{ else }}
-        <label class="label-switch">Favorite:<input type="checkbox" name="favorite" /><div class="checkbox"></div></label>
-    {{ end }}
-    {{ if .Private }}
-        <label class="label-switch">Users Only:<input type="checkbox" name="private" checked /><div class="checkbox"></div></label>
-    {{ else }}
-        <label class="label-switch">Users Only:<input type="checkbox" name="private" /><div class="checkbox"></div></label>
-    {{ end }}
-    {{ if .Admin }}
-        <label class="label-switch">Admin Only:<input type="checkbox" name="admin" checked /><div class="checkbox"></div></label>
-    {{ else }}
-        <label class="label-switch">Admin Only:<input type="checkbox" name="admin" /><div class="checkbox"></div></label>
-    {{ end }}    
-    </div>
-    <br>
-    <div class="tag-field">
-        <label for="tags">Tags</label>
-        <input type="text" id="tags" name="tags" placeholder="Separate tags with commas" value="{{ .Tags|jsTags }}" />
-    </div>
-    <input type="hidden" name="token" value="{{.Token}}"> 
-    <textarea name="editor" id="wikieditor"></textarea>
-    <div class="stack">
-        <input type="submit" class="button-success" value="Submit">
-        <label for="preview_modal" id="preview" class="button-dangerous">Preview</label>
-    </div>
-    </form>
-  </main>
-</article>
+    <article>
+        <form action="/{{.Filename}}?a=save" method="POST" id="savewiki">
+        Title:<input type="text" name="title" value="{{.Title}}">
+        <div>
+        {{ if .Favorite }}
+            <label class="label-switch">Favorite:<input type="checkbox" name="favorite" checked /><div class="checkbox"></div></label>
+        {{ else }}
+            <label class="label-switch">Favorite:<input type="checkbox" name="favorite" /><div class="checkbox"></div></label>
+        {{ end }}
+        {{ if .Private }}
+            <label class="label-switch">Users Only:<input type="checkbox" name="private" checked /><div class="checkbox"></div></label>
+        {{ else }}
+            <label class="label-switch">Users Only:<input type="checkbox" name="private" /><div class="checkbox"></div></label>
+        {{ end }}
+        {{ if .Admin }}
+            <label class="label-switch">Admin Only:<input type="checkbox" name="admin" checked /><div class="checkbox"></div></label>
+        {{ else }}
+            <label class="label-switch">Admin Only:<input type="checkbox" name="admin" /><div class="checkbox"></div></label>
+        {{ end }}    
+        </div>
+        <br>
+        <div class="tag-field">
+            <label for="tags">Tags</label>
+            <input type="text" id="tags" name="tags" placeholder="Separate tags with commas" value="{{ .Tags|jsTags }}" />
+        </div>
+        <input type="hidden" name="token" value="{{.Token}}"> 
+        <textarea name="editor" id="wikieditor"></textarea>
+        <div class="stack">
+            <input type="submit" class="button-success" value="Submit">
+            <label for="preview_modal" id="preview" class="button-dangerous">Preview</label>
+        </div>
+        </form>
+    </article>
+</main>
 
 <div class="modal">
   <input id="preview_modal" type="checkbox" />
@@ -53,8 +54,8 @@
     <article>
         <header>{{.PageTitle }} - Preview</header>
           <label for="preview_modal" class="close">&times;</label>
-        <main class="content" id="preview_content">
-        </main>
+        <section class="content" id="preview_content">
+        </section>
         <label for="preview_modal" class="button-dangerous">
             Close
         </label>
