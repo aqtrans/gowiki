@@ -1,34 +1,34 @@
 {{ define "title" }}<title>{{.page.SiteName}}|History of {{ .Filename }}</title>{{ end }}
 {{ define "content" }}
-<article>
-  <header>History of {{ .Filename }}</header>
-</article>
+<main>
+    <article>
+        <header>History of {{ .Filename }}</header>
+    </article>    
 
-<ul class="tabs">
-  <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
-  <li><a href="/{{.Filename}}?a=edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-  <li><a href="#" class="is-active"><i class="material-icons centericon">history</i>Page History</a></li>
-</ul>
+    <ul class="tabs">
+    <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
+    <li><a href="/{{.Filename}}?a=edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
+    <li><a href="#" class="is-active"><i class="material-icons centericon">history</i>Page History</a></li>
+    </ul>
 
-<article>
-    <main>
-    <table>
-    <thead>
-        <tr>
-        <th>Link</th>
-        <th>Date</th>
-        <th>Message</th>
-        </tr>
-    </thead>
-    <tbody>
-        {{range .FileHistory}}
-        <tr>
-            <td><a href="/{{.Filename}}?commit={{.Commit}}">{{.Commit}}</a></td>
-            <td>{{ .Date|prettyDate }}</td>
-            <td>{{ .Message }}</td>
-        </tr>  
-        {{ end }}
-    </table>
-    </main>
-</article>
+    <article>
+        <table>
+        <thead>
+            <tr>
+            <th>Link</th>
+            <th>Date</th>
+            <th>Message</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .FileHistory}}
+            <tr>
+                <td><a href="/{{.Filename}}?commit={{.Commit}}">{{.Commit}}</a></td>
+                <td>{{ .Date|prettyDate }}</td>
+                <td>{{ .Message }}</td>
+            </tr>  
+            {{ end }}
+        </table>
+    </article>
+</main>
 {{ end }}
