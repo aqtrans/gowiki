@@ -5,33 +5,34 @@
    border-top-left-radius: 0;
  }
 </style>
-<article>
-  <header>{{.PageTitle}}</header>
-  <div class="stats">
-    <ul>
-      <li>{{ .Filename }}<span>Filename</span></li>
-      <li>{{ .frontmatter.Private }}<span>Private</span></li>
-      <li>{{ .frontmatter.Favorite }}<span>Favorite</span></li>
-      <li>{{ range .frontmatter.Tags }}<span class="badge-alert">{{ . }}</span>{{ end }}<span>Tags</span></li>
-    </ul>
-  </div>  
-</article>
 
-<ul class="tabs">
-  <li><a href="#" class="is-active"><i class="material-icons centericon">visibility</i>View Page</a></li>
-  <li><a href="/{{.Filename}}?a=edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-  <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
-</ul>
+<main>
+  <article>
+    <header>{{.PageTitle}}</header>
+    <div class="stats">
+      <ul>
+        <li>{{ .Filename }}<span>Filename</span></li>
+        <li>{{ .frontmatter.Private }}<span>Private</span></li>
+        <li>{{ .frontmatter.Favorite }}<span>Favorite</span></li>
+        <li>{{ range .frontmatter.Tags }}<span class="badge-alert">{{ . }}</span>{{ end }}<span>Tags</span></li>
+      </ul>
+    </div>
+  </article>
 
-<article>
-  <main>
-    {{.wiki.Rendered | safeHTML}}
-      <footer>
-        <ul>
-          <li>Created: {{ .CreateTime | prettyDate }}</li>
-          <li>Last Modified: {{ .ModTime | prettyDate }}</li>
-        </ul>
-      </footer>
-  </main>
-</article>
+  <ul class="tabs">
+    <li><a href="#" class="is-active"><i class="material-icons centericon">visibility</i>View Page</a></li>
+    <li><a href="/{{.Filename}}?a=edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
+    <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
+  </ul>
+
+  <article>
+      {{.wiki.Rendered | safeHTML}}
+        <footer>
+          <ul>
+            <li>Created: {{ .CreateTime | prettyDate }}</li>
+            <li>Last Modified: {{ .ModTime | prettyDate }}</li>
+          </ul>
+        </footer>
+  </article>
+</main>
 {{ end }}
