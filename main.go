@@ -393,7 +393,7 @@ func jsTags(tagS []string) string {
 	}
 	tags = strings.TrimPrefix(tags, ", ")
 	tags = strings.TrimSuffix(tags, ", ")
-	log.Println(tags)
+	//log.Println(tags)
 	return tags
 }
 
@@ -500,6 +500,7 @@ func gitGetCtime(filename string) (int64, error) {
 	}
 	ctime, err := strconv.ParseInt(ostring, 10, 64)
 	if err != nil {
+		log.Println("gitGetCtime error:")
 		log.Println(err)
 	}
 	return ctime, nil
@@ -521,6 +522,7 @@ func gitGetMtime(filename string) (int64, error) {
 	}
 	mtime, err := strconv.ParseInt(ostring, 10, 64)
 	if err != nil {
+		log.Println("gitGetMtime error:")
 		log.Println(err)
 	}
 
@@ -596,6 +598,7 @@ func gitGetFileCommitMtime(commit string) (int64, error) {
 	ostring := strings.TrimSpace(string(o))
 	mtime, err := strconv.ParseInt(ostring, 10, 64)
 	if err != nil {
+		log.Println("gitGetFileCommitMtime error:")
 		log.Println(err)
 	}
 	return mtime, nil
@@ -658,19 +661,11 @@ func loadPage(r *http.Request) (*page, error) {
 	var message string
 	if msg != "" {
 		message = `
-    <input id="alert_modal" type="checkbox" checked />
-    <label for="alert_modal" class="overlay"></label>
-        <article>
-            <header>Alert!</header>
-            <section>
-            <label for="alert_modal" class="close">&times;</label>
+			<div id="alert">
+				<a class="alert" href="#alert">
                 ` + template.HTMLEscapeString(msg) + `
-                <hr>
-            <label for="alert_modal" class="button">
-                Okay
-            </label>
-            </section>
-        </article>        
+                </a>
+			</div>
         `
 	} else {
 		message = ""
@@ -750,6 +745,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 	// Read YAML frontmatter into fm
 	fm, content, err := readFront(body)
 	if err != nil {
+		log.Println("viewCommitHandler readFront error:")
 		log.Println(err)
 	}
 	if content == nil {
@@ -1052,6 +1048,7 @@ func renderTemplate(w http.ResponseWriter, name string, data interface{}) error 
 	buf := bufpool.Get()
 	err := tmpl.ExecuteTemplate(buf, "base", data)
 	if err != nil {
+		log.Println("renderTemplate error:")
 		log.Println(err)
 		bufpool.Put(buf)
 		return err
@@ -1091,6 +1088,83 @@ func loadWikiPage(r *http.Request) (*wikiPage, error) {
 	return loadWikiPageHelper(r, name)
 }
 
+// This does various checks to see if an existing page exists or not
+// Also checks for and returns an error on some edge cases
+// So we only proceed if this returns false AND nil
+// Edge cases checked for currently:
+// - If name is trying to escape or otherwise a bad path
+// - If name is a /directory/file combo, but /directory is actually a file
+func doesPageExist(name string) (bool, error) {
+	fullfilename := cfg.WikiDir + name
+	rel, err := filepath.Rel(cfg.WikiDir, fullfilename)
+	if err != nil {
+		return false, err
+	}
+	if strings.HasPrefix(rel, "../") {
+		return false, errors.New("BAD_PATH")
+	}
+	base := filepath.Dir(fullfilename)
+
+	//log.Println(base)
+	//log.Println(dir)
+	//log.Println(filename)
+
+	_, fierr := os.Stat(fullfilename)
+	if fierr != nil {
+		//log.Println(fierr)
+	}
+
+	// Check if the base of the given filename is actually a file
+	// If so, bail, return 500.
+	basefile, _ := os.Open("./" + base)
+	basefi, _ := basefile.Stat()
+	/* I don't think these should matter
+	if os.IsNotExist(basefierr) {
+		//log.Println("OMG")
+		return false, basefierr
+	}
+	if basefierr != nil {
+		return false, basefierr
+	}*/
+	basefimode := basefi.Mode()
+	if !basefimode.IsDir() {
+		errn := errors.New("Base is not dir")
+		//http.Error(w, basefi.Name()+" is not a directory.", 500)
+		return false, errn
+	}
+	if basefimode.IsRegular() {
+		errn := errors.New("Base is not dir")
+		//http.Error(w, basefi.Name()+" is not a directory.", 500)
+		return false, errn
+	}
+
+	// Directory without specified index
+	if strings.HasSuffix(name, "/") {
+		//if dir != "" && name == "" {
+		log.Println("This might be a directory, trying to parse the index")
+		//filename := name + "index"
+		//title := name + " - Index"
+		fullfilename = cfg.WikiDir + name + "index"
+
+		dirindex, _ := os.Open(fullfilename)
+		_, dirindexfierr := dirindex.Stat()
+		if os.IsNotExist(dirindexfierr) {
+			errn := errors.New("No such dir index")
+			return false, errn
+		}
+	}
+
+	if os.IsNotExist(fierr) {
+		// NOW: Using os.Stat to properly check for file existence, using IsNotExist()
+		// This should mean file is non-existent, so create new page
+		//log.Println(fierr)
+		//errn := errors.New("No such file")
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "indexHandler")
 
@@ -1127,6 +1201,29 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	slugURL(w, r)
 	name := fullName(r)
 
+	// Check if file exists before doing anything else
+	fileExists, feErr := doesPageExist(name)
+	if !fileExists && feErr == nil {
+		w.WriteHeader(404)
+		//title := "Create " + name + "?"
+		p, err := loadPage(r)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		gp := &genPage{
+			p,
+			name,
+		}
+		err = renderTemplate(w, "wiki_create.tmpl", gp)
+		if err != nil {
+			//panic(err)
+			log.Println("wiki_create error:")
+			log.Println(err)
+		} else {
+			return
+		}
+	}
+
 	// In case I want to switch to queries some time
 	query := r.URL.RawQuery
 	if query != "" {
@@ -1144,7 +1241,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if err.Error() == "No such dir index" {
 			log.Println("No such dir index...creating one.")
-			http.Redirect(w, r, "/"+name+"?a=edit", http.StatusTemporaryRedirect)
+			http.Redirect(w, r, "/"+name+"/index", http.StatusTemporaryRedirect)
 			return
 		} else if err.Error() == "No such file" {
 			log.Println("No such file...creating one.")
@@ -1158,8 +1255,14 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 		} else if err.Error() == "NOT_IN_GIT" {
 			http.Redirect(w, r, "/gitadd?file="+name, http.StatusSeeOther)
 			return
+		} else if err.Error() == "NO_DIR_INDEX" {
+			log.Println("No directory index. Does this even need to be an error?")
+			http.Error(w, "Cannot create subdir of a file.", 500)
+			return
 		} else {
-			panic(err)
+			//panic(err)
+			log.Println("loadWikiPage error:")
+			log.Println(err)
 		}
 		//log.Println(err.Error())
 		http.NotFound(w, r)
@@ -1167,7 +1270,9 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = renderTemplate(w, "wiki_view.tmpl", p)
 	if err != nil {
-		panic(err)
+		//panic(err)
+		log.Println("wiki_view error:")
+		log.Println(err)
 	}
 	//log.Println(p.Title + " Page rendered!")
 }
@@ -1177,88 +1282,20 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	var pagetitle string
 	var body []byte
 
+	fullfilename := cfg.WikiDir + name
+
+	//log.Println("Filename: " + name)
+
 	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	log.Println("Filename:" + name)
-
-	fullfilename := cfg.WikiDir + name
-	rel, err := filepath.Rel(cfg.WikiDir, fullfilename)
-	if err != nil {
-		return nil, err
-	}
-	if strings.HasPrefix(rel, "../") {
-		return nil, errors.New("BAD_PATH")
-	}
-	base := filepath.Dir(fullfilename)
-
-	//log.Println(base)
-	//log.Println(dir)
-	//log.Println(filename)
-
-	_, fierr := os.Stat(fullfilename)
-	if fierr != nil {
-		//log.Println(fierr)
-	}
-
-	// Check if the base of the given filename is actually a file
-	// If so, bail, return 500.
-	basefile, _ := os.Open("./" + base)
-	basefi, basefierr := basefile.Stat()
-	basefimode := basefi.Mode()
-	if !basefimode.IsDir() {
-		errn := errors.New("Base is not dir")
-		//http.Error(w, basefi.Name()+" is not a directory.", 500)
-		return nil, errn
-	}
-	if basefimode.IsRegular() {
-		errn := errors.New("Base is not dir")
-		//http.Error(w, basefi.Name()+" is not a directory.", 500)
-		return nil, errn
-	}
-	//log.Println(base)
-	if basefierr != nil {
-		log.Println(basefierr)
-	}
-
-	// Directory without specified index
-	if strings.HasSuffix(name, "/") {
-		//if dir != "" && name == "" {
-		log.Println("This might be a directory, trying to parse the index")
-		filename := name + "index"
-		fullfilename = cfg.WikiDir + name + "index"
-
-		dirindex, _ := os.Open(fullfilename)
-		_, dirindexfierr := dirindex.Stat()
-
-		if os.IsNotExist(dirindexfierr) {
-			//filename = name + "index"
-			title := name + " - Index"
-			// FIXME: logic looks wrong here; should probably have another if/else
-			// ...Checking if file exists, before throwing an error
-			errn := errors.New("No such dir index")
-			newwp := &wikiPage{
-				p,
-				title,
-				filename,
-				&frontmatter{
-					Title: title,
-				},
-				&wiki{},
-				0,
-				0,
-			}
-			return newwp, errn
-		}
-
-	}
-
-	if os.IsNotExist(fierr) {
+	// Check if file exists before doing anything else
+	fileExists, feErr := doesPageExist(name)
+	if !fileExists && feErr == nil {
 		// NOW: Using os.Stat to properly check for file existence, using IsNotExist()
 		// This should mean file is non-existent, so create new page
-		log.Println(fierr)
 		errn := errors.New("No such file")
 		newwp := &wikiPage{
 			p,
@@ -1273,6 +1310,21 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 		}
 		return newwp, errn
 	}
+
+	// Directory without specified index
+	if strings.HasSuffix(name, "/") {
+		//if dir != "" && name == "" {
+		log.Println("This might be a directory, trying to parse the index")
+		//filename := name + "index"
+		fullfilename = cfg.WikiDir + name + "index"
+
+		dirindex, _ := os.Open(fullfilename)
+		_, dirindexfierr := dirindex.Stat()
+		if os.IsNotExist(dirindexfierr) {
+			return nil, errors.New("NO_DIR_INDEX")
+		}
+	}
+
 	body, err = ioutil.ReadFile(fullfilename)
 	if err != nil {
 		// FIXME Not sure what to do here, probably panic?
@@ -1305,11 +1357,13 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 		if err.Error() == "NOT_IN_GIT" {
 			return nil, err
 		}
-		log.Panicln(err)
+		log.Println("gitGetCtime error:")
+		log.Println(err)
 	}
 	mtime, err := gitGetMtime(name)
 	if err != nil {
-		log.Panicln(err)
+		log.Println("gitGetMtime error:")
+		log.Println(err)
 	}
 	wp := &wikiPage{
 		p,
@@ -1328,26 +1382,48 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "editHandler")
+	vars := mux.Vars(r)
+	name := vars["name"]
 
 	slugURL(w, r)
 
 	p, err := loadWikiPage(r)
 	//log.Println(p.Filename)
 	//log.Println(p.PageTitle)
+
+	// Check if file exists before doing anything else
+	//log.Println(name)
+	fileExists, feErr := doesPageExist(name)
+	if !fileExists && feErr == nil {
+		terr := renderTemplate(w, "wiki_edit.tmpl", p)
+		if terr != nil {
+			log.Fatalln(terr)
+		} else {
+			return
+		}
+	}
+
 	if err != nil {
 		if err.Error() == "No such file" {
 			//log.Println("No such file...creating one.")
 			terr := renderTemplate(w, "wiki_edit.tmpl", p)
 			if terr != nil {
+				log.Println("wiki_edit error:")
 				log.Fatalln(terr)
+			} else {
+				return
 			}
 		} else {
+			log.Println("loadWikiPage error:")
 			log.Fatalln(err)
 		}
 	} else {
 		terr := renderTemplate(w, "wiki_edit.tmpl", p)
 		if terr != nil {
+			log.Println("wiki_edit error:")
 			log.Fatalln(terr)
+		} else {
+			return
 		}
 	}
 }
@@ -1457,11 +1533,11 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	favbuf.Reset()
 	err = filepath.Walk(cfg.WikiDir, readFavs)
 	if err != nil {
+		log.Println("filepath.Walk error:")
 		log.Fatal(err)
 	}
 
 	auth.SetSession("flash", "Wiki page successfully saved.", w, r)
-	log.Println(name)
 	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
 	log.Println(name + " page saved!")
 }
@@ -1498,7 +1574,8 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, pagetitle+"?a=edit", http.StatusTemporaryRedirect)
 		return
 	} else if fierr != nil {
-		panic(fierr)
+		log.Println("newHandler file error:")
+		log.Println(fierr)
 	}
 
 	http.Redirect(w, r, pagetitle, http.StatusTemporaryRedirect)
@@ -1568,7 +1645,6 @@ func favsHandler(favs chan []string) {
 func readTags(path string, info os.FileInfo, err error) error {
 
 	if tagMap == nil {
-		//log.Println("tagMap is blank")
 		tagMap = make(map[string][]string)
 	}
 
@@ -1583,6 +1659,7 @@ func readTags(path string, info os.FileInfo, err error) error {
 
 	read, err := ioutil.ReadFile(path)
 	if err != nil {
+		log.Println("readTags ReadFile error:")
 		log.Println(err)
 		return nil
 	}
@@ -1606,6 +1683,29 @@ func readTags(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
+func testEq(a, b []byte) bool {
+
+	if a == nil && b == nil {
+		return true
+	}
+
+	if a == nil || b == nil {
+		return false
+	}
+
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (wiki *rawPage) save() error {
 	defer utils.TimeTrack(time.Now(), "wiki.save()")
 
@@ -1624,11 +1724,21 @@ func (wiki *rawPage) save() error {
 		}
 	}
 
+	originalFile, err := ioutil.ReadFile(fullfilename)
+	if err != nil {
+		log.Println("originalFile ReadFile error:")
+		log.Println(err)
+	}
+	if testEq(originalFile, wiki.Content) {
+		log.Println("No changes detected.")
+		return nil
+	}
+
 	ioutil.WriteFile(fullfilename, wiki.Content, 0755)
 
 	gitfilename := dir + filename
 
-	err := gitAddFilepath(gitfilename)
+	err = gitAddFilepath(gitfilename)
 	if err != nil {
 		return err
 	}
@@ -1656,6 +1766,7 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = renderTemplate(w, "login.tmpl", gp)
 	if err != nil {
+		log.Println("render login error:")
 		log.Println(err)
 		return
 	}
@@ -1674,6 +1785,7 @@ func signupPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = renderTemplate(w, "signup.tmpl", gp)
 	if err != nil {
+		log.Println("render signup error:")
 		log.Println(err)
 		return
 	}
@@ -1706,6 +1818,7 @@ func adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 	}*/
 	err = renderTemplate(w, "admin_users.tmpl", data)
 	if err != nil {
+		log.Println("render admin_users error:")
 		log.Println(err)
 		return
 	}
@@ -1743,6 +1856,7 @@ func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	}*/
 	err = renderTemplate(w, "admin_user.tmpl", data)
 	if err != nil {
+		log.Println("render admin_user error:")
 		log.Println(err)
 		return
 	}
@@ -1768,6 +1882,7 @@ func adminMainHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = renderTemplate(w, "admin_main.tmpl", gp)
 	if err != nil {
+		log.Println("render admin_main error:")
 		log.Println(err)
 		return
 	}
@@ -1784,7 +1899,6 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.URL.Query().Get("file") != "" {
 		file := r.URL.Query().Get("file")
-		//log.Println(action)
 		owithnewlines = []byte(file)
 	} else {
 		o, err := gitIsClean()
@@ -1801,6 +1915,7 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = renderTemplate(w, "git_checkin.tmpl", gp)
 	if err != nil {
+		log.Println("render git_checkin error:")
 		log.Println(err)
 		return
 	}
@@ -1867,6 +1982,7 @@ func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = renderTemplate(w, "tag_list.tmpl", tagpage)
 	if err != nil {
+		log.Println("render tag_list error:")
 		log.Println(err)
 		return
 	}
@@ -1898,6 +2014,7 @@ func wikiAuth(next http.Handler) http.Handler {
 
 		read, err := ioutil.ReadFile(wikipage)
 		if err != nil {
+			log.Println("wikiauth ReadFile error:")
 			log.Println(err)
 		}
 
@@ -1948,6 +2065,7 @@ func wikiAuth(next http.Handler) http.Handler {
 				if !os.IsNotExist(dirindexfierr) {
 					dread, err := ioutil.ReadFile(cfg.WikiDir + dir + "/" + "index")
 					if err != nil {
+						log.Println("wikiauth dir index ReadFile error:")
 						log.Println(err)
 					}
 
@@ -1956,6 +2074,7 @@ func wikiAuth(next http.Handler) http.Handler {
 					var dfm frontmatter
 					dfm, _, err = readFront(dread)
 					if err != nil {
+						log.Println("wikiauth readFront error:")
 						log.Println(err)
 						return
 					}
