@@ -1,0 +1,31 @@
+{{ define "title" }}<title>{{.page.SiteName}}|Create {{ .Title }}?</title>{{ end }}
+{{ define "content" }}
+<style>
+ section section article {
+   border-top-left-radius: 0;
+ }
+</style>
+
+<main>
+  <article>
+    <header>Create {{.Title}}?</header>
+  </article>
+
+  <ul class="tabs">
+    <li><a href="#" class="is-active"><i class="material-icons centericon">visibility</i>View Page</a></li>
+    <li><a href="#"><i class="material-icons centericon">edit</i>Edit Page</a></li>
+    <li><a href="#"><i class="material-icons centericon">history</i>Page History</a></li>
+  </ul>
+
+  <article>
+      There's no existing page named '{{.Title}}'.<br>
+      Would you like to <a href="/{{.Title}}?a=edit">create a page named '{{.Title}}'</a>?
+        <footer>
+          <ul>
+            <li>Created: </li>
+            <li>Last Modified: </li>
+          </ul>
+        </footer>
+  </article>
+</main>
+{{ end }}
