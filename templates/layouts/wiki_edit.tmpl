@@ -42,24 +42,17 @@
         <textarea name="editor" id="wikieditor"></textarea>
         <div class="stack">
             <input type="submit" class="button-success" value="Submit">
-            <label for="preview_modal" id="preview" class="button-dangerous">Preview</label>
+            <a id="preview" href="#previewModal">Preview</a>
         </div>
         </form>
     </article>
 </main>
 
-<div class="modal">
-  <input id="preview_modal" type="checkbox" />
-  <label for="preview_modal" class="overlay"></label>
-    <article>
-        <header>{{.PageTitle }} - Preview</header>
-          <label for="preview_modal" class="close">&times;</label>
-        <section class="content" id="preview_content">
-        </section>
-        <label for="preview_modal" class="button-dangerous">
-            Close
-        </label>
-    </article>
+<div id="previewModal" class="modalDialog">
+    <div><a href="#close" title="Close" class="close">&times;</a>
+        	<h2>Modal Box</h2>
+         <article class="content" id="preview_content">       
+    </div>
 </div>
 
 {{ end }}
