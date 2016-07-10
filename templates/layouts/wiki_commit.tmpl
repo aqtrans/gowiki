@@ -3,36 +3,55 @@
 <link rel="stylesheet" href="/assets/css/diff2html.min.css">
 <main>
   <article>
-  <header>{{.PageTitle}}@{{.Commit}}</header>
-  </article>
-  
-  <ul class="tabs">
-    <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
-    <li><a href="/{{.Filename}}?a=edit"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-    <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
-    <li><a href="#" class="is-active"><i class="material-icons centericon">undo</i>View Page Commit</a></li>
-  </ul>
-
-  <article>
+    <header>{{.PageTitle}}@{{.Commit}}</header>
     <div class="stats">
       <ul>
-        <li>{{ .Filename }}<span>Filename</span></li>
-        <li>{{ .frontmatter.Private }}<span>Private</span></li>
-        <li>{{ .frontmatter.Favorite }}<span>Favorite</span></li>
-        <li>{{ range .frontmatter.Tags }}<span class="badge-alert">{{ . }}</span>{{ end }}<span>Tags</span></li>
+        <li><p>Filename</p>
+        <div class="stat">{{ .Filename }}</div></li>
+        <li><p>Private</p>
+        <div class="stat">{{ .frontmatter.Private }}</div></li>
+        <li><p>Favorite</p>
+        <div class="stat">{{ .frontmatter.Favorite }}</div></li>
+        <li><p>Tags</p>
+        <div class="stat">{{ range .frontmatter.Tags }}<span class="badge">{{ . }}</span>{{ end }}</div></li>
       </ul>
     </div>
-    <div>
-      <a class="active" href="/{{.Filename}}?commit={{.Commit}}">File at Commit</a>|
-      <a href="/{{.Filename}}?commit={{.Commit}}&a=diff">Commit Diff</a>
-    </div>
-        {{.Content | safeHTML}}
-        <footer>
-          <ul>
-            <li>Created: {{ .CreateTime | prettyDate }}</li>
-            <li>Last Modified: {{ .ModTime | prettyDate }}</li>
-          </ul>
-        </footer>
+  </article>
+
+  <ul class="tabs">
+    <li class="tabs-title"><a href="/{{.Filename}}"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
+    <li class="tabs-title"><a href="#"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
+    <li class="tabs-title"><a href="/{{.Filename}}?a=history"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
+    <li class="tabs-title is-active"><a href="#"><i class="fa fa-code-fork" aria-hidden="true"></i>View Page Commit</a></li>
+  </ul>  
+
+  <article class="accordion" data-accordion>
+      <div id="content" class="accordion-item is-active" data-accordion-item>
+        <a href="#" class="accordion-title">Content</a>
+        <div class="accordion-content" data-tab-content>
+          {{.Content | safeHTML}}
+        </div>
+      </div>
+      <div id="diff" class="accordion-item" data-accordion-item>
+        <a href="#" class="accordion-title">Diff</a>
+        <div class="accordion-content" data-tab-content>
+          <pre><code>{{.Diff}}</code></pre>
+        </div>
+      </div>
+    <footer>
+      <ul>
+        <li>Created: {{ .CreateTime | prettyDate }}</li>
+        <li>Last Modified: {{ .ModTime | prettyDate }}</li>
+      </ul>
+    </footer>
   </article>
 </main>
+{{ end }}
+{{ define "extra_scripts" }}
+<script src="/assets/js/jquery.min.js"></script>
+<!-- this will include every plugin and utility required by Foundation -->
+<script src="/assets/js/foundation.min.js"></script>
+<script type="text/javascript" charset="utf-8">
+$(document).foundation();
+</script>
 {{ end }}

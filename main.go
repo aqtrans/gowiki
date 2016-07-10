@@ -159,6 +159,7 @@ type commitPage struct {
 	ModTime    int64
 	Commit     string
 	Content    string
+	Diff       string
 }
 
 type rawPage struct {
@@ -761,13 +762,14 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 	} else {
 		pagetitle = name
 	}
-	diffstring := strings.Replace(string(diff), "\n", "<br>", -1)
+	//diffstring := strings.Replace(string(diff), "\n", "<br>", -1)
+	diffstring := string(diff)
 	//log.Println(diffstring)
 
 	pageContent = md
 
 	// Check for ?a={file,diff} and toss either the file or diff
-	if r.URL.Query().Get("a") != "" {
+	/*if r.URL.Query().Get("a") != "" {
 		action := r.URL.Query().Get("a")
 		//log.Println(action)
 		if action == "diff" {
@@ -775,7 +777,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 		} else {
 			pageContent = md
 		}
-	}
+	}*/
 
 	cp := &commitPage{
 		p,
@@ -790,10 +792,11 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 		mtime,
 		commit,
 		pageContent,
+		diffstring,
 	}
 
 	// Check for ?a={file,diff} and toss either the file or diff
-	if r.URL.Query().Get("a") != "" {
+	/*if r.URL.Query().Get("a") != "" {
 		action := r.URL.Query().Get("a")
 		//log.Println(action)
 		if action == "diff" {
@@ -812,6 +815,11 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
 		if err != nil {
 			log.Fatalln(err)
 		}
+	}*/
+
+	err = renderTemplate(w, "wiki_commit.tmpl", cp)
+	if err != nil {
+		log.Fatalln(err)
 	}
 
 }
