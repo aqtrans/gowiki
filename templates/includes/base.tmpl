@@ -20,11 +20,12 @@
     {{ template "content" . }}
   </section>
     {{ .page.FlashMsg |safeHTML }}       
+
+  {{ template "extra_scripts" . }}
 </body>
 
 <footer>
-</footer>
-  {{ template "extra_scripts" . }}
+</footer>  
 </html>
 {{ end }}
 {{ define "extra_scripts" }}{{ end }}
