@@ -8,19 +8,19 @@
   <meta name="description" content="Gowiki">
   <link rel="shortcut icon" type="image/png" href="/assets/favicon.png"/>
   <link rel="shortcut icon" type="image/ico" href="/assets/favicon.ico" />
-  <link rel="stylesheet" href="/assets/bourbon.css">
+  <link rel="stylesheet" href="/assets/wiki.css">
  </head>
 
-<section>
-  <aside>
+<body>
+  <nav>
     <header><a href="/">Wiki</a></header>
       {{ template "sidebar" .}}
-  </aside>
-
+  </nav>
+  <section>
     {{ template "content" . }}
-
+  </section>
     {{ .page.FlashMsg |safeHTML }}       
-</section>
+</body>
 
 <footer>
 </footer>
