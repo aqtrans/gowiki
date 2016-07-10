@@ -7,58 +7,89 @@
     </article>
               
         <ul class="tabs">
-        <li><a href="/{{.Filename}}"><i class="material-icons centericon">visibility</i>View Page</a></li>
-        <li><a href="#" class="is-active"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-        <li><a href="/{{.Filename}}?a=history"><i class="material-icons centericon">history</i>Page History</a></li>
+        <li class="tabs-title"><a href="/{{.Filename}}"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
+        <li class="tabs-title is-active"><a href="#"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
+        <li class="tabs-title"><a href="/{{.Filename}}?a=history"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
         </ul>
     
 
     <article>
         <form action="/{{.Filename}}?a=save" method="POST" id="savewiki">
         Title:<input type="text" name="title" value="{{.Title}}">
-        <div>
         {{ if .Favorite }}
-            <label class="label-switch">Favorite:<input type="checkbox" name="favorite" checked /><div class="checkbox"></div></label>
+            <div class="switch tiny">
+            Favorite:<input class="switch-input" id="favorite" type="checkbox" name="favorite" checked>
+            <label class="switch-paddle" for="favorite">
+                <span class="show-for-sr">Favorite</span>
+            </label>
+            </div>
         {{ else }}
-            <label class="label-switch">Favorite:<input type="checkbox" name="favorite" /><div class="checkbox"></div></label>
+            <div class="switch tiny">
+            Favorite:<input class="switch-input" id="favorite" type="checkbox" name="favorite">
+            <label class="switch-paddle" for="favorite">
+                <span class="show-for-sr">Favorite</span>
+            </label>
+            </input>
         {{ end }}
         {{ if .Private }}
-            <label class="label-switch">Users Only:<input type="checkbox" name="private" checked /><div class="checkbox"></div></label>
+            <div class="switch tiny">
+            Users Only:<input class="switch-input" id="usersOnly" type="checkbox" name="usersOnly" checked>
+            <label class="switch-paddle" for="usersOnly">
+                <span class="show-for-sr">Users Only</span>
+            </label>
+            </div>
         {{ else }}
-            <label class="label-switch">Users Only:<input type="checkbox" name="private" /><div class="checkbox"></div></label>
+            <div class="switch tiny">
+            Users Only:<input class="switch-input" id="usersOnly" type="checkbox" name="usersOnly">
+            <label class="switch-paddle" for="usersOnly">
+                <span class="show-for-sr">Users Only</span>
+            </label>
+            </div>
         {{ end }}
         {{ if .Admin }}
-            <label class="label-switch">Admin Only:<input type="checkbox" name="admin" checked /><div class="checkbox"></div></label>
+            <div class="switch tiny">
+            Admin Only:<input class="switch-input" id="adminOnly" type="checkbox" name="adminOnly" checked>
+            <label class="switch-paddle" for="adminOnly">
+                <span class="show-for-sr">Admin Only</span>
+            </label>
+            </div>
         {{ else }}
-            <label class="label-switch">Admin Only:<input type="checkbox" name="admin" /><div class="checkbox"></div></label>
-        {{ end }}    
-        </div>
-        <br>
+            <div class="switch tiny">
+            Admin Only:<input class="switch-input" id="adminOnly" type="checkbox" name="adminOnly">
+            <label class="switch-paddle" for="adminOnly">
+                <span class="show-for-sr">Admin Only</span>
+            </label>
+            </div>
+        {{ end }}
         <div class="tag-field">
             <label for="tags">Tags</label>
             <input type="text" id="tags" name="tags" placeholder="Separate tags with commas" value="{{ .Tags|jsTags }}" />
         </div>
         <input type="hidden" name="token" value="{{.Token}}"> 
         <textarea name="editor" id="wikieditor"></textarea>
-        <div class="stack">
-            <input type="submit" class="button-success" value="Submit">
-            <a id="preview" href="#previewModal">Preview</a>
+        <div class="button-group">
+            <a data-open="previewModal" id="preview" class="button">Preview</a>
+            <button type="submit" class="success button">Submit</button>
         </div>
         </form>
     </article>
 </main>
 
-<div id="previewModal" class="modalDialog">
-    <div><a href="#close" title="Close" class="close">&times;</a>
-        	<h2>Modal Box</h2>
-         <article class="content" id="preview_content">       
-    </div>
-</div>
+<div class="full reveal" id="previewModal" data-reveal>
+    <h2>Preview:</h2>
+    <article class="content" id="preview_content"></article>
+    <button class="close-button" data-close aria-label="Close modal" type="button">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>    
 
 {{ end }}
 {{ define "extra_scripts" }}
 <script src="/assets/js/commonmark.js"></script>
 <script src="/assets/js/tagdog.min.js"></script>
+<script src="/assets/js/jquery.min.js"></script>
+<!-- this will include every plugin and utility required by Foundation -->
+<script src="/assets/js/foundation.min.js"></script>
 <!--<script src="/assets/js/jquery.tagsinput.min.js"></script>-->
 <script type="text/javascript" charset="utf-8">
  
@@ -67,6 +98,8 @@
    'width':'100%',
 });
 */
+
+$(document).foundation();
 
 (function() {
     "use strict";
