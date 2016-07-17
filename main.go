@@ -681,11 +681,7 @@ func loadPage(r *http.Request) (*page, error) {
 	return &page{SiteName: "GoWiki", Favs: gofavs, UN: user, Role: role, Token: token, FlashMsg: message}, nil
 }
 
-func historyHandler(w http.ResponseWriter, r *http.Request) {
-
-	slugURL(w, r)
-
-	name := fullName(r)
+func historyHandler(w http.ResponseWriter, r *http.Request, name string) {
 
 	p, err := loadPage(r)
 	if err != nil {
@@ -711,14 +707,10 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 // As well as the date
 // > git log -1 --format=%at [commit sha1]
 // TODO: need to find a way to detect sha1s
-func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit string) {
+func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name string) {
 	var fm frontmatter
 	var pagetitle string
 	var pageContent string
-
-	slugURL(w, r)
-
-	name := fullName(r)
 
 	//commit := vars["commit"]
 
@@ -1186,7 +1178,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("commit") != "" {
 		commit := r.URL.Query().Get("commit")
 		//utils.Debugln(r.URL.Query().Get("commit"))
-		viewCommitHandler(w, r, commit)
+		viewCommitHandler(w, r, commit, "index")
 		return
 	}
 
@@ -1203,34 +1195,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request) {
+func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 	defer utils.TimeTrack(time.Now(), "viewHandler")
-
-	slugURL(w, r)
-	name := fullName(r)
-
-	// Check if file exists before doing anything else
-	fileExists, feErr := doesPageExist(name)
-	if !fileExists && feErr == nil {
-		w.WriteHeader(404)
-		//title := "Create " + name + "?"
-		p, err := loadPage(r)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		gp := &genPage{
-			p,
-			name,
-		}
-		err = renderTemplate(w, "wiki_create.tmpl", gp)
-		if err != nil {
-			//panic(err)
-			log.Println("wiki_create error:")
-			log.Println(err)
-		} else {
-			return
-		}
-	}
 
 	// In case I want to switch to queries some time
 	query := r.URL.RawQuery
@@ -1240,7 +1206,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("commit") != "" {
 		commit := r.URL.Query().Get("commit")
 		//utils.Debugln(r.URL.Query().Get("commit"))
-		viewCommitHandler(w, r, commit)
+		viewCommitHandler(w, r, commit, name)
 		return
 	}
 
@@ -1388,28 +1354,12 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 	return wp, nil
 }
 
-func editHandler(w http.ResponseWriter, r *http.Request) {
+func editHandler(w http.ResponseWriter, r *http.Request, name string) {
 	defer utils.TimeTrack(time.Now(), "editHandler")
-	vars := mux.Vars(r)
-	name := vars["name"]
-
-	slugURL(w, r)
 
 	p, err := loadWikiPage(r)
 	//log.Println(p.Filename)
 	//log.Println(p.PageTitle)
-
-	// Check if file exists before doing anything else
-	//log.Println(name)
-	fileExists, feErr := doesPageExist(name)
-	if !fileExists && feErr == nil {
-		terr := renderTemplate(w, "wiki_edit.tmpl", p)
-		if terr != nil {
-			log.Fatalln(terr)
-		} else {
-			return
-		}
-	}
 
 	if err != nil {
 		if err.Error() == "No such file" {
@@ -1436,11 +1386,8 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func saveHandler(w http.ResponseWriter, r *http.Request) {
+func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 	defer utils.TimeTrack(time.Now(), "saveHandler")
-
-	slugURL(w, r)
-	name := fullName(r)
 
 	r.ParseForm()
 	//txt := r.Body
@@ -2132,6 +2079,41 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, `{"alive": true}`)
 }
 
+func wikiHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Here we will extract the page title from the Request,
+		// and call the provided handler 'fn'
+
+		// Replacing these for now:
+		slugURL(w, r)
+		name := fullName(r)
+
+		// Check if file exists before doing anything else
+		fileExists, feErr := doesPageExist(name)
+		if !fileExists && feErr == nil {
+			w.WriteHeader(404)
+			//title := "Create " + name + "?"
+			p, err := loadPage(r)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			gp := &genPage{
+				p,
+				name,
+			}
+			err = renderTemplate(w, "wiki_create.tmpl", gp)
+			if err != nil {
+				//panic(err)
+				log.Println("wiki_create error:")
+				log.Println(err)
+			} else {
+				return
+			}
+		}
+		fn(w, r, name)
+	}
+}
+
 func Router(r *mux.Router) *mux.Router {
 	statsdata := stats.New()
 
@@ -2188,16 +2170,16 @@ func Router(r *mux.Router) *mux.Router {
 	//r.HandleFunc("/{name:.*}", wikiHandler)
 
 	// wiki functions, should accept alphanumerical, "_", "-", ".", "@"
-	r.HandleFunc(`/{name}`, auth.AuthMiddle(editHandler)).Methods("GET").Queries("a", "edit")
-	r.HandleFunc(`/{name}`, auth.AuthMiddle(saveHandler)).Methods("POST").Queries("a", "save")
-	r.Handle(`/{name}`, alice.New(wikiAuth).ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
-	r.Handle(`/{name}`, alice.New(wikiAuth).ThenFunc(viewHandler)).Methods("GET")
+	r.HandleFunc(`/{name}`, auth.AuthMiddle(wikiHandler(editHandler))).Methods("GET").Queries("a", "edit")
+	r.HandleFunc(`/{name}`, auth.AuthMiddle(wikiHandler(saveHandler))).Methods("POST").Queries("a", "save")
+	r.Handle(`/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(historyHandler))).Methods("GET").Queries("a", "history")
+	r.Handle(`/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(viewHandler))).Methods("GET")
 
 	// With dirs:
-	r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(editHandler)).Methods("GET").Queries("a", "edit")
-	r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(saveHandler)).Methods("POST").Queries("a", "save")
-	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
-	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(viewHandler)).Methods("GET")
+	r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(wikiHandler(editHandler))).Methods("GET").Queries("a", "edit")
+	r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(wikiHandler(saveHandler))).Methods("POST").Queries("a", "save")
+	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(historyHandler))).Methods("GET").Queries("a", "history")
+	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(viewHandler))).Methods("GET")
 
 	//r.NotFoundHandler = alice.New(wikiAuth).ThenFunc(viewHandler)
 	return r
