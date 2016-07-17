@@ -135,30 +135,25 @@ type badFrontmatter struct {
 }
 
 type wiki struct {
-	Rendered string
-	Content  string
+	Title    string
+	Filename string
+	Frontmatter *frontmatter
+	Content  []byte
+	CreateTime int64
+	ModTime    int64	
 }
 
 type wikiPage struct {
 	*page
-	PageTitle string
-	Filename  string
-	*frontmatter
-	*wiki
-	CreateTime int64
-	ModTime    int64
+	Wiki *wiki
+	Rendered string
 }
 
 type commitPage struct {
 	*page
-	PageTitle string
-	Filename  string
-	*frontmatter
-	*wiki
-	CreateTime int64
-	ModTime    int64
+	Wiki *wiki
 	Commit     string
-	Content    string
+	Rendered    string
 	Diff       string
 }
 
@@ -169,9 +164,9 @@ type rawPage struct {
 
 type listPage struct {
 	*page
-	Wikis        []*wikiPage
-	PrivateWikis []*wikiPage
-	AdminWikis   []*wikiPage
+	Wikis        []*wiki
+	PrivateWikis []*wiki
+	AdminWikis   []*wiki
 }
 
 type genPage struct {
@@ -231,13 +226,13 @@ var urlSlugifier = slugify.New(slugify.Configuration{
 })
 
 // Sorting functions
-type wikiByDate []*wikiPage
+type wikiByDate []*wiki
 
 func (a wikiByDate) Len() int           { return len(a) }
 func (a wikiByDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a wikiByDate) Less(i, j int) bool { return a[i].CreateTime < a[j].CreateTime }
 
-type wikiByModDate []*wikiPage
+type wikiByModDate []*wiki
 
 func (a wikiByModDate) Len() int           { return len(a) }
 func (a wikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
@@ -772,19 +767,18 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 	}*/
 
 	cp := &commitPage{
-		p,
-		pagetitle,
-		name,
-		&fm,
-		&wiki{
-			Rendered: md,
-			Content:  string(content),
+		page: p,
+		Wiki: &wiki{
+			Title: pagetitle,
+			Filename: name,
+			Frontmatter: &fm,
+			Content:  content,
+			CreateTime: ctime,
+			ModTime: mtime,
 		},
-		ctime,
-		mtime,
-		commit,
-		pageContent,
-		diffstring,
+		Commit: commit,
+		Rendered: pageContent,
+		Diff: diffstring,
 	}
 
 	// Check for ?a={file,diff} and toss either the file or diff
@@ -834,9 +828,9 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(200)
-	var wps []*wikiPage
-	var privatewps []*wikiPage
-	var adminwps []*wikiPage
+	var wps []*wiki
+	var privatewps []*wiki
+	var adminwps []*wiki
 	for _, file := range fileList {
 
 		// check if the source dir exist
@@ -859,7 +853,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			withoutWikidir := strings.TrimPrefix(cfg.WikiDir, "./")
 			fileURL := strings.TrimPrefix(file, withoutWikidir)
 
-			var wp *wikiPage
+			var wp *wiki
 			var fm frontmatter
 			var pagetitle string
 			//fmt.Println(file)
@@ -913,36 +907,30 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			// If pages are Admin or Private, add to a separate wikiPage slice
 			//   So we only check on rendering
 			if fm.Admin {
-				wp = &wikiPage{
-					p,
-					pagetitle,
-					fileURL,
-					&fm,
-					&wiki{},
-					ctime,
-					mtime,
+				wp = &wiki{
+					Title: pagetitle,
+					Filename: fileURL,
+					Frontmatter: &fm,
+					CreateTime: ctime,
+					ModTime: mtime,
 				}
 				adminwps = append(adminwps, wp)
 			} else if fm.Private {
-				wp = &wikiPage{
-					p,
-					pagetitle,
-					fileURL,
-					&fm,
-					&wiki{},
-					ctime,
-					mtime,
+				wp = &wiki{
+					Title: pagetitle,
+					Filename: fileURL,
+					Frontmatter: &fm,
+					CreateTime: ctime,
+					ModTime: mtime,
 				}
 				privatewps = append(privatewps, wp)
 			} else {
-				wp = &wikiPage{
-					p,
-					pagetitle,
-					fileURL,
-					&fm,
-					&wiki{},
-					ctime,
-					mtime,
+				wp = &wiki{
+					Title: pagetitle,
+					Filename: fileURL,
+					Frontmatter: &fm,
+					CreateTime: ctime,
+					ModTime: mtime,
 				}
 				wps = append(wps, wp)
 			}
@@ -1252,11 +1240,6 @@ func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 }
 
 func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
-	var fm frontmatter
-	var pagetitle string
-	var body []byte
-
-	fullfilename := cfg.WikiDir + name
 
 	//log.Println("Filename: " + name)
 
@@ -1265,91 +1248,33 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 		log.Fatalln(err)
 	}
 
-	// Check if file exists before doing anything else
-	fileExists, feErr := doesPageExist(name)
-	if !fileExists && feErr == nil {
-		// NOW: Using os.Stat to properly check for file existence, using IsNotExist()
-		// This should mean file is non-existent, so create new page
-		errn := errors.New("No such file")
-		newwp := &wikiPage{
-			p,
-			name,
-			name,
-			&frontmatter{
-				Title: name,
-			},
-			&wiki{},
-			0,
-			0,
+	wikip, wikierr := loadWiki(name)
+	if wikierr != nil {
+		if wikierr.Error() == "No such file" {
+			newwp := &wikiPage{
+				page: p,
+				Wiki: &wiki{
+					Title: name,
+					Filename: name,
+					Frontmatter: &frontmatter{
+						Title: name,
+					},
+					CreateTime: 0,
+					ModTime: 0,
+				},
+			}
+			return newwp, wikierr
 		}
-		return newwp, errn
+		return nil, wikierr
 	}
 
-	// Directory without specified index
-	if strings.HasSuffix(name, "/") {
-		//if dir != "" && name == "" {
-		log.Println("This might be a directory, trying to parse the index")
-		//filename := name + "index"
-		fullfilename = cfg.WikiDir + name + "index"
-
-		dirindex, _ := os.Open(fullfilename)
-		_, dirindexfierr := dirindex.Stat()
-		if os.IsNotExist(dirindexfierr) {
-			return nil, errors.New("NO_DIR_INDEX")
-		}
-	}
-
-	body, err = ioutil.ReadFile(fullfilename)
-	if err != nil {
-		// FIXME Not sure what to do here, probably panic?
-		return nil, err
-	}
-	// Read YAML frontmatter into fm
-	fm, content, err := readFront(body)
-	if err != nil {
-		log.Println("YAML unmarshal error in: " + name)
-		log.Println(err)
-	}
-	if content == nil {
-		content = body
-	}
 	// Render remaining content after frontmatter
-	md := markdownRender(content)
+	md := markdownRender(wikip.Content)	
 
-	// TODO: improve this so private pages are actually protected
-	if fm.Private {
-		log.Println("Private page!")
-	}
-	if fm.Title != "" {
-		pagetitle = fm.Title
-	} else {
-		pagetitle = name
-	}
-	ctime, err := gitGetCtime(name)
-	if err != nil {
-		// If not in git, redirect to gitadd
-		if err.Error() == "NOT_IN_GIT" {
-			return nil, err
-		}
-		log.Println("gitGetCtime error:")
-		log.Println(err)
-	}
-	mtime, err := gitGetMtime(name)
-	if err != nil {
-		log.Println("gitGetMtime error:")
-		log.Println(err)
-	}
 	wp := &wikiPage{
-		p,
-		pagetitle,
-		name,
-		&fm,
-		&wiki{
-			Rendered: md,
-			Content:  string(content),
-		},
-		ctime,
-		mtime,
+		page: p,
+		Wiki: wikip,
+		Rendered: md,
 	}
 	return wp, nil
 }
@@ -1423,6 +1348,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 		tagsA = strings.Split(tags, ",")
 	}
 
+	/*
 	//var buffer bytes.Buffer
 	buffer := new(bytes.Buffer)
 
@@ -1452,24 +1378,6 @@ func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 	}
 	buffer.Write([]byte(content))
 
-	/*
-		    buffer.WriteString("---\n")
-		    buffer.WriteString("title: " + title)
-		    buffer.WriteString("\n")
-		    if tags != "" {
-		        buffer.WriteString("tags: [ " + tags + " ]")
-		        buffer.WriteString("\n")
-		    }
-		    buffer.WriteString("favorite: " + strconv.FormatBool(favoritebool))
-		    buffer.WriteString("\n")
-		    buffer.WriteString("private: " + strconv.FormatBool(privatebool))
-		    buffer.WriteString("\n")
-		    buffer.WriteString("admin: " + strconv.FormatBool(adminbool))
-		    buffer.WriteString("\n")
-		    buffer.WriteString("---\n")
-		    buffer.WriteString(content)
-			body := buffer.String()
-	*/
 
 	rp := &rawPage{
 		name,
@@ -1477,6 +1385,24 @@ func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 	}
 
 	err = rp.save()
+	*/
+
+	fm := &frontmatter{
+		Title:    title,
+		Tags:     tagsA,
+		Favorite: favoritebool,
+		Private:  privatebool,
+		Admin:    adminbool,
+	}
+
+	thewiki := &wiki{
+		Title: title,
+		Filename: name,
+		Frontmatter: fm,
+		Content: []byte(content),
+	}
+
+	err := thewiki.save()
 	if err != nil {
 		auth.SetSession("flash", "Failed to save page.", w, r)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -1706,6 +1632,155 @@ func (wiki *rawPage) save() error {
 
 	log.Println(fullfilename + " has been saved.")
 	return nil
+}
+
+func loadWiki(name string) (*wiki, error) {
+	var fm frontmatter
+	var pagetitle string
+	var body []byte
+
+	fullfilename := cfg.WikiDir + name
+
+	// Check if file exists before doing anything else
+	fileExists, feErr := doesPageExist(name)
+	if !fileExists && feErr == nil {
+		// NOW: Using os.Stat to properly check for file existence, using IsNotExist()
+		// This should mean file is non-existent, so create new page
+		errn := errors.New("No such file")
+		return nil, errn
+	}
+
+	// Directory without specified index
+	if strings.HasSuffix(name, "/") {
+		//if dir != "" && name == "" {
+		log.Println("This might be a directory, trying to parse the index")
+		//filename := name + "index"
+		fullfilename = cfg.WikiDir + name + "index"
+
+		dirindex, _ := os.Open(fullfilename)
+		_, dirindexfierr := dirindex.Stat()
+		if os.IsNotExist(dirindexfierr) {
+			return nil, errors.New("NO_DIR_INDEX")
+		}
+	}
+
+	body, err := ioutil.ReadFile(fullfilename)
+	if err != nil {
+		// FIXME Not sure what to do here, probably panic?
+		return nil, err
+	}
+	// Read YAML frontmatter into fm
+	fm, content, err := readFront(body)
+	if err != nil {
+		log.Println("YAML unmarshal error in: " + name)
+		log.Println(err)
+	}
+	if content == nil {
+		content = body
+	}
+
+	// TODO: improve this so private pages are actually protected
+	if fm.Private {
+		log.Println("Private page!")
+	}
+	if fm.Title != "" {
+		pagetitle = fm.Title
+	} else {
+		pagetitle = name
+	}
+	ctime, err := gitGetCtime(name)
+	if err != nil {
+		// If not in git, redirect to gitadd
+		if err.Error() == "NOT_IN_GIT" {
+			return nil, err
+		}
+		log.Println("gitGetCtime error:")
+		log.Println(err)
+	}
+	mtime, err := gitGetMtime(name)
+	if err != nil {
+		log.Println("gitGetMtime error:")
+		log.Println(err)
+	}
+
+	return &wiki{
+		Title: pagetitle,
+		Filename: name,
+		Frontmatter: &fm,
+		Content:  content,
+		CreateTime: ctime,
+		ModTime: mtime,
+	}, nil
+
+}
+
+func (wiki *wiki) save() error {
+	defer utils.TimeTrack(time.Now(), "wiki.save()")
+
+	dir, filename := filepath.Split(wiki.Filename)
+	fullfilename := cfg.WikiDir + dir + filename
+
+	// If directory doesn't exist, create it
+	// - Check if dir is null first
+	if dir != "" {
+		dirpath := cfg.WikiDir + dir
+		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
+			err := os.MkdirAll(dirpath, 0755)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	originalFile, err := ioutil.ReadFile(fullfilename)
+	if err != nil {
+		log.Println("originalFile ReadFile error:")
+		log.Println(err)
+	}
+	if testEq(originalFile, wiki.Content) {
+		log.Println("No changes detected.")
+		return nil
+	}
+
+	// Create a buffer where we build the content of the file
+	buffer := new(bytes.Buffer)
+	_, err = buffer.Write([]byte("---\n"))
+	if err != nil {
+		log.Fatalln(err)
+		return err
+	}
+	yamlBuffer, err := yaml.Marshal(wiki.Frontmatter)
+	if err != nil {
+		log.Fatalln(err)
+		return err
+	}
+	buffer.Write(yamlBuffer)
+	_, err = buffer.Write([]byte("---\n"))
+	if err != nil {
+		log.Fatalln(err)
+		return err
+	}
+	buffer.Write(wiki.Content)
+
+	// Write contents of above buffer, which should be Frontmatter+WikiContent
+	ioutil.WriteFile(fullfilename, buffer.Bytes(), 0755)
+
+	gitfilename := dir + filename
+
+	err = gitAddFilepath(gitfilename)
+	if err != nil {
+		return err
+	}
+
+	// FIXME: add a message box to edit page, check for it here
+	err = gitCommitEmpty()
+	if err != nil {
+		return err
+	}
+
+	log.Println(fullfilename + " has been saved.")
+	return nil
+
 }
 
 func loginPageHandler(w http.ResponseWriter, r *http.Request) {
