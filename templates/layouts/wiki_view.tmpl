@@ -1,4 +1,4 @@
-{{ define "title" }}<title>{{.page.SiteName}}|{{ .PageTitle }}</title>{{ end }}
+{{ define "title" }}<title>{{.page.SiteName}}|{{ .Wiki.Title }}</title>{{ end }}
 {{ define "content" }}
 <style>
  section section article {
@@ -8,33 +8,33 @@
 
 <main>
   <article>
-    <header>{{.PageTitle}}</header>
+    <header>{{.Wiki.Title}}</header>
     <div class="stats">
       <ul>
         <li><p>Filename</p>
-        <div class="stat">{{ .Filename }}</div></li>
+        <div class="stat">{{ .Wiki.Filename }}</div></li>
         <li><p>Private</p>
-        <div class="stat">{{ .frontmatter.Private }}</div></li>
+        <div class="stat">{{ .Wiki.Frontmatter.Private }}</div></li>
         <li><p>Favorite</p>
-        <div class="stat">{{ .frontmatter.Favorite }}</div></li>
+        <div class="stat">{{ .Wiki.Frontmatter.Favorite }}</div></li>
         <li><p>Tags</p>
-        <div class="stat">{{ range .frontmatter.Tags }}<span class="badge">{{ . }}</span>{{ end }}</div></li>
+        <div class="stat">{{ range .Wiki.Frontmatter.Tags }}<span class="badge">{{ . }}</span>{{ end }}</div></li>
       </ul>
     </div>
   </article>
 
   <ul class="tabs">
     <li class="tabs-title is-active"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
-    <li class="tabs-title"><a href="/{{.Filename}}?a=edit"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
-    <li class="tabs-title"><a href="/{{.Filename}}?a=history"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
+    <li class="tabs-title"><a href="/{{.Wiki.Filename}}?a=edit"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
+    <li class="tabs-title"><a href="/{{.Wiki.Filename}}?a=history"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
   </ul>
 
   <article>
-      {{.wiki.Rendered | safeHTML}}
+      {{.Rendered | safeHTML}}
         <footer>
           <ul>
-            <li>Created: {{ .CreateTime | prettyDate }}</li>
-            <li>Last Modified: {{ .ModTime | prettyDate }}</li>
+            <li>Created: {{ .Wiki.CreateTime | prettyDate }}</li>
+            <li>Last Modified: {{ .Wiki.ModTime | prettyDate }}</li>
           </ul>
         </footer>
   </article>
