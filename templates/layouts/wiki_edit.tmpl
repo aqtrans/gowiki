@@ -1,22 +1,22 @@
-{{ define "title" }}<title>{{.page.SiteName}}|Editing {{ .PageTitle }}</title>{{ end }}
+{{ define "title" }}<title>{{.page.SiteName}}|Editing {{ .Wiki.Title }}</title>{{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/tagdog.css">
 <main>
     <article>
-        <header>Editing {{.PageTitle}}</header> 
+        <header>Editing {{.Wiki.Title}}</header> 
     </article>
               
         <ul class="tabs">
-        <li class="tabs-title"><a href="/{{.Filename}}"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
+        <li class="tabs-title"><a href="/{{.Wiki.Filename}}"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
         <li class="tabs-title is-active"><a href="#"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
-        <li class="tabs-title"><a href="/{{.Filename}}?a=history"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
+        <li class="tabs-title"><a href="/{{.Wiki.Filename}}?a=history"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
         </ul>
     
 
     <article>
-        <form action="/{{.Filename}}?a=save" method="POST" id="savewiki">
-        Title:<input type="text" name="title" value="{{.Title}}">
-        {{ if .Favorite }}
+        <form action="/{{.Wiki.Filename}}?a=save" method="POST" id="savewiki">
+        Title:<input type="text" name="title" value="{{.Wiki.Frontmatter.Title}}">
+        {{ if .Wiki.Frontmatter.Favorite }}
             <div class="switch tiny">
             Favorite:<input class="switch-input" id="favorite" type="checkbox" name="favorite" checked>
             <label class="switch-paddle" for="favorite">
@@ -31,7 +31,7 @@
             </label>
             </input>
         {{ end }}
-        {{ if .Private }}
+        {{ if .Wiki.Frontmatter.Private }}
             <div class="switch tiny">
             Users Only:<input class="switch-input" id="usersOnly" type="checkbox" name="usersOnly" checked>
             <label class="switch-paddle" for="usersOnly">
@@ -46,7 +46,7 @@
             </label>
             </div>
         {{ end }}
-        {{ if .Admin }}
+        {{ if .Wiki.Frontmatter.Admin }}
             <div class="switch tiny">
             Admin Only:<input class="switch-input" id="adminOnly" type="checkbox" name="adminOnly" checked>
             <label class="switch-paddle" for="adminOnly">
@@ -63,9 +63,9 @@
         {{ end }}
         <div class="tag-field">
             <label for="tags">Tags</label>
-            <input type="text" id="tags" name="tags" placeholder="Separate tags with commas" value="{{ .Tags|jsTags }}" />
+            <input type="text" id="tags" name="tags" placeholder="Separate tags with commas" value="{{ .Wiki.Frontmatter.Tags|jsTags }}" />
         </div>
-        <input type="hidden" name="token" value="{{.Token}}"> 
+        <input type="hidden" name="token" value="{{.page.Token}}"> 
         <textarea name="editor" id="wikieditor"></textarea>
         <div class="button-group">
             <a data-open="previewModal" id="preview" class="button">Preview</a>
@@ -104,14 +104,14 @@ $(document).foundation();
 (function() {
     "use strict";
     var tagFields = tagdog('.tag-field');
-    console.log(tagFields);
+    //console.log(tagFields);
 }).call(this);
 
 var commonmark = window.commonmark;
 var writer = new commonmark.HtmlRenderer();
 var reader = new commonmark.Parser();
 var textarea = document.getElementById("editor");
-var initial_text = {{printf "%s" .wiki.Content}};
+var initial_text = {{printf "%s" .Wiki.Content}};
 
 document.getElementsByName("editor")[0].value = initial_text;
 

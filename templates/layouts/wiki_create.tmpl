@@ -1,4 +1,4 @@
-{{ define "title" }}<title>{{.page.SiteName}}|Create {{ .Title }}?</title>{{ end }}
+{{ define "title" }}<title>{{.page.SiteName}}|Create {{ .Wiki.Title }}?</title>{{ end }}
 {{ define "content" }}
 <style>
  section section article {
@@ -8,7 +8,7 @@
 
 <main>
   <article>
-    <header>Create {{.Title}}?</header>
+    <header>Create {{.Wiki.Title}}?</header>
   </article>
 
   <ul class="tabs">
@@ -18,13 +18,9 @@
   </ul>
 
   <article>
-      There's no existing page named '{{.Title}}'.<br>
-      Would you like to <a href="/{{.Title}}?a=edit">create a page named '{{.Title}}'</a>?
+      There's no existing page named '{{.Wiki.Filename}}'.<br>
+      Would you like to <a href="/{{.Wiki.Filename}}?a=edit">create a page named '{{.Wiki.Filename}}'</a>?
         <footer>
-          <ul>
-            <li>Created: </li>
-            <li>Last Modified: </li>
-          </ul>
         </footer>
   </article>
 </main>
