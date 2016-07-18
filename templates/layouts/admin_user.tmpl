@@ -3,7 +3,12 @@
 <main>
 <article>
     <header>Admin User Panel</header>
-</article>    
+</article>
+  <ul class="tabs">
+    <li class="tabs-title"><a href="/admin/"><i class="fa fa-lock" aria-hidden="true"></i>Main</a></li>
+    <li class="tabs-title is-active"><a href="#"><i class="fa fa-users" aria-hidden="true"></i>Manage Users</a></li>
+    <li class="tabs-title"><a href="/admin/list"><i class="fa fa-th-list" aria-hidden="true"></i>Manage Wiki Pages</a></li>
+  </ul>
   <article>  
     
         <h1>Editing User {{.User}}</h1>
@@ -15,7 +20,7 @@
         <option value="{{.}}">{{.}}</option>
         {{ end }}<br>
         </select>
-        <button class="stack" type="submit" class="button">Submit</button>
+        <button type="submit" class="button">Submit</button>
         </form>
   </article>
 
@@ -26,10 +31,10 @@
     <section class="content">
     <div>
         <form method="post" action="/admin/password_change" id="pwchange">
-        User:<input class="stack" type="text" id="username" name="username" placeholder="Username" value="{{.User}}" size="12">
-        Password:<input class="stack" type="password" id="password" name="password" placeholder="Password" size="12">
+        User:<input type="text" id="username" name="username" placeholder="Username" value="{{.User}}" size="12">
+        Password:<input type="password" id="password" name="password" placeholder="Password" size="12">
         <input type="hidden" name="token" value="{{.Token}}">
-        <button class="stack" type="submit" class="button">Change Users Password</button>
+        <button type="submit" class="button">Change Users Password</button>
         </form>
     </div>
     </section>
@@ -44,9 +49,9 @@
     <section class="content">
     <div>
         <form method="post" action="/admin/user_delete" id="userdelete">
-        User:<input class="stack" type="text" id="username" name="username" placeholder="Username" value="{{.User}}" size="12">
+        User:<input type="text" id="username" name="username" placeholder="Username" value="{{.User}}" size="12">
         <input type="hidden" name="token" value="{{.Token}}">
-        <button class="stack" type="submit" class="button">Delete user</button>
+        <button type="submit" class="button">Delete user</button>
         </form>
     </div>
     </section>
