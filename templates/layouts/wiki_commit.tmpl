@@ -1,27 +1,27 @@
-{{ define "title" }}<title>{{.page.SiteName}}|Commit of {{ .PageTitle }}</title>{{ end }}
+{{ define "title" }}<title>{{.page.SiteName}}|Commit of {{ .Wiki.Title }}</title>{{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/diff2html.min.css">
 <main>
   <article>
-    <header>{{.PageTitle}}@{{.Commit}}</header>
+    <header>{{.Wiki.Title}}@{{.Commit}}</header>
     <div class="stats">
       <ul>
         <li><p>Filename</p>
-        <div class="stat">{{ .Filename }}</div></li>
+        <div class="stat">{{ .Wiki.Filename }}</div></li>
         <li><p>Private</p>
-        <div class="stat">{{ .frontmatter.Private }}</div></li>
+        <div class="stat">{{ .Wiki.Frontmatter.Private }}</div></li>
         <li><p>Favorite</p>
-        <div class="stat">{{ .frontmatter.Favorite }}</div></li>
+        <div class="stat">{{ .Wiki.Frontmatter.Favorite }}</div></li>
         <li><p>Tags</p>
-        <div class="stat">{{ range .frontmatter.Tags }}<span class="badge">{{ . }}</span>{{ end }}</div></li>
+        <div class="stat">{{ range .Wiki.Frontmatter.Tags }}<span class="badge">{{ . }}</span>{{ end }}</div></li>
       </ul>
     </div>
   </article>
 
   <ul class="tabs">
-    <li class="tabs-title"><a href="/{{.Filename}}"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
+    <li class="tabs-title"><a href="/{{.Wiki.Filename}}"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
     <li class="tabs-title"><a href="#"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
-    <li class="tabs-title"><a href="/{{.Filename}}?a=history"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
+    <li class="tabs-title"><a href="/{{.Wiki.Filename}}?a=history"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
     <li class="tabs-title is-active"><a href="#"><i class="fa fa-code-fork" aria-hidden="true"></i>View Page Commit</a></li>
   </ul>  
 
@@ -29,7 +29,7 @@
       <div id="content" class="accordion-item is-active" data-accordion-item>
         <a href="#" class="accordion-title">Content</a>
         <div class="accordion-content" data-tab-content>
-          {{.Content | safeHTML}}
+          {{.Rendered | safeHTML}}
         </div>
       </div>
       <div id="diff" class="accordion-item" data-accordion-item>
@@ -40,8 +40,8 @@
       </div>
     <footer>
       <ul>
-        <li>Created: {{ .CreateTime | prettyDate }}</li>
-        <li>Last Modified: {{ .ModTime | prettyDate }}</li>
+        <li>Created: {{ .Wiki.CreateTime | prettyDate }}</li>
+        <li>Last Modified: {{ .Wiki.ModTime | prettyDate }}</li>
       </ul>
     </footer>
   </article>
