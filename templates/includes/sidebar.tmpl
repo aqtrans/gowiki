@@ -4,16 +4,20 @@
     <li><a href="/list">List</a></li>
     <li><a href="/gitadd">Git Add</a></li>
 </ul>
-<h2>Favorites:</h2>
+<h3><small>Favorites:</small></h3>
 <ul>
 {{range .page.Favs}}
 <li><a href="/{{.}}">{{.}}</a></li>
 {{end}}
 </ul>
 <form method="get" action="/new" id="newwiki">
-    <input type="text" placeholder="Add page" id="newwiki" name="newwiki" class="newwiki">
-    <input type="hidden" name="token" value="{{.Token}}">
-    <button type="submit"><i class="material-icons">add_box</i></button>
+    <div class="input-group">
+        <input type="text" placeholder="Add page" id="newwiki" name="newwiki" class="newwiki input-group-field">
+        <input type="hidden" name="token" value="{{.Token}}">
+        <div class="input-group-button">
+            <button type="button" class="success button"><i class="fa fa-plus-square-o fa-lg" aria-hidden="true"></i></button>
+        </div>    
+    </div>    
 </form>
     {{ template "usernav" .}}
 {{ end }}
