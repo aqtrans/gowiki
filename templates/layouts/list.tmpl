@@ -22,22 +22,22 @@
     {{ $admin := .page.Role|isAdmin }}
     {{range .Wikis}}
         <tr>
-        <td><a href="/{{.Filename}}">{{.PageTitle}}</a></td>
+        <td><a href="/{{.Filename}}">{{.Title}}</a></td>
         <td>{{.CreateTime | prettyDate}}</td>
         <td>{{.ModTime | prettyDate}}</td>    
-        <td>{{.frontmatter.Admin}}</td>
-        <td>{{.frontmatter.Private}}</td>
+        <td>{{.Frontmatter.Admin}}</td>
+        <td>{{.Frontmatter.Private}}</td>
         <td>{{.Filename}}</td>             
         </tr>
     {{ end }}
     {{ if $user }}
     {{range .PrivateWikis}}
         <tr>
-        <td><a href="/{{.Filename}}">{{.PageTitle}}</a></td>
+        <td><a href="/{{.Filename}}">{{.Title}}</a></td>
         <td>{{.CreateTime | prettyDate}}</td>
         <td>{{.ModTime | prettyDate}}</td>    
-        <td>{{.frontmatter.Admin}}</td>
-        <td>{{.frontmatter.Private}}</td>
+        <td>{{.Frontmatter.Admin}}</td>
+        <td>{{.Frontmatter.Private}}</td>
         <td>{{.Filename}}</td>             
         </tr>
     {{ end }}
@@ -45,11 +45,11 @@
     {{ if $admin }}
     {{range .AdminWikis}}
         <tr>
-        <td><a href="/{{.Filename}}">{{.PageTitle}}</a></td>
+        <td><a href="/{{.Filename}}">{{.Title}}</a></td>
         <td>{{.CreateTime | prettyDate}}</td>
         <td>{{.ModTime | prettyDate}}</td>    
-        <td>{{.frontmatter.Admin}}</td>
-        <td>{{.frontmatter.Private}}</td>
+        <td>{{.Frontmatter.Admin}}</td>
+        <td>{{.Frontmatter.Private}}</td>
         <td>{{.Filename}}</td>             
         </tr>
     {{ end }}
