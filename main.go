@@ -182,6 +182,7 @@ type gitPage struct {
 
 type historyPage struct {
 	*page
+	Wiki *wiki
 	Filename    string
 	FileHistory []*commitLog
 }
@@ -682,12 +683,19 @@ func historyHandler(w http.ResponseWriter, r *http.Request, name string) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	wikip, wikierr := loadWiki(name)
+	if wikierr != nil {
+		log.Fatalln(err)
+	}
+
 	history, err := gitGetLog(name)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	hp := &historyPage{
 		p,
+		wikip,
 		name,
 		history,
 	}
