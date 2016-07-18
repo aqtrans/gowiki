@@ -601,6 +601,18 @@ func gitGetFileCommitMtime(commit string) (int64, error) {
 	return mtime, nil
 }
 
+// git ls-files [filename]
+func gitLs() ([]string, error) {
+	o, err := gitCommand("ls-files", "-z").Output()
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("error during `git ls-files`: %s\n%s", err.Error(), string(o)))
+	}
+	nul := bytes.Replace(o, []byte("\x00"), []byte("\n"), -1)
+	// split each commit onto it's own line
+	lssplit := strings.Split(string(nul), "\n")
+	return lssplit, nil
+}
+
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /*
 func isPrivate(list string) bool {
@@ -819,13 +831,16 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 }
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
-	searchDir := cfg.WikiDir
+	//searchDir := cfg.WikiDir
+
 	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	fileList := []string{}
+	// Currently doing a filepath.Walk over cfg.WikiDir to build a list of wiki pages
+	// But since we use git...should we use git to retrieve the list?
+	/*fileList := []string{}
 	_ = filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
 		// check and skip .git
 		if f.IsDir() && f.Name() == ".git" {
@@ -833,13 +848,23 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		fileList = append(fileList, path)
 		return nil
-	})
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(200)
+	})*/
+
+	fileList, flerr := gitLs()
+	if flerr != nil {
+		log.Fatalln(err)
+	}
+
+	//w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	//w.WriteHeader(200)
+
 	var wps []*wiki
 	var privatewps []*wiki
 	var adminwps []*wiki
 	for _, file := range fileList {
+
+		file = cfg.WikiDir+file
+		//log.Println(file)
 
 		// check if the source dir exist
 		src, err := os.Stat(file)
@@ -848,18 +873,14 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		// check if its a directory
 		if src.IsDir() {
-			// Do something if a directory
-			// TODO: Do we need to do anything if it's a directory?
-			//       The filewalk already descends automatically.
-			//log.Println(file + " is a directory.")
-
+			// Just don't do anything..but don't return.
 		} else {
 
 			_, filename := filepath.Split(file)
 
 			// If this is an absolute path, including the cfg.WikiDir, trim it
-			withoutWikidir := strings.TrimPrefix(cfg.WikiDir, "./")
-			fileURL := strings.TrimPrefix(file, withoutWikidir)
+			//withoutWikidir := strings.TrimPrefix(cfg.WikiDir, "./")
+			fileURL := strings.TrimPrefix(file, cfg.WikiDir)
 
 			var wp *wiki
 			var fm frontmatter
@@ -2032,15 +2053,11 @@ func wikiAuth(next http.Handler) http.Handler {
 		vars := mux.Vars(r)
 		name := vars["name"]
 		dir := vars["dir"]
-		log.Println("Name " + name)
-		log.Println("Dir " + dir)
 
 		wikipage := cfg.WikiDir + r.URL.Path
-		//log.Println(wikipage)
 
 		_, fierr := os.Stat(wikipage)
 		if fierr != nil {
-			//log.Println(fierr)
 			next.ServeHTTP(w, r)
 			return
 		}
