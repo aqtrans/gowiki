@@ -3,9 +3,14 @@
 <main>
 <article>
     <header>Admin User Panel</header>
-</article>    
+</article>
+  <ul class="tabs">
+    <li class="tabs-title"><a href="/admin/"><i class="fa fa-lock" aria-hidden="true"></i>Main</a></li>
+    <li class="tabs-title is-active"><a href="#"><i class="fa fa-users" aria-hidden="true"></i>Manage Users</a></li>
+    <li class="tabs-title"><a href="/admin/list"><i class="fa fa-th-list" aria-hidden="true"></i>Manage Wiki Pages</a></li>
+  </ul> 
   <article>  
-    
+        <h2>Edit existing user:</h2>
         <form method="post" action="/admin/user" id="user">
         <input type="hidden" name="token" value="{{.Token}}">
         <select name="user">
@@ -13,18 +18,19 @@
         <option value="{{.}}">{{.}}</option>
         {{ end }}<br>
         </select>
-        <button class="stack" type="submit" class="button">Submit</button>
+        <button type="submit" class="button">Submit</button>
         </form>
-
+        <hr>
+        <h2>Add new user:</h2>
         <form method="post" action="/auth/signup" id="signup">
-        User:<input class="stack" type="text" id="username" name="username" placeholder="Username" size="12">
-        Password:<input class="stack" type="password" id="password" name="password" placeholder="Password" size="12">
+        User:<input type="text" id="username" name="username" placeholder="Username" size="12">
+        Password:<input type="password" id="password" name="password" placeholder="Password" size="12">
         <input type="hidden" name="token" value="{{.Token}}">
-        Role:<select class="stack" id="role" name="role">
+        Role:<select id="role" name="role">
             <option>User</option>    
             <option>Admin</option>
         </select>
-        <button class="stack" type="submit" class="button">Add User</button>
+        <button type="submit" class="button">Add User</button>
         </form>
     
   </article>
