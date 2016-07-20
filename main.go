@@ -1078,9 +1078,20 @@ func renderTemplate(w http.ResponseWriter, name string, data interface{}) error 
 	// Squeeze in our response time here
 	// Real hacky solution, but better than modifying the struct
 	elapsed := time.Since(startTime)
-	buf.WriteString(elapsed.String())
+	//buf.WriteString(elapsed.String())
+	buf2 := bufpool.Get()
+	err = tmpl.ExecuteTemplate(buf2, "footer", elapsed.String())
+	if err != nil {
+		log.Println("renderTemplate error:")
+		log.Println(err)
+		bufpool.Put(buf)
+		return err
+	}
+
 	buf.WriteTo(w)
+	buf2.WriteTo(w)
 	bufpool.Put(buf)
+	bufpool.Put(buf2)
 	return nil
 }
 
@@ -1221,6 +1232,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 	defer utils.TimeTrack(time.Now(), "viewHandler")
+	startTime = time.Now()
 
 	// In case I want to switch to queries some time
 	query := r.URL.RawQuery
@@ -1317,6 +1329,7 @@ func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
 
 func editHandler(w http.ResponseWriter, r *http.Request, name string) {
 	defer utils.TimeTrack(time.Now(), "editHandler")
+	startTime = time.Now()
 
 	p, err := loadWikiPage(r)
 	//log.Println(p.Filename)
@@ -1349,6 +1362,7 @@ func editHandler(w http.ResponseWriter, r *http.Request, name string) {
 
 func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 	defer utils.TimeTrack(time.Now(), "saveHandler")
+	startTime = time.Now()
 
 	r.ParseForm()
 	//txt := r.Body
@@ -1465,6 +1479,8 @@ func setFlash(msg string, w http.ResponseWriter, r *http.Request) {
 
 func newHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "newHandler")
+	startTime = time.Now()
+
 	pagetitle := r.FormValue("newwiki")
 
 	fullfilename := cfg.WikiDir + pagetitle
@@ -1821,6 +1837,8 @@ func (wiki *wiki) save() error {
 
 func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "loginPageHandler")
+	startTime = time.Now()
+
 	title := "login"
 	p, err := loadPage(r)
 	if err != nil {
@@ -1840,6 +1858,8 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 
 func signupPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "signupPageHandler")
+	startTime = time.Now()
+
 	title := "signup"
 	p, err := loadPage(r)
 	if err != nil {
@@ -1859,6 +1879,8 @@ func signupPageHandler(w http.ResponseWriter, r *http.Request) {
 
 func adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "adminUsersHandler")
+	startTime = time.Now()
+
 	title := "admin-users"
 	p, err := loadPage(r)
 	if err != nil {
@@ -1892,6 +1914,8 @@ func adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "adminUserHandler")
+	startTime = time.Now()
+
 	title := "admin-user"
 	p, err := loadPage(r)
 	if err != nil {
@@ -1937,6 +1961,8 @@ func adminUserPostHandler(w http.ResponseWriter, r *http.Request) {
 
 func adminMainHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "adminMainHandler")
+	startTime = time.Now()
+
 	title := "admin-main"
 	p, err := loadPage(r)
 	if err != nil {
@@ -1956,6 +1982,8 @@ func adminMainHandler(w http.ResponseWriter, r *http.Request) {
 
 func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "gitCheckinHandler")
+	startTime = time.Now()
+
 	title := "Git Checkin"
 	p, err := loadPage(r)
 	if err != nil {
@@ -2035,6 +2063,8 @@ func checkWikiGit(next http.Handler) http.Handler {
 
 func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "tagMapHandler")
+	startTime = time.Now()
+	
 	a := &tagMap
 
 	p, err := loadPage(r)
