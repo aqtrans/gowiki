@@ -106,6 +106,7 @@ var (
 	//sessID   string
 	tagMap  map[string][]string
 	tagsBuf bytes.Buffer
+	startTime time.Time
 )
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -1073,6 +1074,11 @@ func renderTemplate(w http.ResponseWriter, name string, data interface{}) error 
 
 	// Set the header and write the buffer to w
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	// Squeeze in our response time here
+	// Real hacky solution, but better than modifying the struct
+	elapsed := time.Since(startTime)
+	buf.WriteString(elapsed.String())
 	buf.WriteTo(w)
 	bufpool.Put(buf)
 	return nil
@@ -1184,6 +1190,7 @@ func doesPageExist(name string) (bool, error) {
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "indexHandler")
+	startTime = time.Now()
 
 	// In case I want to switch to queries some time
 
