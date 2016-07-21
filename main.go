@@ -336,10 +336,11 @@ func init() {
 func fullName(r *http.Request) string {
 	vars := mux.Vars(r)
 	name := vars["name"]
-	dir := vars["dir"]
+	//dir := vars["dir"]
+	/*dir := filepath.Dir(name)
 	if dir != "" {
 		name = dir + "/" + name
-	}
+	}*/
 	return name
 }
 
@@ -671,11 +672,13 @@ func loadPage(r *http.Request) (*page, error) {
 	var message string
 	if msg != "" {
 		message = `
-			<div id="alert">
-				<a class="alert" href="#alert">
-                ` + template.HTMLEscapeString(msg) + `
-                </a>
-			</div>
+			<div class="alert callout" data-closable>
+			<h5>Alert!</h5>
+			<p>` + template.HTMLEscapeString(msg) + `</p>
+			<button class="close-button" aria-label="Dismiss alert" type="button" data-close>
+				<span aria-hidden="true">&times;</span>
+			</button>
+			</div>			
         `
 	} else {
 		message = ""
@@ -1140,7 +1143,6 @@ func doesPageExist(name string) (bool, error) {
 	base := filepath.Dir(fullfilename)
 
 	//log.Println(base)
-	//log.Println(dir)
 	//log.Println(filename)
 
 	_, fierr := os.Stat(fullfilename)
@@ -2089,7 +2091,9 @@ func wikiAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		name := vars["name"]
-		dir := vars["dir"]
+		//dir := vars["dir"]
+		dir := filepath.Dir(name)
+		//log.Println(dir)
 
 		wikipage := cfg.WikiDir + r.URL.Path
 
@@ -2115,7 +2119,7 @@ func wikiAuth(next http.Handler) http.Handler {
 		var fm frontmatter
 		fm, _, err = readFront(read)
 		if err != nil {
-			log.Println("YAML unmarshal error in: " + dir + "/" + name)
+			log.Println("YAML unmarshal error in: " + name)
 			log.Println(err)
 			return
 		}
@@ -2149,13 +2153,14 @@ func wikiAuth(next http.Handler) http.Handler {
 
 		// Directory checking
 		// Check dir/index for a private or admin flag, and use this for the entire directory contents
-		if dir != "" {
+		if dir != "." {
 			fi, _ := os.Stat(cfg.WikiDir + dir)
 			if fi.IsDir() {
-				dirindex, _ := os.Open(cfg.WikiDir + dir + "/" + "index")
+				dirindexpath := cfg.WikiDir + dir + "/" + "index"
+				dirindex, _ := os.Open(dirindexpath)
 				_, dirindexfierr := dirindex.Stat()
 				if !os.IsNotExist(dirindexfierr) {
-					dread, err := ioutil.ReadFile(cfg.WikiDir + dir + "/" + "index")
+					dread, err := ioutil.ReadFile(dirindexpath)
 					if err != nil {
 						log.Println("wikiauth dir index ReadFile error:")
 						log.Println(err)
@@ -2247,6 +2252,11 @@ func wikiHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 				return
 			}
 		}
+		if !fileExists {
+			log.Println(name+" does not exist, but has an error:")
+			log.Println(feErr)
+			return
+		}
 		fn(w, r, name)
 	}
 }
@@ -2307,16 +2317,18 @@ func Router(r *mux.Router) *mux.Router {
 	//r.HandleFunc("/{name:.*}", wikiHandler)
 
 	// wiki functions, should accept alphanumerical, "_", "-", ".", "@"
-	r.HandleFunc(`/{name}`, auth.AuthMiddle(wikiHandler(editHandler))).Methods("GET").Queries("a", "edit")
-	r.HandleFunc(`/{name}`, auth.AuthMiddle(wikiHandler(saveHandler))).Methods("POST").Queries("a", "save")
-	r.Handle(`/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(historyHandler))).Methods("GET").Queries("a", "history")
-	r.Handle(`/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(viewHandler))).Methods("GET")
+	r.HandleFunc(`/{name:.*}`, auth.AuthMiddle(wikiHandler(editHandler))).Methods("GET").Queries("a", "edit")
+	r.HandleFunc(`/{name:.*}`, auth.AuthMiddle(wikiHandler(saveHandler))).Methods("POST").Queries("a", "save")
+	r.Handle(`/{name:.*}`, alice.New(wikiAuth).ThenFunc(wikiHandler(historyHandler))).Methods("GET").Queries("a", "history")
+	r.Handle(`/{name:.*}`, alice.New(wikiAuth).ThenFunc(wikiHandler(viewHandler))).Methods("GET")
 
 	// With dirs:
+	/*
 	r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(wikiHandler(editHandler))).Methods("GET").Queries("a", "edit")
 	r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(wikiHandler(saveHandler))).Methods("POST").Queries("a", "save")
 	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(historyHandler))).Methods("GET").Queries("a", "history")
 	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(viewHandler))).Methods("GET")
+	*/
 
 	//r.NotFoundHandler = alice.New(wikiAuth).ThenFunc(viewHandler)
 	return r
