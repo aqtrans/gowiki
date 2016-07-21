@@ -17,10 +17,11 @@
       {{ template "sidebar" .}}
   </nav>
   <section>
+    {{ .page.FlashMsg |safeHTML }}
     {{ template "content" . }}
     <footer></footer>
   </section>
-    {{ .page.FlashMsg |safeHTML }}       
+    
 
   {{ template "extra_scripts" . }}
 </body>
