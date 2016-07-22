@@ -51,6 +51,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
 	"jba.io/go/utils"
+	"jba.io/go/wiki/static"
 	//"net/url"
 )
 
@@ -2357,6 +2358,13 @@ func main() {
 		//log.Println(cfg)
 		//log.Println(cfg.AuthConf)
 	*/
+
+	st, sterr := static.ReadFile("assets/robots.txt")
+	if sterr != nil {
+		log.Println(sterr)
+	}
+	log.Println(string(st))
+
 
 	//Check for wikiDir directory + git repo existence
 	_, err := os.Stat(cfg.WikiDir)
