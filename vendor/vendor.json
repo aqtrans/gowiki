@@ -14,9 +14,18 @@
 			"revisionTime": "2015-06-22T10:52:03+02:00"
 		},
 		{
-			"path": "github.com/gorilla/handlers",
-			"revision": "8f2758070a82adb7a3ad6b223a0b91878f32d400",
-			"revisionTime": "2016-01-15T11:23:37-08:00"
+			"checksumSHA1": "67Ufp7gCzJyjLVW3iW3og8uVtkw=",
+			"path": "github.com/dimfeld/httppath",
+			"revision": "c8e499c3ef3c3e272ed8bdcc1ccf39f73c88debc",
+			"revisionTime": "2014-05-15T16:47:37Z"
+		},
+		{
+			"checksumSHA1": "h9BDYXnyuduC58qYWY+1657zGa0=",
+			"path": "github.com/dimfeld/httptreemux",
+			"revision": "cf13f404cb13ff573314339e15e257cff8818a50",
+			"revisionTime": "2016-05-23T03:51:43Z",
+			"version": "=contextmux",
+			"versionExact": "contextmux"
 		},
 		{
 			"path": "github.com/gorilla/mux",
