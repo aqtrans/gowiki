@@ -49,10 +49,13 @@ import (
 	"github.com/spf13/viper"
 	"github.com/thoas/stats"
 	"gopkg.in/yaml.v2"
-	"jba.io/go/auth"
+	"jba.io/go/wiki/auth"
+	//"jba.io/go/wiki/goji17"
+	//"jba.io/go/wiki/goji17/pat"
 	"jba.io/go/utils"
 	"jba.io/go/wiki/static"
 	//"net/url"
+	//"context"
 )
 
 const (
@@ -664,8 +667,8 @@ func loadPage(r *http.Request) (*page, error) {
 	//timer.Step("loadpageFunc")
 
 	// Auth lib middlewares should load the user and tokens into context for reading
-	user, role, msg := auth.GetUsername(r)
-	token := auth.GetToken(r)
+	user, role, msg := auth.GetUsername(r.Context())
+	token := auth.GetToken(r.Context())
 
 	//log.Println("Message: ")
 	//log.Println(msg)
@@ -1206,31 +1209,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "indexHandler")
 	startTime = time.Now()
 
-	// In case I want to switch to queries some time
-
-	//log.Println(r.URL.Query())
-	query := r.URL.RawQuery
-	if query != "" {
-		//utils.Debugln("Query string: " + query)
-	}
-	if r.URL.Query().Get("commit") != "" {
-		commit := r.URL.Query().Get("commit")
-		//utils.Debugln(r.URL.Query().Get("commit"))
-		viewCommitHandler(w, r, commit, "index")
-		return
-	}
-
-	// Get Wiki
-	p, err := loadWikiPageHelper(r, "index")
-	if err != nil {
-		//log.Println(err.Error())
-		http.NotFound(w, r)
-		return
-	}
-	err = renderTemplate(w, "wiki_view.tmpl", p)
-	if err != nil {
-		panic(err)
-	}
+	http.Redirect(w, r, "/index", http.StatusSeeOther)
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
@@ -2125,7 +2104,7 @@ func wikiAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		username, role, _ := auth.GetUsername(r)
+		username, role, _ := auth.GetUsername(r.Context())
 
 		if fm.Private || fm.Admin {
 			if username == "" {
@@ -2177,7 +2156,7 @@ func wikiAuth(next http.Handler) http.Handler {
 						return
 					}
 
-					username, role, _ := auth.GetUsername(r)
+					username, role, _ := auth.GetUsername(r.Context())
 
 					if dfm.Private || dfm.Admin {
 						if username == "" {
