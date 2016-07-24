@@ -9,12 +9,12 @@
         <ul class="tabs">
         <li class="tabs-title"><a href="/{{.Wiki.Filename}}"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
         <li class="tabs-title is-active"><a href="#"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
-        <li class="tabs-title"><a href="/{{.Wiki.Filename}}?a=history"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
+        <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
         </ul>
     
 
     <article>
-        <form action="/{{.Wiki.Filename}}?a=save" method="POST" id="savewiki">
+        <form action="/save/{{.Wiki.Filename}}" method="POST" id="savewiki">
         Title:<input type="text" name="title" value="{{.Wiki.Frontmatter.Title}}">
         {{ if .Wiki.Frontmatter.Favorite }}
             <div class="switch tiny">
