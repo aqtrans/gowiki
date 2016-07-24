@@ -41,8 +41,8 @@ import (
 	"unicode"
 
 	"github.com/Machiel/slugify"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
+	//"github.com/gorilla/handlers"
+	//"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
@@ -50,13 +50,20 @@ import (
 	"github.com/thoas/stats"
 	"gopkg.in/yaml.v2"
 	"jba.io/go/wiki/auth"
-	//"jba.io/go/wiki/goji17"
-	//"jba.io/go/wiki/goji17/pat"
+	//"goji.io"
+	//"goji.io/pat"
+	//"goji.io/middleware"
+	//"goji.io/internal"
 	"jba.io/go/utils"
-	"jba.io/go/wiki/static"
+	//"jba.io/go/wiki/static"
 	//"net/url"
-	//"context"
+	"context"
+	"github.com/dimfeld/httptreemux"
 )
+
+type key int
+
+const TimerKey key = 0
 
 const (
 	commonHtmlFlags = 0 |
@@ -337,21 +344,19 @@ func init() {
 
 }
 
-func fullName(r *http.Request) string {
-	vars := mux.Vars(r)
-	name := vars["name"]
-	//dir := vars["dir"]
-	/*dir := filepath.Dir(name)
-	if dir != "" {
-		name = dir + "/" + name
-	}*/
-	return name
+func timeNewContext(c context.Context, t time.Time) context.Context {
+	return context.WithValue(c, TimerKey, t)
+}
+
+func timeFromContext(c context.Context) (time.Time, bool) {
+	t, ok := c.Value(TimerKey).(time.Time)
+	return t, ok
 }
 
 // Turn the given URL into a slug
 // Redirect to slugURL if it is different from input
-func slugURL(w http.ResponseWriter, r *http.Request) {
-	name := fullName(r)
+func slugURL(w http.ResponseWriter, r *http.Request, params map[string]string) {
+	name := params["name"]
 	//log.Println(name)
 	//log.Println(r.URL.String())
 
@@ -719,7 +724,7 @@ func historyHandler(w http.ResponseWriter, r *http.Request, name string) {
 		name,
 		history,
 	}
-	err = renderTemplate(w, "wiki_history.tmpl", hp)
+	err = renderTemplate(w, r.Context(), "wiki_history.tmpl", hp)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -831,7 +836,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 		}
 	}*/
 
-	err = renderTemplate(w, "wiki_commit.tmpl", cp)
+	err = renderTemplate(w, r.Context(), "wiki_commit.tmpl", cp)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -977,7 +982,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 	l := &listPage{p, wps, privatewps, adminwps}
-	err = renderTemplate(w, "list.tmpl", l)
+	err = renderTemplate(w, r.Context(), "list.tmpl", l)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -1063,7 +1068,7 @@ func readFront(data []byte) (fm frontmatter, content []byte, err error) {
 	return fm, data[yamlEnd:], nil
 }
 
-func renderTemplate(w http.ResponseWriter, name string, data interface{}) error {
+func renderTemplate(w http.ResponseWriter, c context.Context, name string, data interface{}) error {
 	tmpl, ok := templates[name]
 	if !ok {
 		return fmt.Errorf("The template %s does not exist", name)
@@ -1084,7 +1089,12 @@ func renderTemplate(w http.ResponseWriter, name string, data interface{}) error 
 
 	// Squeeze in our response time here
 	// Real hacky solution, but better than modifying the struct
-	elapsed := time.Since(startTime)
+	start, ok := timeFromContext(c)
+	if !ok {
+		utils.Debugln("No startTime in context.")
+		start = time.Now()
+	}
+	elapsed := time.Since(start)
 	//buf.WriteString(elapsed.String())
 	buf2 := bufpool.Get()
 	err = tmpl.ExecuteTemplate(buf2, "footer", elapsed.String())
@@ -1110,24 +1120,7 @@ func parseBool(value string) bool {
 	return boolValue
 }
 
-//////////////////////////////
-/* Get type WikiPage struct {
-	PageTitle    string
-	Filename     string
-	*Frontmatter
-	*Wiki
-}
-type Wiki struct {
-	Rendered     string
-    Content      string
-}*/
-/////////////////////////////
-func loadWikiPage(r *http.Request) (*wikiPage, error) {
 
-	name := fullName(r)
-
-	return loadWikiPageHelper(r, name)
-}
 
 // This does various checks to see if an existing page exists or not
 // Also checks for and returns an error on some edge cases
@@ -1229,7 +1222,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 	}
 
 	// Get Wiki
-	p, err := loadWikiPage(r)
+	p, err := loadWikiPage(r, name)
 	if err != nil {
 		if err.Error() == "No such dir index" {
 			log.Println("No such dir index...creating one.")
@@ -1260,16 +1253,27 @@ func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 		http.NotFound(w, r)
 		return
 	}
-	err = renderTemplate(w, "wiki_view.tmpl", p)
+	err = renderTemplate(w, r.Context(), "wiki_view.tmpl", p)
 	if err != nil {
 		//panic(err)
 		log.Println("wiki_view error:")
 		log.Println(err)
 	}
-	//log.Println(p.Title + " Page rendered!")
 }
 
-func loadWikiPageHelper(r *http.Request, name string) (*wikiPage, error) {
+//////////////////////////////
+/* Get type WikiPage struct {
+	PageTitle    string
+	Filename     string
+	*Frontmatter
+	*Wiki
+}
+type Wiki struct {
+	Rendered     string
+    Content      string
+}*/
+/////////////////////////////
+func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 
 	//log.Println("Filename: " + name)
 
@@ -1313,14 +1317,12 @@ func editHandler(w http.ResponseWriter, r *http.Request, name string) {
 	defer utils.TimeTrack(time.Now(), "editHandler")
 	startTime = time.Now()
 
-	p, err := loadWikiPage(r)
-	//log.Println(p.Filename)
-	//log.Println(p.PageTitle)
+	p, err := loadWikiPage(r, name)
 
 	if err != nil {
 		if err.Error() == "No such file" {
 			//log.Println("No such file...creating one.")
-			terr := renderTemplate(w, "wiki_edit.tmpl", p)
+			terr := renderTemplate(w, r.Context(), "wiki_edit.tmpl", p)
 			if terr != nil {
 				log.Println("wiki_edit error:")
 				log.Fatalln(terr)
@@ -1332,7 +1334,7 @@ func editHandler(w http.ResponseWriter, r *http.Request, name string) {
 			log.Fatalln(err)
 		}
 	} else {
-		terr := renderTemplate(w, "wiki_edit.tmpl", p)
+		terr := renderTemplate(w, r.Context(), "wiki_edit.tmpl", p)
 		if terr != nil {
 			log.Println("wiki_edit error:")
 			log.Fatalln(terr)
@@ -1830,7 +1832,7 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 	}
-	err = renderTemplate(w, "login.tmpl", gp)
+	err = renderTemplate(w, r.Context(), "login.tmpl", gp)
 	if err != nil {
 		log.Println("render login error:")
 		log.Println(err)
@@ -1851,7 +1853,7 @@ func signupPageHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 	}
-	err = renderTemplate(w, "signup.tmpl", gp)
+	err = renderTemplate(w, r.Context(), "signup.tmpl", gp)
 	if err != nil {
 		log.Println("render signup error:")
 		log.Println(err)
@@ -1886,7 +1888,7 @@ func adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 	}*/
-	err = renderTemplate(w, "admin_users.tmpl", data)
+	err = renderTemplate(w, r.Context(), "admin_users.tmpl", data)
 	if err != nil {
 		log.Println("render admin_users error:")
 		log.Println(err)
@@ -1908,8 +1910,9 @@ func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln(err)
 	}
 
-	vars := mux.Vars(r)
-	selectedUser := vars["username"]
+	//ctx := r.Context()
+	params := r.Context().Value(httptreemux.ParamsContextKey).(map[string]string)
+	selectedUser := params["username"]
 
 	data := struct {
 		*page
@@ -1926,7 +1929,7 @@ func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 	}*/
-	err = renderTemplate(w, "admin_user.tmpl", data)
+	err = renderTemplate(w, r.Context(), "admin_user.tmpl", data)
 	if err != nil {
 		log.Println("render admin_user error:")
 		log.Println(err)
@@ -1954,7 +1957,7 @@ func adminMainHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 	}
-	err = renderTemplate(w, "admin_main.tmpl", gp)
+	err = renderTemplate(w, r.Context(), "admin_main.tmpl", gp)
 	if err != nil {
 		log.Println("render admin_main error:")
 		log.Println(err)
@@ -1989,7 +1992,7 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 		title,
 		string(owithnewlines),
 	}
-	err = renderTemplate(w, "git_checkin.tmpl", gp)
+	err = renderTemplate(w, r.Context(), "git_checkin.tmpl", gp)
 	if err != nil {
 		log.Println("render git_checkin error:")
 		log.Println(err)
@@ -2058,7 +2061,7 @@ func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 		page:    p,
 		TagKeys: *a,
 	}
-	err = renderTemplate(w, "tag_list.tmpl", tagpage)
+	err = renderTemplate(w, r.Context(), "tag_list.tmpl", tagpage)
 	if err != nil {
 		log.Println("render tag_list error:")
 		log.Println(err)
@@ -2067,11 +2070,11 @@ func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func wikiAuth(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		name := vars["name"]
-		//dir := vars["dir"]
+func wikiAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		//ctx := r.Context()
+		params := r.Context().Value(httptreemux.ParamsContextKey).(map[string]string)
+		name := params["name"]
 		dir := filepath.Dir(name)
 		//log.Println(dir)
 
@@ -2079,12 +2082,12 @@ func wikiAuth(next http.Handler) http.Handler {
 
 		_, fierr := os.Stat(wikipage)
 		if fierr != nil {
-			next.ServeHTTP(w, r)
+			next(w, r)
 			return
 		}
 
 		if os.IsNotExist(fierr) {
-			next.ServeHTTP(w, r)
+			next(w, r)
 			return
 		}
 
@@ -2184,11 +2187,10 @@ func wikiAuth(next http.Handler) http.Handler {
 					}
 				}
 			}
-
 		}
 
-		next.ServeHTTP(w, r)
-	})
+		next(w, r)
+	}
 }
 
 func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
@@ -2201,14 +2203,20 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, `{"alive": true}`)
 }
 
+// wikiHandler wraps around all wiki page handlers
+// Currently it retrieves the page name from params, checks for file existence, and checks for private pages
 func wikiHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Here we will extract the page title from the Request,
 		// and call the provided handler 'fn'
 
+		params := r.Context().Value(httptreemux.ParamsContextKey).(map[string]string)
+
 		// Replacing these for now:
-		slugURL(w, r)
-		name := fullName(r)
+		slugURL(w, r, params)
+		name := params["name"]
+		dir := filepath.Dir(name)
+		wikipage := cfg.WikiDir + r.URL.Path
 
 		// Check if file exists before doing anything else
 		fileExists, feErr := doesPageExist(name)
@@ -2223,7 +2231,7 @@ func wikiHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 				p,
 				name,
 			}
-			err = renderTemplate(w, "wiki_create.tmpl", gp)
+			err = renderTemplate(w, r.Context(), "wiki_create.tmpl", gp)
 			if err != nil {
 				//panic(err)
 				log.Println("wiki_create error:")
@@ -2237,81 +2245,133 @@ func wikiHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 			log.Println(feErr)
 			return
 		}
+
+		read, err := ioutil.ReadFile(wikipage)
+		if err != nil {
+			log.Println("wikiauth ReadFile error:")
+			log.Println(err)
+		}
+
+		// Read YAML frontmatter into fm
+		// If err, just return, as file should not contain frontmatter
+		var fm frontmatter
+		fm, _, err = readFront(read)
+		if err != nil {
+			log.Println("YAML unmarshal error in: " + name)
+			log.Println(err)
+			return
+		}
+
+		username, role, _ := auth.GetUsername(r.Context())
+
+		if fm.Private || fm.Admin {
+			if username == "" {
+				rurl := r.URL.String()
+				utils.Debugln("AuthMiddleware mitigating: " + r.Host + rurl)
+				//w.Write([]byte("OMG"))
+
+				// Detect if we're in an endless loop, if so, just panic
+				if strings.HasPrefix(rurl, "login?url=/login") {
+					panic("AuthMiddle is in an endless redirect loop")
+					return
+				}
+				auth.SetSession("flash", "Please login to view that page.", w, r)
+				http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+				return
+			}
+		}
+		if fm.Admin {
+			if role != "Admin" {
+				log.Println(username + " attempting to access restricted URL.")
+				auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+				return
+			}
+		}
+
+		// Directory checking
+		// Check dir/index for a private or admin flag, and use this for the entire directory contents
+		if dir != "." {
+			fi, _ := os.Stat(cfg.WikiDir + dir)
+			if fi.IsDir() {
+				dirindexpath := cfg.WikiDir + dir + "/" + "index"
+				dirindex, _ := os.Open(dirindexpath)
+				_, dirindexfierr := dirindex.Stat()
+				if !os.IsNotExist(dirindexfierr) {
+					dread, err := ioutil.ReadFile(dirindexpath)
+					if err != nil {
+						log.Println("wikiauth dir index ReadFile error:")
+						log.Println(err)
+					}
+
+					// Read YAML frontmatter into fm
+					// If err, just return, as file should not contain frontmatter
+					var dfm frontmatter
+					dfm, _, err = readFront(dread)
+					if err != nil {
+						log.Println("wikiauth readFront error:")
+						log.Println(err)
+						return
+					}
+
+					username, role, _ := auth.GetUsername(r.Context())
+
+					if dfm.Private || dfm.Admin {
+						if username == "" {
+							rurl := r.URL.String()
+							utils.Debugln("AuthMiddleware mitigating due to " + dir + "/index: " + r.Host + rurl)
+							//w.Write([]byte("OMG"))
+
+							// Detect if we're in an endless loop, if so, just panic
+							if strings.HasPrefix(rurl, "login?url=/login") {
+								panic("AuthMiddle is in an endless redirect loop")
+								return
+							}
+							auth.SetSession("flash", "This directory is private. You must login to view any pages within.", w, r)
+							http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+							return
+						}
+					}
+					if dfm.Admin {
+						if role != "Admin" {
+							log.Println(username + " attempting to access restricted URL.")
+							auth.SetSession("flash", "Sorry, this directory is private.", w, r)
+							http.Redirect(w, r, "/", http.StatusSeeOther)
+							return
+						}
+					}
+				}
+			}
+		}
+
 		fn(w, r, name)
 	}
 }
 
-func Router(r *mux.Router) *mux.Router {
-	statsdata := stats.New()
 
-	//wiki := s.Append(checkWikiGit)
-	//wikiauth := wiki.Append(wikiAuth)
+func treeMuxWrapper(next http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+	}
+}
+/*
+func wrapHandler(fn http.HandlerFunc) httptreemux.HandlerFunc {
+	return func(
+		res http.ResponseWriter,
+		req *http.Request,
+		_ map[string]string,
+	) {
+		fn(res, req)
+	}
+}
+*/
 
-	//r := mux.NewRouter()
-	//d := r.Host("go.jba.io").Subrouter()
-	r.HandleFunc("/", indexHandler).Methods("GET")
+func timer(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-	r.HandleFunc("/tags", tagMapHandler)
-	r.HandleFunc("/panic", func(w http.ResponseWriter, r *http.Request) {
-		panic("Unexpected error!")
-		//http.Error(w, panic("Unexpected error!"), http.StatusInternalServerError)
+		newt := timeNewContext(r.Context(), time.Now())
+		next.ServeHTTP(w, r.WithContext(newt))
 	})
-
-	r.HandleFunc("/new", auth.AuthMiddle(newHandler)).Methods("GET")
-	//r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
-	r.HandleFunc("/login", loginPageHandler).Methods("GET")
-	//r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
-	r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
-	r.HandleFunc("/signup", signupPageHandler).Methods("GET")
-	r.HandleFunc("/list", listHandler).Methods("GET")
-	r.HandleFunc("/health", HealthCheckHandler).Methods("GET")
-
-	admin := r.PathPrefix("/admin").Subrouter()
-	admin.HandleFunc("/", auth.AuthAdminMiddle(adminMainHandler)).Methods("GET")
-	admin.HandleFunc("/users", auth.AuthAdminMiddle(adminUsersHandler)).Methods("GET")
-	admin.HandleFunc("/users", auth.AuthAdminMiddle(auth.UserSignupPostHandler)).Methods("POST")
-	admin.HandleFunc("/user", auth.AuthAdminMiddle(adminUserPostHandler)).Methods("POST")
-	admin.HandleFunc("/user/{username}", auth.AuthAdminMiddle(adminUserHandler)).Methods("GET")
-	admin.HandleFunc("/user/{username}", auth.AuthAdminMiddle(adminUserHandler)).Methods("POST")
-
-	a := r.PathPrefix("/auth").Subrouter()
-	a.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
-	a.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
-	a.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
-	a.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
-
-	//r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
-
-	r.HandleFunc("/gitadd", auth.AuthMiddle(gitCheckinPostHandler)).Methods("POST")
-	r.HandleFunc("/gitadd", auth.AuthMiddle(gitCheckinHandler)).Methods("GET")
-
-	r.HandleFunc("/stats", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		stats := statsdata.Data()
-		b, _ := json.Marshal(stats)
-		w.Write(b)
-	})
-
-	r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
-
-	//r.HandleFunc("/{name:.*}", wikiHandler)
-
-	// wiki functions, should accept alphanumerical, "_", "-", ".", "@"
-	r.HandleFunc(`/{name:.*}`, auth.AuthMiddle(wikiHandler(editHandler))).Methods("GET").Queries("a", "edit")
-	r.HandleFunc(`/{name:.*}`, auth.AuthMiddle(wikiHandler(saveHandler))).Methods("POST").Queries("a", "save")
-	r.Handle(`/{name:.*}`, alice.New(wikiAuth).ThenFunc(wikiHandler(historyHandler))).Methods("GET").Queries("a", "history")
-	r.Handle(`/{name:.*}`, alice.New(wikiAuth).ThenFunc(wikiHandler(viewHandler))).Methods("GET")
-
-	// With dirs:
-	/*
-	r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(wikiHandler(editHandler))).Methods("GET").Queries("a", "edit")
-	r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(wikiHandler(saveHandler))).Methods("POST").Queries("a", "save")
-	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(historyHandler))).Methods("GET").Queries("a", "history")
-	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(viewHandler))).Methods("GET")
-	*/
-
-	//r.NotFoundHandler = alice.New(wikiAuth).ThenFunc(viewHandler)
-	return r
 }
 
 func main() {
@@ -2338,11 +2398,11 @@ func main() {
 		//log.Println(cfg.AuthConf)
 	*/
 
-	st, sterr := static.ReadFile("assets/robots.txt")
+	/*st, sterr := static.ReadFile("assets/robots.txt")
 	if sterr != nil {
 		log.Println(sterr)
 	}
-	log.Println(string(st))
+	log.Println(string(st))*/
 
 
 	//Check for wikiDir directory + git repo existence
@@ -2362,68 +2422,88 @@ func main() {
 		}
 	}
 
-	s := alice.New(handlers.RecoveryHandler(handlers.PrintRecoveryStack(true)), utils.Logger, auth.UserEnvMiddle, auth.XsrfMiddle)
+	s := alice.New(timer, utils.Logger, auth.UserEnvMiddle, auth.XsrfMiddle)
 
-	r := mux.NewRouter().StrictSlash(true)
+	//r := mux.NewRouter().StrictSlash(true)
+	r := httptreemux.New()
+	r.PanicHandler = httptreemux.ShowErrorsPanicHandler
+	
 
+	statsdata := stats.New()
+
+	//wiki := s.Append(checkWikiGit)
+	//wikiauth := wiki.Append(wikiAuth)
+
+	//r := mux.NewRouter()
+	//d := r.Host("go.jba.io").Subrouter()
+	r.GET("/", indexHandler)
+
+	r.GET("/tags", tagMapHandler)
+	/*r.GET("/panic", func(w http.ResponseWriter, r *http.Request) {
+		panic("Unexpected error!")
+		//http.Error(w, panic("Unexpected error!"), http.StatusInternalServerError)
+	})*/
+
+	r.GET("/new", auth.AuthMiddle(newHandler))
+	//r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
+	r.GET("/login", loginPageHandler)
+	//r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
+	r.GET("/logout", auth.LogoutHandler)
+	r.GET("/signup", signupPageHandler)
+	r.GET("/list", listHandler)
+	r.GET("/health", HealthCheckHandler)
+
+	admin := r.NewGroup("/admin")
+	admin.GET("/", auth.AuthAdminMiddle(adminMainHandler))
+	admin.GET("/users", auth.AuthAdminMiddle(adminUsersHandler))
+	admin.POST("/users", auth.AuthAdminMiddle(auth.UserSignupPostHandler))
+	admin.POST("/user", auth.AuthAdminMiddle(adminUserPostHandler))
+	admin.GET("/user/:username", auth.AuthAdminMiddle(adminUserHandler))
+	admin.POST("/user/:username", auth.AuthAdminMiddle(adminUserHandler))
+
+	a := r.NewGroup("/auth")
+	a.POST("/login", auth.LoginPostHandler)
+	a.POST("/logout", auth.LogoutHandler)
+	a.GET("/logout", auth.LogoutHandler)
+	a.POST("/signup", auth.SignupPostHandler)
+
+	//r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
+
+	r.POST("/gitadd", auth.AuthMiddle(gitCheckinPostHandler))
+	r.GET("/gitadd", auth.AuthMiddle(gitCheckinHandler))
+
+	r.GET("/stats", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		stats := statsdata.Data()
+		b, _ := json.Marshal(stats)
+		w.Write(b)
+	})
+
+	r.GET("/uploads/*", treeMuxWrapper(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads")))))
+
+	//r.HandleFunc("/{name:.*}", wikiHandler)
+
+	// wiki functions, should accept alphanumerical, "_", "-", ".", "@"
+	r.GET(`/edit/*name`, auth.AuthMiddle(wikiHandler(editHandler)))
+	r.POST(`/save/*name`, auth.AuthMiddle(wikiHandler(saveHandler)))
+	r.GET(`/history/*name`, wikiHandler(historyHandler))
+	r.GET(`/*name`, wikiHandler(viewHandler))
+
+	
+
+	// With dirs:
 	/*
-		    statsdata := stats.New()
-
-		    //wiki := s.Append(checkWikiGit)
-		    //wikiauth := wiki.Append(wikiAuth)
-
-			r := mux.NewRouter().StrictSlash(false)
-
-		    //r := mux.NewRouter()
-			//d := r.Host("go.jba.io").Subrouter()
-			r.HandleFunc("/", indexHandler).Methods("GET")
-
-		    r.HandleFunc("/tags", tagMapHandler)
-
-			r.HandleFunc("/new", auth.AuthMiddle(newHandler))
-			r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
-			r.HandleFunc("/login", loginPageHandler).Methods("GET")
-			r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
-			r.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
-			r.HandleFunc("/list", listHandler).Methods("GET")
-
-		    a := r.PathPrefix("/auth").Subrouter()
-		    a.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
-		    a.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
-			a.HandleFunc("/logout", auth.LogoutHandler).Methods("GET")
-		    a.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
-
-		    r.HandleFunc("/admin/users", auth.AuthAdminMiddle(adminUserHandler)).Methods("GET")
-		    r.HandleFunc("/admin/users", auth.AuthAdminMiddle(auth.AdminUserPostHandler)).Methods("POST")
-
-			r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
-			r.HandleFunc("/signup", signupPageHandler).Methods("GET")
-
-			r.HandleFunc("/gitadd", auth.AuthMiddle(gitCheckinPostHandler)).Methods("POST")
-			r.HandleFunc("/gitadd", auth.AuthMiddle(gitCheckinHandler)).Methods("GET")
-
-		    r.HandleFunc("/stats", func(w http.ResponseWriter, r *http.Request) {
-		            w.Header().Set("Content-Type", "application/json")
-		            stats := statsdata.Data()
-		            b, _ := json.Marshal(stats)
-		            w.Write(b)
-		    })
-
-			r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
-
-		    // wiki functions, should accept alphanumerical, "_", "-", ".", "@"
-			r.HandleFunc("/{name:.*}", auth.AuthMiddle(editHandler)).Methods("GET").Queries("a", "edit")
-		    r.HandleFunc("/{name:.*}", auth.AuthMiddle(saveHandler)).Methods("POST").Queries("a", "save")
-
-		    r.Handle("/{name:.*}", alice.New(wikiAuth).ThenFunc(historyHandler)).Methods("GET").Queries("a", "history")
-		    r.Handle("/{name:.*}", alice.New(wikiAuth).ThenFunc(viewHandler)).Methods("GET")
+	r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(wikiHandler(editHandler))).Methods("GET").Queries("a", "edit")
+	r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(wikiHandler(saveHandler))).Methods("POST").Queries("a", "save")
+	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(historyHandler))).Methods("GET").Queries("a", "history")
+	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(viewHandler))).Methods("GET")
 	*/
 
 	http.HandleFunc("/robots.txt", utils.RobotsHandler)
 	http.HandleFunc("/favicon.ico", utils.FaviconHandler)
 	http.HandleFunc("/favicon.png", utils.FaviconHandler)
 	http.HandleFunc("/assets/", utils.StaticHandler)
-	http.Handle("/", s.Then(Router(r)))
+	http.Handle("/", s.Then(r))
 
 	log.Println("Listening on port " + cfg.Port)
 	http.ListenAndServe("0.0.0.0:"+cfg.Port, nil)
