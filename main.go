@@ -333,13 +333,15 @@ func init() {
 	// Crawl for new favorites only on startup and save
 	err = filepath.Walk("./md", readFavs)
 	if err != nil {
-		log.Fatal(err)
+		//log.Fatal(err)
+		log.Println("init: unable to crawl for favorites")
 	}
 
 	// Crawl for tags only on startup and save
 	err = filepath.Walk("./md", readTags)
 	if err != nil {
-		log.Fatal(err)
+		//log.Fatal(err)
+		log.Println("init: unable to crawl for tags")
 	}
 
 }
