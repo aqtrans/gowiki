@@ -24,9 +24,11 @@ install-go:
     - export CURRENT_BUILD_PATH=$(pwd)
     - echo $PATH
     - rm -rf $HOME/gopath
-    - mkdir -p $HOME/gopath # for GOPATH (contains code and external packages)
+    #- mkdir -p $HOME/gopath # for GOPATH (contains code and external packages)
+    - mkdir -p $CURRENT_BUILD_PATH/gopath
     - export GOPATH=$HOME/gopath
     - export PATH=$PATH:$GOPATH/bin
+    - cd /home/gitlab-runner/gopath/src/jba.io/go/wiki
     - go version
     - echo $PATH
     - go env
@@ -37,6 +39,7 @@ build-my-project:
   script:
     - export GOPATH=$HOME/gopath
     - export PATH=$PATH:$GOPATH/bin
+    - cd /home/gitlab-runner/gopath/src/jba.io/go/wiki
     - go get -d
     - go build
 
@@ -45,6 +48,7 @@ test-my-project:
   script:
     - export GOPATH=$HOME/gopath
     - export PATH=$PATH:$GOPATH/bin
+    - cd /home/gitlab-runner/gopath/src/jba.io/go/wiki
     - go test
 
 deploy-it:
@@ -52,7 +56,7 @@ deploy-it:
   script:
     - export GOPATH=$HOME/gopath
     - export PATH=$PATH:$GOPATH/bin:/usr/local/go/bin
-    - cd $CI_PROJECT_DIR
+    - cd /home/gitlab-runner/gopath/src/jba.io/go/wiki
     - mkdir deploy
     - go get -d
     - go build -o ./deploy/wiki
