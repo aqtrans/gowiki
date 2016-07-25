@@ -19,12 +19,7 @@
   <section>
     {{ .page.FlashMsg |safeHTML }}
     {{ template "content" . }}
-    <footer></footer>
-  </section>
-    
 
-  {{ template "extra_scripts" . }}
-</body>
 
 {{ end }}
-{{ define "extra_scripts" }}{{ end }}
+
