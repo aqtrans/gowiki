@@ -57,5 +57,5 @@ deploy-it:
     - go get -d
     - go build -o ./deploy/wiki
     - cp -r templates README.md assets deploy/
-    - rsync -av --delete --exclude auth.db --exclude conf.json --exclude md --exclude uploads --exclude http.log deploy/ aqtrans@localhost:/home/aqtrans/production_apps/wiki/
-#    - ssh aqtrans@localhost /home/aqtrans/production_apps/finish_wiki.sh
+    - rsync -av --delete --exclude auth.db --exclude conf.json --exclude md --exclude uploads --exclude http.log deploy/ golang@localhost:/home/golang/wiki/
+    - ssh golang@localhost sudo systemctl restart golang-wiki
