@@ -43,14 +43,6 @@ build-my-project:
     - go get -d  
     - go build
 
-test-my-project:
-  stage: test
-  script:
-    - export GOPATH=$HOME/gopath
-    - export PATH=$PATH:$GOPATH/bin
-    - cd $GOPATH/src/wiki
-    - go test
-
 deploy-it:
   stage: deploy
   script:
