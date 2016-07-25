@@ -330,6 +330,24 @@ func init() {
 		log.Fatal("git must be installed")
 	}
 
+	//Check for wikiDir directory + git repo existence
+	flag.Parse()
+	_, err = os.Stat(cfg.WikiDir)
+	if err != nil {
+		log.Println(cfg.WikiDir + " does not exist, creating it.")
+		os.Mkdir(cfg.WikiDir, 0755)
+	}
+	_, err = os.Stat(cfg.WikiDir + ".git")
+	if err != nil {
+		log.Println(cfg.WikiDir + " is not a git repo!")
+		if fInit {
+			log.Println("-init flag is given. Cloning " + cfg.GitRepo + "into " + cfg.WikiDir + "...")
+			gitClone(cfg.GitRepo)
+		} else {
+			log.Fatalln("Clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo.")
+		}
+	}	
+
 	// Crawl for new favorites only on startup and save
 	err = filepath.Walk("./md", readFavs)
 	if err != nil {
@@ -343,6 +361,7 @@ func init() {
 		//log.Fatal(err)
 		log.Println("init: unable to crawl for tags")
 	}
+	
 
 }
 
