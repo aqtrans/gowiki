@@ -40,8 +40,8 @@ build-my-project:
   script:
     - export GOPATH=$HOME/gopath
     - export PATH=$PATH:$GOPATH/bin
-    - go get -d
-    - cd $GOPATH/src/wiki    
+    - cd $GOPATH/src/wiki
+    - go get -d  
     - go build
 
 test-my-project:
