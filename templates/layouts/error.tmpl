@@ -1,0 +1,14 @@
+{{ define "title" }}<title>{{.Title}}</title>{{ end }}
+{{ define "content" }}
+<main>
+  <article>
+    <header>Do not panic!</header>
+  </article>
+  
+  <article>
+        {{ .Error }}
+  </article>
+</main>
+{{ end }}
+{{ define "extra_scripts" }}
+{{ end }}
