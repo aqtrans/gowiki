@@ -20,8 +20,6 @@ import (
 	//"github.com/stretchr/testify/assert"
 )
 
-type key int
-
 const UserKey key = 1
 const RoleKey key = 2
 
