@@ -15,7 +15,7 @@
 stages:
   - install-environment
   - build
-  - test
+  #- test
   - deploy  
 
 install-go:
