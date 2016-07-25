@@ -2229,86 +2229,8 @@ func wikiHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 		dir := filepath.Dir(name)
 		wikipage := cfg.WikiDir + r.URL.Path
 
-		// Check if file exists before doing anything else
-		fileExists, feErr := doesPageExist(name)
-		if !fileExists && feErr == nil {
-			w.WriteHeader(404)
-			//title := "Create " + name + "?"
-			p, err := loadPage(r)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			/*gp := &genPage{
-				p,
-				name,
-			}*/
-			wp := &wikiPage{
-				page: p,
-				Wiki: &wiki{
-					Title: name,
-					Filename: name,
-					Frontmatter: &frontmatter{
-						Title: name,
-					},
-				},
-			}
-			err = renderTemplate(w, r.Context(), "wiki_create.tmpl", wp)
-			if err != nil {
-				//panic(err)
-				log.Println("wiki_create error:")
-				log.Println(err)
-			} else {
-				return
-			}
-		}
-		if !fileExists {
-			log.Println(name+" does not exist, but has an error:")
-			log.Println(feErr)
-			return
-		}
-
-		read, err := ioutil.ReadFile(wikipage)
-		if err != nil {
-			log.Println("wikiauth ReadFile error:")
-			log.Println(err)
-		}
-
-		// Read YAML frontmatter into fm
-		// If err, just return, as file should not contain frontmatter
-		var fm frontmatter
-		fm, _, err = readFront(read)
-		if err != nil {
-			log.Println("YAML unmarshal error in: " + name)
-			log.Println(err)
-			return
-		}
-
 		username, role, _ := auth.GetUsername(r.Context())
 
-		if fm.Private || fm.Admin {
-			if username == "" {
-				rurl := r.URL.String()
-				utils.Debugln("AuthMiddleware mitigating: " + r.Host + rurl)
-				//w.Write([]byte("OMG"))
-
-				// Detect if we're in an endless loop, if so, just panic
-				if strings.HasPrefix(rurl, "login?url=/login") {
-					panic("AuthMiddle is in an endless redirect loop")
-					return
-				}
-				auth.SetSession("flash", "Please login to view that page.", w, r)
-				http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
-				return
-			}
-		}
-		if fm.Admin {
-			if role != "Admin" {
-				log.Println(username + " attempting to access restricted URL.")
-				auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
-				http.Redirect(w, r, "/", http.StatusSeeOther)
-				return
-			}
-		}
 
 		// Directory checking
 		// Check dir/index for a private or admin flag, and use this for the entire directory contents
@@ -2364,6 +2286,90 @@ func wikiHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 				}
 			}
 		}
+
+
+		// Check if file exists before doing anything else
+		fileExists, feErr := doesPageExist(name)
+		if !fileExists && feErr == nil {
+			w.WriteHeader(404)
+			//title := "Create " + name + "?"
+			p, err := loadPage(r)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			/*gp := &genPage{
+				p,
+				name,
+			}*/
+			wp := &wikiPage{
+				page: p,
+				Wiki: &wiki{
+					Title: name,
+					Filename: name,
+					Frontmatter: &frontmatter{
+						Title: name,
+					},
+				},
+			}
+			err = renderTemplate(w, r.Context(), "wiki_create.tmpl", wp)
+			if err != nil {
+				//panic(err)
+				log.Println("wiki_create error:")
+				log.Println(err)
+			} else {
+				return
+			}
+		}
+		if !fileExists {
+			log.Println(name+" does not exist, but has an error:")
+			log.Println(feErr)
+			return
+		}
+
+		read, err := ioutil.ReadFile(wikipage)
+		if err != nil {
+			log.Println("wikiauth ReadFile error:")
+			log.Println(err)
+		}
+
+		// Read YAML frontmatter into fm
+		// If err, just return, as file should not contain frontmatter
+		var fm frontmatter
+		fm, _, err = readFront(read)
+		if err != nil {
+			log.Println("YAML unmarshal error in: " + name)
+			log.Println(err)
+			return
+		}
+		if err == nil {
+			if fm.Private || fm.Admin {
+				if username == "" {
+					rurl := r.URL.String()
+					utils.Debugln("AuthMiddleware mitigating: " + r.Host + rurl)
+					//w.Write([]byte("OMG"))
+
+					// Detect if we're in an endless loop, if so, just panic
+					if strings.HasPrefix(rurl, "login?url=/login") {
+						panic("AuthMiddle is in an endless redirect loop")
+					}
+					auth.SetSession("flash", "Please login to view that page.", w, r)
+					http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+					return
+				}
+			}
+			if fm.Admin {
+				if role != "Admin" {
+					log.Println(username + " attempting to access restricted URL.")
+					auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
+					http.Redirect(w, r, "/", http.StatusSeeOther)
+					return
+				}
+			}
+		}
+
+
+
+
 
 		fn(w, r, name)
 	}
