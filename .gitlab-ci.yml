@@ -23,9 +23,10 @@ install-go:
   script:
     - export CURRENT_BUILD_PATH=$(pwd)
     - echo $PATH
+    - echo $CURRENT_BUILD_PATH
     - rm -rf $HOME/gopath
     #- mkdir -p $HOME/gopath # for GOPATH (contains code and external packages)
-    - mkdir -p $CURRENT_BUILD_PATH/gopath/src
+    - mkdir -p $HOME/gopath/src
     - export GOPATH=$HOME/gopath
     - export PATH=$PATH:$GOPATH/bin
     - ln -s $CI_PROJECT_DIR $GOPATH/src/wiki
