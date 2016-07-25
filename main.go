@@ -337,16 +337,6 @@ func init() {
 		log.Println(cfg.WikiDir + " does not exist, creating it.")
 		os.Mkdir(cfg.WikiDir, 0755)
 	}
-	_, err = os.Stat(cfg.WikiDir + ".git")
-	if err != nil {
-		log.Println(cfg.WikiDir + " is not a git repo!")
-		if fInit {
-			log.Println("-init flag is given. Cloning " + cfg.GitRepo + "into " + cfg.WikiDir + "...")
-			gitClone(cfg.GitRepo)
-		} else {
-			log.Fatalln("Clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo.")
-		}
-	}	
 
 	// Crawl for new favorites only on startup and save
 	err = filepath.Walk("./md", readFavs)
@@ -2248,11 +2238,21 @@ func wikiHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 			if err != nil {
 				log.Fatalln(err)
 			}
-			gp := &genPage{
+			/*gp := &genPage{
 				p,
 				name,
+			}*/
+			wp := &wikiPage{
+				page: p,
+				Wiki: &wiki{
+					Title: name,
+					Filename: name,
+					Frontmatter: &frontmatter{
+						Title: name,
+					},
+				},
 			}
-			err = renderTemplate(w, r.Context(), "wiki_create.tmpl", gp)
+			err = renderTemplate(w, r.Context(), "wiki_create.tmpl", wp)
 			if err != nil {
 				//panic(err)
 				log.Println("wiki_create error:")
