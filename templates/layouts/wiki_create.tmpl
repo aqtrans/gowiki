@@ -6,14 +6,14 @@
   </article>
 
   <ul class="tabs">
-    <li><a href="#" class="is-active"><i class="material-icons centericon">visibility</i>View Page</a></li>
-    <li><a href="#"><i class="material-icons centericon">edit</i>Edit Page</a></li>
-    <li><a href="#"><i class="material-icons centericon">history</i>Page History</a></li>
+    <li class="tabs-title is-active"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>Create Page</a></li>
+    <li class="tabs-title"><a href="#"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
+    <li class="tabs-title"><a href="#"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
   </ul>
 
   <article>
       There's no existing page named '{{.Wiki.Filename}}'.<br>
-      Would you like to <a href="/{{.Wiki.Filename}}?a=edit">create a page named '{{.Wiki.Filename}}'</a>?
+      Would you like to <a href="/edit/{{.Wiki.Filename}}">create a page named '{{.Wiki.Filename}}'</a>?
         <footer>
         </footer>
   </article>
