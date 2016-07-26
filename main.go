@@ -238,6 +238,8 @@ var urlSlugifier = slugify.New(slugify.Configuration{
 	},
 })
 
+type wHandler func(http.ResponseWriter, *http.Request, string)
+
 // Sorting functions
 type wikiByDate []*wiki
 
@@ -1112,14 +1114,24 @@ func renderTemplate(w http.ResponseWriter, c context.Context, name string, data 
 	if err != nil {
 		log.Println("renderTemplate error:")
 		log.Println(err)
-		bufpool.Put(buf)
+		bufpool.Put(buf2)
 		return err
 	}
+	buf3 := bufpool.Get()
+	err = tmpl.ExecuteTemplate(buf3, "bottom", data)
+	if err != nil {
+		log.Println("renderTemplate error:")
+		log.Println(err)
+		bufpool.Put(buf3)
+		return err
+	}	
 
 	buf.WriteTo(w)
 	buf2.WriteTo(w)
+	buf3.WriteTo(w)
 	bufpool.Put(buf)
 	bufpool.Put(buf2)
+	bufpool.Put(buf3)
 	return nil
 }
 
@@ -1241,7 +1253,8 @@ func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 			return
 		} else if err.Error() == "No such file" {
 			log.Println("No such file...creating one.")
-			http.Redirect(w, r, "/"+name+"?a=edit", http.StatusTemporaryRedirect)
+			//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
+			createWiki(w, r, name)
 			return
 		} else if err.Error() == "Base is not dir" {
 			log.Println("Cannot create subdir of a file.")
@@ -1499,7 +1512,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 
 	_, fierr := os.Stat(pagetitle)
 	if os.IsNotExist(fierr) {
-		http.Redirect(w, r, pagetitle+"?a=edit", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/edit/"+pagetitle, http.StatusTemporaryRedirect)
 		return
 	} else if fierr != nil {
 		log.Println("newHandler file error:")
@@ -2081,8 +2094,43 @@ func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func createWiki(w http.ResponseWriter, r *http.Request, name string) {
+	username, _, _ := auth.GetUsername(r.Context())
+	if username != "" {
+		w.WriteHeader(404)
+		//title := "Create " + name + "?"
+		p, err := loadPage(r)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		/*gp := &genPage{
+			p,
+			name,
+		}*/
+		wp := &wikiPage{
+			page: p,
+			Wiki: &wiki{
+				Title: name,
+				Filename: name,
+				Frontmatter: &frontmatter{
+					Title: name,
+				},
+			},
+		}
+		err = renderTemplate(w, r.Context(), "wiki_create.tmpl", wp)
+		if err != nil {
+			//panic(err)
+			log.Println("wiki_create error:")
+			log.Println(err)
+		}
+		return
+	}
+
+}
+/*
 func wikiAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		//ctx := r.Context()
 		params := r.Context().Value(httptreemux.ParamsContextKey).(map[string]string)
 		name := params["name"]
@@ -2203,6 +2251,7 @@ func wikiAuth(next http.HandlerFunc) http.HandlerFunc {
 		next(w, r)
 	}
 }
+*/
 
 func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	// A very simple health check.
@@ -2216,7 +2265,7 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 
 // wikiHandler wraps around all wiki page handlers
 // Currently it retrieves the page name from params, checks for file existence, and checks for private pages
-func wikiHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+func wikiHandler(fn wHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Here we will extract the page title from the Request,
 		// and call the provided handler 'fn'
@@ -2227,10 +2276,7 @@ func wikiHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 		slugURL(w, r, params)
 		name := params["name"]
 		dir := filepath.Dir(name)
-		wikipage := cfg.WikiDir + r.URL.Path
-
-		username, role, _ := auth.GetUsername(r.Context())
-
+		wikipage := cfg.WikiDir + name
 
 		// Directory checking
 		// Check dir/index for a private or admin flag, and use this for the entire directory contents
@@ -2256,32 +2302,8 @@ func wikiHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 						log.Println(err)
 						return
 					}
-
-					username, role, _ := auth.GetUsername(r.Context())
-
-					if dfm.Private || dfm.Admin {
-						if username == "" {
-							rurl := r.URL.String()
-							utils.Debugln("AuthMiddleware mitigating due to " + dir + "/index: " + r.Host + rurl)
-							//w.Write([]byte("OMG"))
-
-							// Detect if we're in an endless loop, if so, just panic
-							if strings.HasPrefix(rurl, "login?url=/login") {
-								panic("AuthMiddle is in an endless redirect loop")
-								return
-							}
-							auth.SetSession("flash", "This directory is private. You must login to view any pages within.", w, r)
-							http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
-							return
-						}
-					}
-					if dfm.Admin {
-						if role != "Admin" {
-							log.Println(username + " attempting to access restricted URL.")
-							auth.SetSession("flash", "Sorry, this directory is private.", w, r)
-							http.Redirect(w, r, "/", http.StatusSeeOther)
-							return
-						}
+					if err == nil {
+						fmPrivAdminCheck(dfm, dir+"/index", w, r)
 					}
 				}
 			}
@@ -2291,36 +2313,27 @@ func wikiHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 		// Check if file exists before doing anything else
 		fileExists, feErr := doesPageExist(name)
 		if !fileExists && feErr == nil {
-			w.WriteHeader(404)
-			//title := "Create " + name + "?"
-			p, err := loadPage(r)
-			if err != nil {
-				log.Fatalln(err)
-			}
-			/*gp := &genPage{
-				p,
-				name,
-			}*/
-			wp := &wikiPage{
-				page: p,
-				Wiki: &wiki{
-					Title: name,
-					Filename: name,
-					Frontmatter: &frontmatter{
-						Title: name,
-					},
-				},
-			}
-			err = renderTemplate(w, r.Context(), "wiki_create.tmpl", wp)
-			if err != nil {
-				//panic(err)
-				log.Println("wiki_create error:")
-				log.Println(err)
-			} else {
+			//log.Println(r.URL.RequestURI())
+
+			// If editing or saving, bypass create page
+			if r.URL.RequestURI() == "/edit/"+name {
+				fn(w, r, name)
 				return
 			}
+			if r.URL.RequestURI() == "/save/"+name {
+				fn(w, r, name)
+				return
+			}
+
+			createWiki(w, r, name)
+			return
 		}
-		if !fileExists {
+		/*if !fileExists && feErr == nil && (r.URL.RequestURI() != "/save/"+name) {
+			//log.Println(r.URL.RequestURI())
+			createWiki(w, r, name)
+			return
+		}*/		
+		if !fileExists && feErr != nil {
 			log.Println(name+" does not exist, but has an error:")
 			log.Println(feErr)
 			return
@@ -2342,37 +2355,39 @@ func wikiHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 			return
 		}
 		if err == nil {
-			if fm.Private || fm.Admin {
-				if username == "" {
-					rurl := r.URL.String()
-					utils.Debugln("AuthMiddleware mitigating: " + r.Host + rurl)
-					//w.Write([]byte("OMG"))
-
-					// Detect if we're in an endless loop, if so, just panic
-					if strings.HasPrefix(rurl, "login?url=/login") {
-						panic("AuthMiddle is in an endless redirect loop")
-					}
-					auth.SetSession("flash", "Please login to view that page.", w, r)
-					http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
-					return
-				}
-			}
-			if fm.Admin {
-				if role != "Admin" {
-					log.Println(username + " attempting to access restricted URL.")
-					auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
-					http.Redirect(w, r, "/", http.StatusSeeOther)
-					return
-				}
-			}
+			fmPrivAdminCheck(fm, name, w, r)
 		}
-
-
-
-
 
 		fn(w, r, name)
 	}
+}
+
+func fmPrivAdminCheck(fm frontmatter, name string, w http.ResponseWriter, r *http.Request) {
+		username, role, _ := auth.GetUsername(r.Context())
+
+		if fm.Private || fm.Admin {
+			if username == "" {
+				rurl := r.URL.String()
+				utils.Debugln("AuthMiddleware mitigating: " + r.Host + rurl)
+				//w.Write([]byte("OMG"))
+
+				// Detect if we're in an endless loop, if so, just panic
+				if strings.HasPrefix(rurl, "login?url=/login") {
+					panic("AuthMiddle is in an endless redirect loop")
+				}
+				auth.SetSession("flash", "Please login to view that page.", w, r)
+				http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+				return
+			}
+		}
+		if fm.Admin {
+			if role != "Admin" {
+				log.Println(username + " attempting to access restricted URL.")
+				auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+				return
+			}
+		}
 }
 
 
