@@ -59,7 +59,7 @@ func setup() {
 	rr = httptest.NewRecorder()
 }
 
-// TestNewWikiPage tests if viewing a 
+// TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
 func TestNewWikiPage(t *testing.T) {
     // Create a request to pass to our handler. We don't have any query parameters for now, so we'll
     // pass 'nil' as the third parameter.
@@ -171,10 +171,10 @@ func TestNewHandler(t *testing.T) {
 	//log.Println(rr.Header().Get("Location"))
 
 	// Check the response body is what we expect.
-	expected := `/omg/yeah/what?a=edit`
+	expected := `/edit/omg/yeah/what`
 	if rr.Header().Get("Location") != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Body.String(), expected)
+			rr.Header().Get("Location"), expected)
 	}
 
 }
