@@ -15,8 +15,10 @@ import (
 	//"os"
 	//"jba.io/go/auth"
 	"strings"
-
+	"context"
 	"github.com/gorilla/mux"
+	"jba.io/go/wiki/auth"
+	"github.com/dimfeld/httptreemux"
 	//"github.com/stretchr/testify/assert"
 )
 
@@ -55,6 +57,52 @@ func setup() {
 	*/
 	//The response recorder used to record HTTP responses
 	rr = httptest.NewRecorder()
+}
+
+// TestNewWikiPage tests if viewing a 
+func TestNewWikiPage(t *testing.T) {
+    // Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+    // pass 'nil' as the third parameter.
+    req, err := http.NewRequest("GET", "/zomgwtf", nil)
+    if err != nil {
+        t.Fatal(err)
+    }
+
+	handler := http.HandlerFunc(wikiHandler(editHandler))
+
+    // We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+    rr := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
+		Username: "admin",
+		Role: "Admin",
+		Flash: "",
+	})
+	params := make(map[string]string)
+	params["name"] = "zomgwtf"
+	ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
+	rctx := req.WithContext(ctx)
+
+    // Our handlers satisfy http.Handler, so we can call their ServeHTTP method 
+    // directly and pass in our Request and ResponseRecorder.
+    handler.ServeHTTP(rr, rctx)
+	//t.Log(rr.Body.String())
+	//t.Log(rr.Code)
+	
+    // Check the status code is what we expect.
+    if status := rr.Code; status != http.StatusNotFound {
+        t.Errorf("handler returned wrong status code: got %v want %v",
+            status, http.StatusOK)
+    }
+
+	/*
+    // Check the response body is what we expect.
+    expected := `{"alive": true}`
+    if rr.Body.String() != expected {
+        t.Errorf("handler returned unexpected body: got %v want %v",
+            rr.Body.String(), expected)
+    }
+	*/
 }
 
 func TestHealthCheckHandler(t *testing.T) {
