@@ -40,9 +40,6 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/Machiel/slugify"
-	//"github.com/gorilla/handlers"
-	//"github.com/gorilla/mux"
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
@@ -50,10 +47,6 @@ import (
 	"github.com/thoas/stats"
 	"gopkg.in/yaml.v2"
 	"jba.io/go/wiki/auth"
-	//"goji.io"
-	//"goji.io/pat"
-	//"goji.io/middleware"
-	//"goji.io/internal"
 	"jba.io/go/utils"
 	//"jba.io/go/wiki/static"
 	//"net/url"
@@ -216,28 +209,6 @@ type jsonfresponse struct {
 	Name string `json:"name,omitempty"`
 }
 
-var urlSlugifier = slugify.New(slugify.Configuration{
-	IsValidCharacterChecker: func(c rune) bool {
-		if c >= 'a' && c <= 'z' {
-			return true
-		}
-
-		if c >= '0' && c <= '9' {
-			return true
-		}
-
-		if c == '/' {
-			return true
-		}
-
-		if c == '.' {
-			return true
-		}
-
-		return false
-	},
-})
-
 type wHandler func(http.ResponseWriter, *http.Request, string)
 
 // Sorting functions
@@ -364,31 +335,6 @@ func timeNewContext(c context.Context, t time.Time) context.Context {
 func timeFromContext(c context.Context) (time.Time, bool) {
 	t, ok := c.Value(TimerKey).(time.Time)
 	return t, ok
-}
-
-// Turn the given URL into a slug
-// Redirect to slugURL if it is different from input
-func slugURL(w http.ResponseWriter, r *http.Request, params map[string]string) {
-	name := params["name"]
-	//log.Println(name)
-	//log.Println(r.URL.String())
-
-	// In case a non-slugified filename was created outside, check for existence before we react
-	fullfilename := cfg.WikiDir + name
-	if _, err := os.Stat(fullfilename); err == nil {
-		return
-	}
-
-	slugName := urlSlugifier.Slugify(name)
-	if name != slugName {
-		//log.Println(name + " and " + slugName + " differ.")
-		//log.Println(strings.Replace(r.URL.String(), name, slugName, 1))
-		//log.Println(r.URL.RequestURI())
-		http.Redirect(w, r, "/"+slugName+"?"+r.URL.RawQuery, http.StatusTemporaryRedirect)
-		return
-	}
-	//log.Println(r.URL)
-	//log.Println(r.URL.RawQuery)
 }
 
 func isAdmin(s string) bool {
@@ -867,7 +813,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	// Currently doing a filepath.Walk over cfg.WikiDir to build a list of wiki pages
 	// But since we use git...should we use git to retrieve the list?
 	/*fileList := []string{}
-	_ = filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
+	_ = filepath.Walk(cfg.WikiDir, func(path string, f os.FileInfo, err error) error {
 		// check and skip .git
 		if f.IsDir() && f.Name() == ".git" {
 			return filepath.SkipDir
@@ -875,12 +821,12 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		fileList = append(fileList, path)
 		return nil
 	})*/
-
+	
 	fileList, flerr := gitLs()
 	if flerr != nil {
 		log.Fatalln(err)
 	}
-
+	
 	//w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	//w.WriteHeader(200)
 
@@ -888,7 +834,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	var privatewps []*wiki
 	var adminwps []*wiki
 	for _, file := range fileList {
-
+		
 		file = cfg.WikiDir+file
 		//log.Println(file)
 
@@ -900,6 +846,27 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		// check if its a directory
 		if src.IsDir() {
 			// Just don't do anything..but don't return.
+			/*dirindexpath := cfg.WikiDir + src.Name() + "/" + "index"
+			dirindex, _ := os.Open(dirindexpath)
+			_, dirindexfierr := dirindex.Stat()
+			if !os.IsNotExist(dirindexfierr) {
+				dread, err := ioutil.ReadFile(dirindexpath)
+				if err != nil {
+					log.Println("wikiauth dir index ReadFile error:")
+					log.Println(err)
+				}
+				var dfm frontmatter
+				dfm, _, err = readFront(dread)
+				if err != nil {
+					log.Println("wikiauth readFront error:")
+					log.Println(err)
+				}
+				if err == nil {
+					if dfm.Private || dfm.Admin {
+						
+					}
+				}
+			}*/	
 		} else {
 
 			_, filename := filepath.Split(file)
@@ -1503,11 +1470,6 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 		auth.SetSession("flash", "Failed to create page.", w, r)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
-	}
-
-	slugName := urlSlugifier.Slugify(pagetitle)
-	if slugName != pagetitle {
-		pagetitle = slugName
 	}
 
 	_, fierr := os.Stat(pagetitle)
@@ -2273,7 +2235,6 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		params := r.Context().Value(httptreemux.ParamsContextKey).(map[string]string)
 
 		// Replacing these for now:
-		slugURL(w, r, params)
 		name := params["name"]
 		dir := filepath.Dir(name)
 		wikipage := cfg.WikiDir + name
