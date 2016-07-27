@@ -812,20 +812,53 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Currently doing a filepath.Walk over cfg.WikiDir to build a list of wiki pages
 	// But since we use git...should we use git to retrieve the list?
-	/*fileList := []string{}
+	fileList := []string{}
+	//privFileList := []string{}
 	_ = filepath.Walk(cfg.WikiDir, func(path string, f os.FileInfo, err error) error {
 		// check and skip .git
 		if f.IsDir() && f.Name() == ".git" {
 			return filepath.SkipDir
 		}
+		//log.Println(path)
+		// If not .git, check if there is an index file within
+		// If there is, check the frontmatter for private/admin
+		// If THAT exists, we'll set SkipDir, and run a separate function for these dirs
+		if f.IsDir() && f.Name() != ".git" {
+			dirindexpath := path + "/" + "index"
+			log.Println(dirindexpath)
+			dirindex, _ := os.Open(dirindexpath)
+			_, dirindexfierr := dirindex.Stat()
+			if !os.IsNotExist(dirindexfierr) {
+				dread, err := ioutil.ReadFile(dirindexpath)
+				if err != nil {
+					log.Println("wikiauth dir index ReadFile error:")
+					log.Println(err)
+				}
+
+				// Read YAML frontmatter into fm
+				// If err, just return, as file should not contain frontmatter
+				var dfm frontmatter
+				dfm, _, err = readFront(dread)
+				if err != nil {
+					log.Println("wikiauth readFront error:")
+					log.Println(err)
+					//return nil
+				}
+				if err == nil {
+					if dfm.Private || dfm.Admin {
+						return filepath.SkipDir
+					}
+				}
+			}			
+		}
 		fileList = append(fileList, path)
 		return nil
-	})*/
+	})
 	
-	fileList, flerr := gitLs()
+	/*fileList, flerr := gitLs()
 	if flerr != nil {
 		log.Fatalln(err)
-	}
+	}*/
 	
 	//w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	//w.WriteHeader(200)
@@ -835,7 +868,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	var adminwps []*wiki
 	for _, file := range fileList {
 		
-		file = cfg.WikiDir+file
+		//file = cfg.WikiDir+file
 		//log.Println(file)
 
 		// check if the source dir exist
@@ -872,8 +905,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			_, filename := filepath.Split(file)
 
 			// If this is an absolute path, including the cfg.WikiDir, trim it
-			//withoutWikidir := strings.TrimPrefix(cfg.WikiDir, "./")
-			fileURL := strings.TrimPrefix(file, cfg.WikiDir)
+			withoutWikidir := strings.TrimPrefix(cfg.WikiDir, "./")
+			fileURL := strings.TrimPrefix(file, withoutWikidir)
 
 			var wp *wiki
 			var fm frontmatter
