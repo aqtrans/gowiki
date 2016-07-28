@@ -729,7 +729,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 		log.Println(err)
 	}
 	if content == nil {
-		content = body
+		content = []byte("")
 	}
 	// Render remaining content after frontmatter
 	md := markdownRender(content)
@@ -814,7 +814,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	// But since we use git...should we use git to retrieve the list?
 	fileList := []string{}
 	//privFileList := []string{}
-	_ = filepath.Walk(cfg.WikiDir, func(path string, f os.FileInfo, err error) error {
+
+	/*_ = filepath.Walk(cfg.WikiDir, func(path string, f os.FileInfo, err error) error {
 		// check and skip .git
 		if f.IsDir() && f.Name() == ".git" {
 			return filepath.SkipDir
@@ -823,9 +824,9 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		// If not .git, check if there is an index file within
 		// If there is, check the frontmatter for private/admin
 		// If THAT exists, we'll set SkipDir, and run a separate function for these dirs
-		if f.IsDir() && f.Name() != ".git" {
+		/*if f.IsDir() && f.Name() != ".git" {
 			dirindexpath := path + "/" + "index"
-			log.Println(dirindexpath)
+			//log.Println(dirindexpath)
 			dirindex, _ := os.Open(dirindexpath)
 			_, dirindexfierr := dirindex.Stat()
 			if !os.IsNotExist(dirindexfierr) {
@@ -846,19 +847,22 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				}
 				if err == nil {
 					if dfm.Private || dfm.Admin {
-						return filepath.SkipDir
+						//log.Println(path)
+						//log.Println(filepath.Dir(path))
+						//log.Println(f.Name())
+						//return filepath.SkipDir
 					}
 				}
 			}			
 		}
 		fileList = append(fileList, path)
 		return nil
-	})
+	})*/
 	
-	/*fileList, flerr := gitLs()
+	fileList, flerr := gitLs()
 	if flerr != nil {
 		log.Fatalln(err)
-	}*/
+	}
 	
 	//w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	//w.WriteHeader(200)
@@ -868,7 +872,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	var adminwps []*wiki
 	for _, file := range fileList {
 		
-		//file = cfg.WikiDir+file
+		// If using Git, build the full path:
+		file = cfg.WikiDir+file
 		//log.Println(file)
 
 		// check if the source dir exist
@@ -1002,7 +1007,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func readFront(data []byte) (fm frontmatter, content []byte, err error) {
-	defer utils.TimeTrack(time.Now(), "readFront")
+	//defer utils.TimeTrack(time.Now(), "readFront")
 	r := bytes.NewBuffer(data)
 
 	// eat away starting whitespace
@@ -1382,8 +1387,9 @@ func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 	tags := r.FormValue("tags")
 	var tagsA []string
 	favorite := r.FormValue("favorite")
-	private := r.FormValue("private")
-	admin := r.FormValue("admin")
+	private := r.FormValue("usersOnly")
+	admin := r.FormValue("adminOnly")
+	log.Println(private)
 
 	favoritebool := false
 	if favorite == "on" {
@@ -1730,8 +1736,9 @@ func loadWiki(name string) (*wiki, error) {
 		log.Println("YAML unmarshal error in: " + name)
 		log.Println(err)
 	}
+	log.Println(fm)
 	if content == nil {
-		content = body
+		content = []byte("")
 	}
 
 	// TODO: improve this so private pages are actually protected
