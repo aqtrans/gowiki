@@ -43,6 +43,7 @@ import (
 	"gopkg.in/hlandau/passlib.v1"
 	"context"
 	"jba.io/go/utils"
+	"golang.org/x/crypto/bcrypt"
 	//"github.com/dimfeld/httptreemux"
 	//"github.com/julienschmidt/httprouter"
 )
@@ -108,6 +109,17 @@ func Open(path string) *bolt.DB {
 		log.Println(err)
 	}
 	return Authdb
+}
+
+// HashPassword generates a bcrypt hash of the password using work factor 14.
+func HashPassword(password []byte) ([]byte, error) {
+	return bcrypt.GenerateFromPassword(password, 14)
+}
+
+// CheckPassword securely compares a bcrypt hashed password with its possible
+// plaintext equivalent.  Returns nil on success, or an error on failure.
+func CheckPasswordHash(hash, password []byte) error {
+	return bcrypt.CompareHashAndPassword(hash, password)
 }
 
 func newContextU(c context.Context, u *User) context.Context {
@@ -546,6 +558,11 @@ func boltAuth(username, password string) bool {
 		return nil
 	})
 	hashedUserPass := string(hashedUserPassByte)
+
+	bcryptPass, err := HashPassword([]byte(password))
+
+	log.Println(hashedUserPass)
+	log.Println(string(bcryptPass))
 
 	// newHash and err should be blank/nil on success
 	newHash, err := passlib.Verify(password, hashedUserPass)
