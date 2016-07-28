@@ -127,7 +127,7 @@ type frontmatter struct {
 	Title    string   `yaml:"title"`
 	Tags     []string `yaml:"tags,omitempty"`
 	Favorite bool     `yaml:"favorite,omitempty"`
-	Private  bool     `yaml:"private,omitempty"`
+	Public   bool     `yaml:"private,omitempty"`
 	Admin    bool     `yaml:"admin,omitempty"`
 }
 
@@ -135,7 +135,7 @@ type badFrontmatter struct {
 	Title    string `yaml:"title"`
 	Tags     string `yaml:"tags,omitempty"`
 	Favorite bool   `yaml:"favorite,omitempty"`
-	Private  bool   `yaml:"private,omitempty"`
+	Public   bool   `yaml:"private,omitempty"`
 	Admin    bool   `yaml:"admin,omitempty"`
 }
 
@@ -170,7 +170,7 @@ type rawPage struct {
 type listPage struct {
 	*page
 	Wikis        []*wiki
-	PrivateWikis []*wiki
+	PublicWikis  []*wiki
 	AdminWikis   []*wiki
 }
 
@@ -733,8 +733,8 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 	}
 	// Render remaining content after frontmatter
 	md := markdownRender(content)
-	if fm.Private {
-		log.Println("Private page!")
+	if fm.Public {
+		log.Println("Public page!")
 	}
 	if fm.Title != "" {
 		pagetitle = fm.Title
@@ -868,7 +868,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	//w.WriteHeader(200)
 
 	var wps []*wiki
-	var privatewps []*wiki
+	var publicwps []*wiki
 	var adminwps []*wiki
 	for _, file := range fileList {
 		
@@ -910,8 +910,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			_, filename := filepath.Split(file)
 
 			// If this is an absolute path, including the cfg.WikiDir, trim it
-			withoutWikidir := strings.TrimPrefix(cfg.WikiDir, "./")
-			fileURL := strings.TrimPrefix(file, withoutWikidir)
+			//withoutWikidir := strings.TrimPrefix(cfg.WikiDir, "./")
+			fileURL := strings.TrimPrefix(file, cfg.WikiDir)
 
 			var wp *wiki
 			var fm frontmatter
@@ -934,7 +934,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println("YAML unmarshal error in: " + file)
 				log.Println(err)
 			}
-			if fm.Private {
+			if fm.Public {
 				//log.Println("Private page!")
 			}
 			if fm.Title != "" {
@@ -943,8 +943,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			if fm.Title == "" {
 				fm.Title = fileURL
 			}
-			if fm.Private != true {
-				fm.Private = false
+			if fm.Public != true {
+				fm.Public = false
 			}
 			if fm.Admin != true {
 				fm.Admin = false
@@ -964,7 +964,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				log.Panicln(err)
 			}
 
-			// If pages are Admin or Private, add to a separate wikiPage slice
+			// If pages are Admin or Public, add to a separate wikiPage slice
 			//   So we only check on rendering
 			if fm.Admin {
 				wp = &wiki{
@@ -975,7 +975,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 					ModTime: mtime,
 				}
 				adminwps = append(adminwps, wp)
-			} else if fm.Private {
+			} else if fm.Public {
 				wp = &wiki{
 					Title: pagetitle,
 					Filename: fileURL,
@@ -983,7 +983,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 					CreateTime: ctime,
 					ModTime: mtime,
 				}
-				privatewps = append(privatewps, wp)
+				publicwps = append(publicwps, wp)
 			} else {
 				wp = &wiki{
 					Title: pagetitle,
@@ -999,7 +999,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
-	l := &listPage{p, wps, privatewps, adminwps}
+	l := &listPage{p, wps, publicwps, adminwps}
 	err = renderTemplate(w, r.Context(), "list.tmpl", l)
 	if err != nil {
 		log.Fatalln(err)
@@ -1074,9 +1074,9 @@ func readFront(data []byte) (fm frontmatter, content []byte, err error) {
 		if found {
 			fm.Favorite = favorite
 		}
-		private, found := m["private"].(bool)
+		public, found := m["public"].(bool)
 		if found {
-			fm.Private = private
+			fm.Public = public
 		}
 		admin, found := m["admin"].(bool)
 		if found {
@@ -1387,17 +1387,16 @@ func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 	tags := r.FormValue("tags")
 	var tagsA []string
 	favorite := r.FormValue("favorite")
-	private := r.FormValue("usersOnly")
+	public := r.FormValue("publicPage")
 	admin := r.FormValue("adminOnly")
-	log.Println(private)
 
 	favoritebool := false
 	if favorite == "on" {
 		favoritebool = true
 	}
-	privatebool := false
-	if private == "on" {
-		privatebool = true
+	publicbool := false
+	if public == "on" {
+		publicbool = true
 	}
 	adminbool := false
 	if admin == "on" {
@@ -1455,7 +1454,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 		Title:    title,
 		Tags:     tagsA,
 		Favorite: favoritebool,
-		Private:  privatebool,
+		Public:  publicbool,
 		Admin:    adminbool,
 	}
 
@@ -1736,14 +1735,14 @@ func loadWiki(name string) (*wiki, error) {
 		log.Println("YAML unmarshal error in: " + name)
 		log.Println(err)
 	}
-	log.Println(fm)
+	//log.Println(fm)
 	if content == nil {
 		content = []byte("")
 	}
 
 	// TODO: improve this so private pages are actually protected
-	if fm.Private {
-		log.Println("Private page!")
+	if fm.Public {
+		log.Println("Public page!")
 	}
 	if fm.Title != "" {
 		pagetitle = fm.Title
@@ -2276,12 +2275,14 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 
 		// Replacing these for now:
 		name := params["name"]
-		dir := filepath.Dir(name)
+		//dir := filepath.Dir(name)
 		wikipage := cfg.WikiDir + name
+
+		username, role, _ := auth.GetUsername(r.Context())
 
 		// Directory checking
 		// Check dir/index for a private or admin flag, and use this for the entire directory contents
-		if dir != "." {
+		/*if dir != "." {
 			fi, _ := os.Stat(cfg.WikiDir + dir)
 			if fi.IsDir() {
 				dirindexpath := cfg.WikiDir + dir + "/" + "index"
@@ -2308,7 +2309,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 					}
 				}
 			}
-		}
+		}*/
 
 
 		// Check if file exists before doing anything else
@@ -2356,40 +2357,56 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 			return
 		}
 		if err == nil {
-			fmPrivAdminCheck(fm, name, w, r)
+			if fm.Public {
+				fn(w, r, name)
+				return
+			}
+			if fm.Admin {
+				if username =="" && role != "Admin" {
+					log.Println(username + " attempting to access restricted URL.")
+					auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
+					http.Redirect(w, r, "/", http.StatusSeeOther)
+					return
+				}
+			}			
+		}
+		if err == nil && fm.Public {
+			fn(w, r, name)
+			return
 		}
 
-		fn(w, r, name)
+		if username == "" {
+			rurl := r.URL.String()
+			utils.Debugln("wikiHandler mitigating: " + r.Host + rurl)
+			//w.Write([]byte("OMG"))
+
+			// Detect if we're in an endless loop, if so, just panic
+			if strings.HasPrefix(rurl, "login?url=/login") {
+				panic("AuthMiddle is in an endless redirect loop")
+			}
+			auth.SetSession("flash", "Please login to view that page.", w, r)
+			http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+			return
+		} else {
+			fn(w, r, name)
+			return
+		}
 	}
 }
 
+/*
 func fmPrivAdminCheck(fm frontmatter, name string, w http.ResponseWriter, r *http.Request) {
 		username, role, _ := auth.GetUsername(r.Context())
 
-		if fm.Private || fm.Admin {
-			if username == "" {
-				rurl := r.URL.String()
-				utils.Debugln("AuthMiddleware mitigating: " + r.Host + rurl)
-				//w.Write([]byte("OMG"))
-
-				// Detect if we're in an endless loop, if so, just panic
-				if strings.HasPrefix(rurl, "login?url=/login") {
-					panic("AuthMiddle is in an endless redirect loop")
-				}
-				auth.SetSession("flash", "Please login to view that page.", w, r)
-				http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
-				return
-			}
+		if fm.Public {
+			return
 		}
-		if fm.Admin {
-			if role != "Admin" {
-				log.Println(username + " attempting to access restricted URL.")
-				auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
-				http.Redirect(w, r, "/", http.StatusSeeOther)
-				return
-			}
+
+		if !fm.Public {
+			
 		}
 }
+*/
 
 
 func treeMuxWrapper(next http.Handler) http.HandlerFunc {
@@ -2492,7 +2509,7 @@ func main() {
 	r.GET("/login", loginPageHandler)
 	//r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	r.GET("/logout", auth.LogoutHandler)
-	r.GET("/signup", signupPageHandler)
+	//r.GET("/signup", signupPageHandler)
 	r.GET("/list", listHandler)
 	r.GET("/health", HealthCheckHandler)
 
@@ -2508,7 +2525,7 @@ func main() {
 	a.POST("/login", auth.LoginPostHandler)
 	a.POST("/logout", auth.LogoutHandler)
 	a.GET("/logout", auth.LogoutHandler)
-	a.POST("/signup", auth.SignupPostHandler)
+	//a.POST("/signup", auth.SignupPostHandler)
 
 	//r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
 
