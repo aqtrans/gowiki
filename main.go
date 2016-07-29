@@ -46,7 +46,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/thoas/stats"
 	"gopkg.in/yaml.v2"
-	"jba.io/go/wiki/auth"
+	"jba.io/go/wiki/lib"
 	"jba.io/go/utils"
 	//"jba.io/go/wiki/static"
 	//"net/url"
@@ -229,7 +229,7 @@ func init() {
 
 	// Viper config
 	viper.SetConfigName("conf")
-	viper.AddConfigPath(".")
+	viper.AddConfigPath("./data/")
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
 		//panic(fmt.Errorf("Fatal error config file: %s \n", err))
@@ -256,7 +256,7 @@ func init() {
 	*/
 	viper.SetDefault("Port", "3000")
 	viper.SetDefault("Email", "unused@the.moment")
-	viper.SetDefault("WikiDir", "./md/")
+	viper.SetDefault("WikiDir", "./data/wikidata/")
 	viper.SetDefault("MainTLD", "wiki.jba.io")
 	viper.SetDefault("GitRepo", "git@jba.io:conf/gowiki-data.git")
 	defaultauthstruct := &auth.AuthConf{
@@ -313,14 +313,14 @@ func init() {
 	}
 
 	// Crawl for new favorites only on startup and save
-	err = filepath.Walk("./md", readFavs)
+	err = filepath.Walk(cfg.WikiDir, readFavs)
 	if err != nil {
 		//log.Fatal(err)
 		log.Println("init: unable to crawl for favorites")
 	}
 
 	// Crawl for tags only on startup and save
-	err = filepath.Walk("./md", readTags)
+	err = filepath.Walk(cfg.WikiDir, readTags)
 	if err != nil {
 		//log.Fatal(err)
 		log.Println("init: unable to crawl for tags")
@@ -369,7 +369,6 @@ func jsTags(tagS []string) string {
 // Construct an *exec.Cmd for `git {args}` with a workingDirectory
 func gitCommand(args ...string) *exec.Cmd {
 	c := exec.Command(gitPath, args...)
-	//c.Dir = "./md"
 	c.Dir = cfg.WikiDir
 	return c
 }
@@ -624,7 +623,6 @@ func markdownRender(content []byte) string {
 	md := markdownCommon(content)
 	mds := string(md)
 
-	//log.Println("MDS:"+ mds)
 	return mds
 }
 
@@ -2497,7 +2495,7 @@ func main() {
 	flag.Parse()
 
 	// Open and initialize auth database
-	auth.Open("./auth.db")
+	auth.Open("./data/auth.db")
 	autherr := auth.AuthDbInit()
 	if autherr != nil {
 		log.Fatalln(autherr)
