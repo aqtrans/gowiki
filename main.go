@@ -1736,10 +1736,8 @@ func loadWiki(name string) (*wiki, error) {
 		log.Println("YAML unmarshal error in: " + name)
 		log.Println(err)
 	}
-<<<<<<< HEAD
-=======
+
 	//log.Println(fm)
->>>>>>> 688c4800a8f08c621183150f49863743338cebff
 	if content == nil {
 		content = []byte("")
 	}
