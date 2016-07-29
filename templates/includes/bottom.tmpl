@@ -1,12 +1,12 @@
 {{ define "bottom" }}
-  {{ template "extra_scripts" . }}
-<script src="/assets/js/jquery.min.js"></script>
-<!-- this will include every plugin and utility required by Foundation -->
-<script src="/assets/js/foundation.min.js"></script>
-<script type="text/javascript" charset="utf-8">
-$(document).foundation();
-</script>
-</body>
-</html>
+  {{ block "extra_scripts" . }}
+  <script src="/assets/js/jquery.min.js"></script>
+  <!-- this will include every plugin and utility required by Foundation -->
+  <script src="/assets/js/foundation.min.js"></script>
+  <script type="text/javascript" charset="utf-8">
+  $(document).foundation();
+  </script>
+  </body>
+  </html>
+  {{ end }}
 {{ end }}
-{{ define "extra_scripts" }}{{ end }}
