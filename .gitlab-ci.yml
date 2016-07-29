@@ -41,6 +41,8 @@ build-my-project:
     - export PATH=$PATH:$GOPATH/bin
     - cd $GOPATH/src/wiki
     - go get -d  
+    - go get github.com/GeertJohan/go.rice/rice
+    - rice embed-go
     - go build
 
 deploy-it:
@@ -51,6 +53,8 @@ deploy-it:
     - cd $GOPATH/src/wiki
     - mkdir deploy
     - go get -d
+    - go get github.com/GeertJohan/go.rice/rice
+    - rice embed-go
     - go build -o ./deploy/wiki
     - cp -r templates README.md deploy/
     - rsync -av --delete --exclude data/ --exclude http.log deploy/ golang@localhost:/home/golang/wiki/
