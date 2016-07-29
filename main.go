@@ -52,6 +52,7 @@ import (
 	//"net/url"
 	"context"
 	"github.com/dimfeld/httptreemux"
+	"github.com/GeertJohan/go.rice"
 )
 
 type key int
@@ -1736,7 +1737,6 @@ func loadWiki(name string) (*wiki, error) {
 		log.Println("YAML unmarshal error in: " + name)
 		log.Println(err)
 	}
-	log.Println(fm)
 	if content == nil {
 		content = []byte("")
 	}
@@ -2417,6 +2417,62 @@ func timer(next http.Handler) http.Handler {
 	})
 }
 
+// This serves a file of the requested name from the "assets" rice box
+func riceServeStatic(w http.ResponseWriter, r *http.Request, file string) {
+	assetBox := rice.MustFindBox("assets")
+	f, err := assetBox.HTTPBox().Open(file)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	content := io.ReadSeeker(f)
+	http.ServeContent(w, r, file, time.Now(), content)
+	return
+}
+
+func static(w http.ResponseWriter, r *http.Request) {
+	staticFile := r.URL.Path[len("/assets/"):]
+
+	defer utils.TimeTrack(time.Now(), "StaticHandler "+staticFile)
+
+	if len(staticFile) != 0 {
+		/*
+		   f, err := http.Dir("assets/").Open(staticFile)
+		   if err == nil {
+		       content := io.ReadSeeker(f)
+		       http.ServeContent(w, r, staticFile, time.Now(), content)
+		       return
+		   }*/
+		riceServeStatic(w, r, staticFile)
+		return
+	}
+	http.NotFound(w, r)
+}
+
+func FaviconHandler(w http.ResponseWriter, r *http.Request) {
+	//log.Println(r.URL.Path)
+	if r.URL.Path == "/favicon.ico" {
+		riceServeStatic(w, r, "/favicon.ico")
+		return
+	} else if r.URL.Path == "/favicon.png" {
+		riceServeStatic(w, r, "/favicon.png")
+		return
+	} else {
+		http.NotFound(w, r)
+		return
+	}
+
+}
+
+func RobotsHandler(w http.ResponseWriter, r *http.Request) {
+	//log.Println(r.URL.Path)
+	if r.URL.Path == "/robots.txt" {
+		riceServeStatic(w, r, "/robots.txt")
+		return
+	}
+	http.NotFound(w, r)
+}
+
 func main() {
 
 	flag.Parse()
@@ -2531,8 +2587,15 @@ func main() {
 	r.POST(`/save/*name`, auth.AuthMiddle(wikiHandler(saveHandler)))
 	r.GET(`/history/*name`, wikiHandler(historyHandler))
 	r.GET(`/*name`, wikiHandler(viewHandler))
-
-	
+		
+	//assetBox := rice.MustFindBox("assets")
+	//assetFileServer := http.StripPrefix("/assets/", http.FileServer(assetBox.HTTPBox()))
+	/*
+	r.GET("/assets/*", static)
+	r.GET("/robots.txt", RobotsHandler)
+	r.GET("/favicon.ico", FaviconHandler)
+	r.GET("/favicon.png", FaviconHandler)
+	*/
 
 	// With dirs:
 	/*
@@ -2542,10 +2605,10 @@ func main() {
 	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(viewHandler))).Methods("GET")
 	*/
 
-	http.HandleFunc("/robots.txt", utils.RobotsHandler)
-	http.HandleFunc("/favicon.ico", utils.FaviconHandler)
-	http.HandleFunc("/favicon.png", utils.FaviconHandler)
-	http.HandleFunc("/assets/", utils.StaticHandler)
+	http.HandleFunc("/robots.txt", RobotsHandler)
+	http.HandleFunc("/favicon.ico", FaviconHandler)
+	http.HandleFunc("/favicon.png", FaviconHandler)
+	http.HandleFunc("/assets/", static)
 	http.Handle("/", s.Then(r))
 
 	log.Println("Listening on port " + cfg.Port)
