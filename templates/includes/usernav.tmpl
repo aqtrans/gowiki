@@ -1,6 +1,6 @@
 {{ define "usernav" }}
 <div class="callout small primary">
-<h5><i class="fa fa-user" aria-hidden="true"></i><span>User: {{ if .UN }}{{ .page.UN }}|{{ .page.Role }}{{ end }}</span></h5>
+<h5><i class="fa fa-user" aria-hidden="true"></i>{{ if .UN }}<span>User: {{ .page.UN }}|{{ .page.Role }}{{ end }}</span></h5>
 <hr>
 <ul>
 {{ if .UN }}
@@ -10,7 +10,6 @@
     {{ end }}    
 {{ else }}
 <li><a href="/login">Login</a></li>
-<li><a href="/signup">Sign Up</a></li>
 {{ end }}
 </ul>
 </div>
