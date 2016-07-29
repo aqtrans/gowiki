@@ -31,18 +31,18 @@
             </label>
             </input>
         {{ end }}
-        {{ if .Wiki.Frontmatter.Private }}
+        {{ if .Wiki.Frontmatter.Public }}
             <div class="switch tiny">
-            Users Only:<input class="switch-input" id="usersOnly" type="checkbox" name="usersOnly" checked>
-            <label class="switch-paddle" for="usersOnly">
-                <span class="show-for-sr">Users Only</span>
+            Public Page:<input class="switch-input" id="publicPage" type="checkbox" name="publicPage" checked>
+            <label class="switch-paddle" for="publicPage">
+                <span class="show-for-sr">Public Page</span>
             </label>
             </div>
         {{ else }}
             <div class="switch tiny">
-            Users Only:<input class="switch-input" id="usersOnly" type="checkbox" name="usersOnly">
-            <label class="switch-paddle" for="usersOnly">
-                <span class="show-for-sr">Users Only</span>
+            Public Page:<input class="switch-input" id="publicPage" type="checkbox" name="publicPage">
+            <label class="switch-paddle" for="publicPage">
+                <span class="show-for-sr">Public Page</span>
             </label>
             </div>
         {{ end }}
