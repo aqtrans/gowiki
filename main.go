@@ -111,7 +111,6 @@ var (
 	//sessID   string
 	tagMap  map[string][]string
 	tagsBuf bytes.Buffer
-	startTime time.Time
 )
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -182,8 +181,9 @@ type genPage struct {
 
 type gitPage struct {
 	*page
-	Title    string
-	GitFiles string
+	Title     string
+	GitFiles  string
+	GitRemote string
 }
 
 type historyPage struct {
@@ -442,10 +442,20 @@ func gitCommitEmpty() error {
 }
 
 // Execute `git push` in workingDirectory
-func gitPush(msg string) error {
-	o, err := gitCommand("push").CombinedOutput()
+func gitPush() error {
+	o, err := gitCommand("push", "-u", "origin", "master").CombinedOutput()
 	if err != nil {
 		return errors.New(fmt.Sprintf("error during `git push`: %s\n%s", err.Error(), string(o)))
+	}
+
+	return nil
+}
+
+// Execute `git push` in workingDirectory
+func gitPull() error {
+	o, err := gitCommand("pull").CombinedOutput()
+	if err != nil {
+		return errors.New(fmt.Sprintf("error during `git pull`: %s\n%s", err.Error(), string(o)))
 	}
 
 	return nil
@@ -1227,14 +1237,12 @@ func doesPageExist(name string) (bool, error) {
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "indexHandler")
-	startTime = time.Now()
 
 	http.Redirect(w, r, "/index", http.StatusSeeOther)
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 	defer utils.TimeTrack(time.Now(), "viewHandler")
-	startTime = time.Now()
 
 	// In case I want to switch to queries some time
 	query := r.URL.RawQuery
@@ -1265,9 +1273,9 @@ func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 			http.Error(w, "Cannot create subdir of a file.", 500)
 			return
 			// If gitGetCtime returns NOT_IN_GIT, we handle it here
-		} else if err.Error() == "NOT_IN_GIT" {
-			http.Redirect(w, r, "/gitadd?file="+name, http.StatusSeeOther)
-			return
+		//} else if err.Error() == "NOT_IN_GIT" {
+		//	http.Redirect(w, r, "/gitadd?file="+name, http.StatusSeeOther)
+		//	return
 		} else if err.Error() == "NO_DIR_INDEX" {
 			log.Println("No directory index. Does this even need to be an error?")
 			http.Error(w, "Cannot create subdir of a file.", 500)
@@ -1343,7 +1351,6 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 
 func editHandler(w http.ResponseWriter, r *http.Request, name string) {
 	defer utils.TimeTrack(time.Now(), "editHandler")
-	startTime = time.Now()
 
 	p, err := loadWikiPage(r, name)
 
@@ -1374,7 +1381,6 @@ func editHandler(w http.ResponseWriter, r *http.Request, name string) {
 
 func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 	defer utils.TimeTrack(time.Now(), "saveHandler")
-	startTime = time.Now()
 
 	r.ParseForm()
 	//txt := r.Body
@@ -1491,7 +1497,6 @@ func setFlash(msg string, w http.ResponseWriter, r *http.Request) {
 
 func newHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "newHandler")
-	startTime = time.Now()
 
 	pagetitle := r.FormValue("newwiki")
 
@@ -1846,7 +1851,6 @@ func (wiki *wiki) save() error {
 
 func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "loginPageHandler")
-	startTime = time.Now()
 
 	title := "login"
 	p, err := loadPage(r)
@@ -1867,7 +1871,6 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 
 func signupPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "signupPageHandler")
-	startTime = time.Now()
 
 	title := "signup"
 	p, err := loadPage(r)
@@ -1888,7 +1891,6 @@ func signupPageHandler(w http.ResponseWriter, r *http.Request) {
 
 func adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "adminUsersHandler")
-	startTime = time.Now()
 
 	title := "admin-users"
 	p, err := loadPage(r)
@@ -1923,7 +1925,6 @@ func adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "adminUserHandler")
-	startTime = time.Now()
 
 	title := "admin-user"
 	p, err := loadPage(r)
@@ -1971,7 +1972,6 @@ func adminUserPostHandler(w http.ResponseWriter, r *http.Request) {
 
 func adminMainHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "adminMainHandler")
-	startTime = time.Now()
 
 	title := "admin-main"
 	p, err := loadPage(r)
@@ -1992,7 +1992,6 @@ func adminMainHandler(w http.ResponseWriter, r *http.Request) {
 
 func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "gitCheckinHandler")
-	startTime = time.Now()
 
 	title := "Git Checkin"
 	p, err := loadPage(r)
@@ -2016,6 +2015,7 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 		string(owithnewlines),
+		cfg.GitRepo,
 	}
 	err = renderTemplate(w, r.Context(), "git_checkin.tmpl", gp)
 	if err != nil {
@@ -2056,6 +2056,62 @@ func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func gitPushPostHandler(w http.ResponseWriter, r *http.Request) {
+	defer utils.TimeTrack(time.Now(), "gitPushPostHandler")
+
+	err := gitPush()
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
+
+	http.Redirect(w, r, "/admin/git", http.StatusSeeOther)
+
+}
+
+func gitPullPostHandler(w http.ResponseWriter, r *http.Request) {
+	defer utils.TimeTrack(time.Now(), "gitPullPostHandler")
+
+	err := gitPull()
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
+
+	http.Redirect(w, r, "/admin/git", http.StatusSeeOther)
+
+}
+
+func adminGitHandler(w http.ResponseWriter, r *http.Request) {
+	defer utils.TimeTrack(time.Now(), "adminGitHandler")
+
+	title := "Git Management"
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	var owithnewlines []byte
+
+	o, err := gitIsClean()
+	if err != nil && err.Error() != "directory is dirty" {
+		log.Fatalln(err)
+	}
+	owithnewlines = bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
+
+	gp := &gitPage{
+		p,
+		title,
+		string(owithnewlines),
+		cfg.GitRepo,
+	}
+	err = renderTemplate(w, r.Context(), "admin_git.tmpl", gp)
+	if err != nil {
+		log.Println("render admin_git error:")
+		log.Println(err)
+		return
+	}
+}
+
 // Middleware to check for "dirty" git repo
 func checkWikiGit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -2073,7 +2129,6 @@ func checkWikiGit(next http.Handler) http.Handler {
 
 func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "tagMapHandler")
-	startTime = time.Now()
 	
 	a := &tagMap
 
@@ -2571,6 +2626,10 @@ func main() {
 
 	admin := r.NewGroup("/admin")
 	admin.GET("/", auth.AuthAdminMiddle(adminMainHandler))
+	admin.GET("/git", auth.AuthAdminMiddle(adminGitHandler))
+	admin.POST("/git/push", auth.AuthAdminMiddle(gitPushPostHandler))
+	admin.POST("/git/checkin", auth.AuthAdminMiddle(gitCheckinPostHandler))
+	admin.POST("/git/pull", auth.AuthAdminMiddle(gitPullPostHandler))
 	admin.GET("/users", auth.AuthAdminMiddle(adminUsersHandler))
 	admin.POST("/users", auth.AuthAdminMiddle(auth.UserSignupPostHandler))
 	admin.POST("/user", auth.AuthAdminMiddle(adminUserPostHandler))
