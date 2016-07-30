@@ -2677,6 +2677,8 @@ func main() {
 	admin.POST("/user", auth.AuthAdminMiddle(adminUserPostHandler))
 	admin.GET("/user/:username", auth.AuthAdminMiddle(adminUserHandler))
 	admin.POST("/user/:username", auth.AuthAdminMiddle(adminUserHandler))
+	admin.POST("/user/password_change", auth.AuthAdminMiddle(auth.AdminUserPassChangePostHandler))
+	admin.POST("/user/delete", auth.AuthAdminMiddle(auth.AdminUserDeletePostHandler))
 
 	a := r.NewGroup("/auth")
 	a.POST("/login", auth.LoginPostHandler)
