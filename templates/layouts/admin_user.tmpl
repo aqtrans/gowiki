@@ -8,7 +8,7 @@
     <li class="tabs-title"><a href="/admin/"><i class="fa fa-lock" aria-hidden="true"></i>Main</a></li>
     <li class="tabs-title is-active"><a href="#"><i class="fa fa-users" aria-hidden="true"></i>Manage Users</a></li>
     <li class="tabs-title"><a href="/admin/list"><i class="fa fa-th-list" aria-hidden="true"></i>Manage Wiki Pages</a></li>
-    <li class="tabs-title"><a href="/admin/git"><i class="fa fa-th-list" aria-hidden="true"></i>Manage Wiki Git</a></li>
+    <li class="tabs-title"><a href="/admin/git"><i class="fa fa-git" aria-hidden="true"></i>Manage Wiki Git</a></li>
   </ul>
   <article>  
     
@@ -31,7 +31,7 @@
     </header>
     <section class="content">
     <div>
-        <form method="post" action="/admin/password_change" id="pwchange">
+        <form method="post" action="/admin/user/password_change" id="pwchange">
         User:<input type="text" id="username" name="username" placeholder="Username" value="{{.User}}" size="12">
         Password:<input type="password" id="password" name="password" placeholder="Password" size="12">
         <input type="hidden" name="token" value="{{.Token}}">
@@ -49,7 +49,7 @@
     </header>
     <section class="content">
     <div>
-        <form method="post" action="/admin/user_delete" id="userdelete">
+        <form method="post" action="/admin/user/delete" id="userdelete">
         User:<input type="text" id="username" name="username" placeholder="Username" value="{{.User}}" size="12">
         <input type="hidden" name="token" value="{{.Token}}">
         <button type="submit" class="button">Delete user</button>
