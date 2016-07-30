@@ -9,6 +9,12 @@
 			"revisionTime": "2016-03-08T18:19:12-08:00"
 		},
 		{
+			"checksumSHA1": "3eH5XenKCK28s5fpbAeQoPGT3D0=",
+			"path": "github.com/GeertJohan/go.rice",
+			"revision": "0f3f5fde32fd1f755632a3d31ba2ec6d449e387b",
+			"revisionTime": "2016-01-23T22:41:58+01:00"
+		},
+		{
 			"path": "github.com/Machiel/slugify",
 			"revision": "9c8f186ad6ea352ad2709ad0ec08f2ecc8a1b424",
 			"revisionTime": "2015-06-22T10:52:03+02:00"
