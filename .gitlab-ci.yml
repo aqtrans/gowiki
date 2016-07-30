@@ -56,6 +56,6 @@ deploy-it:
     - go get github.com/GeertJohan/go.rice/rice
     - rice embed-go
     - go build -o ./deploy/wiki
-    - cp -r templates README.md deploy/
+    - cp -r README.md deploy/
     - rsync -av --delete --exclude data/ --exclude http.log deploy/ golang@localhost:/home/golang/wiki/
     #- ssh golang@localhost sudo systemctl restart golang-wiki
