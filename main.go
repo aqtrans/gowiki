@@ -127,7 +127,7 @@ type frontmatter struct {
 	Title    string   `yaml:"title"`
 	Tags     []string `yaml:"tags,omitempty"`
 	Favorite bool     `yaml:"favorite,omitempty"`
-	Public   bool     `yaml:"private,omitempty"`
+	Public   bool     `yaml:"public,omitempty"`
 	Admin    bool     `yaml:"admin,omitempty"`
 }
 
@@ -135,7 +135,7 @@ type badFrontmatter struct {
 	Title    string `yaml:"title"`
 	Tags     string `yaml:"tags,omitempty"`
 	Favorite bool   `yaml:"favorite,omitempty"`
-	Public   bool   `yaml:"private,omitempty"`
+	Public   bool   `yaml:"public,omitempty"`
 	Admin    bool   `yaml:"admin,omitempty"`
 }
 
