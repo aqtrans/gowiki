@@ -279,6 +279,7 @@ func init() {
 	if templates == nil {
 		templates = make(map[string]*template.Template)
 	}
+	/*
 	templatesDir := "./templates/"
 	layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
 	if err != nil {
@@ -297,6 +298,7 @@ func init() {
 		utils.Debugln(files)
 		templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFiles(files...))
 	}
+	*/
 
 	//var err error
 	gitPath, err = exec.LookPath("git")
@@ -2557,6 +2559,46 @@ func main() {
 	}
 	defer auth.Authdb.Close()
 
+	templateBox, err := rice.FindBox("templates")
+	includes, err := templateBox.Open("includes")
+	includeDir, err := includes.Readdir(-1)
+	layouts, err := templateBox.Open("layouts")
+	layoutsDir, err := layouts.Readdir(-1)
+	var boxT []string
+	var templateIBuff bytes.Buffer
+	for _, v := range includeDir {
+		boxT = append(boxT, "includes/"+v.Name())
+		//log.Println(boxT)
+		iString, _ := templateBox.String("includes/"+v.Name())
+		templateIBuff.WriteString(iString)
+	}	
+	//log.Println(templateBuff.String())
+	//iT, _ := templateBox.String("includes/base.tmpl")
+	//log.Println(iT)
+	/*
+	for _, v := range layoutsDir {
+		boxT = append(boxT, "layouts/"+v.Name())
+		//log.Println(boxT)
+		lString, _ := templateBox.String("layouts/"+v.Name())
+		templateBuff.WriteString(lString)
+	}
+	*/
+	
+	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isAdmin": isAdmin, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
+
+	//templatesB := make(map[string]*template.Template)
+
+	for _, layout := range layoutsDir {
+		boxT = append(boxT, "layouts/"+layout.Name())
+		//DEBUG TEMPLATE LOADING
+		//utils.Debugln(files)
+		lString, _ := templateBox.String("layouts/"+layout.Name())
+		fstring := templateIBuff.String() + lString
+		//log.Println(fstring)
+		templates[layout.Name()] = template.Must(template.New(layout.Name()).Funcs(funcMap).Parse(fstring))
+	}
+	//log.Println(templates["wiki_view.tmpl"].DefinedTemplates())
+
 	/*
 		//Load conf.json
 		conf, _ := os.Open("conf.json")
@@ -2577,7 +2619,7 @@ func main() {
 
 
 	//Check for wikiDir directory + git repo existence
-	_, err := os.Stat(cfg.WikiDir)
+	_, err = os.Stat(cfg.WikiDir)
 	if err != nil {
 		log.Println(cfg.WikiDir + " does not exist, creating it.")
 		os.Mkdir(cfg.WikiDir, 0755)
