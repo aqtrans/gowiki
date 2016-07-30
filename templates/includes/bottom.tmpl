@@ -1,5 +1,5 @@
 {{ define "bottom" }}
-  {{ block "extra_scripts" . }}
+  {{ template "extra_scripts" . }}
   <script src="/assets/js/jquery.min.js"></script>
   <!-- this will include every plugin and utility required by Foundation -->
   <script src="/assets/js/foundation.min.js"></script>
@@ -8,5 +8,5 @@
   </script>
   </body>
   </html>
-  {{ end }}
 {{ end }}
+{{ define "extra_scripts" }}{{ end }}
