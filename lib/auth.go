@@ -591,18 +591,14 @@ func doesUserExist(username string) bool {
 		v := b.Get([]byte(username))
 		if v == nil {
 			err := errors.New("User does not exist")
-			log.Println(err)
 			return err
 		}
 		return nil
 	})
-	if err.Error() == "User does not exist" {
-		return false
-	} else if err == nil {
+	if err == nil {
 		return true
-	} else {
-		return false
-	}
+	} 
+	return false
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
