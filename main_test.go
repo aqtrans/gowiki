@@ -8,6 +8,7 @@ import (
 	//"github.com/drewolson/testflight"
 	"net/http"
 	"net/http/httptest"
+	//"html/template"
 	//"github.com/gorilla/context"
 	//"fmt"
 	//"log"
@@ -20,6 +21,7 @@ import (
 	"jba.io/go/wiki/lib/auth"
 	"github.com/dimfeld/httptreemux"
 	"jba.io/go/utils"
+	//"github.com/GeertJohan/go.rice"
 	//"gopkg.in/gavv/httpexpect.v1"
 	//"github.com/stretchr/testify/assert"
 )
@@ -35,6 +37,21 @@ var (
 	//req       *http.Request
 	//rr        *httptest.ResponseRecorder
 )
+
+func TestAuthInit(t *testing.T) {
+	err := authInit()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer auth.Authdb.Close()
+}
+
+func TestRiceInit(t *testing.T) {
+	err := riceInit()
+	if err != nil {
+		t.Fatal(err)
+	}	
+}
 
 // TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
 func TestNewWikiPage(t *testing.T) {
@@ -53,8 +70,7 @@ func TestNewWikiPage(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
 		Username: "admin",
-		Role: "Admin",
-		Flash: "",
+		IsAdmin: true,
 	})
 	params := make(map[string]string)
 	params["name"] = randPage
@@ -176,8 +192,7 @@ func TestIndexPage(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
 		Username: "admin",
-		Role: "Admin",
-		Flash: "",
+		IsAdmin: true,
 	})
 	params := make(map[string]string)
 	params["name"] = "index"
@@ -223,8 +238,7 @@ func TestIndexHistoryPage(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
 		Username: "admin",
-		Role: "Admin",
-		Flash: "",
+		IsAdmin: true,
 	})
 	params := make(map[string]string)
 	params["name"] = "index"
@@ -270,8 +284,7 @@ func TestIndexEditPage(t *testing.T) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
 		Username: "admin",
-		Role: "Admin",
-		Flash: "",
+		IsAdmin: true,
 	})
 	params := make(map[string]string)
 	params["name"] = "index"
