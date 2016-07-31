@@ -47,7 +47,7 @@ build-my-project:
     - export GOROOT=$HOME/golang/go
     - export GOPATH=$HOME/gopath
     - export PATH=$GOROOT/bin:$PATH 
-    - export PATH=$GOROOT/bin:$PATH    
+    - export PATH=$GOPATH/bin:$PATH  
     - cd $GOPATH/src/wiki
     - go get -d  
     - go get github.com/GeertJohan/go.rice/rice
@@ -60,7 +60,7 @@ test-my-project:
     - export GOROOT=$HOME/golang/go
     - export GOPATH=$HOME/gopath
     - export PATH=$GOROOT/bin:$PATH 
-    - export PATH=$GOROOT/bin:$PATH    
+    - export PATH=$GOPATH/bin:$PATH
     - cd $GOPATH/src/wiki  
     - go test
 
@@ -70,7 +70,7 @@ deploy-it:
     - export GOROOT=$HOME/golang/go
     - export GOPATH=$HOME/gopath
     - export PATH=$GOROOT/bin:$PATH 
-    - export PATH=$GOROOT/bin:$PATH    
+    - export PATH=$GOPATH/bin:$PATH  
     - cd $GOPATH/src/wiki
     - mkdir deploy
     - go get -d
