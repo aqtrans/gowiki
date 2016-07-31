@@ -93,7 +93,6 @@ type configuration struct {
 	Port     string
 	Email    string
 	WikiDir  string
-	MainTLD  string
 	GitRepo  string
 	AuthConf auth.AuthConf
 }
@@ -232,12 +231,9 @@ func init() {
 	viper.SetDefault("Port", "3000")
 	viper.SetDefault("Email", "unused@the.moment")
 	viper.SetDefault("WikiDir", "./data/wikidata/")
-	viper.SetDefault("MainTLD", "wiki.jba.io")
-	viper.SetDefault("GitRepo", "git@jba.io:conf/gowiki-data.git")
+	viper.SetDefault("GitRepo", "git@example.com:user/wikidata.git")
 	defaultauthstruct := &auth.AuthConf{
-		AdminUser: "aqtrans",
-		LdapEnabled: false,
-		LdapConf:    auth.LdapConf{},
+		AdminUser: "admin",
 	}
 	viper.SetDefault("AuthConf", &defaultauthstruct)
 
