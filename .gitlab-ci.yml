@@ -15,6 +15,7 @@
 stages:
   - install-environment
   - build
+  - test
   - deploy  
 
 install-go:
@@ -24,9 +25,15 @@ install-go:
     - echo $PATH
     - echo $CURRENT_BUILD_PATH
     - rm -rf $HOME/gopath
+    - rm -rf $HOME/golang    
     #- mkdir -p $HOME/gopath # for GOPATH (contains code and external packages)
     - mkdir -p $HOME/gopath/src
+    - mkdir -p $HOME/golang
+    - curl https://storage.googleapis.com/golang/go1.7rc3.linux-amd64.tar.gz 2>/dev/null > go1.7rc3.linux-amd64.tar.gz
+    - tar -C $HOME/golang -xzf go1.7rc3.linux-amd64.tar.gz
+    - export GOROOT=$HOME/golang/go
     - export GOPATH=$HOME/gopath
+    - export PATH=$PATH:$GOROOT/bin
     - export PATH=$PATH:$GOPATH/bin
     - ln -s $CI_PROJECT_DIR $GOPATH/src/wiki
     - go version
@@ -37,19 +44,33 @@ install-go:
 build-my-project:
   stage: build
   script:
+    - export GOROOT=$HOME/golang/go
     - export GOPATH=$HOME/gopath
-    - export PATH=$PATH:$GOPATH/bin
+    - export PATH=$GOROOT/bin:$PATH 
+    - export PATH=$GOROOT/bin:$PATH    
     - cd $GOPATH/src/wiki
     - go get -d  
     - go get github.com/GeertJohan/go.rice/rice
     - rice embed-go
     - go build
 
+test-my-project:
+  stage: test
+  script:
+    - export GOROOT=$HOME/golang/go
+    - export GOPATH=$HOME/gopath
+    - export PATH=$GOROOT/bin:$PATH 
+    - export PATH=$GOROOT/bin:$PATH    
+    - cd $GOPATH/src/wiki  
+    - go test
+
 deploy-it:
   stage: deploy
   script:
+    - export GOROOT=$HOME/golang/go
     - export GOPATH=$HOME/gopath
-    - export PATH=$PATH:$GOPATH/bin:/usr/local/go/bin
+    - export PATH=$GOROOT/bin:$PATH 
+    - export PATH=$GOROOT/bin:$PATH    
     - cd $GOPATH/src/wiki
     - mkdir deploy
     - go get -d
