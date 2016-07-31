@@ -17,7 +17,7 @@ import (
 	"strings"
 	"context"
 	//"github.com/gorilla/mux"
-	"jba.io/go/wiki/auth"
+	"jba.io/go/wiki/lib/auth"
 	"github.com/dimfeld/httptreemux"
 	"jba.io/go/utils"
 	//"gopkg.in/gavv/httpexpect.v1"
