@@ -46,7 +46,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/thoas/stats"
 	"gopkg.in/yaml.v2"
-	"jba.io/go/wiki/lib"
+	"jba.io/go/wiki/lib/auth"
 	"jba.io/go/utils"
 	//"jba.io/go/wiki/static"
 	//"net/url"
@@ -2551,8 +2551,6 @@ func RobotsHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 
 	flag.Parse()
-
-	
 
 	// Open and initialize auth database
 	auth.Open("./data/auth.db")
