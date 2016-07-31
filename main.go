@@ -2548,23 +2548,27 @@ func RobotsHandler(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
-func main() {
-
-	flag.Parse()
-
-	// Open and initialize auth database
-	auth.Open("./data/auth.db")
-	autherr := auth.AuthDbInit()
-	if autherr != nil {
-		log.Fatalln(autherr)
-	}
-	defer auth.Authdb.Close()
-
+func riceInit() error {
 	templateBox, err := rice.FindBox("templates")
+	if err != nil {
+		return err
+	}
 	includes, err := templateBox.Open("includes")
+	if err != nil {
+		return err
+	}	
 	includeDir, err := includes.Readdir(-1)
+	if err != nil {
+		return err
+	}	
 	layouts, err := templateBox.Open("layouts")
+	if err != nil {
+		return err
+	}	
 	layoutsDir, err := layouts.Readdir(-1)
+	if err != nil {
+		return err
+	}	
 	var boxT []string
 	var templateIBuff bytes.Buffer
 	for _, v := range includeDir {
@@ -2572,52 +2576,50 @@ func main() {
 		//log.Println(boxT)
 		iString, _ := templateBox.String("includes/"+v.Name())
 		templateIBuff.WriteString(iString)
-	}	
-	//log.Println(templateBuff.String())
-	//iT, _ := templateBox.String("includes/base.tmpl")
-	//log.Println(iT)
-	/*
-	for _, v := range layoutsDir {
-		boxT = append(boxT, "layouts/"+v.Name())
-		//log.Println(boxT)
-		lString, _ := templateBox.String("layouts/"+v.Name())
-		templateBuff.WriteString(lString)
 	}
-	*/
 	
 	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
 
 	//templatesB := make(map[string]*template.Template)
 
+	// Here we are prefacing every layout with what should be every includes/ .tmpl file
+	// Ex: includes/sidebar.tmpl includes/bottom.tmpl includes/base.tmpl layouts/list.tmpl
+	// **THIS IS VERY IMPORTANT TO ALLOW MY BASE TEMPLATE TO WORK**
 	for _, layout := range layoutsDir {
 		boxT = append(boxT, "layouts/"+layout.Name())
 		//DEBUG TEMPLATE LOADING
 		//utils.Debugln(files)
 		lString, _ := templateBox.String("layouts/"+layout.Name())
 		fstring := templateIBuff.String() + lString
-		//log.Println(fstring)
 		templates[layout.Name()] = template.Must(template.New(layout.Name()).Funcs(funcMap).Parse(fstring))
 	}
-	//log.Println(templates["wiki_view.tmpl"].DefinedTemplates())
+	return nil
+}
 
-	/*
-		//Load conf.json
-		conf, _ := os.Open("conf.json")
-		decoder := json.NewDecoder(conf)
-		err := decoder.Decode(&cfg)
-		if err != nil {
-			fmt.Println("error decoding config:", err)
-		}
-		//log.Println(cfg)
-		//log.Println(cfg.AuthConf)
-	*/
-
-	/*st, sterr := static.ReadFile("assets/robots.txt")
-	if sterr != nil {
-		log.Println(sterr)
+func authInit() error {
+	auth.Open("./data/auth.db")
+	autherr := auth.AuthDbInit()
+	if autherr != nil {
+		return autherr
 	}
-	log.Println(string(st))*/
+	return nil
+}
 
+func main() {
+
+	flag.Parse()
+
+	// Open and initialize auth database
+	err := authInit()
+	if err != nil {
+		log.Fatalln(err)
+	}	
+	defer auth.Authdb.Close()
+
+	err = riceInit()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	//Check for wikiDir directory + git repo existence
 	_, err = os.Stat(cfg.WikiDir)
