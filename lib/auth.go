@@ -28,19 +28,21 @@ package auth
 import (
 	//"github.com/gorilla/securecookie"
 	"errors"
-
+	"strconv"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"net/url"
 	"strings"
+	"crypto/subtle"
 
 	"github.com/boltdb/bolt"
 	//"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 	"github.com/mavricknz/ldap"
-	"gopkg.in/hlandau/passlib.v1"
+	//"github.com/spf13/viper"
+	//"gopkg.in/hlandau/passlib.v1"
 	"context"
 	"jba.io/go/utils"
 	"golang.org/x/crypto/bcrypt"
@@ -52,8 +54,7 @@ type key int
 
 const TokenKey key = 0
 const UserKey key = 1
-const RoleKey key = 2
-const MsgKey key = 3
+const MsgKey key = 2
 
 // AuthConf: Pass Auth inside config.json
 /*
@@ -69,6 +70,7 @@ const MsgKey key = 3
 */
 // Then decode and populate this struct using code from the main app
 type AuthConf struct {
+	AdminUser   string
 	LdapEnabled bool
 	LdapConf
 }
@@ -83,8 +85,11 @@ type LdapConf struct {
 
 type User struct {
 	Username string
-	Role     string
-	Flash	 string
+	IsAdmin  bool
+}
+
+type Flash struct {
+	Msg	 string
 }
 
 type Token   string
@@ -122,20 +127,29 @@ func CheckPasswordHash(hash, password []byte) error {
 	return bcrypt.CompareHashAndPassword(hash, password)
 }
 
-func newContextU(c context.Context, u *User) context.Context {
+func newUserContext(c context.Context, u *User) context.Context {
 	return context.WithValue(c, UserKey, u)
 }
 
-func fromContextU(c context.Context) (*User, bool) {
+func fromUserContext(c context.Context) (*User, bool) {
 	u, ok := c.Value(UserKey).(*User)
 	return u, ok
 }
 
-func newContextT(c context.Context, t string) context.Context {
+func newFlashContext(c context.Context, f *Flash) context.Context {
+	return context.WithValue(c, MsgKey, f)
+}
+
+func fromFlashContext(c context.Context) (*Flash, bool) {
+	f, ok := c.Value(MsgKey).(*Flash)
+	return f, ok
+}
+
+func newTokenContext(c context.Context, t string) context.Context {
 	return context.WithValue(c, TokenKey, t)
 }
 
-func fromContextT(c context.Context) (string, bool) {
+func fromTokenContext(c context.Context) (string, bool) {
 	t, ok := c.Value(TokenKey).(string)
 	return t, ok
 }
@@ -197,30 +211,29 @@ func clearFlash(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getUsernameFromCookie(r *http.Request) (username, role, message string) {
-	//defer timeTrack(time.Now(), "GetUsername")
+func getUsernameFromCookie(r *http.Request) (username string) {
 	s, _ := CookieHandler.Get(r, "session")
 	userC, ok := s.Values["user"].(string)
 	if !ok {
-		username = ""
-		role = ""
-	} else {
-		z := strings.Split(userC, ":")
-		username = z[0]
-		role = z[1]
+		userC = ""
 	}
+
+	return userC
+}
+
+func getFlashFromCookie(r *http.Request) (message string) {
+	s, _ := CookieHandler.Get(r, "session")
 
 	messageC, ok := s.Values["flash"].(string)
 	if !ok {
 		messageC = ""
 	}
 
-	return username, role, messageC
+	return messageC
 }
 
 // Retrieve a token
 func getTokenFromCookie(r *http.Request) (token string) {
-	//defer timeTrack(time.Now(), "GetUsername")
 	s, _ := CookieHandler.Get(r, "session")
 	token, ok := s.Values["token"].(string)
 	if !ok {
@@ -231,27 +244,41 @@ func getTokenFromCookie(r *http.Request) (token string) {
 
 
 
-// GetUsername retrieves username, role and flash message from context
-func GetUsername(c context.Context) (username, role, msg string) {
+// GetUsername retrieves username, and admin bool from context
+func GetUsername(c context.Context) (username string, isAdmin bool) {
 	//defer timeTrack(time.Now(), "GetUsername")
-	userC, ok := fromContextU(c)
+	userC, ok := fromUserContext(c)
 	if !ok {
 		utils.Debugln("No username in context.")
 		userC = &User{}
 	}
 	if ok {
 		username = userC.Username
-		role = userC.Role
-		msg = userC.Flash
+		isAdmin = userC.IsAdmin
 	}
 
-	return username, role, msg
+	return username, isAdmin
+}
+
+// GetToken retrieves token from context
+func GetFlash(c context.Context) string {
+	//defer timeTrack(time.Now(), "GetUsername")
+	var flash string
+	t, ok := fromFlashContext(c)
+	if !ok {
+		utils.Debugln("No token in context.")
+		flash = ""
+	}
+	if ok {
+		flash = t.Msg
+	}
+	return flash
 }
 
 // GetToken retrieves token from context
 func GetToken(c context.Context) string {
 	//defer timeTrack(time.Now(), "GetUsername")
-	t, ok := fromContextT(c)
+	t, ok := fromTokenContext(c)
 	if !ok {
 		utils.Debugln("No token in context.")
 		t = ""
@@ -275,8 +302,8 @@ func setToken(w http.ResponseWriter, r *http.Request) (context.Context, string) 
 		SetSession("token", token, w, r)
 		utils.Debugln("new token generated")
 	}
-	utils.Debugln("setToken: " + token)
-	return newContextT(r.Context(), token), token
+	utils.Debugln("Cookie Token: " + token)
+	return newTokenContext(r.Context(), token), token
 }
 
 // Given an http.Request with a token input, compare it to the token in the session cookie
@@ -288,7 +315,7 @@ func CheckToken(w http.ResponseWriter, r *http.Request) error {
 		utils.Debugln("**CSRF blank**")
 		return fmt.Errorf("CSRF Blank! flashToken: %s tmplToken: %s", flashToken, tmplToken)
 	}
-	if tmplToken != flashToken {
+	if !verifyToken(tmplToken, flashToken) {
 		//http.Error(w, "CSRF error!", 500)
 		utils.Debugln("**CSRF mismatch!**")
 		return fmt.Errorf("CSRF Mismatch! flashToken: %s tmplToken: %s", flashToken, tmplToken)
@@ -308,8 +335,7 @@ func UserSignupPostHandler(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		username := template.HTMLEscapeString(r.FormValue("username"))
 		password := template.HTMLEscapeString(r.FormValue("password"))
-		role := r.FormValue("role")
-		err := newUser(username, password, role)
+		err := newUser(username, password)
 		if err != nil {
 			utils.Debugln(err)
 			panic(err)
@@ -336,7 +362,8 @@ func AdminUserPassChangePostHandler(w http.ResponseWriter, r *http.Request) {
 		username := template.HTMLEscapeString(r.FormValue("username"))
 		password := template.HTMLEscapeString(r.FormValue("password"))
 		// Hash password now so if it fails we catch it before touching Bolt
-		hash, err := passlib.Hash(password)
+		//hash, err := passlib.Hash(password)
+		hash, err := HashPassword([]byte(password))
 		if err != nil {
 			// couldn't hash password for some reason
 			log.Fatalln(err)
@@ -393,8 +420,7 @@ func SignupPostHandler(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		username := template.HTMLEscapeString(r.FormValue("username"))
 		password := template.HTMLEscapeString(r.FormValue("password"))
-		role := "User"
-		err := newUser(username, password, role)
+		err := newUser(username, password)
 		if err != nil {
 			utils.Debugln(err)
 			SetSession("flash", "User registration failed.", w, r)
@@ -467,9 +493,7 @@ func LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Login authentication
 		if auth(username, password) {
-			role := getUserRole(username)
-			fulluser := username + ":" + role
-			SetSession("user", fulluser, w, r)
+			SetSession("user", username, w, r)
 			utils.Debugln(username + " successfully logged in.")
 			SetSession("flash", "User '"+username+"' successfully logged in.", w, r)
 			postRedir(w, r, r2)
@@ -512,24 +536,6 @@ func ldapAuth(un, pw string) bool {
 	return true
 }
 
-func getUserRole(username string) string {
-	var userRoleByte []byte
-	// Grab given user's role from Bolt
-	Authdb.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("Roles"))
-		v := b.Get([]byte(username))
-		if v == nil {
-			err := errors.New("User does not exist")
-			log.Println(err)
-			userRoleByte = []byte("")
-			return err
-		}
-		userRoleByte = v
-		return nil
-	})
-	return string(userRoleByte)
-}
-
 // Bundle of all auth functions, checking which are enabled
 func auth(username, password string) bool {
 	if Authcfg.LdapEnabled {
@@ -557,15 +563,16 @@ func boltAuth(username, password string) bool {
 		hashedUserPassByte = v
 		return nil
 	})
-	hashedUserPass := string(hashedUserPassByte)
+	//hashedUserPass := string(hashedUserPassByte)
 
-	bcryptPass, err := HashPassword([]byte(password))
+	//bcryptPass, err := HashPassword([]byte(password))
 
-	log.Println(hashedUserPass)
-	log.Println(string(bcryptPass))
+	//log.Println(hashedUserPass)
+	//log.Println(string(bcryptPass))
 
 	// newHash and err should be blank/nil on success
-	newHash, err := passlib.Verify(password, hashedUserPass)
+	//newHash, err := passlib.Verify(password, hashedUserPass)
+	err := CheckPasswordHash(hashedUserPassByte, []byte(password))
 	if err != nil {
 		// Incorrect password, malformed hash, etc.
 		log.Println("error verifying password")
@@ -573,16 +580,6 @@ func boltAuth(username, password string) bool {
 		return false
 	}
 
-	if newHash != "" {
-		// passlib thinks we should upgrade to a new stronger hash.
-		// ... store the new hash in the database ...
-		utils.Debugln("newHash isn't empty... " + newHash)
-		err := updatePass(username, newHash)
-		if err != nil {
-			utils.Debugln(err)
-			return false
-		}
-	}
 	utils.Debugln("Authenticated via Boltdb")
 	return true
 
@@ -599,12 +596,18 @@ func postRedir(w http.ResponseWriter, r *http.Request, name string) {
 	http.Redirect(w, r, name, http.StatusSeeOther)
 }
 
+// Taken from nosurf: https://github.com/justinas/nosurf/blob/master/token.go
+func verifyToken(realToken, sentToken string) bool {
+	return subtle.ConstantTimeCompare([]byte(realToken), []byte(sentToken)) == 1
+}
+
 // Dedicated function to create new users, taking plaintext username, password, and role
 //  Hashing done in this function, no need to do it before
-func newUser(username, password, role string) error {
+func newUser(username, password string) error {
 
 	// Hash password now so if it fails we catch it before touching Bolt
-	hash, err := passlib.Hash(password)
+	//hash, err := passlib.Hash(password)
+	hash, err := HashPassword([]byte(password))
 	if err != nil {
 		// couldn't hash password for some reason
 		log.Fatalln(err)
@@ -655,21 +658,6 @@ func newUser(username, password, role string) error {
 		return adderr
 	}
 
-	roleerr := Authdb.Update(func(tx *bolt.Tx) error {
-		rolebucket := tx.Bucket([]byte("Roles"))
-
-		err = rolebucket.Put([]byte(username), []byte(role))
-		if err != nil {
-			log.Println(err)
-			return err
-		}
-		log.Println("User: " + username + " added as " + role)
-		return nil
-	})
-	if roleerr != nil {
-		return roleerr
-	}
-
 	return nil
 }
 
@@ -702,7 +690,7 @@ func deleteUser(username string) error {
 	return err
 }
 
-func updatePass(username, hash string) error {
+func updatePass(username string, hash []byte) error {
 
 	// Update password only if user exists
 	Authdb.Update(func(tx *bolt.Tx) error {
@@ -715,7 +703,7 @@ func updatePass(username, hash string) error {
 			log.Println(err)
 			return err
 		}
-		err := userbucket.Put([]byte(username), []byte(hash))
+		err := userbucket.Put([]byte(username), hash)
 		if err != nil {
 			return err
 		}
@@ -731,8 +719,7 @@ func XsrfMiddle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if there's an existing xsrf
 		// If not, generate one in the cookie
-		reqcx, reqID := setToken(w, r)
-		utils.Debugln("reqID: " + reqID)
+		reqcx, xsrftoken := setToken(w, r)
 		switch r.Method {
 		case "GET":
 			// If this is a GET request, go ahead and serve the next, with reqcx
@@ -746,7 +733,7 @@ func XsrfMiddle(next http.Handler) http.Handler {
 				return
 			}
 			tmplToken := r.FormValue("token")
-			utils.Debugln("POST: flashToken: " + reqID)
+			utils.Debugln("POST: flashToken: " + xsrftoken)
 			utils.Debugln("POST: tmplToken: " + tmplToken)
 			// Actually check CSRF token, since this is a POST request
 			if tmplToken == "" {
@@ -754,7 +741,7 @@ func XsrfMiddle(next http.Handler) http.Handler {
 				utils.Debugln("**CSRF Token Blank**")
 				return
 			}
-			if tmplToken != reqID {
+			if !verifyToken(tmplToken, xsrftoken) {
 				http.Error(w, "CSRF Token Error!", 500)
 				utils.Debugln("**CSRF Token Mismatch!**")
 				return
@@ -777,7 +764,7 @@ func XsrfMiddle(next http.Handler) http.Handler {
 func AuthMiddle(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		//username := getUsernameFromCookie(r)
-		username, role, _ := GetUsername(r.Context())
+		username, isAdmin := GetUsername(r.Context())
 		if username == "" {
 			rurl := r.URL.String()
 			utils.Debugln("AuthMiddleware mitigating: " + r.Host + rurl)
@@ -791,37 +778,14 @@ func AuthMiddle(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		utils.Debugln(username + " (" + role + ") is visiting " + r.Referer())
-		//context.Set(r, UserKey, username)
-		next.ServeHTTP(w, r)
-	})
-}
-
-func AuthMiddleAlice(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username, role, _ := GetUsername(r.Context())
-		if username == "" {
-			rurl := r.URL.String()
-			utils.Debugln("AuthMiddleware mitigating: " + r.Host + rurl)
-
-			// Detect if we're in an endless loop, if so, just panic
-			if strings.HasPrefix(rurl, "login?url=/login") {
-				panic("AuthMiddle is in an endless redirect loop")
-				return
-			}
-			http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, 302)
-			return
-		}
-
-		utils.Debugln(username + " (" + role + ") is visiting " + r.Referer())
-		//context.Set(r, UserKey, username)
+		utils.Debugln(username + " (is Admin: " + strconv.FormatBool(isAdmin) + ") is visiting " + r.Referer())
 		next.ServeHTTP(w, r)
 	})
 }
 
 func AuthAdminMiddle(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username, role, _ := GetUsername(r.Context())
+		username, isAdmin := GetUsername(r.Context())
 		if username == "" {
 			rurl := r.URL.String()
 			utils.Debugln("AuthAdminMiddleware mitigating: " + r.Host + rurl)
@@ -834,43 +798,14 @@ func AuthAdminMiddle(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		//If user is not an Admin, just redirect to index
-		if role != "Admin" {
+		if !isAdmin {
 			log.Println(username + " attempting to access restricted URL.")
 			SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
 			postRedir(w, r, "/")
 			return
 		}
 
-		utils.Debugln(username + " (" + role + ") is visiting " + r.Referer())
-		next.ServeHTTP(w, r)
-	})
-}
-
-func AuthAdminMiddleAlice(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username, role, _ := GetUsername(r.Context())
-		if username == "" {
-			rurl := r.URL.String()
-			utils.Debugln("AuthAdminMiddleware mitigating: " + r.Host + rurl)
-			//w.Write([]byte("OMG"))
-
-			// Detect if we're in an endless loop, if so, just panic
-			if strings.HasPrefix(rurl, "login?url=/login") {
-				panic("AuthAdminMiddle is in an endless redirect loop")
-				return
-			}
-			http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, 302)
-			return
-		}
-
-		if role != "Admin" {
-			log.Println(username + " attempting to access restricted URL.")
-			SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
-			postRedir(w, r, r.Referer())
-			return
-		}
-
-		utils.Debugln(username + " (" + role + ") is visiting " + r.Referer())
+		utils.Debugln(username + " (is Admin: " + strconv.FormatBool(isAdmin) + ") is visiting " + r.Referer())
 		next.ServeHTTP(w, r)
 	})
 }
@@ -879,22 +814,32 @@ func AuthAdminMiddleAlice(next http.Handler) http.Handler {
 // tosses it into the context for use in various other middlewares
 func UserEnvMiddle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username, role, message := getUsernameFromCookie(r)
+		username := getUsernameFromCookie(r)
+		message := getFlashFromCookie(r)
 		// Delete flash after pushing to context
 		clearFlash(w, r)
+		// If username is the configured AdminUser, set context to reflect this
+		isAdmin := false
+		if username == Authcfg.AdminUser {
+			utils.Debugln("Setting isAdmin to true due to "+ Authcfg.AdminUser)
+			isAdmin = true
+		}
 		u := &User{
 			Username: username,
-			Role: role,
-			Flash: message,
+			IsAdmin: isAdmin,
 		}
-		newc := newContextU(r.Context(), u)
+		f := &Flash{
+			Msg: message,
+		}
+		newc := newUserContext(r.Context(), u)
+		newc = newFlashContext(newc, f)
 		next.ServeHTTP(w, r.WithContext(newc))
 	})
 }
 
 func AuthCookieMiddle(next http.HandlerFunc) http.HandlerFunc {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		username, _, _ := getUsernameFromCookie(r)
+		username := getUsernameFromCookie(r)
 		if username == "" {
 			utils.Debugln("AuthMiddleware mitigating: " + r.Host + r.URL.String())
 			http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+r.URL.String(), 302)
@@ -913,38 +858,31 @@ func AuthDbInit() error {
 		if err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
-		rolebucket, err := tx.CreateBucketIfNotExists([]byte("Roles"))
-		if err != nil {
-			return fmt.Errorf("create bucket: %s", err)
+
+		adminUser := Authcfg.AdminUser
+		if adminUser == "" {
+			adminUser = "admin"
 		}
 
-		userbucketUser := userbucket.Get([]byte("admin"))
+		userbucketUser := userbucket.Get([]byte(adminUser))
 		if userbucketUser == nil {
-			fmt.Println("admin Boltdb user does not exist, creating it.")
-			hash, err := passlib.Hash("admin")
+			fmt.Println("Admin Boltdb user "+ adminUser +" does not exist, creating it.")
+			//hash, err := passlib.Hash("admin")
+			hash, err := HashPassword([]byte("admin"))
 			if err != nil {
 				// couldn't hash password for some reason
 				log.Fatalln(err)
 				return err
 			}
-
-			//Set password of user "admin" to hash of "admin"
-			err = userbucket.Put([]byte("admin"), []byte(hash))
+			err = userbucket.Put([]byte(adminUser), []byte(hash))
 			if err != nil {
-				log.Fatalln(err)
+				log.Println(err)
 				return err
 			}
 
-			//Set role to Admin
-			err = rolebucket.Put([]byte("admin"), []byte("Admin"))
-			if err != nil {
-				log.Fatalln(err)
-				return err
-			}
 			fmt.Println("***DEFAULT USER CREDENTIALS:***")
-			fmt.Println("Username: admin")
+			fmt.Println("Username: "+ adminUser)
 			fmt.Println("Password: admin")
-			fmt.Println("Role: Admin")
 			return nil
 		}
 		return nil
