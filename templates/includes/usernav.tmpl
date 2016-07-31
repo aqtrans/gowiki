@@ -1,11 +1,11 @@
 {{ define "usernav" }}
 <div class="callout small primary">
-<h5><i class="fa fa-user" aria-hidden="true"></i>{{ if .UN }}<span>User: {{ .page.UN }}|{{ .page.Role }}{{ end }}</span></h5>
+<h5><i class="fa fa-user" aria-hidden="true"></i>User panel{{ if .UN }}<span><small>{{ .page.UN }}</small>{{ end }}</span></h5>
 <hr>
 <ul>
 {{ if .UN }}
     <li><a href="/auth/logout">Logout</a></li>
-    {{ if .page.Role|isAdmin }}    
+    {{ if .page.IsAdmin }}    
         <li><a href="/admin">Admin Panel</a></li>
     {{ end }}    
 {{ else }}

@@ -118,7 +118,7 @@ type page struct {
 	SiteName string
 	Favs     []string
 	UN       string
-	Role     string
+	IsAdmin  bool
 	Token    string
 	FlashMsg string
 }
@@ -227,7 +227,20 @@ func (a wikiByModDate) Less(i, j int) bool { return a[i].ModTime < a[j].ModTime 
 
 func init() {
 
-	// Viper config
+	// Viper config.
+
+	viper.SetDefault("Port", "3000")
+	viper.SetDefault("Email", "unused@the.moment")
+	viper.SetDefault("WikiDir", "./data/wikidata/")
+	viper.SetDefault("MainTLD", "wiki.jba.io")
+	viper.SetDefault("GitRepo", "git@jba.io:conf/gowiki-data.git")
+	defaultauthstruct := &auth.AuthConf{
+		AdminUser: "aqtrans",
+		LdapEnabled: false,
+		LdapConf:    auth.LdapConf{},
+	}
+	viper.SetDefault("AuthConf", &defaultauthstruct)
+
 	viper.SetConfigName("conf")
 	viper.AddConfigPath("./data/")
 	err := viper.ReadInConfig() // Find and read the config file
@@ -254,19 +267,9 @@ func init() {
 		        }
 		    }
 	*/
-	viper.SetDefault("Port", "3000")
-	viper.SetDefault("Email", "unused@the.moment")
-	viper.SetDefault("WikiDir", "./data/wikidata/")
-	viper.SetDefault("MainTLD", "wiki.jba.io")
-	viper.SetDefault("GitRepo", "git@jba.io:conf/gowiki-data.git")
-	defaultauthstruct := &auth.AuthConf{
-		LdapEnabled: false,
-		LdapConf:    auth.LdapConf{},
-	}
-	viper.SetDefault("AuthConf", defaultauthstruct)
-	viper.Unmarshal(&cfg)
 
-	//log.Println(&cfg)
+	viper.Unmarshal(&cfg)
+	viper.UnmarshalKey("AuthConf", &auth.Authcfg)
 
 	//Flag '-l' enables go.dev and *.dev domain resolution
 	flag.BoolVar(&fLocal, "l", false, "Turn on localhost resolving for Handlers")
@@ -642,11 +645,13 @@ func loadPage(r *http.Request) (*page, error) {
 	//timer.Step("loadpageFunc")
 
 	// Auth lib middlewares should load the user and tokens into context for reading
-	user, role, msg := auth.GetUsername(r.Context())
+	user, isAdmin := auth.GetUsername(r.Context())
+	msg := auth.GetFlash(r.Context())
 	token := auth.GetToken(r.Context())
 
 	//log.Println("Message: ")
 	//log.Println(msg)
+
 
 	var message string
 	if msg != "" {
@@ -669,7 +674,7 @@ func loadPage(r *http.Request) (*page, error) {
 	gofavs := <-favs
 
 	//log.Println(gofavs)
-	return &page{SiteName: "GoWiki", Favs: gofavs, UN: user, Role: role, Token: token, FlashMsg: message}, nil
+	return &page{SiteName: "GoWiki", Favs: gofavs, UN: user, IsAdmin: isAdmin, Token: token, FlashMsg: message}, nil
 }
 
 func historyHandler(w http.ResponseWriter, r *http.Request, name string) {
@@ -2153,7 +2158,7 @@ func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createWiki(w http.ResponseWriter, r *http.Request, name string) {
-	username, _, _ := auth.GetUsername(r.Context())
+	username, _ := auth.GetUsername(r.Context())
 	if username != "" {
 		w.WriteHeader(404)
 		//title := "Create " + name + "?"
@@ -2335,7 +2340,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		//dir := filepath.Dir(name)
 		wikipage := cfg.WikiDir + name
 
-		username, role, _ := auth.GetUsername(r.Context())
+		username, isAdmin := auth.GetUsername(r.Context())
 
 		// Directory checking
 		// Check dir/index for a private or admin flag, and use this for the entire directory contents
@@ -2419,7 +2424,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 				return
 			}
 			if fm.Admin {
-				if username =="" && role != "Admin" {
+				if !isAdmin {
 					log.Println(username + " attempting to access restricted URL.")
 					auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
 					http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -2551,6 +2556,8 @@ func main() {
 
 	flag.Parse()
 
+	
+
 	// Open and initialize auth database
 	auth.Open("./data/auth.db")
 	autherr := auth.AuthDbInit()
@@ -2584,7 +2591,7 @@ func main() {
 	}
 	*/
 	
-	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isAdmin": isAdmin, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
+	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
 
 	//templatesB := make(map[string]*template.Template)
 
