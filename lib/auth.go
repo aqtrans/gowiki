@@ -40,7 +40,7 @@ import (
 	"github.com/boltdb/bolt"
 	//"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
-	"github.com/mavricknz/ldap"
+	//"github.com/mavricknz/ldap"
 	//"github.com/spf13/viper"
 	//"gopkg.in/hlandau/passlib.v1"
 	"context"
@@ -71,10 +71,11 @@ const MsgKey key = 2
 // Then decode and populate this struct using code from the main app
 type AuthConf struct {
 	AdminUser   string
-	LdapEnabled bool
-	LdapConf
+	//LdapEnabled bool
+	//LdapConf
 }
 
+/*
 type LdapConf struct {
 	LdapPort uint16 `json:",omitempty"`
 	LdapUrl  string `json:",omitempty"`
@@ -82,6 +83,7 @@ type LdapConf struct {
 	LdapUn   string `json:",omitempty"`
 	LdapOu   string `json:",omitempty"`
 }
+*/
 
 type User struct {
 	Username string
@@ -191,11 +193,6 @@ func ClearSession(w http.ResponseWriter, r *http.Request) {
 		delete(s.Values, "user")
 		s.Save(r, w)
 	}
-	_, ok = s.Values["role"].(string)
-	if ok {
-		delete(s.Values, "role")
-		s.Save(r, w)
-	}
 }
 
 func clearFlash(w http.ResponseWriter, r *http.Request) {
@@ -241,8 +238,6 @@ func getTokenFromCookie(r *http.Request) (token string) {
 	}
 	return token
 }
-
-
 
 // GetUsername retrieves username, and admin bool from context
 func GetUsername(c context.Context) (username string, isAdmin bool) {
@@ -515,6 +510,7 @@ func LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+/*
 func ldapAuth(un, pw string) bool {
 	//Build DN: uid=admin,ou=People,dc=example,dc=com
 	dn := Authcfg.LdapUn + "=" + un + ",ou=" + Authcfg.LdapConf.LdapOu + "," + Authcfg.LdapConf.LdapDn
@@ -535,14 +531,17 @@ func ldapAuth(un, pw string) bool {
 	utils.Debugln("Authenticated via LDAP")
 	return true
 }
+*/
 
 // Bundle of all auth functions, checking which are enabled
 func auth(username, password string) bool {
+	/*
 	if Authcfg.LdapEnabled {
 		if ldapAuth(username, password) || boltAuth(username, password) {
 			return true
 		}
 	}
+	*/
 	if boltAuth(username, password) {
 		return true
 	}
@@ -583,6 +582,27 @@ func boltAuth(username, password string) bool {
 	utils.Debugln("Authenticated via Boltdb")
 	return true
 
+}
+
+// Check if user actually exists
+func doesUserExist(username string) bool {
+	err := Authdb.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("Users"))
+		v := b.Get([]byte(username))
+		if v == nil {
+			err := errors.New("User does not exist")
+			log.Println(err)
+			return err
+		}
+		return nil
+	})
+	if err.Error() == "User does not exist" {
+		return false
+	} else if err == nil {
+		return true
+	} else {
+		return false
+	}
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -816,6 +836,12 @@ func UserEnvMiddle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username := getUsernameFromCookie(r)
 		message := getFlashFromCookie(r)
+		// Check if user actually exists before setting username
+		// If user does not exist, clear the session because something fishy is going on
+		if !doesUserExist(username) {
+			username = ""
+			ClearSession(w, r)
+		}
 		// Delete flash after pushing to context
 		clearFlash(w, r)
 		// If username is the configured AdminUser, set context to reflect this
