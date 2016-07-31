@@ -18,8 +18,7 @@
     </thead>
     <tbody>
     {{ $user := .page.UN| isLoggedIn }}
-    {{ $role := .page.Role }}
-    {{ $admin := .page.Role|isAdmin }}
+    {{ $admin := .page.IsAdmin }}
     {{range .PublicWikis}}
         <tr>
         <td><a href="/{{.Filename}}">{{.Title}}</a></td>
