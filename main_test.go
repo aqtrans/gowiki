@@ -42,6 +42,7 @@ var (
 func init() {
 	//viper.Set("WikiDir", "./test/")
 	cfg.WikiDir = "./tests/wikidir/"
+	cfg.GitRepo = "git@jba.io:conf/gowiki-data.git"
 }
 
 func TestAuthInit(t *testing.T) {
