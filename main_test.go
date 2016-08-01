@@ -13,7 +13,7 @@ import (
 	//"fmt"
 	//"log"
 	"net/url"
-	//"os"
+	"os"
 	//"jba.io/go/auth"
 	"strings"
 	"context"
@@ -21,6 +21,7 @@ import (
 	"jba.io/go/wiki/lib/auth"
 	"github.com/dimfeld/httptreemux"
 	"jba.io/go/utils"
+	//"github.com/spf13/viper"
 	//"github.com/GeertJohan/go.rice"
 	//"gopkg.in/gavv/httpexpect.v1"
 	//"github.com/stretchr/testify/assert"
@@ -38,6 +39,11 @@ var (
 	//rr        *httptest.ResponseRecorder
 )
 
+func init() {
+	//viper.Set("WikiDir", "./test/")
+	cfg.WikiDir = "./test_wikidir/"
+}
+
 func TestAuthInit(t *testing.T) {
 	err := authInit()
 	if err != nil {
@@ -51,6 +57,17 @@ func TestRiceInit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}	
+}
+
+func TestWikiInit(t *testing.T) {
+	_, err := os.Stat(cfg.WikiDir)
+	if err != nil {
+		os.Mkdir(cfg.WikiDir, 0755)
+	}
+	_, err = os.Stat(cfg.WikiDir + ".git")
+	if err != nil {
+		gitClone(cfg.GitRepo)
+	}
 }
 
 // TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
@@ -359,6 +376,14 @@ func TestMarkdownRender2(t *testing.T) {
 		//ioutil.WriteFile("./tests/test2.html", []byte(rawmds), 0755)
 		t.Error("Converted Markdown does not equal test2" + "\n Raw: \n" + rawmds + "Rendered: \n" + rendermds)
 	}
+}
+
+func TestRemoveTestWikiDir(t *testing.T) {
+	err := os.RemoveAll("./test_wikidir/")
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log("Removed ./test_wikidir/")
 }
 
 // Below is for testing the difference between just writing the Tags string directly as fed in from the wiki form, or using a []string as the source, but having to write them using a for loop
