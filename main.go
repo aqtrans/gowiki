@@ -2575,8 +2575,8 @@ func riceInit() error {
 	return nil
 }
 
-func authInit() error {
-	auth.Open("./data/auth.db")
+func authInit(authDB string) error {
+	auth.Open(authDB)
 	autherr := auth.AuthDbInit()
 	if autherr != nil {
 		return autherr
@@ -2608,10 +2608,10 @@ func main() {
 	flag.Parse()
 
 	// Open and initialize auth database
-	err := authInit()
+	err := authInit("./data/auth.db")
 	if err != nil {
 		log.Fatalln(err)
-	}	
+	}
 	defer auth.Authdb.Close()
 
 	err = riceInit()

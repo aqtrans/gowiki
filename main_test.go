@@ -41,11 +41,11 @@ var (
 
 func init() {
 	//viper.Set("WikiDir", "./test/")
-	cfg.WikiDir = "./test_wikidir/"
+	cfg.WikiDir = "./tests/wikidir/"
 }
 
 func TestAuthInit(t *testing.T) {
-	err := authInit()
+	err := authInit("./tests/auth.db")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -379,11 +379,11 @@ func TestMarkdownRender2(t *testing.T) {
 }
 
 func TestRemoveTestWikiDir(t *testing.T) {
-	err := os.RemoveAll("./test_wikidir/")
+	err := os.RemoveAll("./tests/wikidir/")
 	if err != nil {
 		t.Error(err)
 	}
-	t.Log("Removed ./test_wikidir/")
+	t.Log("Removed ./tests/wikidir/")
 }
 
 // Below is for testing the difference between just writing the Tags string directly as fed in from the wiki form, or using a []string as the source, but having to write them using a for loop
