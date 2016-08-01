@@ -21,6 +21,7 @@ import (
 	"jba.io/go/wiki/lib/auth"
 	"github.com/dimfeld/httptreemux"
 	"jba.io/go/utils"
+	"github.com/boltdb/bolt"
 	//"github.com/spf13/viper"
 	//"github.com/GeertJohan/go.rice"
 	//"gopkg.in/gavv/httpexpect.v1"
@@ -45,12 +46,57 @@ func init() {
 	cfg.GitRepo = "git@jba.io:conf/gowiki-data.git"
 }
 
-func TestAuthInit(t *testing.T) {
-	err := authInit("./tests/auth.db")
+// tempfile returns a temporary file path.
+func tempfile() string {
+	f, err := ioutil.TempFile("", "bolt-")
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
-	defer auth.Authdb.Close()
+	if err := f.Close(); err != nil {
+		panic(err)
+	}
+	if err := os.Remove(f.Name()); err != nil {
+		panic(err)
+	}
+	return f.Name()
+}
+
+type DB struct {
+	*bolt.DB
+}
+
+// MustOpenDB returns a new, open DB at a temporary location.
+func mustOpenDB() *DB {
+	db, err := bolt.Open(tempfile(), 0666, nil)
+	if err != nil {
+		panic(err)
+	}
+	return &DB{db}
+}
+
+func (db *DB) Close() error {
+	defer os.Remove(db.Path())
+	return db.DB.Close()
+}
+
+func (db *DB) MustClose() {
+	if err := db.Close(); err != nil {
+		panic(err)
+	}
+}
+
+
+
+func TestAuthInit(t *testing.T) {
+	//authDB := mustOpenDB()
+	db := mustOpenDB()
+	t.Log(db.Path())
+	auth.Authdb = db.DB
+	autherr := auth.AuthDbInit()
+	if autherr != nil {
+		t.Fatal(autherr)
+	}
+	db.MustClose()
 }
 
 func TestRiceInit(t *testing.T) {
