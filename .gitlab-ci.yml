@@ -62,7 +62,7 @@ test-my-project:
     - export PATH=$GOROOT/bin:$PATH 
     - export PATH=$GOPATH/bin:$PATH
     - cd $GOPATH/src/wiki  
-    - go test
+    - go test -v
 
 deploy-it:
   stage: deploy
