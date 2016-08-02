@@ -96,7 +96,9 @@ type Flash struct {
 
 type Token   string
 
-var Authcfg = AuthConf{}
+//var Authcfg = AuthConf{}
+
+var AdminUser string
 
 var Authdb *bolt.DB
 
@@ -842,8 +844,9 @@ func UserEnvMiddle(next http.Handler) http.Handler {
 		clearFlash(w, r)
 		// If username is the configured AdminUser, set context to reflect this
 		isAdmin := false
-		if username == Authcfg.AdminUser {
-			utils.Debugln("Setting isAdmin to true due to "+ Authcfg.AdminUser)
+		log.Println(AdminUser)
+		if username == AdminUser {
+			utils.Debugln("Setting isAdmin to true due to "+ AdminUser)
 			isAdmin = true
 		}
 		u := &User{
@@ -881,7 +884,7 @@ func AuthDbInit() error {
 			return fmt.Errorf("create bucket: %s", err)
 		}
 
-		adminUser := Authcfg.AdminUser
+		adminUser := AdminUser
 		if adminUser == "" {
 			adminUser = "admin"
 		}
