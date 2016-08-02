@@ -104,7 +104,7 @@ var (
 	fLocal    bool
 	debug     = utils.Debug
 	fInit     bool
-	cfg       = configuration{}
+	//cfg       = configuration{}
 	gitPath   string
 	favbuf    bytes.Buffer
 	//sessID   string
@@ -232,10 +232,14 @@ func init() {
 	viper.SetDefault("Email", "unused@the.moment")
 	viper.SetDefault("WikiDir", "./data/wikidata/")
 	viper.SetDefault("GitRepo", "git@example.com:user/wikidata.git")
+	/*
 	defaultauthstruct := &auth.AuthConf{
 		AdminUser: "admin",
 	}
 	viper.SetDefault("AuthConf", &defaultauthstruct)
+	*/
+	viper.SetDefault("AdminUser", "admin")
+	
 
 	viper.SetConfigName("conf")
 	viper.AddConfigPath("./data/")
@@ -246,6 +250,7 @@ func init() {
 	}
 	viper.SetConfigType("json")
 	viper.WatchConfig()
+	
 	/*
 			Port     string
 			Email    string
@@ -264,8 +269,8 @@ func init() {
 		    }
 	*/
 
-	viper.Unmarshal(&cfg)
-	viper.UnmarshalKey("AuthConf", &auth.Authcfg)
+	//viper.Unmarshal(&cfg)
+	//viper.UnmarshalKey("AuthConf", &auth.Authcfg)
 
 	//Flag '-l' enables go.dev and *.dev domain resolution
 	flag.BoolVar(&fLocal, "l", false, "Turn on localhost resolving for Handlers")
@@ -349,7 +354,7 @@ func jsTags(tagS []string) string {
 // Construct an *exec.Cmd for `git {args}` with a workingDirectory
 func gitCommand(args ...string) *exec.Cmd {
 	c := exec.Command(gitPath, args...)
-	c.Dir = cfg.WikiDir
+	c.Dir = viper.GetString("WikiDir") 
 	return c
 }
 
@@ -864,7 +869,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	for _, file := range fileList {
 		
 		// If using Git, build the full path:
-		file = cfg.WikiDir+file
+		file = filepath.Join(viper.GetString("WikiDir"), file)
+		//file = viper.GetString("WikiDir")+file
 		//log.Println(file)
 
 		// check if the source dir exist
@@ -875,7 +881,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		// check if its a directory
 		if src.IsDir() {
 			// Just don't do anything..but don't return.
-			/*dirindexpath := cfg.WikiDir + src.Name() + "/" + "index"
+			/*dirindexpath := viper.GetString("WikiDir") + src.Name() + "/" + "index"
 			dirindex, _ := os.Open(dirindexpath)
 			_, dirindexfierr := dirindex.Stat()
 			if !os.IsNotExist(dirindexfierr) {
@@ -901,8 +907,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			_, filename := filepath.Split(file)
 
 			// If this is an absolute path, including the cfg.WikiDir, trim it
-			//withoutWikidir := strings.TrimPrefix(cfg.WikiDir, "./")
-			fileURL := strings.TrimPrefix(file, cfg.WikiDir)
+			//withoutWikidir := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
+			fileURL := strings.TrimPrefix(file, viper.GetString("WikiDir"))
 
 			var wp *wiki
 			var fm frontmatter
@@ -1148,8 +1154,9 @@ func parseBool(value string) bool {
 // - If name is trying to escape or otherwise a bad path
 // - If name is a /directory/file combo, but /directory is actually a file
 func doesPageExist(name string) (bool, error) {
-	fullfilename := cfg.WikiDir + name
-	rel, err := filepath.Rel(cfg.WikiDir, fullfilename)
+	//fullfilename := cfg.WikiDir + name
+	fullfilename := filepath.Join(viper.GetString("WikiDir"), name) 
+	rel, err := filepath.Rel(viper.GetString("WikiDir"), fullfilename)
 	if err != nil {
 		return false, err
 	}
@@ -1168,27 +1175,33 @@ func doesPageExist(name string) (bool, error) {
 
 	// Check if the base of the given filename is actually a file
 	// If so, bail, return 500.
-	basefile, _ := os.Open("./" + base)
-	basefi, _ := basefile.Stat()
-	/* I don't think these should matter
+	basefile, err := os.Open("./" + base)
+	if err != nil {
+		return false, err
+	}
+	basefi, basefierr := basefile.Stat()
+	// I don't think these should matter
 	if os.IsNotExist(basefierr) {
 		//log.Println("OMG")
 		return false, basefierr
 	}
 	if basefierr != nil {
 		return false, basefierr
-	}*/
-	basefimode := basefi.Mode()
-	if !basefimode.IsDir() {
-		errn := errors.New("Base is not dir")
-		//http.Error(w, basefi.Name()+" is not a directory.", 500)
-		return false, errn
 	}
-	if basefimode.IsRegular() {
-		errn := errors.New("Base is not dir")
-		//http.Error(w, basefi.Name()+" is not a directory.", 500)
-		return false, errn
+	if basefierr == nil {
+		basefimode := basefi.Mode()
+		if !basefimode.IsDir() {
+			errn := errors.New("Base is not dir")
+			//http.Error(w, basefi.Name()+" is not a directory.", 500)
+			return false, errn
+		}
+		if basefimode.IsRegular() {
+			errn := errors.New("Base is not dir")
+			//http.Error(w, basefi.Name()+" is not a directory.", 500)
+			return false, errn
+		}
 	}
+
 
 	// Directory without specified index
 	if strings.HasSuffix(name, "/") {
@@ -1196,7 +1209,8 @@ func doesPageExist(name string) (bool, error) {
 		log.Println("This might be a directory, trying to parse the index")
 		//filename := name + "index"
 		//title := name + " - Index"
-		fullfilename = cfg.WikiDir + name + "index"
+		//fullfilename = cfg.WikiDir + name + "index"
+		fullfilename = filepath.Join(viper.GetString("WikiDir"), name, "index")
 
 		dirindex, _ := os.Open(fullfilename)
 		_, dirindexfierr := dirindex.Stat()
@@ -1462,7 +1476,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 
 	// Crawl for new favorites only on startup and save
 	favbuf.Reset()
-	err = filepath.Walk(cfg.WikiDir, readFavs)
+	err = filepath.Walk(viper.GetString("WikiDir"), readFavs)
 	if err != nil {
 		log.Println("filepath.Walk error:")
 		log.Fatal(err)
@@ -1482,8 +1496,9 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 
 	pagetitle := r.FormValue("newwiki")
 
-	fullfilename := cfg.WikiDir + pagetitle
-	rel, err := filepath.Rel(cfg.WikiDir, fullfilename)
+	//fullfilename := cfg.WikiDir + pagetitle
+	fullfilename := filepath.Join(viper.GetString("WikiDir"), pagetitle)
+	rel, err := filepath.Rel(viper.GetString("WikiDir"), fullfilename)
 	if err != nil {
 		auth.SetSession("flash", "Failed to create page.", w, r)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -1511,7 +1526,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func urlFromPath(path string) string {
-	url := filepath.Clean(cfg.WikiDir) + "/"
+	url := filepath.Clean(viper.GetString("WikiDir")) + "/"
 	return strings.TrimPrefix(path, url)
 }
 
@@ -1637,12 +1652,14 @@ func (wiki *rawPage) save() error {
 	defer utils.TimeTrack(time.Now(), "wiki.save()")
 
 	dir, filename := filepath.Split(wiki.Name)
-	fullfilename := cfg.WikiDir + dir + filename
+	//fullfilename := cfg.WikiDir + dir + filename
+	fullfilename := filepath.Join(viper.GetString("WikiDir"), dir, filename)
 
 	// If directory doesn't exist, create it
 	// - Check if dir is null first
 	if dir != "" {
-		dirpath := cfg.WikiDir + dir
+		//dirpath := cfg.WikiDir + dir
+		dirpath := filepath.Join(viper.GetString("WikiDir"), dir)
 		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
 			err := os.MkdirAll(dirpath, 0755)
 			if err != nil {
@@ -1685,7 +1702,8 @@ func loadWiki(name string) (*wiki, error) {
 	var pagetitle string
 	var body []byte
 
-	fullfilename := cfg.WikiDir + name
+	//fullfilename := cfg.WikiDir + name
+	fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
 
 	// Check if file exists before doing anything else
 	fileExists, feErr := doesPageExist(name)
@@ -1701,7 +1719,8 @@ func loadWiki(name string) (*wiki, error) {
 		//if dir != "" && name == "" {
 		log.Println("This might be a directory, trying to parse the index")
 		//filename := name + "index"
-		fullfilename = cfg.WikiDir + name + "index"
+		//fullfilename = cfg.WikiDir + name + "index"
+		fullfilename = filepath.Join(viper.GetString("WikiDir"), name, "index")
 
 		dirindex, _ := os.Open(fullfilename)
 		_, dirindexfierr := dirindex.Stat()
@@ -1766,12 +1785,14 @@ func (wiki *wiki) save() error {
 	defer utils.TimeTrack(time.Now(), "wiki.save()")
 
 	dir, filename := filepath.Split(wiki.Filename)
-	fullfilename := cfg.WikiDir + dir + filename
+	//fullfilename := cfg.WikiDir + dir + filename
+	fullfilename := filepath.Join(viper.GetString("WikiDir"), dir, filename)
 
 	// If directory doesn't exist, create it
 	// - Check if dir is null first
 	if dir != "" {
-		dirpath := cfg.WikiDir + dir
+		//dirpath := cfg.WikiDir + dir
+		dirpath := filepath.Join(viper.GetString("WikiDir"), dir)
 		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
 			err := os.MkdirAll(dirpath, 0755)
 			if err != nil {
@@ -1997,7 +2018,7 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 		string(owithnewlines),
-		cfg.GitRepo,
+		viper.GetString("GitRepo"),
 	}
 	err = renderTemplate(w, r.Context(), "git_checkin.tmpl", gp)
 	if err != nil {
@@ -2084,7 +2105,7 @@ func adminGitHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 		string(owithnewlines),
-		cfg.GitRepo,
+		viper.GetString("GitRepo"),
 	}
 	err = renderTemplate(w, r.Context(), "admin_git.tmpl", gp)
 	if err != nil {
@@ -2313,7 +2334,8 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		// Replacing these for now:
 		name := params["name"]
 		//dir := filepath.Dir(name)
-		wikipage := cfg.WikiDir + name
+		//wikipage := cfg.WikiDir + name
+		wikipage := filepath.Join(viper.GetString("WikiDir"), name)
 
 		username, isAdmin := auth.GetUsername(r.Context())
 
@@ -2586,17 +2608,18 @@ func authInit(authDB string) error {
 
 func initWikiDir() {
 	//Check for wikiDir directory + git repo existence
-	_, err := os.Stat(cfg.WikiDir)
+	wikidir := viper.GetString("WikiDir")
+	_, err := os.Stat(wikidir)
 	if err != nil {
-		log.Println(cfg.WikiDir + " does not exist, creating it.")
-		os.Mkdir(cfg.WikiDir, 0755)
+		log.Println(wikidir + " does not exist, creating it.")
+		os.Mkdir(wikidir, 0755)
 	}
-	_, err = os.Stat(cfg.WikiDir + ".git")
+	_, err = os.Stat(wikidir + ".git")
 	if err != nil {
-		log.Println(cfg.WikiDir + " is not a git repo!")
+		log.Println(wikidir + " is not a git repo!")
 		if fInit {
-			log.Println("-init flag is given. Cloning " + cfg.GitRepo + "into " + cfg.WikiDir + "...")
-			gitClone(cfg.GitRepo)
+			log.Println("-init flag is given. Cloning " + viper.GetString("GitRepo") + "into " + wikidir + "...")
+			gitClone(viper.GetString("GitRepo"))
 		} else {
 			log.Fatalln("Clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo.")
 		}
@@ -2614,6 +2637,8 @@ func main() {
 	}
 	defer auth.Authdb.Close()
 
+	auth.AdminUser = viper.GetString("AdminUser")
+
 	err = riceInit()
 	if err != nil {
 		log.Fatalln(err)
@@ -2622,14 +2647,14 @@ func main() {
 	initWikiDir()
 
 	// Crawl for new favorites only on startup and save
-	err = filepath.Walk(cfg.WikiDir, readFavs)
+	err = filepath.Walk(viper.GetString("WikiDir"), readFavs)
 	if err != nil {
 		//log.Fatal(err)
 		log.Println("init: unable to crawl for favorites")
 	}
 
 	// Crawl for tags only on startup and save
-	err = filepath.Walk(cfg.WikiDir, readTags)
+	err = filepath.Walk(viper.GetString("WikiDir"), readTags)
 	if err != nil {
 		//log.Fatal(err)
 		log.Println("init: unable to crawl for tags")
@@ -2733,7 +2758,7 @@ func main() {
 	http.HandleFunc("/assets/", static)
 	http.Handle("/", s.Then(r))
 
-	log.Println("Listening on port " + cfg.Port)
-	http.ListenAndServe("0.0.0.0:"+cfg.Port, nil)
+	log.Println("Listening on port " + viper.GetString("Port"))
+	http.ListenAndServe("0.0.0.0:"+viper.GetString("Port"), nil)
 
 }
