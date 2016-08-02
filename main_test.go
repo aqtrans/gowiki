@@ -22,7 +22,7 @@ import (
 	"github.com/dimfeld/httptreemux"
 	"jba.io/go/utils"
 	"github.com/boltdb/bolt"
-	//"github.com/spf13/viper"
+	"github.com/spf13/viper"
 	//"github.com/GeertJohan/go.rice"
 	//"gopkg.in/gavv/httpexpect.v1"
 	//"github.com/stretchr/testify/assert"
@@ -41,9 +41,8 @@ var (
 )
 
 func init() {
-	//viper.Set("WikiDir", "./test/")
-	cfg.WikiDir = "./tests/wikidir/"
-	cfg.GitRepo = "git@jba.io:conf/gowiki-data.git"
+	viper.Set("WikiDir", "./tests/wikidir")
+	viper.Set("GitRepo", "git@jba.io:conf/gowiki-data.git")
 }
 
 // tempfile returns a temporary file path.
@@ -107,13 +106,13 @@ func TestRiceInit(t *testing.T) {
 }
 
 func TestWikiInit(t *testing.T) {
-	_, err := os.Stat(cfg.WikiDir)
+	_, err := os.Stat(viper.GetString("WikiDir"))
 	if err != nil {
-		os.Mkdir(cfg.WikiDir, 0755)
+		os.Mkdir(viper.GetString("WikiDir"), 0755)
 	}
-	_, err = os.Stat(cfg.WikiDir + ".git")
+	_, err = os.Stat(viper.GetString("WikiDir") + ".git")
 	if err != nil {
-		gitClone(cfg.GitRepo)
+		gitClone(viper.GetString("GitRepo"))
 	}
 }
 
