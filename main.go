@@ -494,7 +494,7 @@ func gitGetMtime(filename string) (int64, error) {
 // File history
 // git log --pretty=format:"commit:%H date:%at message:%s" [filename]
 // git log --pretty=format:"%H,%at,%s" [filename]
-func gitGetLog(filename string) ([]*commitLog, error) {
+func gitGetFileLog(filename string) ([]*commitLog, error) {
 	o, err := gitCommand("log", "--pretty=format:%H,%at,%s", filename).Output()
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("error during `git log`: %s\n%s", err.Error(), string(o)))
@@ -575,6 +575,19 @@ func gitLs() ([]string, error) {
 	nul := bytes.Replace(o, []byte("\x00"), []byte("\n"), -1)
 	// split each commit onto it's own line
 	lssplit := strings.Split(string(nul), "\n")
+	return lssplit, nil
+}
+
+// git log --name-only --pretty=format:"%at %H" HEAD
+func gitHistory() ([]string, error) {
+	o, err := gitCommand("log", "--name-only", "--pretty=format:'%at %H'", "-z", "HEAD").Output()
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("error during `git history`: %s\n%s", err.Error(), string(o)))
+	}
+	nul := bytes.Replace(o, []byte("\x00\x00"), []byte("\n"), -1)
+	// split each commit onto it's own line
+	lssplit := strings.Split(string(nul), "\n")
+	log.Println(lssplit)
 	return lssplit, nil
 }
 
@@ -669,7 +682,7 @@ func historyHandler(w http.ResponseWriter, r *http.Request, name string) {
 		log.Fatalln(err)
 	}
 
-	history, err := gitGetLog(name)
+	history, err := gitGetFileLog(name)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -798,6 +811,23 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 
 }
 
+func recentHandler(w http.ResponseWriter, r *http.Request) {
+	/*
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	*/
+
+	gh, err := gitHistory()
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(gh)
+	log.Println(gh[4])
+
+}	
+
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	//searchDir := cfg.WikiDir
 
@@ -869,60 +899,35 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	for _, file := range fileList {
 		
 		// If using Git, build the full path:
-		file = filepath.Join(viper.GetString("WikiDir"), file)
+		fullname := filepath.Join(viper.GetString("WikiDir"), file)
 		//file = viper.GetString("WikiDir")+file
-		//log.Println(file)
+		log.Println(file)
+		log.Println(fullname)
 
 		// check if the source dir exist
-		src, err := os.Stat(file)
+		src, err := os.Stat(fullname)
 		if err != nil {
 			panic(err)
 		}
-		// check if its a directory
-		if src.IsDir() {
-			// Just don't do anything..but don't return.
-			/*dirindexpath := viper.GetString("WikiDir") + src.Name() + "/" + "index"
-			dirindex, _ := os.Open(dirindexpath)
-			_, dirindexfierr := dirindex.Stat()
-			if !os.IsNotExist(dirindexfierr) {
-				dread, err := ioutil.ReadFile(dirindexpath)
-				if err != nil {
-					log.Println("wikiauth dir index ReadFile error:")
-					log.Println(err)
-				}
-				var dfm frontmatter
-				dfm, _, err = readFront(dread)
-				if err != nil {
-					log.Println("wikiauth readFront error:")
-					log.Println(err)
-				}
-				if err == nil {
-					if dfm.Private || dfm.Admin {
-						
-					}
-				}
-			}*/	
-		} else {
+		// If not a directory, get frontmatter from file and add to list
+		if !src.IsDir() {
 
 			_, filename := filepath.Split(file)
 
 			// If this is an absolute path, including the cfg.WikiDir, trim it
-			//withoutWikidir := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
-			fileURL := strings.TrimPrefix(file, viper.GetString("WikiDir"))
+			//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
+			//fileURL := strings.TrimPrefix(file, withoutdotslash)
 
 			var wp *wiki
 			var fm frontmatter
 			var pagetitle string
-			//fmt.Println(file)
-			//w.Write([]byte(file))
-			//w.Write([]byte("<br>"))
 
-			pagetitle = filename
 			//log.Println(file)
-			body, err := ioutil.ReadFile(file)
+			body, err := ioutil.ReadFile(fullname)
 			if err != nil {
 				log.Fatalln(err)
 			}
+
 			// Read YAML frontmatter into fm
 			fm, _, err = readFront(body)
 			if err != nil {
@@ -934,11 +939,12 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			if fm.Public {
 				//log.Println("Private page!")
 			}
+			pagetitle = filename
 			if fm.Title != "" {
 				pagetitle = fm.Title
 			}
 			if fm.Title == "" {
-				fm.Title = fileURL
+				fm.Title = file
 			}
 			if fm.Public != true {
 				fm.Public = false
@@ -952,11 +958,11 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			if fm.Tags == nil {
 				fm.Tags = []string{}
 			}
-			ctime, err := gitGetCtime(fileURL)
+			ctime, err := gitGetCtime(file)
 			if err != nil && err.Error() != "NOT_IN_GIT" {
 				log.Panicln(err)
 			}
-			mtime, err := gitGetMtime(fileURL)
+			mtime, err := gitGetMtime(file)
 			if err != nil {
 				log.Panicln(err)
 			}
@@ -966,7 +972,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			if fm.Admin {
 				wp = &wiki{
 					Title: pagetitle,
-					Filename: fileURL,
+					Filename: file,
 					Frontmatter: &fm,
 					CreateTime: ctime,
 					ModTime: mtime,
@@ -975,7 +981,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			} else if fm.Public {
 				wp = &wiki{
 					Title: pagetitle,
-					Filename: fileURL,
+					Filename: file,
 					Frontmatter: &fm,
 					CreateTime: ctime,
 					ModTime: mtime,
@@ -984,7 +990,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			} else {
 				wp = &wiki{
 					Title: pagetitle,
-					Filename: fileURL,
+					Filename: file,
 					Frontmatter: &fm,
 					CreateTime: ctime,
 					ModTime: mtime,
@@ -2333,9 +2339,9 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 
 		// Replacing these for now:
 		name := params["name"]
+		fullname := filepath.Join(viper.GetString("WikiDir"), name)
 		//dir := filepath.Dir(name)
 		//wikipage := cfg.WikiDir + name
-		wikipage := filepath.Join(viper.GetString("WikiDir"), name)
 
 		username, isAdmin := auth.GetUsername(r.Context())
 
@@ -2400,7 +2406,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 			return
 		}
 
-		read, err := ioutil.ReadFile(wikipage)
+		read, err := ioutil.ReadFile(fullname)
 		if err != nil {
 			log.Println("wikiauth ReadFile error:")
 			log.Println(err)
@@ -2415,11 +2421,11 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 			log.Println(err)
 			return
 		}
+		if err == nil && fm.Public {
+			fn(w, r, name)
+			return
+		}		
 		if err == nil {
-			if fm.Public {
-				fn(w, r, name)
-				return
-			}
 			if fm.Admin {
 				if !isAdmin {
 					log.Println(username + " attempting to access restricted URL.")
@@ -2429,10 +2435,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 				}
 			}			
 		}
-		if err == nil && fm.Public {
-			fn(w, r, name)
-			return
-		}
+
 
 		if username == "" {
 			rurl := r.URL.String()
@@ -2691,6 +2694,7 @@ func main() {
 	r.GET("/logout", auth.LogoutHandler)
 	//r.GET("/signup", signupPageHandler)
 	r.GET("/list", listHandler)
+	r.GET("/recent", recentHandler)
 	r.GET("/health", HealthCheckHandler)
 
 	admin := r.NewGroup("/admin")
