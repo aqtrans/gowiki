@@ -13,7 +13,7 @@
         <li><p>Favorite</p>
         <div class="stat">{{ .Wiki.Frontmatter.Favorite }}</div></li>
         <li><p>Tags</p>
-        <div class="stat">{{ range .Wiki.Frontmatter.Tags }}<span class="badge">{{ . }}</span>{{ end }}</div></li>
+        <div class="stat">{{ range .Wiki.Frontmatter.Tags }}<span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i>{{ . }}</span>{{ end }}</div></li>
       </ul>
     </div>
   </article>
@@ -26,6 +26,12 @@
   </ul>  
 
   <article class="accordion" data-accordion>
+      <ul class="breadcrumbs">
+        <li><a href="/{{.Wiki.Filename}}">{{.Wiki.Title}}</a></li>
+        <li>
+          <span class="show-for-sr">Current: </span> commit:{{.Commit}}
+        </li>
+      </ul>
       <div id="content" class="accordion-item is-active" data-accordion-item>
         <a href="#" class="accordion-title">Content</a>
         <div class="accordion-content" data-tab-content>
