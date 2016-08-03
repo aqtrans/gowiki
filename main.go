@@ -750,22 +750,9 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 	} else {
 		pagetitle = name
 	}
-	//diffstring := strings.Replace(string(diff), "\n", "<br>", -1)
 	diffstring := string(diff)
-	//log.Println(diffstring)
 
 	pageContent = md
-
-	// Check for ?a={file,diff} and toss either the file or diff
-	/*if r.URL.Query().Get("a") != "" {
-		action := r.URL.Query().Get("a")
-		//log.Println(action)
-		if action == "diff" {
-			pageContent = "<code>" + diffstring + "</code>"
-		} else {
-			pageContent = md
-		}
-	}*/
 
 	cp := &commitPage{
 		page: p,
@@ -781,28 +768,6 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 		Rendered: pageContent,
 		Diff: diffstring,
 	}
-
-	// Check for ?a={file,diff} and toss either the file or diff
-	/*if r.URL.Query().Get("a") != "" {
-		action := r.URL.Query().Get("a")
-		//log.Println(action)
-		if action == "diff" {
-			err = renderTemplate(w, "wiki_commit_diff.tmpl", cp)
-			if err != nil {
-				log.Fatalln(err)
-			}
-		} else {
-			err = renderTemplate(w, "wiki_commit.tmpl", cp)
-			if err != nil {
-				log.Fatalln(err)
-			}
-		}
-	} else {
-		err = renderTemplate(w, "wiki_commit.tmpl", cp)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	}*/
 
 	err = renderTemplate(w, r.Context(), "wiki_commit.tmpl", cp)
 	if err != nil {
@@ -1246,11 +1211,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 	defer utils.TimeTrack(time.Now(), "viewHandler")
 
-	// In case I want to switch to queries some time
-	query := r.URL.RawQuery
-	if query != "" {
-		//utils.Debugln(query)
-	}
+	// If this is a commit, pass along the SHA1 to that function
 	if r.URL.Query().Get("commit") != "" {
 		commit := r.URL.Query().Get("commit")
 		//utils.Debugln(r.URL.Query().Get("commit"))
