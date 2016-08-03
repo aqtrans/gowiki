@@ -61,10 +61,6 @@ const TimerKey key = 0
 
 const (
 	commonHtmlFlags = 0 |
-		blackfriday.HTML_USE_SMARTYPANTS |
-		blackfriday.HTML_SMARTYPANTS_FRACTIONS |
-		blackfriday.HTML_SMARTYPANTS_DASHES |
-		blackfriday.HTML_SMARTYPANTS_LATEX_DASHES |
 		blackfriday.HTML_FOOTNOTE_RETURN_LINKS |
 		blackfriday.HTML_TOC |
 		blackfriday.HTML_NOFOLLOW_LINKS
@@ -104,10 +100,8 @@ var (
 	fLocal    bool
 	debug     = utils.Debug
 	fInit     bool
-	//cfg       = configuration{}
 	gitPath   string
 	favbuf    bytes.Buffer
-	//sessID   string
 	tagMap  map[string][]string
 	tagsBuf bytes.Buffer
 )
@@ -160,12 +154,6 @@ type commitPage struct {
 	Rendered    string
 	Diff       string
 }
-
-type rawPage struct {
-	Name    string
-	Content []byte
-}
-
 type listPage struct {
 	*page
 	Wikis        []*wiki
@@ -1352,8 +1340,8 @@ func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 
 	// Check for and install required YAML frontmatter
 	title := r.FormValue("title")
-	tags := r.FormValue("tags")
-	var tagsA []string
+	// This is the separate input that tagdog.js throws new tags into
+	tags := r.FormValue("tags_all")
 	favorite := r.FormValue("favorite")
 	public := r.FormValue("publicPage")
 	admin := r.FormValue("adminOnly")
@@ -1375,48 +1363,10 @@ func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 		title = name
 	}
 
+	var tagsA []string
 	if tags != "" {
 		tagsA = strings.Split(tags, ",")
 	}
-
-	/*
-	//var buffer bytes.Buffer
-	buffer := new(bytes.Buffer)
-
-	bfm := &frontmatter{
-		Title:    title,
-		Tags:     tagsA,
-		Favorite: favoritebool,
-		Private:  privatebool,
-		Admin:    adminbool,
-	}
-	_, err := buffer.Write([]byte("---\n"))
-	if err != nil {
-		log.Fatalln(err)
-		return
-	}
-	yamlBuffer, err := yaml.Marshal(bfm)
-	if err != nil {
-		log.Fatalln(err)
-		return
-	}
-	buffer.Write(yamlBuffer)
-
-	_, err = buffer.Write([]byte("---\n"))
-	if err != nil {
-		log.Fatalln(err)
-		return
-	}
-	buffer.Write([]byte(content))
-
-
-	rp := &rawPage{
-		name,
-		buffer.Bytes(),
-	}
-
-	err = rp.save()
-	*/
 
 	fm := &frontmatter{
 		Title:    title,
@@ -1615,55 +1565,6 @@ func testEq(a, b []byte) bool {
 	return true
 }
 
-func (wiki *rawPage) save() error {
-	defer utils.TimeTrack(time.Now(), "wiki.save()")
-
-	dir, filename := filepath.Split(wiki.Name)
-	//fullfilename := cfg.WikiDir + dir + filename
-	fullfilename := filepath.Join(viper.GetString("WikiDir"), dir, filename)
-
-	// If directory doesn't exist, create it
-	// - Check if dir is null first
-	if dir != "" {
-		//dirpath := cfg.WikiDir + dir
-		dirpath := filepath.Join(viper.GetString("WikiDir"), dir)
-		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
-			err := os.MkdirAll(dirpath, 0755)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	originalFile, err := ioutil.ReadFile(fullfilename)
-	if err != nil {
-		log.Println("originalFile ReadFile error:")
-		log.Println(err)
-	}
-	if testEq(originalFile, wiki.Content) {
-		log.Println("No changes detected.")
-		return nil
-	}
-
-	ioutil.WriteFile(fullfilename, wiki.Content, 0755)
-
-	gitfilename := dir + filename
-
-	err = gitAddFilepath(gitfilename)
-	if err != nil {
-		return err
-	}
-
-	// FIXME: add a message box to edit page, check for it here
-	err = gitCommitEmpty()
-	if err != nil {
-		return err
-	}
-
-	log.Println(fullfilename + " has been saved.")
-	return nil
-}
-
 func loadWiki(name string) (*wiki, error) {
 	var fm frontmatter
 	var pagetitle string
@@ -1773,10 +1674,7 @@ func (wiki *wiki) save() error {
 		log.Println("originalFile ReadFile error:")
 		log.Println(err)
 	}
-	if testEq(originalFile, wiki.Content) {
-		log.Println("No changes detected.")
-		return nil
-	}
+
 
 	// Create a buffer where we build the content of the file
 	buffer := new(bytes.Buffer)
@@ -1797,6 +1695,13 @@ func (wiki *wiki) save() error {
 		return err
 	}
 	buffer.Write(wiki.Content)
+
+	// Test equality of the original file, plus the buffer we just built
+	log.Println(bytes.Equal(originalFile, buffer.Bytes()))
+	if bytes.Equal(originalFile, buffer.Bytes()) {
+		log.Println("No changes detected.")
+		return nil
+	}
 
 	// Write contents of above buffer, which should be Frontmatter+WikiContent
 	ioutil.WriteFile(fullfilename, buffer.Bytes(), 0755)
