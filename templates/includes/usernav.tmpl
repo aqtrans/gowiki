@@ -1,6 +1,6 @@
 {{ define "usernav" }}
-<div class="callout small primary">
-<h5><i class="fa fa-user" aria-hidden="true"></i>User panel{{ if .UN }}<span><small>{{ .page.UN }}</small>{{ end }}</span></h5>
+<div class="usernav">
+<h5><i class="fa fa-user" aria-hidden="true"></i>User: {{ if .UN }}<span><small>(logged in as {{ .page.UN }})</small></span>{{ end }}</h5> 
 <hr>
 <ul>
 {{ if .UN }}
