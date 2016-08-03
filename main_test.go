@@ -41,7 +41,7 @@ var (
 )
 
 func init() {
-	viper.Set("WikiDir", "./tests/wikidir")
+	viper.Set("WikiDir", "./tests/gowiki-testdata")
 	viper.Set("GitRepo", "git@jba.io:conf/gowiki-data.git")
 }
 
@@ -243,7 +243,7 @@ func TestNewHandler(t *testing.T) {
 func TestIndexPage(t *testing.T) {
     // Create a request to pass to our handler. We don't have any query parameters for now, so we'll
     // pass 'nil' as the third parameter.
-    req, err := http.NewRequest("GET", "/index", nil)
+    req, err := http.NewRequest("GET", "/", nil)
     if err != nil {
         t.Fatal(err)
     }
@@ -422,14 +422,6 @@ func TestMarkdownRender2(t *testing.T) {
 		//ioutil.WriteFile("./tests/test2.html", []byte(rawmds), 0755)
 		t.Error("Converted Markdown does not equal test2" + "\n Raw: \n" + rawmds + "Rendered: \n" + rendermds)
 	}
-}
-
-func TestRemoveTestWikiDir(t *testing.T) {
-	err := os.RemoveAll("./tests/wikidir/")
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log("Removed ./tests/wikidir/")
 }
 
 // Below is for testing the difference between just writing the Tags string directly as fed in from the wiki form, or using a []string as the source, but having to write them using a for loop
