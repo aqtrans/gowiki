@@ -1,0 +1,3 @@
+[submodule "tests/gowiki-testdata"]
+	path = tests/gowiki-testdata
+	url = git@jba.io:aqtrans/gowiki-testdata.git
