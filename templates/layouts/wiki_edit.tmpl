@@ -103,8 +103,10 @@ $(document).foundation();
 
 (function() {
     "use strict";
-    var tagFields = tagdog('.tag-field');
-    //console.log(tagFields);
+    var options = {
+        hiddenFieldSuffix: '_all'
+    }    
+    var tagFields = tagdog('.tag-field', options);
 }).call(this);
 
 var commonmark = window.commonmark;
