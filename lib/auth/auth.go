@@ -844,7 +844,6 @@ func UserEnvMiddle(next http.Handler) http.Handler {
 		clearFlash(w, r)
 		// If username is the configured AdminUser, set context to reflect this
 		isAdmin := false
-		log.Println(AdminUser)
 		if username == AdminUser {
 			utils.Debugln("Setting isAdmin to true due to "+ AdminUser)
 			isAdmin = true
