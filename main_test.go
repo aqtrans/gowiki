@@ -396,7 +396,7 @@ func TestMarkdownRender(t *testing.T) {
 	rawmds := markdownRender(rawmd)
 	
 	if rawmds != rendermds {
-		ioutil.WriteFile("./tests/test4.html", []byte(rawmds), 0755)
+		//ioutil.WriteFile("./tests/test4.html", []byte(rawmds), 0755)
 		t.Error("Converted Markdown does not equal test" + "\n Raw: \n" + rawmds + "Rendered: \n" + rendermds)
 	}
 
