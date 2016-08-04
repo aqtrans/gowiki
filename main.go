@@ -45,6 +45,7 @@ import (
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
+	//"github.com/microcosm-cc/bluemonday"
 	"github.com/spf13/viper"
 	"github.com/thoas/stats"
 	"gopkg.in/yaml.v2"
@@ -56,7 +57,7 @@ import (
 	"github.com/dimfeld/httptreemux"
 	"github.com/GeertJohan/go.rice"
 	"regexp"
-	"golang.org/x/net/html"
+	//"golang.org/x/net/html"
 )
 
 type key int
@@ -362,135 +363,6 @@ func RenderLinkCurrentPattern(rawBytes []byte, urlPrefix string) []byte {
 	return rawBytes
 }
 
-var validLinksPattern = regexp.MustCompile(`^[a-z][\w-]+://`)
-
-// isLink reports whether link fits valid format.
-func isLink(link []byte) bool {
-	return validLinksPattern.Match(link)
-}
-
-// Render renders Markdown to HTML with special links.
-func Render(rawBytes []byte, urlPrefix string) []byte {
-	urlPrefix = strings.Replace(urlPrefix, " ", "%20", -1)
-	result := PostProcess(rawBytes, urlPrefix)
-	result = RenderRaw(result, urlPrefix)
-	
-	//result = Sanitizer.SanitizeBytes(result)
-	return result
-}
-
-// RenderRaw renders Markdown to HTML without handling special links.
-func RenderRaw(body []byte, urlPrefix string) []byte {
-	htmlFlags := 0
-	htmlFlags |= blackfriday.HTML_SKIP_STYLE
-	htmlFlags |= blackfriday.HTML_OMIT_CONTENTS
-	renderer := &Renderer{
-		Renderer:  blackfriday.HtmlRenderer(htmlFlags, "", ""),
-		urlPrefix: urlPrefix,
-	}
-
-	// set up the parser
-	extensions := 0
-	extensions |= blackfriday.EXTENSION_NO_INTRA_EMPHASIS
-	extensions |= blackfriday.EXTENSION_TABLES
-	extensions |= blackfriday.EXTENSION_FENCED_CODE
-	extensions |= blackfriday.EXTENSION_AUTOLINK
-	extensions |= blackfriday.EXTENSION_STRIKETHROUGH
-	extensions |= blackfriday.EXTENSION_SPACE_HEADERS
-	extensions |= blackfriday.EXTENSION_NO_EMPTY_LINE_BEFORE_BLOCK
-
-	body = blackfriday.Markdown(body, renderer, extensions)
-	return body
-}
-
-var (
-	leftAngleBracket  = []byte("</")
-	rightAngleBracket = []byte(">")
-)
-
-var noEndTags = []string{"img", "input", "br", "hr"}
-
-// PostProcess treats different types of HTML differently,
-// and only renders special links for plain text blocks.
-func PostProcess(rawHtml []byte, urlPrefix string) []byte {
-	startTags := make([]string, 0, 5)
-	var buf bytes.Buffer
-	tokenizer := html.NewTokenizer(bytes.NewReader(rawHtml))
-
-OUTER_LOOP:
-	for html.ErrorToken != tokenizer.Next() {
-		token := tokenizer.Token()
-		switch token.Type {
-		case html.TextToken:
-			buf.Write(RenderLinkCurrentPattern([]byte(token.String()), urlPrefix))
-
-		case html.StartTagToken:
-			buf.WriteString(token.String())
-			tagName := token.Data
-			// If this is an excluded tag, we skip processing all output until a close tag is encountered.
-			if strings.EqualFold("a", tagName) || strings.EqualFold("code", tagName) || strings.EqualFold("pre", tagName) {
-				stackNum := 1
-				for html.ErrorToken != tokenizer.Next() {
-					token = tokenizer.Token()
-
-					// Copy the token to the output verbatim
-					buf.WriteString(token.String())
-
-					if token.Type == html.StartTagToken {
-						stackNum++
-					}
-
-					// If this is the close tag to the outer-most, we are done
-					if token.Type == html.EndTagToken {
-						stackNum--
-
-						if stackNum <= 0 && strings.EqualFold(tagName, token.Data) {
-							break
-						}
-					}
-				}
-				continue OUTER_LOOP
-			}
-
-			if !IsSliceContainsStr(noEndTags, token.Data) {
-				startTags = append(startTags, token.Data)
-			}
-
-		case html.EndTagToken:
-			if len(startTags) == 0 {
-				buf.WriteString(token.String())
-				break
-			}
-
-			buf.Write(leftAngleBracket)
-			buf.WriteString(startTags[len(startTags)-1])
-			buf.Write(rightAngleBracket)
-			startTags = startTags[:len(startTags)-1]
-		default:
-			buf.WriteString(token.String())
-		}
-	}
-
-	if io.EOF == tokenizer.Err() {
-		return buf.Bytes()
-	}
-
-	// If we are not at the end of the input, then some other parsing error has occurred,
-	// so return the input verbatim.
-	return rawHtml
-}
-
-// IsSliceContainsStr returns true if the string exists in given slice, ignore case.
-func IsSliceContainsStr(sl []string, str string) bool {
-	str = strings.ToLower(str)
-	for _, s := range sl {
-		if strings.ToLower(s) == str {
-			return true
-		}
-	}
-	return false
-}
-
 // CUSTOM GIT WRAPPERS
 // Construct an *exec.Cmd for `git {args}` with a workingDirectory
 func gitCommand(args ...string) *exec.Cmd {
@@ -769,7 +641,10 @@ func markdownRender(content []byte) string {
 	//md := markdown.New(markdown.HTML(true), markdown.Nofollow(true), markdown.Breaks(true))
 	//mds := md.RenderToString(content)
 
-	result := RenderLinkCurrentPattern(content, viper.GetString("Tld"))
+	// build full URL out of configured TLD:
+	domain := "//" + viper.GetString("Tld")
+
+	result := RenderLinkCurrentPattern(content, domain)
 	//log.Println(string(result))
 
 	md := markdownCommon(result)
@@ -795,7 +670,7 @@ func loadPage(r *http.Request) (*page, error) {
 		message = `
 			<div class="alert callout" data-closable>
 			<h5>Alert!</h5>
-			<p>` + template.HTMLEscapeString(msg) + `</p>
+			<p>` + msg + `</p>
 			<button class="close-button" aria-label="Dismiss alert" type="button" data-close>
 				<span aria-hidden="true">&times;</span>
 			</button>
@@ -2652,11 +2527,6 @@ func initWikiDir() {
 }
 
 func main() {
-
-	rawmdf := "./tests/test5.md"
-	rawmd, _ := ioutil.ReadFile(rawmdf)
-	rawmds2 := Render(rawmd, "https://wiki.jba.io/")
-	log.Println(string(rawmds2))
 
 	flag.Parse()
 
