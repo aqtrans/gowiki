@@ -394,10 +394,12 @@ func TestMarkdownRender(t *testing.T) {
 	rendermds := string(rendermd)
 
 	rawmds := markdownRender(rawmd)
+	
 	if rawmds != rendermds {
-		//ioutil.WriteFile("./tests/test.html", []byte(rawmds), 0755)
+		ioutil.WriteFile("./tests/test4.html", []byte(rawmds), 0755)
 		t.Error("Converted Markdown does not equal test" + "\n Raw: \n" + rawmds + "Rendered: \n" + rendermds)
 	}
+
 }
 
 // Tests a corner case where stuff without markdown wasn't being rendered
@@ -421,6 +423,31 @@ func TestMarkdownRender2(t *testing.T) {
 	if rawmds != rendermds {
 		//ioutil.WriteFile("./tests/test2.html", []byte(rawmds), 0755)
 		t.Error("Converted Markdown does not equal test2" + "\n Raw: \n" + rawmds + "Rendered: \n" + rendermds)
+	}
+}
+
+func TestMarkdownRender3(t *testing.T) {
+	// Read raw Markdown
+	rawmdf := "./tests/test3.md"
+	rawmd, err := ioutil.ReadFile(rawmdf)
+	if err != nil {
+		t.Error("Unable to access test3.md")
+	}
+	
+	// Read what rendered Markdown HTML should look like
+	rendermdf := "./tests/test3.html"
+	rendermd, err := ioutil.ReadFile(rendermdf)
+	if err != nil {
+		t.Error("Unable to access test3.html")
+	}
+	// []byte to string
+	rendermds := string(rendermd)
+
+	rawmds := markdownRender(rawmd)
+
+	if rawmds != rendermds {
+		//ioutil.WriteFile("./tests/test3.html", []byte(rawmds), 0755)
+		t.Error("Converted Markdown does not equal test3" + "\n Raw: \n" + rawmds + "Rendered: \n" + rendermds)
 	}
 }
 
