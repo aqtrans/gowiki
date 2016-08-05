@@ -1245,7 +1245,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 			log.Println("No such dir index...creating one.")
 			http.Redirect(w, r, "/"+name+"/index", http.StatusTemporaryRedirect)
 			return
-		} else if err.Error() == "No such file" {
+		} else if err.Error() == "NO_SUCH_FILE" {
 			log.Println("No such file...creating one.")
 			//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
 			createWiki(w, r, name)
@@ -1302,7 +1302,7 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 
 	wikip, wikierr := loadWiki(name)
 	if wikierr != nil {
-		if wikierr.Error() == "No such file" {
+		if wikierr.Error() == "NO_SUCH_FILE" {
 			newwp := &wikiPage{
 				page: p,
 				Wiki: &wiki{
@@ -1337,7 +1337,7 @@ func editHandler(w http.ResponseWriter, r *http.Request, name string) {
 	p, err := loadWikiPage(r, name)
 
 	if err != nil {
-		if err.Error() == "No such file" {
+		if err.Error() == "NO_SUCH_FILE" {
 			//log.Println("No such file...creating one.")
 			terr := renderTemplate(w, r.Context(), "wiki_edit.tmpl", p)
 			if terr != nil {
@@ -1609,7 +1609,7 @@ func loadWiki(name string) (*wiki, error) {
 	if !fileExists && feErr == nil {
 		// NOW: Using os.Stat to properly check for file existence, using IsNotExist()
 		// This should mean file is non-existent, so create new page
-		errn := errors.New("No such file")
+		errn := errors.New("NO_SUCH_FILE")
 		return nil, errn
 	}
 
@@ -2064,6 +2064,7 @@ func createWiki(w http.ResponseWriter, r *http.Request, name string) {
 		p, err := loadPage(r)
 		if err != nil {
 			log.Fatalln(err)
+			return
 		}
 		/*gp := &genPage{
 			p,
@@ -2084,9 +2085,14 @@ func createWiki(w http.ResponseWriter, r *http.Request, name string) {
 			//panic(err)
 			log.Println("wiki_create error:")
 			log.Println(err)
+			return
 		}
 		return
 	}
+
+	auth.SetSession("flash", "Please login to view that page.", w, r)
+	http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+r.URL.String(), http.StatusSeeOther)
+	return
 
 }
 /*
@@ -2237,6 +2243,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		// Replacing these for now:
 		name := params["name"]
 		fullname := filepath.Join(viper.GetString("WikiDir"), name)
+		
 		//dir := filepath.Dir(name)
 		//wikipage := cfg.WikiDir + name
 
@@ -2288,15 +2295,10 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 				fn(w, r, name)
 				return
 			}
-
 			createWiki(w, r, name)
 			return
 		}
-		/*if !fileExists && feErr == nil && (r.URL.RequestURI() != "/save/"+name) {
-			//log.Println(r.URL.RequestURI())
-			createWiki(w, r, name)
-			return
-		}*/		
+
 		if !fileExists && feErr != nil {
 			log.Println(name+" does not exist, but has an error:")
 			log.Println(feErr)

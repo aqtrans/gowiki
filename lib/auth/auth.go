@@ -834,6 +834,7 @@ func UserEnvMiddle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username := getUsernameFromCookie(r)
 		message := getFlashFromCookie(r)
+		
 		// Check if user actually exists before setting username
 		// If user does not exist, clear the session because something fishy is going on
 		if !doesUserExist(username) {
