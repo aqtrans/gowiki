@@ -551,6 +551,13 @@ func auth(username, password string) bool {
 }
 
 func boltAuth(username, password string) bool {
+
+	// Catch non-existent users before wasting CPU cycles checking hashes
+	if !doesUserExist(username) {
+		log.Println(username + " does not exist but trying to login.")
+		return false
+	}
+
 	var hashedUserPassByte []byte
 	// Grab given user's password from Bolt
 	Authdb.View(func(tx *bolt.Tx) error {
@@ -576,7 +583,7 @@ func boltAuth(username, password string) bool {
 	err := CheckPasswordHash(hashedUserPassByte, []byte(password))
 	if err != nil {
 		// Incorrect password, malformed hash, etc.
-		log.Println("error verifying password")
+		log.Println("error verifying password for user " + username)
 		utils.Debugln(err)
 		return false
 	}
