@@ -58,6 +58,7 @@ import (
 	"github.com/GeertJohan/go.rice"
 	"regexp"
 	//"golang.org/x/net/html"
+	"github.com/BurntSushi/toml"
 )
 
 type key int
@@ -91,6 +92,7 @@ func markdownCommon(input []byte) []byte {
 }
 
 type configuration struct {
+	Domain   string
 	Port     string
 	Email    string
 	WikiDir  string
@@ -222,14 +224,17 @@ func (a wikiByModDate) Len() int           { return len(a) }
 func (a wikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a wikiByModDate) Less(i, j int) bool { return a[i].ModTime < a[j].ModTime }
 
+var conf *configuration
+
 func init() {
+	//toml.DecodeFile("./data/conf.toml", &conf);
 
 	// Viper config.
 
 	viper.SetDefault("Port", "3000")
 	viper.SetDefault("Email", "unused@the.moment")
 	viper.SetDefault("WikiDir", "./data/wikidata/")
-	viper.SetDefault("Tld", "wiki.example.com")
+	viper.SetDefault("Domain", "wiki.example.com")
 	viper.SetDefault("GitRepo", "git@example.com:user/wikidata.git")
 	/*
 	defaultauthstruct := &auth.AuthConf{
@@ -249,12 +254,25 @@ func init() {
 	}
 	viper.SetConfigType("json")
 	viper.WatchConfig()
+
+	/* To save config to toml:
+	err = viper.Unmarshal(&conf)
+	//jc := conf
+	if err != nil {
+		log.Println(err)
+	}
+	bo := conf.save()
+	if !bo {
+		log.Println(bo)
+	}
+	*/
+
 	
 	/*
 			Port     string
 			Email    string
 			WikiDir  string
-			MainTLD  string
+			Domain  string
 			GitRepo  string
 		    AuthConf struct {
 		        LdapEnabled bool
@@ -311,6 +329,22 @@ func init() {
 	//var err error
 	
 
+}
+
+func (conf *configuration) save() bool {
+	buf := new(bytes.Buffer)
+	err := toml.NewEncoder(buf).Encode(conf)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	log.Println(buf.String())
+	err = ioutil.WriteFile("./data/conf.toml", buf.Bytes(), 0644)
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+	return true
 }
 
 func timeNewContext(c context.Context, t time.Time) context.Context {
@@ -641,8 +675,8 @@ func markdownRender(content []byte) string {
 	//md := markdown.New(markdown.HTML(true), markdown.Nofollow(true), markdown.Breaks(true))
 	//mds := md.RenderToString(content)
 
-	// build full URL out of configured TLD:
-	domain := "//" + viper.GetString("Tld")
+	// build full URL out of configured Domain:
+	domain := "//" + viper.GetString("Domain")
 
 	result := RenderLinkCurrentPattern(content, domain)
 	//log.Println(string(result))
