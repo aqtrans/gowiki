@@ -1,24 +1,29 @@
 {{ define "sidebar" }}
+<fieldset class="fieldset">
+  <legend>Wiki</legend>
 <ul>
     <li><a href="/">Home</a></li>
     <li><a href="/list">List</a></li>
     <li><a href="/tags">Tags</a></li>
     <li><a href="/gitadd">Git Add</a></li>
 </ul>
-<h3><small>Favorites:</small></h3>
+</fieldset>
+<fieldset class="fieldset">
+  <legend>Favs</legend>
 <ul>
 {{range .page.Favs}}
 <li><a href="/{{.}}">{{.}}</a></li>
 {{end}}
 </ul>
+</fieldset>
+
 <form method="get" action="/new" id="newwiki">
-    <div class="input-group">
-        <input type="text" placeholder="Add page" id="newwiki" name="newwiki" class="newwiki input-group-field">
+        <input type="text" placeholder="Add page" id="newwiki" name="newwiki">
         <input type="hidden" name="token" value="{{.Token}}">
-        <div class="input-group-button">
-            <button type="button" class="success button"><i class="fa fa-plus-square-o fa-lg" aria-hidden="true"></i></button>
-        </div>    
-    </div>    
+        <div>
+        <button type="button" class="success button"><i class="fa fa-plus-square-o fa-lg" aria-hidden="true"></i></button>
+        </div>   
 </form>
+
     {{ template "usernav" .}}
 {{ end }}
