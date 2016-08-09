@@ -79,4 +79,4 @@ deploy-it:
     - go build -o ./deploy/wiki
     - cp -r README.md deploy/
     - rsync -av --delete --exclude data/ --exclude http.log deploy/ golang@localhost:/home/golang/wiki/
-    #- ssh golang@localhost sudo systemctl restart golang-wiki
+    - ssh golang@localhost sudo systemctl restart golang-wiki
