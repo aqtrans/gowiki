@@ -1,0 +1,48 @@
+{{ define "title" }}<title>{{.SiteName}}|Admin Git Panel</title>{{ end }}
+{{ define "content" }}
+<main>
+<article>
+    <header>Admin Git Panel</header>
+</article>
+
+  <ul class="tabs">
+    <li class="tabs-title"><a href="#"><i class="fa fa-lock" aria-hidden="true"></i>Main</a></li>
+    <li class="tabs-title"><a href="/admin/users"><i class="fa fa-users" aria-hidden="true"></i>Manage Users</a></li>
+    <li class="tabs-title"><a href="/admin/list"><i class="fa fa-th-list" aria-hidden="true"></i>Manage Wiki Pages</a></li>
+    <li class="tabs-title"><a href="/admin/git"><i class="fa fa-git" aria-hidden="true"></i>Manage Wiki Git</a></li>
+    <li class="tabs-title is-active"><a href="/admin/config"><i class="fa fa-git" aria-hidden="true"></i>Manage Wiki Config</a></li>
+  </ul>
+
+  <article>
+
+        <h2>Adjust config:</h2>
+        <form method="post" action="/admin/config" id="config">
+        Domain:<input type="text" id="domain" name="domain" value="{{.Config.Domain}}">
+        Port:<input type="text" id="port" name="port" value="{{.Config.Port}}">
+        Email:<input type="text" id="email" name="email" value="{{.Config.Email}}">
+        WikiDir:<input type="text" id="wikidir" name="wikidir" value="{{.Config.WikiDir}}">
+        GitRepo:<input type="text" id="gitrepo" name="gitrepo" value="{{.Config.GitRepo}}">
+        AdminUser:<input type="text" id="adminuser" name="adminuser" value="{{.Config.AdminUser}}">
+        {{ if .Config.PushOnSave }}
+            <div class="switch tiny">
+            PushOnSave:<input class="switch-input" id="pushonsave" type="checkbox" name="pushonsave" checked>
+            <label class="switch-paddle" for="pushonsave">
+                <span class="show-for-sr">Push On Save</span>
+            </label>
+            </div>
+        {{ else }}
+            <div class="switch tiny">
+            PushOnSave:<input class="switch-input" id="pushonsave" type="checkbox" name="pushonsave">
+            <label class="switch-paddle" for="pushonsave">
+                <span class="show-for-sr">Push On Save</span>
+            </label>
+            </input>
+        {{ end }}
+        <input type="hidden" name="token" value="{{.Token}}">
+        <button type="submit" class="button">Submit</button>
+        </form>
+        <hr>
+
+  </article>
+</main>
+{{ end }}

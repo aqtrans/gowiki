@@ -92,11 +92,13 @@ func markdownCommon(input []byte) []byte {
 }
 
 type configuration struct {
-	Domain   string
-	Port     string
-	Email    string
-	WikiDir  string
-	GitRepo  string
+	Domain     string
+	Port       string
+	Email      string
+	WikiDir    string
+	GitRepo    string
+	AdminUser  string
+	PushOnSave bool
 }
 
 type Renderer struct {
@@ -224,26 +226,19 @@ func (a wikiByModDate) Len() int           { return len(a) }
 func (a wikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a wikiByModDate) Less(i, j int) bool { return a[i].ModTime < a[j].ModTime }
 
-var conf *configuration
+var conf configuration
 
 func init() {
 	//toml.DecodeFile("./data/conf.toml", &conf);
-
+	
 	// Viper config.
-
 	viper.SetDefault("Port", "3000")
 	viper.SetDefault("Email", "unused@the.moment")
 	viper.SetDefault("WikiDir", "./data/wikidata/")
 	viper.SetDefault("Domain", "wiki.example.com")
 	viper.SetDefault("GitRepo", "git@example.com:user/wikidata.git")
-	/*
-	defaultauthstruct := &auth.AuthConf{
-		AdminUser: "admin",
-	}
-	viper.SetDefault("AuthConf", &defaultauthstruct)
-	*/
 	viper.SetDefault("AdminUser", "admin")
-	
+	viper.SetDefault("PushOnSave", false)
 
 	viper.SetConfigName("conf")
 	viper.AddConfigPath("./data/")
@@ -252,20 +247,9 @@ func init() {
 		//panic(fmt.Errorf("Fatal error config file: %s \n", err))
 		fmt.Println("No configuration file loaded - using defaults")
 	}
-	viper.SetConfigType("json")
-	viper.WatchConfig()
-
-	/* To save config to toml:
-	err = viper.Unmarshal(&conf)
-	//jc := conf
-	if err != nil {
-		log.Println(err)
-	}
-	bo := conf.save()
-	if !bo {
-		log.Println(bo)
-	}
-	*/
+	//viper.SetConfigType("toml")
+	
+	
 
 	
 	/*
@@ -301,10 +285,10 @@ func init() {
 		templates = make(map[string]*template.Template)
 	}
 
-	gitPath, err = exec.LookPath("git")
-	if err != nil {
+	gitPath, _ = exec.LookPath("git")
+	/*if err != nil {
 		log.Fatal("git must be installed")
-	}
+	}*/
 	/*
 	templatesDir := "./templates/"
 	layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
@@ -338,7 +322,8 @@ func (conf *configuration) save() bool {
 		log.Println(err)
 		return false
 	}
-	log.Println(buf.String())
+	//log.Println(buf.String())
+
 	err = ioutil.WriteFile("./data/conf.toml", buf.Bytes(), 0644)
 	if err != nil {
 		log.Println(err)
@@ -1258,7 +1243,8 @@ func doesPageExist(name string) (bool, error) {
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "indexHandler")
 
-	http.Redirect(w, r, "/index", http.StatusSeeOther)
+	//http.Redirect(w, r, "/index", http.StatusSeeOther)
+	viewHandler(w, r, "index")
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
@@ -1930,6 +1916,80 @@ func adminMainHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func adminConfigHandler(w http.ResponseWriter, r *http.Request) {
+	defer utils.TimeTrack(time.Now(), "adminConfigHandler")
+
+	var cfg configuration
+	// To save config to toml:
+	err := viper.Unmarshal(&cfg)
+	//jc := conf
+	if err != nil {
+		log.Println(err)
+	}
+
+	title := "admin-config"
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	data := struct {
+		*page
+		Title string
+		Config configuration
+	}{
+		p,
+		title,
+		cfg,
+	}
+	err = renderTemplate(w, r.Context(), "admin_config.tmpl", data)
+	if err != nil {
+		log.Println("render admin_config error:")
+		log.Println(err)
+		return
+	}
+}
+
+func adminConfigPostHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	log.Println(r.PostForm)
+	domain := r.FormValue("domain")
+	port := r.FormValue("port")
+	email := r.FormValue("email")
+	wikidir := r.FormValue("wikidir")
+	gitrepo := r.FormValue("gitrepo")
+	adminuser := r.FormValue("adminuser")
+	rawPushonsave := r.FormValue("pushonsave")
+	pushonsave := false
+	if rawPushonsave == "on" {
+		pushonsave = true
+	}
+
+	cfg := &configuration{
+		Domain: domain,
+		Port: port,
+		Email: email,
+		WikiDir: wikidir,
+		GitRepo: gitrepo,
+		AdminUser: adminuser,
+		PushOnSave: pushonsave,
+	}
+
+	viper.Set("Domain", domain)
+	viper.Set("Port", port)
+	viper.Set("Email", email)
+	viper.Set("WikiDir", wikidir)
+	viper.Set("GitRepo", gitrepo)
+	viper.Set("AdminUser", adminuser)
+	viper.Set("PushOnSave", pushonsave)
+	
+	bo := cfg.save()
+	if !bo {
+		log.Println(bo)
+	}
+	http.Redirect(w, r, "/admin/config", http.StatusOK)
+	return
+}
+
 func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "gitCheckinHandler")
 
@@ -2564,6 +2624,9 @@ func initWikiDir() {
 
 func main() {
 
+	viper.WatchConfig()
+	//log.Println(viper.GetBool("PushOnSave"))
+
 	flag.Parse()
 
 	// Open and initialize auth database
@@ -2632,6 +2695,8 @@ func main() {
 
 	admin := r.NewGroup("/admin")
 	admin.GET("/", auth.AuthAdminMiddle(adminMainHandler))
+	admin.GET("/config", auth.AuthAdminMiddle(adminConfigHandler))
+	admin.POST("/config", auth.AuthAdminMiddle(adminConfigPostHandler))
 	admin.GET("/git", auth.AuthAdminMiddle(adminGitHandler))
 	admin.POST("/git/push", auth.AuthAdminMiddle(gitPushPostHandler))
 	admin.POST("/git/checkin", auth.AuthAdminMiddle(gitCheckinPostHandler))
