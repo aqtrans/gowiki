@@ -397,7 +397,7 @@ func TestMarkdownRender(t *testing.T) {
 	
 	if rawmds != rendermds {
 		//ioutil.WriteFile("./tests/test4.html", []byte(rawmds), 0755)
-		t.Error("Converted Markdown does not equal test" + "\n Raw: \n" + rawmds + "Rendered: \n" + rendermds)
+		t.Error("Converted Markdown does not equal test" + "\n Output: \n" + rawmds + "Expected: \n" + rendermds)
 	}
 
 }
@@ -422,7 +422,7 @@ func TestMarkdownRender2(t *testing.T) {
 	rawmds := markdownRender(rawmd)
 	if rawmds != rendermds {
 		//ioutil.WriteFile("./tests/test2.html", []byte(rawmds), 0755)
-		t.Error("Converted Markdown does not equal test2" + "\n Raw: \n" + rawmds + "Rendered: \n" + rendermds)
+		t.Error("Converted Markdown does not equal test2" + "\n Output: \n" + rawmds + "Expected: \n" + rendermds)
 	}
 }
 
@@ -447,7 +447,7 @@ func TestMarkdownRender3(t *testing.T) {
 
 	if rawmds != rendermds {
 		//ioutil.WriteFile("./tests/test3.html", []byte(rawmds), 0755)
-		t.Error("Converted Markdown does not equal test3" + "\n Raw: \n" + rawmds + "Rendered: \n" + rendermds)
+		t.Error("Converted Markdown does not equal test3" + "\n Output: \n" + rawmds + "Expected: \n" + rendermds)
 	}
 }
 
