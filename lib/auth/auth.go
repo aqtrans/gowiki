@@ -48,6 +48,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	//"github.com/dimfeld/httptreemux"
 	//"github.com/julienschmidt/httprouter"
+	"github.com/xyproto/permissionbolt"
 )
 
 type key int
@@ -90,6 +91,8 @@ type User struct {
 	IsAdmin  bool
 }
 
+type PermsUser *permissionbolt.UserState
+
 type Flash struct {
 	Msg	 string
 }
@@ -110,6 +113,14 @@ var CookieHandler = sessions.NewCookieStore(
 	[]byte("5CO4mHhkuV4BVDZT72pfkNxVhxOMHMN9lTZjGihKJoNWOUQf5j32NF2nx8RQypUh"),
 	[]byte("YuBmqpu4I40ObfPHw0gl7jeF88bk4eT4"),
 )
+
+func Perms(path string) *permissionbolt.Permissions {
+	perm, err := permissionbolt.NewWithConf(path)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return perm
+}
 
 func Open(path string) *bolt.DB {
 	var err error
