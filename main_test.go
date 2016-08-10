@@ -18,7 +18,7 @@ import (
 	"strings"
 	"context"
 	//"github.com/gorilla/mux"
-	"jba.io/go/wiki/lib/auth"
+	"jba.io/go/auth"
 	"github.com/dimfeld/httptreemux"
 	"jba.io/go/utils"
 	"github.com/boltdb/bolt"
@@ -396,7 +396,7 @@ func TestMarkdownRender(t *testing.T) {
 	rawmds := markdownRender(rawmd)
 	
 	if rawmds != rendermds {
-		//ioutil.WriteFile("./tests/test4.html", []byte(rawmds), 0755)
+		//ioutil.WriteFile("./tests/test.html", []byte(rawmds), 0755)
 		t.Error("Converted Markdown does not equal test" + "\n Output: \n" + rawmds + "Expected: \n" + rendermds)
 	}
 
