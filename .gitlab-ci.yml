@@ -61,7 +61,8 @@ test-my-project:
     - export GOPATH=$HOME/gopath
     - export PATH=$GOROOT/bin:$PATH 
     - export PATH=$GOPATH/bin:$PATH
-    - cd $GOPATH/src/wiki  
+    - cd $GOPATH/src/wiki
+    - go get github.com/boltdb/bolt
     - go test -v
 
 deploy-it:
