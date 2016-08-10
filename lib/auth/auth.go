@@ -26,7 +26,7 @@ package auth
 //      - Mostly working
 
 import (
-	//"github.com/gorilla/securecookie"
+	"github.com/gorilla/securecookie"
 	"errors"
 	"strconv"
 	"fmt"
@@ -39,7 +39,7 @@ import (
 
 	"github.com/boltdb/bolt"
 	//"github.com/gorilla/context"
-	"github.com/gorilla/sessions"
+	//"github.com/gorilla/sessions"
 	//"github.com/mavricknz/ldap"
 	//"github.com/spf13/viper"
 	//"gopkg.in/hlandau/passlib.v1"
@@ -96,19 +96,15 @@ type Flash struct {
 
 type Token   string
 
-//var Authcfg = AuthConf{}
-
-var AdminUser string
-
-var Authdb *bolt.DB
-
-//var sCookieHandler = securecookie.New(
-//	securecookie.GenerateRandomKey(64),
-//	securecookie.GenerateRandomKey(32))
-
-var CookieHandler = sessions.NewCookieStore(
-	[]byte("5CO4mHhkuV4BVDZT72pfkNxVhxOMHMN9lTZjGihKJoNWOUQf5j32NF2nx8RQypUh"),
-	[]byte("YuBmqpu4I40ObfPHw0gl7jeF88bk4eT4"),
+var (
+	AdminUser string
+	Authdb *bolt.DB
+	sCookieHandler = securecookie.New(
+		[]byte("5CO4mHhkuV4BVDZT72pfkNxVhxOMHMN9lTZjGihKJoNWOUQf5j32NF2nx8RQypUh"),
+		[]byte("YuBmqpu4I40ObfPHw0gl7jeF88bk4eT4"))
+	//CookieHandler = sessions.NewCookieStore(
+	//	[]byte("5CO4mHhkuV4BVDZT72pfkNxVhxOMHMN9lTZjGihKJoNWOUQf5j32NF2nx8RQypUh"),
+	//	[]byte("YuBmqpu4I40ObfPHw0gl7jeF88bk4eT4"),)
 )
 
 func Open(path string) *bolt.DB {
@@ -161,19 +157,30 @@ func fromTokenContext(c context.Context) (string, bool) {
 // SetSession Takes a key, and a value to store inside a cookie
 // Currently used for username and CSRF tokens
 func SetSession(key, val string, w http.ResponseWriter, r *http.Request) {
-	//defer timeTrack(time.Now(), "SetSession")
-	session, err := CookieHandler.Get(r, "session")
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-	session.Options = &sessions.Options{
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   false,
-	}
-	session.Values[key] = val
-	session.Save(r, w)
+
+    if encoded, err := sCookieHandler.Encode(key, val); err == nil {
+        cookie := &http.Cookie{
+            Name:  key,
+            Value: encoded,
+            Path:  "/",
+        }
+        http.SetCookie(w, cookie)
+    }
+	
+}
+
+func ReadSession(key string, w http.ResponseWriter, r *http.Request) string {
+	value := ""
+    if cookie, err := r.Cookie(key); err == nil {
+		err := sCookieHandler.Decode(key, cookie.Value, &value)
+		if err != nil {
+			log.Println("Error decoding cookie " + key + " value")
+			SetSession(key, "", w, r)
+			return ""
+		}
+    }
+	log.Println(key + " : " + value)
+	return value
 }
 
 // SetFlash sets a flash message inside a cookie, which, combined with the UserEnvMiddle
@@ -184,61 +191,30 @@ func SetFlash(msg string, w http.ResponseWriter, r *http.Request) {
 
 // ClearSession currently only clearing the user value
 // The CSRF token should always be around due to the login form and such
-func ClearSession(w http.ResponseWriter, r *http.Request) {
-	s, err := CookieHandler.Get(r, "session")
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-	_, ok := s.Values["user"].(string)
-	if ok {
-		delete(s.Values, "user")
-		s.Save(r, w)
-	}
+func ClearSession(key string, w http.ResponseWriter, r *http.Request) {
+    SetSession(key, "", w, r)
 }
 
 func clearFlash(w http.ResponseWriter, r *http.Request) {
-	s, err := CookieHandler.Get(r, "session")
-	if err != nil {
-		return
-	}
-	_, ok := s.Values["flash"].(string)
-	if ok {
-		utils.Debugln("flash cleared")
-		delete(s.Values, "flash")
-		s.Save(r, w)
-	}
+	utils.Debugln("flash cleared")
+	ClearSession("flash", w, r)
 }
 
-func getUsernameFromCookie(r *http.Request) (username string) {
-	s, _ := CookieHandler.Get(r, "session")
-	userC, ok := s.Values["user"].(string)
-	if !ok {
-		userC = ""
-	}
-
-	return userC
+func getUsernameFromCookie(r *http.Request, w http.ResponseWriter) (username string) {
+	return ReadSession("user", w, r)
 }
 
-func getFlashFromCookie(r *http.Request) (message string) {
-	s, _ := CookieHandler.Get(r, "session")
-
-	messageC, ok := s.Values["flash"].(string)
-	if !ok {
-		messageC = ""
+func getFlashFromCookie(r *http.Request, w http.ResponseWriter) (message string) {
+	message = ReadSession("flash", w, r)
+	if message != "" {
+		clearFlash(w, r)
 	}
-
-	return messageC
+	return message
 }
 
 // Retrieve a token
-func getTokenFromCookie(r *http.Request) (token string) {
-	s, _ := CookieHandler.Get(r, "session")
-	token, ok := s.Values["token"].(string)
-	if !ok {
-
-	}
-	return token
+func getTokenFromCookie(r *http.Request, w http.ResponseWriter) (token string) {
+	return ReadSession("token", w, r)
 }
 
 // GetUsername retrieves username, and admin bool from context
@@ -257,13 +233,13 @@ func GetUsername(c context.Context) (username string, isAdmin bool) {
 	return username, isAdmin
 }
 
-// GetToken retrieves token from context
+// GetFlash retrieves token from context
 func GetFlash(c context.Context) string {
 	//defer timeTrack(time.Now(), "GetUsername")
 	var flash string
 	t, ok := fromFlashContext(c)
 	if !ok {
-		utils.Debugln("No token in context.")
+		utils.Debugln("No flash in context.")
 		flash = ""
 	}
 	if ok {
@@ -292,9 +268,8 @@ func genToken(w http.ResponseWriter, r *http.Request) string {
 
 // Only set a new token if one doesn't already exist
 func setToken(w http.ResponseWriter, r *http.Request) (context.Context, string) {
-	s, _ := CookieHandler.Get(r, "session")
-	token, ok := s.Values["token"].(string)
-	if !ok {
+	token := ReadSession("token", w, r)
+	if token == "" {
 		token = utils.RandKey(32)
 		SetSession("token", token, w, r)
 		utils.Debugln("new token generated")
@@ -611,7 +586,7 @@ func doesUserExist(username string) bool {
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	ClearSession(w, r)
+	ClearSession("user", w, r)
 	utils.Debugln("Logout")
 	http.Redirect(w, r, r.Referer(), 302)
 }
@@ -839,17 +814,16 @@ func AuthAdminMiddle(next http.HandlerFunc) http.HandlerFunc {
 // tosses it into the context for use in various other middlewares
 func UserEnvMiddle(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username := getUsernameFromCookie(r)
-		message := getFlashFromCookie(r)
+		username := getUsernameFromCookie(r, w)
+		message := getFlashFromCookie(r, w)
 		
 		// Check if user actually exists before setting username
 		// If user does not exist, clear the session because something fishy is going on
 		if !doesUserExist(username) {
 			username = ""
-			ClearSession(w, r)
+			ClearSession("user", w, r)
 		}
-		// Delete flash after pushing to context
-		clearFlash(w, r)
+		
 		// If username is the configured AdminUser, set context to reflect this
 		isAdmin := false
 		if username == AdminUser {
@@ -871,7 +845,7 @@ func UserEnvMiddle(next http.Handler) http.Handler {
 
 func AuthCookieMiddle(next http.HandlerFunc) http.HandlerFunc {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		username := getUsernameFromCookie(r)
+		username := getUsernameFromCookie(r, w)
 		if username == "" {
 			utils.Debugln("AuthMiddleware mitigating: " + r.Host + r.URL.String())
 			http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+r.URL.String(), 302)
