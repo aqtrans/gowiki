@@ -28,7 +28,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	//"github.com/golang-commonmark/markdown"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -45,20 +44,16 @@ import (
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
-	//"github.com/microcosm-cc/bluemonday"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/spf13/viper"
 	"github.com/thoas/stats"
 	"gopkg.in/yaml.v2"
-	//"jba.io/go/wiki/lib/auth"
 	"jba.io/go/auth"
 	"jba.io/go/utils"
-	//"jba.io/go/wiki/static"
-	//"net/url"
 	"context"
 	"github.com/dimfeld/httptreemux"
 	"github.com/GeertJohan/go.rice"
 	"regexp"
-	//"golang.org/x/net/html"
 	"github.com/BurntSushi/toml"
 )
 
@@ -668,9 +663,15 @@ func markdownRender(content []byte) string {
 	//log.Println(string(result))
 
 	md := markdownCommon(result)
-	mds := string(md)
 
-	return mds
+	p := bluemonday.UGCPolicy()
+	p.AllowElements("nav")	
+
+	html := p.SanitizeBytes(md)
+
+	//mds := string(md)
+	//return mds
+	return string(html)
 }
 
 func loadPage(r *http.Request) (*page, error) {
