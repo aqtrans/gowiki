@@ -4,14 +4,14 @@
 <article>
     <header>Admin User Panel</header>
 </article>
+
   <ul class="tabs">
-    <li class="tabs-title"><a href="/admin/"><i class="fa fa-lock" aria-hidden="true"></i>Main</a></li>
-    <li class="tabs-title is-active"><a href="#"><i class="fa fa-users" aria-hidden="true"></i>Manage Users</a></li>
-    <li class="tabs-title"><a href="/admin/list"><i class="fa fa-th-list" aria-hidden="true"></i>Manage Wiki Pages</a></li>
-    <li class="tabs-title"><a href="/admin/git"><i class="fa fa-git" aria-hidden="true"></i>Manage Wiki Git</a></li>
+    <li class="tabs-title"><a href="/admin/"><i class="fa fa-lock" aria-hidden="true"></i> Main</a></li>
+    <li class="tabs-title is-active"><a href="#"><i class="fa fa-users" aria-hidden="true"></i> Manage Users</a></li>
+    <li class="tabs-title"><a href="/admin/git"><i class="fa fa-git" aria-hidden="true"></i> Manage Git</a></li>
+    <li class="tabs-title"><a href="/admin/config"><i class="fa fa-wrench" aria-hidden="true"></i> Manage Config</a></li>
   </ul>
-  <article>  
-    
+  <article>
         <h1>Editing User {{.User}}</h1>
         <br>
         <form method="post" action="/admin/user" id="user">
