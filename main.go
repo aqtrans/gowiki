@@ -40,6 +40,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"bufio"
 
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
@@ -60,6 +61,8 @@ import (
 type key int
 
 const TimerKey key = 0
+
+const yamlsep = "---"
 
 const (
 	commonHtmlFlags = 0 |
@@ -772,7 +775,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 	}
 
 	// Read YAML frontmatter into fm
-	fm, content, err := readFront(body)
+	fmbytes, content, err := readFront(body)
 	if err != nil {
 		log.Println("viewCommitHandler readFront error:")
 		log.Println(err)
@@ -780,6 +783,12 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 	if content == nil {
 		content = []byte("")
 	}
+
+	fm, err = marshalFrontmatter(fmbytes)
+	if err != nil {
+		log.Println(err)
+	}
+
 	// Render remaining content after frontmatter
 	md := markdownRender(content)
 	if fm.Public {
@@ -928,19 +937,18 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			var pagetitle string
 
 			//log.Println(file)
-			body, err := ioutil.ReadFile(fullname)
-			if err != nil {
-				log.Fatalln(err)
-			}
 
 			// Read YAML frontmatter into fm
-			fm, _, err = readFront(body)
+			fmbytes, _, err := readFileAndFront(fullname)
 			if err != nil {
-				// If YAML frontmatter doesn't exist, proceed, but log it
-				//log.Fatalln(err)
+				log.Println(err)
+			}
+			fm, err = marshalFrontmatter(fmbytes)
+			if err != nil {
 				log.Println("YAML unmarshal error in: " + file)
 				log.Println(err)
 			}
+
 			if fm.Public {
 				//log.Println("Private page!")
 			}
@@ -1014,8 +1022,19 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func readFront(data []byte) (fm frontmatter, content []byte, err error) {
+func readFileAndFront(filepath string) (fmdata []byte, content []byte, err error) {
+
+	data, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		log.Println(err)
+		return nil, nil, err
+	}
+	return readFront(data)
+}
+
+func readFront(data []byte) (fmdata []byte, content []byte, err error) {
 	//defer utils.TimeTrack(time.Now(), "readFront")
+
 	r := bytes.NewBuffer(data)
 
 	// eat away starting whitespace
@@ -1024,7 +1043,7 @@ func readFront(data []byte) (fm frontmatter, content []byte, err error) {
 		ch, _, err = r.ReadRune()
 		if err != nil {
 			// file is just whitespace
-			return frontmatter{}, []byte{}, nil
+			return []byte{}, []byte{}, nil
 		}
 	}
 	r.UnreadRune()
@@ -1032,14 +1051,13 @@ func readFront(data []byte) (fm frontmatter, content []byte, err error) {
 	// check if first line is ---
 	line, err := r.ReadString('\n')
 	if err != nil && err != io.EOF {
-		return frontmatter{}, nil, err
+		return nil, nil, err
 	}
 
 	if strings.TrimSpace(line) != "---" {
 		// no front matter, just content
-		return frontmatter{}, data, nil
+		return []byte{}, data, nil
 	}
-
 	yamlStart := len(data) - r.Len()
 	yamlEnd := yamlStart
 
@@ -1047,9 +1065,9 @@ func readFront(data []byte) (fm frontmatter, content []byte, err error) {
 		line, err = r.ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
-				return frontmatter{}, data, nil
+				return []byte{}, data, nil
 			}
-			return frontmatter{}, nil, err
+			return nil, nil, err
 		}
 
 		if strings.TrimSpace(line) == "---" {
@@ -1058,12 +1076,59 @@ func readFront(data []byte) (fm frontmatter, content []byte, err error) {
 		}
 	}
 
-	m := map[string]interface{}{}
-	err = yaml.Unmarshal(data[yamlStart:yamlEnd], &fm)
+	return data[yamlStart:yamlEnd], data[yamlEnd:], nil
+}
+
+func readFrontBuf(filepath string) (fmdata []byte, content []byte, err error) {
+    f, err := os.Open(filepath)
+    if err != nil {
+        log.Println(err)
+    }
+    defer f.Close()
+
+    topbuf := new(bytes.Buffer)
+    bottombuf := new(bytes.Buffer)
+    s := bufio.NewScanner(f)
+    line := 0
+    start := false
+    end := false
+    for s.Scan() {
+        //log.Println(end)
+        if start && end {
+            bottombuf.Write(s.Bytes())
+            bottombuf.WriteString("\n")
+        }
+        if start && !end {
+            // Anything after the --- tag, add to the topbuffer
+            if s.Text() != yamlsep {
+                topbuf.Write(s.Bytes())
+                topbuf.WriteString("\n")
+            }
+            if s.Text() == yamlsep {
+                end = true
+            }
+        }     
+
+        // Hopefully catch the first --- tag
+        if s.Text() == yamlsep && !start {
+            start = true
+        }
+        line = line+1
+    }
+    //log.Println("TOP: ")
+    //log.Println(topbuf.String())
+    //log.Println("-----")
+    //log.Println(bottombuf.String())
+	return topbuf.Bytes(), bottombuf.Bytes(), nil
+}
+
+func marshalFrontmatter(fmdata []byte) (fm frontmatter, err error) {
+	err = yaml.Unmarshal(fmdata, &fm)
 	if err != nil {
-		err = yaml.Unmarshal(data[yamlStart:yamlEnd], &m)
+		m := map[string]interface{}{}
+		err = yaml.Unmarshal(fmdata, &m)
 		if err != nil {
-			return frontmatter{}, nil, err
+			return frontmatter{}, err
 		}
 
 		title, found := m["title"].(string)
@@ -1091,7 +1156,7 @@ func readFront(data []byte) (fm frontmatter, content []byte, err error) {
 			fm.Admin = admin
 		}
 	}
-	return fm, data[yamlEnd:], nil
+	return fm, nil	
 }
 
 func renderTemplate(w http.ResponseWriter, c context.Context, name string, data interface{}) error {
@@ -1513,18 +1578,17 @@ func readFavs(path string, info os.FileInfo, err error) error {
 		return nil
 	}
 
-	read, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Print(err)
-		return nil
-	}
-
 	name := urlFromPath(path)
 
 	// Read YAML frontmatter into fm
 	// If err, just return, as file should not contain frontmatter
+
+	fmbytes, _, err := readFileAndFront(path)
+	if err != nil {
+		return nil
+	}
 	var fm frontmatter
-	fm, _, err = readFront(read)
+	fm, err = marshalFrontmatter(fmbytes)
 	if err != nil {
 		return nil
 	}
@@ -1569,19 +1633,16 @@ func readTags(path string, info os.FileInfo, err error) error {
 		return nil
 	}
 
-	read, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Println("readTags ReadFile error:")
-		log.Println(err)
-		return nil
-	}
-
 	name := urlFromPath(path)
 
 	// Read YAML frontmatter into fm
 	// If err, just return, as file should not contain frontmatter
+	fmbytes, _, err := readFileAndFront(path)
+	if err != nil {
+		return nil
+	}
 	var fm frontmatter
-	fm, _, err = readFront(read)
+	fm, err = marshalFrontmatter(fmbytes)
 	if err != nil {
 		return nil
 	}
@@ -1621,7 +1682,6 @@ func testEq(a, b []byte) bool {
 func loadWiki(name string) (*wiki, error) {
 	var fm frontmatter
 	var pagetitle string
-	var body []byte
 
 	//fullfilename := cfg.WikiDir + name
 	fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
@@ -1650,16 +1710,15 @@ func loadWiki(name string) (*wiki, error) {
 		}
 	}
 
-	body, err := ioutil.ReadFile(fullfilename)
+	fmbytes, content, err := readFileAndFront(fullfilename)
 	if err != nil {
-		// FIXME Not sure what to do here, probably panic?
+		log.Println(err)
 		return nil, err
 	}
-	// Read YAML frontmatter into fm
-	fm, content, err := readFront(body)
+	fm, err = marshalFrontmatter(fmbytes)
 	if err != nil {
-		log.Println("YAML unmarshal error in: " + name)
 		log.Println(err)
+		return nil, err
 	}
 
 	//log.Println(fm)
@@ -2191,131 +2250,6 @@ func createWiki(w http.ResponseWriter, r *http.Request, name string) {
 	return
 
 }
-/*
-func wikiAuth(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		//ctx := r.Context()
-		params := r.Context().Value(httptreemux.ParamsContextKey).(map[string]string)
-		name := params["name"]
-		dir := filepath.Dir(name)
-		//log.Println(dir)
-
-		wikipage := cfg.WikiDir + r.URL.Path
-
-		_, fierr := os.Stat(wikipage)
-		if fierr != nil {
-			next(w, r)
-			return
-		}
-
-		if os.IsNotExist(fierr) {
-			next(w, r)
-			return
-		}
-
-		read, err := ioutil.ReadFile(wikipage)
-		if err != nil {
-			log.Println("wikiauth ReadFile error:")
-			log.Println(err)
-		}
-
-		// Read YAML frontmatter into fm
-		// If err, just return, as file should not contain frontmatter
-		var fm frontmatter
-		fm, _, err = readFront(read)
-		if err != nil {
-			log.Println("YAML unmarshal error in: " + name)
-			log.Println(err)
-			return
-		}
-
-		username, role, _ := auth.GetUsername(r.Context())
-
-		if fm.Private || fm.Admin {
-			if username == "" {
-				rurl := r.URL.String()
-				utils.Debugln("AuthMiddleware mitigating: " + r.Host + rurl)
-				//w.Write([]byte("OMG"))
-
-				// Detect if we're in an endless loop, if so, just panic
-				if strings.HasPrefix(rurl, "login?url=/login") {
-					panic("AuthMiddle is in an endless redirect loop")
-					return
-				}
-				auth.SetSession("flash", "Please login to view that page.", w, r)
-				http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
-				return
-			}
-		}
-		if fm.Admin {
-			if role != "Admin" {
-				log.Println(username + " attempting to access restricted URL.")
-				auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
-				http.Redirect(w, r, "/", http.StatusSeeOther)
-				return
-			}
-		}
-
-		// Directory checking
-		// Check dir/index for a private or admin flag, and use this for the entire directory contents
-		if dir != "." {
-			fi, _ := os.Stat(cfg.WikiDir + dir)
-			if fi.IsDir() {
-				dirindexpath := cfg.WikiDir + dir + "/" + "index"
-				dirindex, _ := os.Open(dirindexpath)
-				_, dirindexfierr := dirindex.Stat()
-				if !os.IsNotExist(dirindexfierr) {
-					dread, err := ioutil.ReadFile(dirindexpath)
-					if err != nil {
-						log.Println("wikiauth dir index ReadFile error:")
-						log.Println(err)
-					}
-
-					// Read YAML frontmatter into fm
-					// If err, just return, as file should not contain frontmatter
-					var dfm frontmatter
-					dfm, _, err = readFront(dread)
-					if err != nil {
-						log.Println("wikiauth readFront error:")
-						log.Println(err)
-						return
-					}
-
-					username, role, _ := auth.GetUsername(r.Context())
-
-					if dfm.Private || dfm.Admin {
-						if username == "" {
-							rurl := r.URL.String()
-							utils.Debugln("AuthMiddleware mitigating due to " + dir + "/index: " + r.Host + rurl)
-							//w.Write([]byte("OMG"))
-
-							// Detect if we're in an endless loop, if so, just panic
-							if strings.HasPrefix(rurl, "login?url=/login") {
-								panic("AuthMiddle is in an endless redirect loop")
-								return
-							}
-							auth.SetSession("flash", "This directory is private. You must login to view any pages within.", w, r)
-							http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
-							return
-						}
-					}
-					if dfm.Admin {
-						if role != "Admin" {
-							log.Println(username + " attempting to access restricted URL.")
-							auth.SetSession("flash", "Sorry, this directory is private.", w, r)
-							http.Redirect(w, r, "/", http.StatusSeeOther)
-							return
-						}
-					}
-				}
-			}
-		}
-
-		next(w, r)
-	}
-}
-*/
 
 func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	// A very simple health check.
@@ -2345,38 +2279,6 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 
 		username, isAdmin := auth.GetUsername(r.Context())
 
-		// Directory checking
-		// Check dir/index for a private or admin flag, and use this for the entire directory contents
-		/*if dir != "." {
-			fi, _ := os.Stat(cfg.WikiDir + dir)
-			if fi.IsDir() {
-				dirindexpath := cfg.WikiDir + dir + "/" + "index"
-				dirindex, _ := os.Open(dirindexpath)
-				_, dirindexfierr := dirindex.Stat()
-				if !os.IsNotExist(dirindexfierr) {
-					dread, err := ioutil.ReadFile(dirindexpath)
-					if err != nil {
-						log.Println("wikiauth dir index ReadFile error:")
-						log.Println(err)
-					}
-
-					// Read YAML frontmatter into fm
-					// If err, just return, as file should not contain frontmatter
-					var dfm frontmatter
-					dfm, _, err = readFront(dread)
-					if err != nil {
-						log.Println("wikiauth readFront error:")
-						log.Println(err)
-						return
-					}
-					if err == nil {
-						fmPrivAdminCheck(dfm, dir+"/index", w, r)
-					}
-				}
-			}
-		}*/
-
-
 		// Check if file exists before doing anything else
 		fileExists, feErr := doesPageExist(name)
 		if !fileExists && feErr == nil {
@@ -2401,21 +2303,20 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 			return
 		}
 
-		read, err := ioutil.ReadFile(fullname)
-		if err != nil {
-			log.Println("wikiauth ReadFile error:")
-			log.Println(err)
-		}
-
 		// Read YAML frontmatter into fm
 		// If err, just return, as file should not contain frontmatter
-		var fm frontmatter
-		fm, _, err = readFront(read)
+		fmbytes, _, err := readFileAndFront(fullname)
 		if err != nil {
-			log.Println("YAML unmarshal error in: " + name)
 			log.Println(err)
 			return
 		}
+		var fm frontmatter
+		fm, err = marshalFrontmatter(fmbytes)
+		if err != nil {
+			log.Println("YAML unmarshal error in: " + name)
+			return
+		}
+
 		if err == nil && fm.Public {
 			fn(w, r, name)
 			return
@@ -2451,37 +2352,11 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 	}
 }
 
-/*
-func fmPrivAdminCheck(fm frontmatter, name string, w http.ResponseWriter, r *http.Request) {
-		username, role, _ := auth.GetUsername(r.Context())
-
-		if fm.Public {
-			return
-		}
-
-		if !fm.Public {
-			
-		}
-}
-*/
-
-
 func treeMuxWrapper(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(w, r)
 	}
 }
-/*
-func wrapHandler(fn http.HandlerFunc) httptreemux.HandlerFunc {
-	return func(
-		res http.ResponseWriter,
-		req *http.Request,
-		_ map[string]string,
-	) {
-		fn(res, req)
-	}
-}
-*/
 
 func timer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -2489,62 +2364,6 @@ func timer(next http.Handler) http.Handler {
 		newt := timeNewContext(r.Context(), time.Now())
 		next.ServeHTTP(w, r.WithContext(newt))
 	})
-}
-
-// This serves a file of the requested name from the "assets" rice box
-func riceServeStatic(w http.ResponseWriter, r *http.Request, file string) {
-	assetBox := rice.MustFindBox("assets")
-	f, err := assetBox.HTTPBox().Open(file)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-	content := io.ReadSeeker(f)
-	http.ServeContent(w, r, file, time.Now(), content)
-	return
-}
-
-func static(w http.ResponseWriter, r *http.Request) {
-	staticFile := r.URL.Path[len("/assets/"):]
-
-	defer utils.TimeTrack(time.Now(), "StaticHandler "+staticFile)
-
-	if len(staticFile) != 0 {
-		/*
-		   f, err := http.Dir("assets/").Open(staticFile)
-		   if err == nil {
-		       content := io.ReadSeeker(f)
-		       http.ServeContent(w, r, staticFile, time.Now(), content)
-		       return
-		   }*/
-		riceServeStatic(w, r, staticFile)
-		return
-	}
-	http.NotFound(w, r)
-}
-
-func FaviconHandler(w http.ResponseWriter, r *http.Request) {
-	//log.Println(r.URL.Path)
-	if r.URL.Path == "/favicon.ico" {
-		riceServeStatic(w, r, "/favicon.ico")
-		return
-	} else if r.URL.Path == "/favicon.png" {
-		riceServeStatic(w, r, "/favicon.png")
-		return
-	} else {
-		http.NotFound(w, r)
-		return
-	}
-
-}
-
-func RobotsHandler(w http.ResponseWriter, r *http.Request) {
-	//log.Println(r.URL.Path)
-	if r.URL.Path == "/robots.txt" {
-		riceServeStatic(w, r, "/robots.txt")
-		return
-	}
-	http.NotFound(w, r)
 }
 
 func riceInit() error {
@@ -2638,6 +2457,8 @@ func main() {
 	}
 	defer auth.Authdb.Close()
 
+	utils.AssetsBox = rice.MustFindBox("assets")
+	
 	auth.AdminUser = viper.GetString("AdminUser")
 
 	err = riceInit()
@@ -2756,10 +2577,10 @@ func main() {
 	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(viewHandler))).Methods("GET")
 	*/
 
-	http.HandleFunc("/robots.txt", RobotsHandler)
-	http.HandleFunc("/favicon.ico", FaviconHandler)
-	http.HandleFunc("/favicon.png", FaviconHandler)
-	http.HandleFunc("/assets/", static)
+	http.HandleFunc("/robots.txt", utils.RobotsHandler)
+	http.HandleFunc("/favicon.ico", utils.FaviconHandler)
+	http.HandleFunc("/favicon.png", utils.FaviconHandler)
+	http.HandleFunc("/assets/", utils.StaticHandler)
 	http.Handle("/", s.Then(r))
 
 	log.Println("Listening on port " + viper.GetString("Port"))
