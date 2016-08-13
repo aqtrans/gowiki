@@ -20,7 +20,7 @@ import (
 	//"github.com/gorilla/mux"
 	"jba.io/go/auth"
 	"github.com/dimfeld/httptreemux"
-	"jba.io/go/utils"
+	//"jba.io/go/utils"
 	"github.com/boltdb/bolt"
 	"github.com/spf13/viper"
 	//"github.com/GeertJohan/go.rice"
@@ -120,7 +120,7 @@ func TestWikiInit(t *testing.T) {
 func TestNewWikiPage(t *testing.T) {
     // Create a request to pass to our handler. We don't have any query parameters for now, so we'll
     // pass 'nil' as the third parameter.
-	randPage := utils.RandKey(8)
+	randPage := auth.RandKey(8)
     req, err := http.NewRequest("GET", "/"+randPage, nil)
     if err != nil {
         t.Fatal(err)
@@ -462,7 +462,7 @@ var tagsarray = []string{"OMG", "YEAH", "WHAT", "ZZZZ", "FFFF", "EEEE", "RRRTRT"
 var tagsstring string = "OMG, YEAH, WHAT, ZZZZ, FFFF, EEEE, RRRTRT, GRHTH, GBHFT, QPFLG, MGJHIB, LRIGJB, DJCUDK, WIFJV, GKBIBK, XKSDFM, RUFJS, SLDKF ,ZKDJF, WIFKFG, EIFLG, DKFIBJ, WWRKG, SLFIBK, PRIVATE"
 var body string = "WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO\n# OMG \n # YEAH"
 
-func BenchmarkBufferString(b *testing.B) {
+func benchmarkBufferString(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		var buffer bytes.Buffer
 		buffer.WriteString("---\n")
@@ -481,7 +481,7 @@ func BenchmarkBufferString(b *testing.B) {
 	}
 }
 
-func BenchmarkBufferArray(b *testing.B) {
+func benchmarkBufferArray(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		var buffer bytes.Buffer
 		buffer.WriteString("---\n")
@@ -527,6 +527,18 @@ func benchmarkIsPrivateArray(size int, b *testing.B) {
 	//tags := strings.Split(list, " ")
 	for n := 0; n < b.N; n++ {
 		isPrivateA(list)
+	}
+}
+
+func BenchmarkReadFront(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		readFileAndFront("./tests/bench.md")
+	}
+}
+
+func BenchmarkReadFrontBuffer(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		readFrontBuf("./tests/bench.md")
 	}
 }
 
