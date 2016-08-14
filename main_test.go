@@ -394,8 +394,8 @@ func TestMarkdownRender(t *testing.T) {
 	// []byte to string
 	rendermds := string(rendermd)
 
-	//rawmds := markdownRender(rawmd)
-	rawmds := commonmarkRender(rawmd)
+	rawmds := markdownRender(rawmd)
+	//rawmds := commonmarkRender(rawmd)
 	
 	if rawmds != rendermds {
 		//ioutil.WriteFile("./tests/test.html", []byte(rawmds), 0755)
@@ -421,8 +421,8 @@ func TestMarkdownRender2(t *testing.T) {
 	// []byte to string
 	rendermds := string(rendermd)
 
-	//rawmds := markdownRender(rawmd)
-	rawmds := commonmarkRender(rawmd)
+	rawmds := markdownRender(rawmd)
+	//rawmds := commonmarkRender(rawmd)
 	if rawmds != rendermds {
 		//ioutil.WriteFile("./tests/test2.html", []byte(rawmds), 0755)
 		t.Error("Converted Markdown does not equal test2" + "\n Output: \n" + rawmds + "Expected: \n" + rendermds)
@@ -446,8 +446,8 @@ func TestMarkdownRender3(t *testing.T) {
 	// []byte to string
 	rendermds := string(rendermd)
 
-	//rawmds := markdownRender(rawmd)
-	rawmds := commonmarkRender(rawmd)
+	rawmds := markdownRender(rawmd)
+	//rawmds := commonmarkRender(rawmd)
 
 	if rawmds != rendermds {
 		//ioutil.WriteFile("./tests/test3.html", []byte(rawmds), 0755)
@@ -557,7 +557,7 @@ func BenchmarkMarkdownRender(b *testing.B) {
 	}
 }
 
-
+/*
 func BenchmarkCommonmarkRender(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		rawmdf := "./tests/bench.md"
@@ -579,7 +579,7 @@ func BenchmarkMarkdown2Render(b *testing.B) {
 		markdownRender2(rawmd)
 	}
 }
-
+*/
 //func BenchmarkIsPrivate2(b *testing.B) { benchmarkIsPrivate(2, b) }
 //func BenchmarkIsPrivateArray2(b *testing.B) { benchmarkIsPrivateArray(2, b) }
 
