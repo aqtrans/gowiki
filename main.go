@@ -45,7 +45,8 @@ import (
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
-	"github.com/rhinoman/go-commonmark"
+	//"github.com/rhinoman/go-commonmark"
+	//bf "gopkg.in/russross/blackfriday.v2"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/spf13/viper"
 	"github.com/thoas/stats"
@@ -57,7 +58,7 @@ import (
 	"github.com/GeertJohan/go.rice"
 	"regexp"
 	"github.com/BurntSushi/toml"
-	bf "gopkg.in/russross/blackfriday.v2"
+	
 )
 
 type key int
@@ -84,7 +85,8 @@ const (
 		blackfriday.EXTENSION_NO_EMPTY_LINE_BEFORE_BLOCK |
 		blackfriday.EXTENSION_FOOTNOTES |
 		blackfriday.EXTENSION_TITLEBLOCK
-
+	
+	/*
 	commonHTMLFlags2 = 0 |
 		bf.FootnoteReturnLinks |
 		bf.NofollowLinks
@@ -102,7 +104,7 @@ const (
 		bf.Footnotes |
 		bf.Titleblock |
 		bf.TOC
-
+	*/
 )
 
 func markdownCommon(input []byte) []byte {
@@ -698,6 +700,9 @@ func markdownRender(content []byte) string {
 	return string(html)
 }
 
+/* Markdown renderers used for benchmarks
+// May come back to using Blackfriday.v2 when it's stabalized, 
+// and this should be a good starting point
 func markdownCommon2(input []byte) []byte {
 	// set up the HTML renderer
 	renderer := bf.NewHTMLRenderer(bf.HTMLRendererParameters{
@@ -762,6 +767,7 @@ func commonmarkRender(content []byte) string {
 
 	return html
 }
+*/
 
 func loadPage(r *http.Request) (*page, error) {
 	//timer.Step("loadpageFunc")
@@ -876,8 +882,8 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 	}
 
 	// Render remaining content after frontmatter
-	//md := markdownRender(content)
-	md := commonmarkRender(content)
+	md := markdownRender(content)
+	//md := commonmarkRender(content)
 	if fm.Public {
 		log.Println("Public page!")
 	}
@@ -1495,9 +1501,9 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 	}
 
 	// Render remaining content after frontmatter
-	//md := markdownRender(wikip.Content)
-	md := commonmarkRender(wikip.Content)
-	markdownRender2(wikip.Content)
+	md := markdownRender(wikip.Content)
+	//md := commonmarkRender(wikip.Content)
+	//markdownRender2(wikip.Content)
 
 	wp := &wikiPage{
 		page: p,
