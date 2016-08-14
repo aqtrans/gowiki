@@ -45,6 +45,7 @@ import (
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
+	"github.com/rhinoman/go-commonmark"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/spf13/viper"
 	"github.com/thoas/stats"
@@ -56,6 +57,7 @@ import (
 	"github.com/GeertJohan/go.rice"
 	"regexp"
 	"github.com/BurntSushi/toml"
+	bf "gopkg.in/russross/blackfriday.v2"
 )
 
 type key int
@@ -82,6 +84,25 @@ const (
 		blackfriday.EXTENSION_NO_EMPTY_LINE_BEFORE_BLOCK |
 		blackfriday.EXTENSION_FOOTNOTES |
 		blackfriday.EXTENSION_TITLEBLOCK
+
+	commonHTMLFlags2 = 0 |
+		bf.FootnoteReturnLinks |
+		bf.NofollowLinks
+
+	commonExtensions2 = 0 |
+		bf.NoIntraEmphasis |
+		bf.Tables |
+		bf.FencedCode |
+		bf.Autolink |
+		bf.Strikethrough |
+		bf.AutoHeaderIDs |
+		bf.BackslashLineBreak |
+		bf.DefinitionLists |
+		bf.NoEmptyLineBeforeBlock |
+		bf.Footnotes |
+		bf.Titleblock |
+		bf.TOC
+
 )
 
 func markdownCommon(input []byte) []byte {
@@ -677,6 +698,71 @@ func markdownRender(content []byte) string {
 	return string(html)
 }
 
+func markdownCommon2(input []byte) []byte {
+	// set up the HTML renderer
+	renderer := bf.NewHTMLRenderer(bf.HTMLRendererParameters{
+		Flags:      commonHTMLFlags2,
+		Extensions: commonExtensions2,
+	})
+	opt := bf.Options{
+		Extensions: commonExtensions2,
+	}
+	return bf.Markdown(input, renderer, opt)
+}
+
+func markdownRender2(content []byte) string {
+	opt := bf.Options{
+		Extensions: commonExtensions2,
+	}
+	renderer := bf.NewHTMLRenderer(bf.HTMLRendererParameters{
+		Flags:      commonHTMLFlags2,
+		Extensions: commonExtensions2,
+	})
+
+	//html := markdownCommon2(content)
+	ast := bf.Parse(content, opt)
+	domain := "//" + viper.GetString("Domain")
+	
+	var buff bytes.Buffer
+	//defaultRenderer := bf.NewHTMLRenderer(bf.HTMLRendererParameters{})
+	ast.Walk(func(node *bf.Node, entering bool) bf.WalkStatus {
+		//log.Println(string(node.Literal))
+		if linkPattern.Match(node.Literal) {
+			ms := linkPattern.FindAll(node.Literal, -1)
+			for _, m := range ms {
+				m = bytes.TrimPrefix(m, []byte("["))
+				m = bytes.TrimSuffix(m, []byte("]()"))
+				//log.Println(string(m2))
+				//link := []byte(fmt.Sprintf(`<a href="%s%s">`, domain, m2, ))
+				//node.Literal = link
+				buff.WriteString(fmt.Sprintf(`<a href="%s%s">`, domain, m, ))
+			}
+		} else {
+			renderer.RenderNode(&buff, node, entering)
+		}		
+		return bf.GoToNext
+	})
+	//log.Println(string(buff.Bytes()))
+	return string(buff.Bytes())
+}
+
+func commonmarkRender(content []byte) string {
+
+	// build full URL out of configured Domain:
+	domain := "//" + viper.GetString("Domain")
+
+	result := RenderLinkCurrentPattern(content, domain)
+	
+	md := commonmark.Md2Html(string(result), commonmark.CMARK_OPT_DEFAULT)
+
+	p := bluemonday.UGCPolicy()
+	p.AllowElements("nav")
+
+	html := p.Sanitize(md)
+
+	return html
+}
+
 func loadPage(r *http.Request) (*page, error) {
 	//timer.Step("loadpageFunc")
 
@@ -790,7 +876,8 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 	}
 
 	// Render remaining content after frontmatter
-	md := markdownRender(content)
+	//md := markdownRender(content)
+	md := commonmarkRender(content)
 	if fm.Public {
 		log.Println("Public page!")
 	}
@@ -1408,7 +1495,9 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 	}
 
 	// Render remaining content after frontmatter
-	md := markdownRender(wikip.Content)	
+	//md := markdownRender(wikip.Content)
+	md := commonmarkRender(wikip.Content)
+	markdownRender2(wikip.Content)
 
 	wp := &wikiPage{
 		page: p,
@@ -2458,7 +2547,7 @@ func main() {
 	defer auth.Authdb.Close()
 
 	utils.AssetsBox = rice.MustFindBox("assets")
-	
+
 	auth.AdminUser = viper.GetString("AdminUser")
 
 	err = riceInit()
