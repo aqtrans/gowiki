@@ -23,6 +23,7 @@ import (
 	//"jba.io/go/utils"
 	"github.com/boltdb/bolt"
 	"github.com/spf13/viper"
+	//"github.com/rhinoman/go-commonmark"
 	//"github.com/GeertJohan/go.rice"
 	//"gopkg.in/gavv/httpexpect.v1"
 	//"github.com/stretchr/testify/assert"
@@ -393,7 +394,8 @@ func TestMarkdownRender(t *testing.T) {
 	// []byte to string
 	rendermds := string(rendermd)
 
-	rawmds := markdownRender(rawmd)
+	//rawmds := markdownRender(rawmd)
+	rawmds := commonmarkRender(rawmd)
 	
 	if rawmds != rendermds {
 		//ioutil.WriteFile("./tests/test.html", []byte(rawmds), 0755)
@@ -419,7 +421,8 @@ func TestMarkdownRender2(t *testing.T) {
 	// []byte to string
 	rendermds := string(rendermd)
 
-	rawmds := markdownRender(rawmd)
+	//rawmds := markdownRender(rawmd)
+	rawmds := commonmarkRender(rawmd)
 	if rawmds != rendermds {
 		//ioutil.WriteFile("./tests/test2.html", []byte(rawmds), 0755)
 		t.Error("Converted Markdown does not equal test2" + "\n Output: \n" + rawmds + "Expected: \n" + rendermds)
@@ -443,7 +446,8 @@ func TestMarkdownRender3(t *testing.T) {
 	// []byte to string
 	rendermds := string(rendermd)
 
-	rawmds := markdownRender(rawmd)
+	//rawmds := markdownRender(rawmd)
+	rawmds := commonmarkRender(rawmd)
 
 	if rawmds != rendermds {
 		//ioutil.WriteFile("./tests/test3.html", []byte(rawmds), 0755)
@@ -539,6 +543,40 @@ func BenchmarkReadFront(b *testing.B) {
 func BenchmarkReadFrontBuffer(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		readFrontBuf("./tests/bench.md")
+	}
+}
+
+func BenchmarkMarkdownRender(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		rawmdf := "./tests/bench.md"
+		rawmd, err := ioutil.ReadFile(rawmdf)
+		if err != nil {
+			b.Error("Unable to access bench.md")
+		}
+		markdownRender(rawmd)
+	}
+}
+
+
+func BenchmarkCommonmarkRender(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		rawmdf := "./tests/bench.md"
+		rawmd, err := ioutil.ReadFile(rawmdf)
+		if err != nil {
+			b.Error("Unable to access bench.md")
+		}
+		commonmarkRender(rawmd)
+	}
+}
+
+func BenchmarkMarkdown2Render(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		rawmdf := "./tests/bench.md"
+		rawmd, err := ioutil.ReadFile(rawmdf)
+		if err != nil {
+			b.Error("Unable to access bench.md")
+		}
+		markdownRender2(rawmd)
 	}
 }
 
