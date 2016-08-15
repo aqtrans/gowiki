@@ -65,7 +65,7 @@
             <label for="tags">Tags</label>
             <input type="text" id="tags" name="tags" placeholder="Separate tags with commas" value="{{ .Wiki.Frontmatter.Tags|jsTags }}" />
         </div>
-        <input type="hidden" name="token" value="{{.page.Token}}"> 
+        {{.Token}}
         <textarea name="editor" id="wikieditor"></textarea>
         <div class="button-group">
             <a data-open="previewModal" id="preview" class="button">Preview</a>
