@@ -58,7 +58,8 @@ import (
 	"github.com/GeertJohan/go.rice"
 	"regexp"
 	"github.com/BurntSushi/toml"
-	"github.com/aqtrans/ctx-csrf"	
+	"github.com/aqtrans/ctx-csrf"
+	"github.com/blevesearch/bleve"
 )
 
 type key int
@@ -934,7 +935,7 @@ func recentHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println(gh)
 	log.Println(gh[4])
 
-}	
+}
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	//searchDir := cfg.WikiDir
@@ -1513,6 +1514,7 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 	}
 	return wp, nil
 }
+
 
 func editHandler(w http.ResponseWriter, r *http.Request, name string) {
 	defer utils.TimeTrack(time.Now(), "editHandler")
@@ -2539,6 +2541,106 @@ func initWikiDir() {
 	}
 }
 
+func bleveIndex() {
+	mapping := bleve.NewIndexMapping()
+	var index bleve.Index
+	_, err := os.Stat("./data/index.bleve")
+	if err != nil {	
+		index, _ = bleve.New("./data/index.bleve", mapping)
+	} else {
+		index, _ = bleve.Open("./data/index.bleve")
+	}
+
+	fileList, flerr := gitLs()
+	if flerr != nil {
+		log.Fatalln(err)
+	}
+	for _, file := range fileList {
+		fullname := filepath.Join(viper.GetString("WikiDir"), file)
+		src, err := os.Stat(fullname)
+		if err != nil {
+			panic(err)
+		}
+		// If not a directory, get frontmatter from file and add to list
+		if !src.IsDir() {
+
+			//log.Println(file)
+			_, filename := filepath.Split(file)
+			var wp *wiki
+			var fm frontmatter
+			var pagetitle string
+
+			// Read YAML frontmatter into fm
+			fmbytes, content, err := readFileAndFront(fullname)
+			if err != nil {
+				log.Println(err)
+			}
+			fm, err = marshalFrontmatter(fmbytes)
+			if err != nil {
+				log.Println("YAML unmarshal error in: " + file)
+				log.Println(err)
+			}
+			if fm.Public {
+				//log.Println("Private page!")
+			}
+			pagetitle = filename
+			if fm.Title != "" {
+				pagetitle = fm.Title
+			}
+			if fm.Title == "" {
+				fm.Title = file
+			}
+			if fm.Public != true {
+				fm.Public = false
+			}
+			if fm.Admin != true {
+				fm.Admin = false
+			}
+			if fm.Favorite != true {
+				fm.Favorite = false
+			}
+			if fm.Tags == nil {
+				fm.Tags = []string{}
+			}
+			ctime, err := gitGetCtime(file)
+			if err != nil && err.Error() != "NOT_IN_GIT" {
+				log.Panicln(err)
+			}
+			mtime, err := gitGetMtime(file)
+			if err != nil {
+				log.Panicln(err)
+			}			
+
+			wp = &wiki{
+				Title: pagetitle,
+				Filename: file,
+				Frontmatter: &fm,
+				Content: content,
+				CreateTime: ctime,
+				ModTime: mtime,
+			}
+
+			index.Index(fullname, wp)
+		}			
+	}
+
+	//query := bleve.NewQueryStringQuery("lisa")
+	query := bleve.NewMatchQuery("gpg")
+	searchRequest := bleve.NewSearchRequest(query)
+	searchResult, _ := index.Search(searchRequest)
+	log.Println(searchResult.String())
+
+	query2 := bleve.NewMatchAllQuery()
+	searchRequest2 := bleve.NewSearchRequest(query2)
+	searchResults, err := index.Search(searchRequest2)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Println(searchResults.Hits[0].Fragments)	
+
+}
+
 func main() {
 
 	viper.WatchConfig()
@@ -2576,6 +2678,10 @@ func main() {
 		//log.Fatal(err)
 		log.Println("init: unable to crawl for tags")
 	}
+
+
+	//bleveIndex()
+
 
 	// HTTP stuff from here on out
 	s := alice.New(timer, utils.Logger, auth.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(false)))
