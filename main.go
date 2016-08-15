@@ -58,7 +58,7 @@ import (
 	"github.com/GeertJohan/go.rice"
 	"regexp"
 	"github.com/BurntSushi/toml"
-	
+	"github.com/aqtrans/ctx-csrf"	
 )
 
 type key int
@@ -148,7 +148,7 @@ type page struct {
 	Favs     []string
 	UN       string
 	IsAdmin  bool
-	Token    string
+	Token    template.HTML
 	FlashMsg string
 }
 
@@ -775,7 +775,8 @@ func loadPage(r *http.Request) (*page, error) {
 	// Auth lib middlewares should load the user and tokens into context for reading
 	user, isAdmin := auth.GetUsername(r.Context())
 	msg := auth.GetFlash(r.Context())
-	token := auth.GetToken(r.Context())
+	//token := auth.GetToken(r.Context())
+	token := csrf.TemplateField(r.Context(), r)
 
 	//log.Println("Message: ")
 	//log.Println(msg)
@@ -2541,7 +2542,6 @@ func initWikiDir() {
 func main() {
 
 	viper.WatchConfig()
-	//log.Println(viper.GetBool("PushOnSave"))
 
 	flag.Parse()
 
@@ -2577,22 +2577,14 @@ func main() {
 		log.Println("init: unable to crawl for tags")
 	}
 
-
 	// HTTP stuff from here on out
-	s := alice.New(timer, utils.Logger, auth.UserEnvMiddle, auth.XsrfMiddle)
+	s := alice.New(timer, utils.Logger, auth.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(false)))
 
-	//r := mux.NewRouter().StrictSlash(true)
 	r := httptreemux.New()
 	r.PanicHandler = httptreemux.ShowErrorsPanicHandler
 	
-
 	statsdata := stats.New()
 
-	//wiki := s.Append(checkWikiGit)
-	//wikiauth := wiki.Append(wikiAuth)
-
-	//r := mux.NewRouter()
-	//d := r.Host("go.jba.io").Subrouter()
 	r.GET("/", indexHandler)
 
 	r.GET("/tags", tagMapHandler)
@@ -2647,30 +2639,10 @@ func main() {
 
 	r.GET("/uploads/*", treeMuxWrapper(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads")))))
 
-	//r.HandleFunc("/{name:.*}", wikiHandler)
-
-	// wiki functions, should accept alphanumerical, "_", "-", ".", "@"
 	r.GET(`/edit/*name`, auth.AuthMiddle(wikiHandler(editHandler)))
 	r.POST(`/save/*name`, auth.AuthMiddle(wikiHandler(saveHandler)))
 	r.GET(`/history/*name`, wikiHandler(historyHandler))
 	r.GET(`/*name`, wikiHandler(viewHandler))
-		
-	//assetBox := rice.MustFindBox("assets")
-	//assetFileServer := http.StripPrefix("/assets/", http.FileServer(assetBox.HTTPBox()))
-	/*
-	r.GET("/assets/*", static)
-	r.GET("/robots.txt", RobotsHandler)
-	r.GET("/favicon.ico", FaviconHandler)
-	r.GET("/favicon.png", FaviconHandler)
-	*/
-
-	// With dirs:
-	/*
-	r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(wikiHandler(editHandler))).Methods("GET").Queries("a", "edit")
-	r.HandleFunc(`/{dir}/{name}`, auth.AuthMiddle(wikiHandler(saveHandler))).Methods("POST").Queries("a", "save")
-	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(historyHandler))).Methods("GET").Queries("a", "history")
-	r.Handle(`/{dir}/{name}`, alice.New(wikiAuth).ThenFunc(wikiHandler(viewHandler))).Methods("GET")
-	*/
 
 	http.HandleFunc("/robots.txt", utils.RobotsHandler)
 	http.HandleFunc("/favicon.ico", utils.FaviconHandler)

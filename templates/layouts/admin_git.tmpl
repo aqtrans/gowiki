@@ -15,7 +15,7 @@
         <h2>Push wikidata to remote Git repo:</h2>
         <p>Push wikidata to {{ .GitRemote }}?</p>
         <form method="post" action="/admin/git/push" id="git_push">
-        <input type="hidden" name="token" value="{{.Token}}">
+        {{.Token}}
         <button type="submit" class="button">Submit</button>
         </form>
         <hr>
@@ -23,7 +23,7 @@
         <h2>Pull wikidata from remote Git repo:</h2>
         <p>Pull wikidata from {{ .GitRemote }}?</p>
         <form method="post" action="/admin/git/pull" id="git_pull">
-        <input type="hidden" name="token" value="{{.Token}}">
+        {{.Token}}
         <button type="submit" class="button">Add User</button>
         </form>
         <hr>
@@ -32,7 +32,7 @@
         <p>The following files were found to be modified outside of the wiki:</p>
         {{ .GitFiles | safeHTML }}
         <form method="post" action="/admin/git/checkin" id="git_checkin">
-        <input type="hidden" name="token" value="{{.Token}}">
+        {{.Token}}
         <button type="submit" class="button">Submit</button>
         </form>
         <hr>
