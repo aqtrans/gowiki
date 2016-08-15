@@ -60,6 +60,8 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/aqtrans/ctx-csrf"
 	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/analysis/analyzers/keyword_analyzer"
+	"github.com/blevesearch/bleve/analysis/language/en"
 )
 
 type key int
@@ -141,6 +143,7 @@ var (
 	favbuf    bytes.Buffer
 	tagMap  map[string][]string
 	tagsBuf bytes.Buffer
+	index bleve.Index
 )
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -633,17 +636,25 @@ func gitLs() ([]string, error) {
 	return lssplit, nil
 }
 
-// git log --name-only --pretty=format:"%at %H" HEAD
+// git log --name-only --pretty=format:"%at %H" -z HEAD
 func gitHistory() ([]string, error) {
-	o, err := gitCommand("log", "--name-only", "--pretty=format:'%at %H'", "-z", "HEAD").Output()
+	o, err := gitCommand("log", "--name-only", "--pretty=format:_END %at %H", "-z", "HEAD").Output()
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("error during `git history`: %s\n%s", err.Error(), string(o)))
 	}
-	nul := bytes.Replace(o, []byte("\x00\x00"), []byte("\n"), -1)
-	// split each commit onto it's own line
-	lssplit := strings.Split(string(nul), "\n")
-	log.Println(lssplit)
-	return lssplit, nil
+
+	// Get rid of first _END
+	o = bytes.Replace(o, []byte("_END"), []byte(""), 1)
+	
+	// Now remove all _END tags
+	b := bytes.SplitAfter(o, []byte("_END"))
+	var s []string
+	for _, v := range b {
+		v = bytes.Replace(v, []byte("_END"), []byte(""), -1)
+		s = append(s, string(v))
+	}
+	
+	return s, nil
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -920,6 +931,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 
 }
 
+// TODO: Fix this
 func recentHandler(w http.ResponseWriter, r *http.Request) {
 	/*
 	p, err := loadPage(r)
@@ -932,8 +944,8 @@ func recentHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println(gh)
-	log.Println(gh[4])
+	//log.Println(gh)
+	log.Println(gh[6])
 
 }
 
@@ -945,8 +957,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln(err)
 	}
 
-	// Currently doing a filepath.Walk over cfg.WikiDir to build a list of wiki pages
-	// But since we use git...should we use git to retrieve the list?
+	// ~~Currently doing a filepath.Walk over cfg.WikiDir to build a list of wiki pages~~
+	// ~~But since we use git...should we use git to retrieve the list?~~
 	fileList := []string{}
 	//privFileList := []string{}
 
@@ -2542,103 +2554,157 @@ func initWikiDir() {
 }
 
 func bleveIndex() {
-	mapping := bleve.NewIndexMapping()
-	var index bleve.Index
-	_, err := os.Stat("./data/index.bleve")
-	if err != nil {	
-		index, _ = bleve.New("./data/index.bleve", mapping)
-	} else {
-		index, _ = bleve.Open("./data/index.bleve")
-	}
+	
+	var err error
+	index, err = bleve.Open("./data/index.bleve")
+	if err == bleve.ErrorIndexPathDoesNotExist {
+		nameMapping := bleve.NewTextFieldMapping()
+		nameMapping.Analyzer = keyword_analyzer.Name
 
-	fileList, flerr := gitLs()
-	if flerr != nil {
-		log.Fatalln(err)
-	}
-	for _, file := range fileList {
-		fullname := filepath.Join(viper.GetString("WikiDir"), file)
-		src, err := os.Stat(fullname)
+		contentMapping := bleve.NewTextFieldMapping()
+		contentMapping.Analyzer = en.AnalyzerName
+
+		tagMapping := bleve.NewTextFieldMapping()
+		tagMapping.Analyzer = keyword_analyzer.Name
+
+		wikiMapping := bleve.NewDocumentMapping()
+		wikiMapping.AddFieldMappingsAt("Name", nameMapping)
+		wikiMapping.AddFieldMappingsAt("Tags", tagMapping)
+		wikiMapping.AddFieldMappingsAt("Content", contentMapping)
+
+		indexMapping := bleve.NewIndexMapping()
+		indexMapping.AddDocumentMapping("Wiki", wikiMapping)
+		indexMapping.TypeField = "type"
+		indexMapping.DefaultAnalyzer = "en"
+
+		index, err = bleve.New("./data/index.bleve", indexMapping)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
-		// If not a directory, get frontmatter from file and add to list
-		if !src.IsDir() {
 
-			//log.Println(file)
-			_, filename := filepath.Split(file)
-			var wp *wiki
-			var fm frontmatter
-			var pagetitle string
+		fileList, flerr := gitLs()
+		if flerr != nil {
+			log.Fatalln(err)
+		}
+		// TODO: Turn this into a bleve.Batch() job!
+		for _, file := range fileList {
+			fullname := filepath.Join(viper.GetString("WikiDir"), file)
+			src, err := os.Stat(fullname)
+			if err != nil {
+				panic(err)
+			}
+			// If not a directory, get frontmatter from file and add to list
+			if !src.IsDir() {
 
-			// Read YAML frontmatter into fm
-			fmbytes, content, err := readFileAndFront(fullname)
-			if err != nil {
-				log.Println(err)
-			}
-			fm, err = marshalFrontmatter(fmbytes)
-			if err != nil {
-				log.Println("YAML unmarshal error in: " + file)
-				log.Println(err)
-			}
-			if fm.Public {
-				//log.Println("Private page!")
-			}
-			pagetitle = filename
-			if fm.Title != "" {
-				pagetitle = fm.Title
-			}
-			if fm.Title == "" {
-				fm.Title = file
-			}
-			if fm.Public != true {
-				fm.Public = false
-			}
-			if fm.Admin != true {
-				fm.Admin = false
-			}
-			if fm.Favorite != true {
-				fm.Favorite = false
-			}
-			if fm.Tags == nil {
-				fm.Tags = []string{}
-			}
-			ctime, err := gitGetCtime(file)
-			if err != nil && err.Error() != "NOT_IN_GIT" {
-				log.Panicln(err)
-			}
-			mtime, err := gitGetMtime(file)
-			if err != nil {
-				log.Panicln(err)
+				//log.Println(file)
+				_, filename := filepath.Split(file)
+				//var wp *wiki
+				var fm frontmatter
+				var pagetitle string
+
+				// Read YAML frontmatter into fm
+				fmbytes, content, err := readFileAndFront(fullname)
+				if err != nil {
+					log.Println(err)
+				}
+				fm, err = marshalFrontmatter(fmbytes)
+				if err != nil {
+					log.Println("YAML unmarshal error in: " + file)
+					log.Println(err)
+				}
+				if fm.Public {
+					//log.Println("Private page!")
+				}
+				pagetitle = filename
+				if fm.Title != "" {
+					pagetitle = fm.Title
+				}
+				if fm.Title == "" {
+					fm.Title = file
+				}
+				if fm.Public != true {
+					fm.Public = false
+				}
+				if fm.Admin != true {
+					fm.Admin = false
+				}
+				if fm.Favorite != true {
+					fm.Favorite = false
+				}
+				if fm.Tags == nil {
+					fm.Tags = []string{}
+				}
+				/*
+				ctime, err := gitGetCtime(file)
+				if err != nil && err.Error() != "NOT_IN_GIT" {
+					log.Panicln(err)
+				}
+				mtime, err := gitGetMtime(file)
+				if err != nil {
+					log.Panicln(err)
+				}
+				*/
+
+				data := struct {
+					Name    string `json:"name"`
+					Tags    []string `json:"tags"`
+					Content string `json:"content"`
+				}{
+					Name: pagetitle,
+					Tags: fm.Tags,
+					Content: string(content),
+				}
+				/*
+				wp = &wiki{
+					Title: pagetitle,
+					Filename: file,
+					Frontmatter: &fm,
+					Content: content,
+					CreateTime: ctime,
+					ModTime: mtime,
+				}
+				*/
+
+				index.Index(file, data)
+				
 			}			
+		}
 
-			wp = &wiki{
-				Title: pagetitle,
-				Filename: file,
-				Frontmatter: &fm,
-				Content: content,
-				CreateTime: ctime,
-				ModTime: mtime,
-			}
-
-			index.Index(fullname, wp)
-		}			
 	}
+
+
+
+
+	
 
 	//query := bleve.NewQueryStringQuery("lisa")
-	query := bleve.NewMatchQuery("gpg")
-	searchRequest := bleve.NewSearchRequest(query)
-	searchResult, _ := index.Search(searchRequest)
-	log.Println(searchResult.String())
 
+	//log.Println(searchResult.Hits[0].Fields)
+
+	/*
 	query2 := bleve.NewMatchAllQuery()
 	searchRequest2 := bleve.NewSearchRequest(query2)
 	searchResults, err := index.Search(searchRequest2)
 	if err != nil {
 		panic(err)
 	}
+	log.Println(searchResults.String())	
+	*/
 
-	log.Println(searchResults.Hits[0].Fragments)	
+}
 
+func search(w http.ResponseWriter, r *http.Request) {
+	params := r.Context().Value(httptreemux.ParamsContextKey).(map[string]string)
+	name := params["name"]
+
+	query := bleve.NewMatchQuery(name)
+	searchRequest := bleve.NewSearchRequest(query)
+	searchRequest.Highlight = bleve.NewHighlight()
+
+	searchResult, _ := index.Search(searchRequest)
+	log.Println(searchResult.String())
+	//fields, _ := index.Fields()
+	//log.Println(fields)
 }
 
 func main() {
@@ -2655,7 +2721,6 @@ func main() {
 	defer auth.Authdb.Close()
 
 	utils.AssetsBox = rice.MustFindBox("assets")
-
 	auth.AdminUser = viper.GetString("AdminUser")
 
 	err = riceInit()
@@ -2664,6 +2729,8 @@ func main() {
 	}
 
 	initWikiDir()
+	bleveIndex()
+
 
 	// Crawl for new favorites only on startup and save
 	err = filepath.Walk(viper.GetString("WikiDir"), readFavs)
@@ -2678,10 +2745,6 @@ func main() {
 		//log.Fatal(err)
 		log.Println("init: unable to crawl for tags")
 	}
-
-
-	//bleveIndex()
-
 
 	// HTTP stuff from here on out
 	s := alice.New(timer, utils.Logger, auth.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(false)))
@@ -2706,6 +2769,7 @@ func main() {
 	r.GET("/logout", auth.LogoutHandler)
 	//r.GET("/signup", signupPageHandler)
 	r.GET("/list", listHandler)
+	r.GET("/search/*name", search)
 	r.GET("/recent", recentHandler)
 	r.GET("/health", HealthCheckHandler)
 
