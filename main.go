@@ -225,6 +225,16 @@ type tagMapPage struct {
 	TagKeys map[string][]string
 }
 
+type searchPage struct {
+	*page
+	Results []*result
+}
+
+type result struct {
+	Name   string
+	Result string
+}
+
 type commitLog struct {
 	Filename string
 	Commit   string
@@ -2564,6 +2574,12 @@ func bleveIndex() {
 		contentMapping := bleve.NewTextFieldMapping()
 		contentMapping.Analyzer = en.AnalyzerName
 
+		boolMapping := bleve.NewBooleanFieldMapping()
+
+		timestamp := "2006-01-02 at 03:04:05PM"
+		dateMapping := bleve.NewDateTimeFieldMapping()
+		//dateMapping.DateFormat = timestamp
+
 		tagMapping := bleve.NewTextFieldMapping()
 		tagMapping.Analyzer = keyword_analyzer.Name
 
@@ -2571,9 +2587,12 @@ func bleveIndex() {
 		wikiMapping.AddFieldMappingsAt("Name", nameMapping)
 		wikiMapping.AddFieldMappingsAt("Tags", tagMapping)
 		wikiMapping.AddFieldMappingsAt("Content", contentMapping)
+		wikiMapping.AddFieldMappingsAt("Public", boolMapping)
+		wikiMapping.AddFieldMappingsAt("Created", dateMapping)
+		wikiMapping.AddFieldMappingsAt("Modified", dateMapping)
 
 		indexMapping := bleve.NewIndexMapping()
-		indexMapping.AddDocumentMapping("Wiki", wikiMapping)
+		indexMapping.AddDocumentMapping("PublicWiki", wikiMapping)
 		indexMapping.TypeField = "type"
 		indexMapping.DefaultAnalyzer = "en"
 
@@ -2634,7 +2653,7 @@ func bleveIndex() {
 				if fm.Tags == nil {
 					fm.Tags = []string{}
 				}
-				/*
+				
 				ctime, err := gitGetCtime(file)
 				if err != nil && err.Error() != "NOT_IN_GIT" {
 					log.Panicln(err)
@@ -2643,16 +2662,22 @@ func bleveIndex() {
 				if err != nil {
 					log.Panicln(err)
 				}
-				*/
+				
 
 				data := struct {
 					Name    string `json:"name"`
+					Public  bool
 					Tags    []string `json:"tags"`
 					Content string `json:"content"`
+					Created string
+					Modified string
 				}{
 					Name: pagetitle,
+					Public: fm.Public,
 					Tags: fm.Tags,
 					Content: string(content),
+					Created: time.Unix(ctime, 0).Format(timestamp),
+					Modified: time.Unix(mtime, 0).Format(timestamp),
 				}
 				/*
 				wp = &wiki{
@@ -2697,14 +2722,59 @@ func search(w http.ResponseWriter, r *http.Request) {
 	params := r.Context().Value(httptreemux.ParamsContextKey).(map[string]string)
 	name := params["name"]
 
-	query := bleve.NewMatchQuery(name)
+	p, err := loadPage(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	//query := bleve.NewMatchQuery(name)
+
+	must := make([]bleve.Query, 1)
+	mustNot := make([]bleve.Query, 1)
+	must[0] = bleve.NewMatchQuery(name)
+
+	public := false
+
+	username, _ := auth.GetUsername(r.Context())
+	if username != "" {
+		public = true
+	}
+
+	mustNot[0] = bleve.NewBoolFieldQuery(public)
+	mustNot[0].SetField("Public")
+
+	query := bleve.NewBooleanQuery(must, nil, mustNot)
+
 	searchRequest := bleve.NewSearchRequest(query)
+
 	searchRequest.Highlight = bleve.NewHighlight()
 
 	searchResult, _ := index.Search(searchRequest)
 	log.Println(searchResult.String())
-	//fields, _ := index.Fields()
-	//log.Println(fields)
+
+	var results []*result
+	
+	//var results map[string]string
+	for _, v := range searchResult.Hits {
+		for _, fragments := range v.Fragments {
+			for _, fragment := range fragments {
+				var r *result
+				r = &result{
+					Name: v.ID,
+					Result: fragment,
+				}
+				//results[v.ID] = fragment
+				results = append(results, r)
+			}
+		}
+	}
+
+	s := &searchPage{p, results}
+	err = renderTemplate(w, r.Context(), "search_results.tmpl", s)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 }
 
 func main() {
