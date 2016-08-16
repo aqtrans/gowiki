@@ -1,0 +1,30 @@
+{{ define "title" }}<title>{{.page.SiteName}}|List</title>{{ end }}
+{{ define "content" }}
+<main>
+<article>
+  <header>Recent Activity</header> 
+</article>    
+<article>
+    <table>
+    <thead>
+        <tr>
+        <th>Date</th>
+        <th>Commit</th>
+        <th>Filenames</th>
+        </tr>
+    </thead>
+    <tbody>
+    {{ $user := .page.UN| isLoggedIn }}
+    {{ $admin := .page.IsAdmin }}
+    {{range .Recents}}
+        <tr>
+        <td>{{.Date | prettyDate}}</td>
+        <td>{{.Commit}}</td>
+        <td>{{range .Filenames}}  <a href="/{{.}}">{{.}}</a>{{end}}</td>
+        </tr>
+    {{ end }}
+    </tbody>
+    </table>    
+</article>
+</main>
+{{ end }}

@@ -230,6 +230,17 @@ type searchPage struct {
 	Results []*result
 }
 
+type recentsPage struct {
+	*page
+	Recents []*recent
+}
+
+type recent struct {
+	Date      int64
+	Commit    string
+	Filenames []string
+}
+
 type result struct {
 	Name   string
 	Result string
@@ -655,10 +666,12 @@ func gitHistory() ([]string, error) {
 
 	// Get rid of first _END
 	o = bytes.Replace(o, []byte("_END"), []byte(""), 1)
+	o = bytes.Replace(o, []byte("\x00"), []byte("\n"), -1)
 	
 	// Now remove all _END tags
 	b := bytes.SplitAfter(o, []byte("_END"))
 	var s []string
+	//var s *[]recent
 	for _, v := range b {
 		v = bytes.Replace(v, []byte("_END"), []byte(""), -1)
 		s = append(s, string(v))
@@ -943,19 +956,54 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 
 // TODO: Fix this
 func recentHandler(w http.ResponseWriter, r *http.Request) {
-	/*
+	
 	p, err := loadPage(r)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	*/
+	
 
 	gh, err := gitHistory()
 	if err != nil {
 		log.Println(err)
 	}
 	//log.Println(gh)
-	log.Println(gh[6])
+	//log.Println(gh[10])
+	/*
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(200)
+	*/
+	var split []string
+	var split2 []string
+	var recents []*recent
+
+	log.Println(gh[0])
+	for _, v := range gh {
+		split = strings.Split(strings.TrimSpace(v), " ")
+		date, err := strconv.ParseInt(split[0], 0, 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// If there is a filename (initial one will not have it)...
+		split2 = strings.Split(split[1], "\n")
+		if len(split2) >= 2 {
+
+			r := &recent{
+				Date: date,
+				Commit: split2[0],
+				Filenames: strings.Split(split2[1], "\n"),
+			}
+			//w.Write([]byte(v + "<br>"))
+			recents = append(recents, r)
+		}
+	}
+
+	s := &recentsPage{p, recents}
+	err = renderTemplate(w, r.Context(), "recents.tmpl", s)
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 }
 
@@ -2840,7 +2888,7 @@ func main() {
 	//r.GET("/signup", signupPageHandler)
 	r.GET("/list", listHandler)
 	r.GET("/search/*name", search)
-	r.GET("/recent", recentHandler)
+	r.GET("/recent", auth.AuthMiddle(recentHandler))
 	r.GET("/health", HealthCheckHandler)
 
 	admin := r.NewGroup("/admin")
