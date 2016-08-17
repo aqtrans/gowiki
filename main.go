@@ -132,7 +132,7 @@ type Renderer struct {
 }
 
 var (
-	linkPattern = regexp.MustCompile(`\[\/[0-9a-zA-Z-_\.\/]+\]\(\)`)
+	linkPattern = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
 	bufpool   *bpool.BufferPool
 	templates map[string]*template.Template
 	_24K      int64 = (1 << 20) * 24
@@ -418,6 +418,8 @@ func jsTags(tagS []string) string {
 // Special Markdown render helper to convert [/empty/wiki/links]() to a full <a href> link
 // Borrowed most of this from https://raw.githubusercontent.com/gogits/gogs/master/modules/markdown/markdown.go
 func replaceInterwikiLinks(rawBytes []byte, urlPrefix string) []byte {
+	return linkPattern.ReplaceAll(rawBytes, []byte(fmt.Sprintf(`<a href="%s/$1">/$1</a>`, urlPrefix, )))
+	/*
 	ms := linkPattern.FindAll(rawBytes, -1)
 	for _, m := range ms {
 		m2 := bytes.TrimPrefix(m, []byte("["))
@@ -426,7 +428,8 @@ func replaceInterwikiLinks(rawBytes []byte, urlPrefix string) []byte {
 		rawBytes = []byte(fmt.Sprintf(`<a href="%s%s">%s</a>`, urlPrefix, m2, m2, ))
 		//rawBytes = link
 	}
-	return rawBytes
+	*/
+	//return rawBytes
 }
 
 // CUSTOM GIT WRAPPERS
