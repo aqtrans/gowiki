@@ -430,14 +430,15 @@ func TestMarkdownRender2(t *testing.T) {
 	}
 }
 
+
+// Tests my custom link renderer, without YAML frontmatter
 func TestMarkdownRender3(t *testing.T) {
-	// Read raw Markdown
 	rawmdf := "./tests/test3.md"
 	rawmd, err := ioutil.ReadFile(rawmdf)
 	if err != nil {
 		t.Error("Unable to access test3.md")
 	}
-	
+
 	// Read what rendered Markdown HTML should look like
 	rendermdf := "./tests/test3.html"
 	rendermd, err := ioutil.ReadFile(rendermdf)
@@ -448,12 +449,38 @@ func TestMarkdownRender3(t *testing.T) {
 	rendermds := string(rendermd)
 
 	rawmds := markdownRender(rawmd)
-	//rawmds := commonmarkRender(rawmd)
 
 	if rawmds != rendermds {
 		//ioutil.WriteFile("./tests/test3.html", []byte(rawmds), 0755)
 		t.Error("Converted Markdown does not equal test3" + "\n Output: \n" + rawmds + "Expected: \n" + rendermds)
 	}
+	
+}
+
+// Tests my custom link renderer, with YAML frontmatter
+func TestMarkdownRender4(t *testing.T) {
+	rawmdf := "./tests/test4.md"
+	rawmd, err := ioutil.ReadFile(rawmdf)
+	if err != nil {
+		t.Error("Unable to access test4.md")
+	}
+	
+	// Read what rendered Markdown HTML should look like
+	rendermdf := "./tests/test4.html"
+	rendermd, err := ioutil.ReadFile(rendermdf)
+	if err != nil {
+		t.Error("Unable to access test4.html")
+	}
+	// []byte to string
+	rendermds := string(rendermd)
+
+	rawmds := markdownRender(rawmd)
+	//rawmds := commonmarkRender(rawmd)
+
+	if rawmds != rendermds {
+		ioutil.WriteFile("./tests/test4.html", []byte(rawmds), 0755)
+		t.Error("Converted Markdown does not equal test4" + "\n Output: \n" + rawmds + "Expected: \n" + rendermds)
+	}	
 }
 
 // Below is for testing the difference between just writing the Tags string directly as fed in from the wiki form, or using a []string as the source, but having to write them using a for loop

@@ -132,7 +132,7 @@ type Renderer struct {
 }
 
 var (
-	linkPattern = regexp.MustCompile(`^\[\/[0-9a-zA-Z-_\.\/]+\]\(\)`)
+	linkPattern = regexp.MustCompile(`\[\/[0-9a-zA-Z-_\.\/]+\]\(\)`)
 	bufpool   *bpool.BufferPool
 	templates map[string]*template.Template
 	_24K      int64 = (1 << 20) * 24
@@ -417,14 +417,14 @@ func jsTags(tagS []string) string {
 
 // Special Markdown render helper to convert [/empty/wiki/links]() to a full <a href> link
 // Borrowed most of this from https://raw.githubusercontent.com/gogits/gogs/master/modules/markdown/markdown.go
-func RenderLinkCurrentPattern(rawBytes []byte, urlPrefix string) []byte {
+func replaceInterwikiLinks(rawBytes []byte, urlPrefix string) []byte {
 	ms := linkPattern.FindAll(rawBytes, -1)
 	for _, m := range ms {
 		m2 := bytes.TrimPrefix(m, []byte("["))
 		m2 = bytes.TrimSuffix(m2, []byte("]()"))
 		//log.Println(string(m2))
-		link := []byte(fmt.Sprintf(`<a href="%s%s">`, urlPrefix, m2, ))
-		rawBytes = link
+		rawBytes = []byte(fmt.Sprintf(`<a href="%s%s">`, urlPrefix, m2, ))
+		//rawBytes = link
 	}
 	return rawBytes
 }
@@ -719,9 +719,7 @@ func markdownRender(content []byte) string {
 
 	// build full URL out of configured Domain:
 	domain := "//" + viper.GetString("Domain")
-
-	result := RenderLinkCurrentPattern(content, domain)
-	//log.Println(string(result))
+	result := replaceInterwikiLinks(content, domain)
 
 	md := markdownCommon(result)
 
@@ -1187,13 +1185,17 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func readFileAndFront(filepath string) (fmdata []byte, content []byte, err error) {
-
+func readFile(filepath string) []byte {
 	data, err := ioutil.ReadFile(filepath)
 	if err != nil {
-		log.Println(err)
-		return nil, nil, err
+		log.Fatalln(err)
+		return nil
 	}
+	return data
+}
+
+func readFileAndFront(filepath string) (fmdata []byte, content []byte, err error) {
+	data := readFile(filepath)
 	return readFront(data)
 }
 
@@ -1240,7 +1242,6 @@ func readFront(data []byte) (fmdata []byte, content []byte, err error) {
 			break
 		}
 	}
-
 	return data[yamlStart:yamlEnd], data[yamlEnd:], nil
 }
 
