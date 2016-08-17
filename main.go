@@ -423,7 +423,7 @@ func replaceInterwikiLinks(rawBytes []byte, urlPrefix string) []byte {
 		m2 := bytes.TrimPrefix(m, []byte("["))
 		m2 = bytes.TrimSuffix(m2, []byte("]()"))
 		//log.Println(string(m2))
-		rawBytes = []byte(fmt.Sprintf(`<a href="%s%s">`, urlPrefix, m2, ))
+		rawBytes = []byte(fmt.Sprintf(`<a href="%s%s"></a>`, urlPrefix, m2, ))
 		//rawBytes = link
 	}
 	return rawBytes
