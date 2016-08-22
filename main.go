@@ -383,9 +383,13 @@ func timeNewContext(c context.Context, t time.Time) context.Context {
 	return context.WithValue(c, TimerKey, t)
 }
 
-func timeFromContext(c context.Context) (time.Time, bool) {
+func timeFromContext(c context.Context) time.Time {
 	t, ok := c.Value(TimerKey).(time.Time)
-	return t, ok
+	if !ok {
+		utils.Debugln("No startTime in context.")
+		t = time.Now()
+	}
+	return t
 }
 
 func isAdmin(s string) bool {
@@ -1349,36 +1353,25 @@ func renderTemplate(w http.ResponseWriter, c context.Context, name string, data 
 
 	// Squeeze in our response time here
 	// Real hacky solution, but better than modifying the struct
-	start, ok := timeFromContext(c)
-	if !ok {
-		utils.Debugln("No startTime in context.")
-		start = time.Now()
-	}
+	start := timeFromContext(c)
 	elapsed := time.Since(start)
-	//buf.WriteString(elapsed.String())
-	buf2 := bufpool.Get()
-	err = tmpl.ExecuteTemplate(buf2, "footer", elapsed.String())
+	tmpl.Execute(buf, elapsed.String())
+	err = tmpl.ExecuteTemplate(buf, "footer", elapsed.String())
 	if err != nil {
 		log.Println("renderTemplate error:")
 		log.Println(err)
-		bufpool.Put(buf2)
+		bufpool.Put(buf)
 		return err
 	}
-	buf3 := bufpool.Get()
-	err = tmpl.ExecuteTemplate(buf3, "bottom", data)
+	err = tmpl.ExecuteTemplate(buf, "bottom", data)
 	if err != nil {
 		log.Println("renderTemplate error:")
 		log.Println(err)
-		bufpool.Put(buf3)
+		bufpool.Put(buf)
 		return err
-	}	
-
+	}
 	buf.WriteTo(w)
-	buf2.WriteTo(w)
-	buf3.WriteTo(w)
 	bufpool.Put(buf)
-	bufpool.Put(buf2)
-	bufpool.Put(buf3)
 	return nil
 }
 
@@ -2530,19 +2523,23 @@ func treeMuxWrapper(next http.Handler) http.HandlerFunc {
 	}
 }
 
+// In combination with a footer.tmpl and associated code in renderTemplate(),
+//  this middleware gives us a response time in the request.Context
 func timer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		newt := timeNewContext(r.Context(), time.Now())
-		next.ServeHTTP(w, r.WithContext(newt))
+		newTime := timeNewContext(r.Context(), time.Now())
+		next.ServeHTTP(w, r.WithContext(newTime))
 	})
 }
 
 func riceInit() error {
+	// Parent templates directory named 'templates'
 	templateBox, err := rice.FindBox("templates")
 	if err != nil {
 		return err
 	}
+	// Child directory 'templates/includes' containing the base templates
 	includes, err := templateBox.Open("includes")
 	if err != nil {
 		return err
@@ -2550,7 +2547,8 @@ func riceInit() error {
 	includeDir, err := includes.Readdir(-1)
 	if err != nil {
 		return err
-	}	
+	}
+	// Child directory 'templates/layouts' containing individual page layouts
 	layouts, err := templateBox.Open("layouts")
 	if err != nil {
 		return err
@@ -2563,14 +2561,11 @@ func riceInit() error {
 	var templateIBuff bytes.Buffer
 	for _, v := range includeDir {
 		boxT = append(boxT, "includes/"+v.Name())
-		//log.Println(boxT)
 		iString, _ := templateBox.String("includes/"+v.Name())
 		templateIBuff.WriteString(iString)
 	}
 	
 	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
-
-	//templatesB := make(map[string]*template.Template)
 
 	// Here we are prefacing every layout with what should be every includes/ .tmpl file
 	// Ex: includes/sidebar.tmpl includes/bottom.tmpl includes/base.tmpl layouts/list.tmpl
