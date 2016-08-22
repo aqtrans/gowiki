@@ -1674,13 +1674,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 		return
 	}
 
-	// Crawl for new favorites only on startup and save
-	favbuf.Reset()
-	err = filepath.Walk(viper.GetString("WikiDir"), readFavs)
-	if err != nil {
-		log.Println("filepath.Walk error:")
-		log.Fatal(err)
-	}
+	go refreshStuff()
 
 	auth.SetSession("flash", "Wiki page successfully saved.", w, r)
 	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
@@ -1821,34 +1815,10 @@ func readTags(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
-func testEq(a, b []byte) bool {
-
-	if a == nil && b == nil {
-		return true
-	}
-
-	if a == nil || b == nil {
-		return false
-	}
-
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-
-	return true
-}
-
 func loadWiki(name string) (*wiki, error) {
 	var fm frontmatter
 	var pagetitle string
 
-	//fullfilename := cfg.WikiDir + name
 	fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
 
 	// Check if file exists before doing anything else
@@ -1864,8 +1834,7 @@ func loadWiki(name string) (*wiki, error) {
 	if strings.HasSuffix(name, "/") {
 		//if dir != "" && name == "" {
 		log.Println("This might be a directory, trying to parse the index")
-		//filename := name + "index"
-		//fullfilename = cfg.WikiDir + name + "index"
+
 		fullfilename = filepath.Join(viper.GetString("WikiDir"), name, "index")
 
 		dirindex, _ := os.Open(fullfilename)
@@ -1930,7 +1899,6 @@ func (wiki *wiki) save() error {
 	defer utils.TimeTrack(time.Now(), "wiki.save()")
 
 	dir, filename := filepath.Split(wiki.Filename)
-	//fullfilename := cfg.WikiDir + dir + filename
 	fullfilename := filepath.Join(viper.GetString("WikiDir"), dir, filename)
 
 	// If directory doesn't exist, create it
@@ -2613,7 +2581,97 @@ func initWikiDir() {
 func bleveIndex() {
 	
 	var err error
+	timestamp := "2006-01-02 at 03:04:05PM"
 	index, err = bleve.Open("./data/index.bleve")
+
+	// If index exists, crawl and re-index
+	if err == nil {
+		fileList, flerr := gitLs()
+		if flerr != nil {
+			log.Fatalln(err)
+		}
+		// TODO: Turn this into a bleve.Batch() job!
+		for _, file := range fileList {
+			fullname := filepath.Join(viper.GetString("WikiDir"), file)
+			src, err := os.Stat(fullname)
+			if err != nil {
+				panic(err)
+			}
+			// If not a directory, get frontmatter from file and add to list
+			if !src.IsDir() {
+
+				//log.Println(file)
+				_, filename := filepath.Split(file)
+				//var wp *wiki
+				var fm frontmatter
+				var pagetitle string
+
+				// Read YAML frontmatter into fm
+				fmbytes, content, err := readFileAndFront(fullname)
+				if err != nil {
+					log.Println(err)
+				}
+				fm, err = marshalFrontmatter(fmbytes)
+				if err != nil {
+					log.Println("YAML unmarshal error in: " + file)
+					log.Println(err)
+				}
+				if fm.Public {
+					//log.Println("Private page!")
+				}
+				pagetitle = filename
+				if fm.Title != "" {
+					pagetitle = fm.Title
+				}
+				if fm.Title == "" {
+					fm.Title = file
+				}
+				if fm.Public != true {
+					fm.Public = false
+				}
+				if fm.Admin != true {
+					fm.Admin = false
+				}
+				if fm.Favorite != true {
+					fm.Favorite = false
+				}
+				if fm.Tags == nil {
+					fm.Tags = []string{}
+				}
+				
+				ctime, err := gitGetCtime(file)
+				if err != nil && err.Error() != "NOT_IN_GIT" {
+					log.Panicln(err)
+				}
+				mtime, err := gitGetMtime(file)
+				if err != nil {
+					log.Panicln(err)
+				}
+				
+
+				data := struct {
+					Name    string `json:"name"`
+					Public  bool
+					Tags    []string `json:"tags"`
+					Content string `json:"content"`
+					Created string
+					Modified string
+				}{
+					Name: pagetitle,
+					Public: fm.Public,
+					Tags: fm.Tags,
+					Content: string(content),
+					Created: time.Unix(ctime, 0).Format(timestamp),
+					Modified: time.Unix(mtime, 0).Format(timestamp),
+				}
+
+				index.Index(file, data)
+				
+			}			
+		}		
+	}
+
+	// If index does not exist, create mapping and then index
 	if err == bleve.ErrorIndexPathDoesNotExist {
 		nameMapping := bleve.NewTextFieldMapping()
 		nameMapping.Analyzer = keyword_analyzer.Name
@@ -2623,7 +2681,7 @@ func bleveIndex() {
 
 		boolMapping := bleve.NewBooleanFieldMapping()
 
-		timestamp := "2006-01-02 at 03:04:05PM"
+		
 		dateMapping := bleve.NewDateTimeFieldMapping()
 		//dateMapping.DateFormat = timestamp
 
@@ -2726,16 +2784,6 @@ func bleveIndex() {
 					Created: time.Unix(ctime, 0).Format(timestamp),
 					Modified: time.Unix(mtime, 0).Format(timestamp),
 				}
-				/*
-				wp = &wiki{
-					Title: pagetitle,
-					Filename: file,
-					Frontmatter: &fm,
-					Content: content,
-					CreateTime: ctime,
-					ModTime: mtime,
-				}
-				*/
 
 				index.Index(file, data)
 				
@@ -2743,25 +2791,6 @@ func bleveIndex() {
 		}
 
 	}
-
-
-
-
-	
-
-	//query := bleve.NewQueryStringQuery("lisa")
-
-	//log.Println(searchResult.Hits[0].Fields)
-
-	/*
-	query2 := bleve.NewMatchAllQuery()
-	searchRequest2 := bleve.NewSearchRequest(query2)
-	searchResults, err := index.Search(searchRequest2)
-	if err != nil {
-		panic(err)
-	}
-	log.Println(searchResults.String())	
-	*/
 
 }
 
@@ -2824,6 +2853,26 @@ func search(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// This should be all the stuff we need to be refreshed on startup and when pages are saved
+func refreshStuff() {
+	// Update search index
+	bleveIndex()
+
+	// Crawl for new favorites only on startup and save
+	err := filepath.Walk(viper.GetString("WikiDir"), readFavs)
+	if err != nil {
+		//log.Fatal(err)
+		log.Println("init: unable to crawl for favorites")
+	}
+
+	// Crawl for tags only on startup and save
+	err = filepath.Walk(viper.GetString("WikiDir"), readTags)
+	if err != nil {
+		//log.Fatal(err)
+		log.Println("init: unable to crawl for tags")
+	}	
+}
+
 func main() {
 
 	viper.WatchConfig()
@@ -2846,22 +2895,8 @@ func main() {
 	}
 
 	initWikiDir()
-	bleveIndex()
-
-
-	// Crawl for new favorites only on startup and save
-	err = filepath.Walk(viper.GetString("WikiDir"), readFavs)
-	if err != nil {
-		//log.Fatal(err)
-		log.Println("init: unable to crawl for favorites")
-	}
-
-	// Crawl for tags only on startup and save
-	err = filepath.Walk(viper.GetString("WikiDir"), readTags)
-	if err != nil {
-		//log.Fatal(err)
-		log.Println("init: unable to crawl for tags")
-	}
+	
+	refreshStuff()
 
 	// HTTP stuff from here on out
 	s := alice.New(timer, utils.Logger, auth.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(false)))
