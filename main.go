@@ -2057,7 +2057,7 @@ func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//ctx := r.Context()
-	params := r.Context().Value(httptreemux.ParamsContextKey).(map[string]string)
+	params := getParams(r.Context())
 	selectedUser := params["username"]
 
 	data := struct {
@@ -2401,7 +2401,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		// Here we will extract the page title from the Request,
 		// and call the provided handler 'fn'
 
-		params := r.Context().Value(httptreemux.ParamsContextKey).(map[string]string)
+		params := getParams(r.Context())
 
 		// Replacing these for now:
 		name := params["name"]
@@ -2794,9 +2794,27 @@ func bleveIndex() {
 
 }
 
+// Simple function to get the httptreemux params, setting it blank if there aren't any
+func getParams(c context.Context) map[string]string {
+	params, ok := c.Value(httptreemux.ParamsContextKey).(map[string]string)
+	if !ok {
+		params = make(map[string]string)
+	}
+	return params
+}
+
 func search(w http.ResponseWriter, r *http.Request) {
-	params := r.Context().Value(httptreemux.ParamsContextKey).(map[string]string)
+	params := getParams(r.Context())
 	name := params["name"]
+
+	// If this is a POST request, and searchwiki form is not blank,
+	//  set name to its' value
+	if r.Method == "POST" {
+		r.ParseForm()
+		if r.PostFormValue("searchwiki") != "" {
+			name = r.PostFormValue("searchwiki")
+		}
+	}
 
 	p, err := loadPage(r)
 	if err != nil {
@@ -2826,7 +2844,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 	searchRequest.Highlight = bleve.NewHighlight()
 
 	searchResult, _ := index.Search(searchRequest)
-	log.Println(searchResult.String())
+	//log.Println(searchResult.String())
 
 	var results []*result
 	
@@ -2922,6 +2940,7 @@ func main() {
 	//r.GET("/signup", signupPageHandler)
 	r.GET("/list", listHandler)
 	r.GET("/search/*name", search)
+	r.POST("/search", search)
 	r.GET("/recent", auth.AuthMiddle(recentHandler))
 	r.GET("/health", HealthCheckHandler)
 

@@ -25,5 +25,13 @@
         </div>   
 </form>
 
+<form method="POST" action="/search" id="searchwiki">
+        <input type="text" placeholder="Search" id="searchwiki" name="searchwiki">
+        {{.Token}}
+        <div>
+        <button type="button" class="success button">Search</button>
+        </div>   
+</form>
+
     {{ template "usernav" .}}
 {{ end }}
