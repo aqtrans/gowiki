@@ -18,20 +18,20 @@
 </fieldset>
 
 <form method="POST" action="/new" id="newwiki">
-        <input type="text" placeholder="Add page" id="newwiki" name="newwiki">
-        {{.Token}}
-        <div>
-        <button type="button" class="success button"><i class="fa fa-plus-square-o fa-lg" aria-hidden="true"></i></button>
-        </div>   
+  <div class="input-wrapper">
+      <input type="text" placeholder="Add page" id="newwiki" name="newwiki">
+      {{.Token}}
+      <button type="button" class="success button"><i class="fa fa-plus-square-o fa-lg" aria-hidden="true"></i></button>
+  </div>
 </form>
 
 <form method="POST" action="/search" id="searchwiki">
-        <input type="text" placeholder="Search" id="searchwiki" name="searchwiki">
-        {{.Token}}
-        <div>
-        <button type="button" class="success button">Search</button>
-        </div>   
-</form>
+  <div class="input-wrapper">
+      <input type="text" placeholder="Search" id="searchwiki" name="searchwiki">
+      {{.Token}}
+      <button type="button" class="success button">Search</button>
+  </div>
+</form> 
 
     {{ template "usernav" .}}
 {{ end }}
