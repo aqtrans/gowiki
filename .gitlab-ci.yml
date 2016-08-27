@@ -76,6 +76,10 @@ deploy-it:
     - mkdir deploy
     - go get -d
     - go get github.com/GeertJohan/go.rice/rice
+    - npm install
+    - npm install bower
+    - node_modules/.bin/bower install
+    - npm build
     - rice embed-go
     - go build -o ./deploy/wiki
     - cp -r README.md deploy/
