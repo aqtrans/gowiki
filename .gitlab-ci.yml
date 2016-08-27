@@ -24,18 +24,18 @@ install-go:
     - export CURRENT_BUILD_PATH=$(pwd)
     - echo $PATH
     - echo $CURRENT_BUILD_PATH
-    - rm -rf $HOME/gopath
-    - rm -rf $HOME/golang    
+    #- rm -rf $HOME/gopath
+    #- rm -rf $HOME/golang    
     #- mkdir -p $HOME/gopath # for GOPATH (contains code and external packages)
-    - mkdir -p $HOME/gopath/src
-    - mkdir -p $HOME/golang
-    - curl https://storage.googleapis.com/golang/go1.7rc6.linux-amd64.tar.gz 2>/dev/null > go1.7rc6.linux-amd64.tar.gz
-    - tar -C $HOME/golang -xzf go1.7rc6.linux-amd64.tar.gz
-    - export GOROOT=$HOME/golang/go
-    - export GOPATH=$HOME/gopath
-    - export PATH=$PATH:$GOROOT/bin
-    - export PATH=$PATH:$GOPATH/bin
-    - ln -s $CI_PROJECT_DIR $GOPATH/src/wiki
+    #- mkdir -p $HOME/gopath/src
+    #- mkdir -p $HOME/golang
+    #- curl https://storage.googleapis.com/golang/go1.7rc6.linux-amd64.tar.gz 2>/dev/null > go1.7rc6.linux-amd64.tar.gz
+    #- tar -C $HOME/golang -xzf go1.7rc6.linux-amd64.tar.gz
+    #- export GOROOT=$HOME/golang/go
+    #- export GOPATH=$HOME/gopath
+    #- export PATH=$PATH:$GOROOT/bin
+    #- export PATH=$PATH:$GOPATH/bin
+    #- ln -s $CI_PROJECT_DIR $GOPATH/src/wiki
     - go version
     - echo $PATH
     - go env
@@ -44,10 +44,10 @@ install-go:
 build-my-project:
   stage: build
   script:
-    - export GOROOT=$HOME/golang/go
-    - export GOPATH=$HOME/gopath
-    - export PATH=$GOROOT/bin:$PATH 
-    - export PATH=$GOPATH/bin:$PATH  
+    #- export GOROOT=$HOME/golang/go
+    #- export GOPATH=$HOME/gopath
+    #- export PATH=$GOROOT/bin:$PATH 
+    #- export PATH=$GOPATH/bin:$PATH  
     - cd $GOPATH/src/wiki
     - go get -d  
     - go get github.com/GeertJohan/go.rice/rice
@@ -57,10 +57,10 @@ build-my-project:
 test-my-project:
   stage: test
   script:
-    - export GOROOT=$HOME/golang/go
-    - export GOPATH=$HOME/gopath
-    - export PATH=$GOROOT/bin:$PATH 
-    - export PATH=$GOPATH/bin:$PATH
+    #- export GOROOT=$HOME/golang/go
+    #- export GOPATH=$HOME/gopath
+    #- export PATH=$GOROOT/bin:$PATH 
+    #- export PATH=$GOPATH/bin:$PATH
     - cd $GOPATH/src/wiki
     - go get github.com/boltdb/bolt
     - go test -v
@@ -68,10 +68,10 @@ test-my-project:
 deploy-it:
   stage: deploy
   script:
-    - export GOROOT=$HOME/golang/go
-    - export GOPATH=$HOME/gopath
-    - export PATH=$GOROOT/bin:$PATH 
-    - export PATH=$GOPATH/bin:$PATH  
+    #- export GOROOT=$HOME/golang/go
+    #- export GOPATH=$HOME/gopath
+    #- export PATH=$GOROOT/bin:$PATH 
+    #- export PATH=$GOPATH/bin:$PATH  
     - cd $GOPATH/src/wiki
     - mkdir deploy
     - go get -d
