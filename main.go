@@ -144,6 +144,7 @@ var (
 	tagMap  map[string][]string
 	tagsBuf bytes.Buffer
 	index bleve.Index
+	wikiList map[string][]*wiki
 )
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -2829,6 +2830,125 @@ func search(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln(err)
 	}
 
+}
+
+func crawlWiki() {
+
+	fileList, err := gitLs()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	var wps []*wiki
+	var publicwps []*wiki
+	var adminwps []*wiki
+	for _, file := range fileList {
+		
+		// If using Git, build the full path:
+		fullname := filepath.Join(viper.GetString("WikiDir"), file)
+		//file = viper.GetString("WikiDir")+file
+		log.Println(file)
+		log.Println(fullname)
+
+		// check if the source dir exist
+		src, err := os.Stat(fullname)
+		if err != nil {
+			panic(err)
+		}
+		// If not a directory, get frontmatter from file and add to list
+		if !src.IsDir() {
+
+			_, filename := filepath.Split(file)
+
+			// If this is an absolute path, including the cfg.WikiDir, trim it
+			//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
+			//fileURL := strings.TrimPrefix(file, withoutdotslash)
+
+			var wp *wiki
+			var fm frontmatter
+			var pagetitle string
+
+			//log.Println(file)
+
+			// Read YAML frontmatter into fm
+			fmbytes, _, err := readFileAndFront(fullname)
+			if err != nil {
+				log.Println(err)
+			}
+			fm, err = marshalFrontmatter(fmbytes)
+			if err != nil {
+				log.Println("YAML unmarshal error in: " + file)
+				log.Println(err)
+			}
+
+			if fm.Public {
+				//log.Println("Private page!")
+			}
+			pagetitle = filename
+			if fm.Title != "" {
+				pagetitle = fm.Title
+			}
+			if fm.Title == "" {
+				fm.Title = file
+			}
+			if fm.Public != true {
+				fm.Public = false
+			}
+			if fm.Admin != true {
+				fm.Admin = false
+			}
+			if fm.Favorite != true {
+				fm.Favorite = false
+			}
+			if fm.Tags == nil {
+				fm.Tags = []string{}
+			}
+			ctime, err := gitGetCtime(file)
+			if err != nil && err.Error() != "NOT_IN_GIT" {
+				log.Panicln(err)
+			}
+			mtime, err := gitGetMtime(file)
+			if err != nil {
+				log.Panicln(err)
+			}
+
+			// If pages are Admin or Public, add to a separate wikiPage slice
+			//   So we only check on rendering
+			if fm.Admin {
+				wp = &wiki{
+					Title: pagetitle,
+					Filename: file,
+					Frontmatter: &fm,
+					CreateTime: ctime,
+					ModTime: mtime,
+				}
+				adminwps = append(adminwps, wp)
+			} else if fm.Public {
+				wp = &wiki{
+					Title: pagetitle,
+					Filename: file,
+					Frontmatter: &fm,
+					CreateTime: ctime,
+					ModTime: mtime,
+				}
+				publicwps = append(publicwps, wp)
+			} else {
+				wp = &wiki{
+					Title: pagetitle,
+					Filename: file,
+					Frontmatter: &fm,
+					CreateTime: ctime,
+					ModTime: mtime,
+				}
+				wps = append(wps, wp)
+			}
+			//log.Println(string(body))
+			//log.Println(string(wp.wiki.Content))
+		}
+
+	}
+	wikiList["public"] = publicwps
+	wikiList["admin"] = adminwps
+	wikiList["private"] = wps
 }
 
 // This should be all the stuff we need to be refreshed on startup and when pages are saved
