@@ -809,7 +809,7 @@ func commonmarkRender(content []byte) string {
 }
 */
 
-func loadPage(r *http.Request) (*page, error) {
+func loadPage(r *http.Request) *page {
 	//timer.Step("loadpageFunc")
 
 	// Auth lib middlewares should load the user and tokens into context for reading
@@ -843,18 +843,15 @@ func loadPage(r *http.Request) (*page, error) {
 	gofavs := <-favs
 
 	//log.Println(gofavs)
-	return &page{SiteName: "GoWiki", Favs: gofavs, UN: user, IsAdmin: isAdmin, Token: token, FlashMsg: message}, nil
+	return &page{SiteName: "GoWiki", Favs: gofavs, UN: user, IsAdmin: isAdmin, Token: token, FlashMsg: message}
 }
 
 func historyHandler(w http.ResponseWriter, r *http.Request, name string) {
 
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
 
-	wikip, wikierr := loadWiki(name)
-	if wikierr != nil {
+	wikip, err := loadWiki(name)
+	if err != nil {
 		log.Fatalln(err)
 	}
 
@@ -886,10 +883,8 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 
 	//commit := vars["commit"]
 
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
+
 	body, err := gitGetFileCommit(name, commit)
 	if err != nil {
 		log.Fatalln(err)
@@ -962,11 +957,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 // TODO: Fix this
 func recentHandler(w http.ResponseWriter, r *http.Request) {
 	
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	
+	p := loadPage(r)	
 
 	gh, err := gitHistory()
 	if err != nil {
@@ -1015,10 +1006,7 @@ func recentHandler(w http.ResponseWriter, r *http.Request) {
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	//searchDir := cfg.WikiDir
 
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
 
 	// ~~Currently doing a filepath.Walk over cfg.WikiDir to build a list of wiki pages~~
 	// ~~But since we use git...should we use git to retrieve the list?~~
@@ -1069,8 +1057,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})*/
 	
-	fileList, flerr := gitLs()
-	if flerr != nil {
+	fileList, err := gitLs()
+	if err != nil {
 		log.Fatalln(err)
 	}
 	
@@ -1544,14 +1532,11 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 
 	//log.Println("Filename: " + name)
 
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
 
-	wikip, wikierr := loadWiki(name)
-	if wikierr != nil {
-		if wikierr.Error() == "NO_SUCH_FILE" {
+	wikip, err := loadWiki(name)
+	if err != nil {
+		if err.Error() == "NO_SUCH_FILE" {
 			newwp := &wikiPage{
 				page: p,
 				Wiki: &wiki{
@@ -1564,9 +1549,9 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 					ModTime: 0,
 				},
 			}
-			return newwp, wikierr
+			return newwp, err
 		}
-		return nil, wikierr
+		return nil, err
 	}
 
 	// Render remaining content after frontmatter
@@ -1973,15 +1958,13 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "loginPageHandler")
 
 	title := "login"
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
+
 	gp := &genPage{
 		p,
 		title,
 	}
-	err = renderTemplate(w, r.Context(), "login.tmpl", gp)
+	err := renderTemplate(w, r.Context(), "login.tmpl", gp)
 	if err != nil {
 		log.Println("render login error:")
 		log.Println(err)
@@ -1993,15 +1976,13 @@ func signupPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "signupPageHandler")
 
 	title := "signup"
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
+
 	gp := &genPage{
 		p,
 		title,
 	}
-	err = renderTemplate(w, r.Context(), "signup.tmpl", gp)
+	err := renderTemplate(w, r.Context(), "signup.tmpl", gp)
 	if err != nil {
 		log.Println("render signup error:")
 		log.Println(err)
@@ -2013,10 +1994,8 @@ func adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "adminUsersHandler")
 
 	title := "admin-users"
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
+
 	userlist, err := auth.Userlist()
 	if err != nil {
 		log.Fatalln(err)
@@ -2047,10 +2026,8 @@ func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "adminUserHandler")
 
 	title := "admin-user"
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
+
 	userlist, err := auth.Userlist()
 	if err != nil {
 		log.Fatalln(err)
@@ -2094,15 +2071,13 @@ func adminMainHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "adminMainHandler")
 
 	title := "admin-main"
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
+
 	gp := &genPage{
 		p,
 		title,
 	}
-	err = renderTemplate(w, r.Context(), "admin_main.tmpl", gp)
+	err := renderTemplate(w, r.Context(), "admin_main.tmpl", gp)
 	if err != nil {
 		log.Println("render admin_main error:")
 		log.Println(err)
@@ -2122,10 +2097,8 @@ func adminConfigHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	title := "admin-config"
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
+
 	data := struct {
 		*page
 		Title string
@@ -2188,10 +2161,8 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "gitCheckinHandler")
 
 	title := "Git Checkin"
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
+
 	var owithnewlines []byte
 
 	if r.URL.Query().Get("file") != "" {
@@ -2211,7 +2182,7 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 		string(owithnewlines),
 		viper.GetString("GitRepo"),
 	}
-	err = renderTemplate(w, r.Context(), "git_checkin.tmpl", gp)
+	err := renderTemplate(w, r.Context(), "git_checkin.tmpl", gp)
 	if err != nil {
 		log.Println("render git_checkin error:")
 		log.Println(err)
@@ -2280,10 +2251,8 @@ func adminGitHandler(w http.ResponseWriter, r *http.Request) {
 	defer utils.TimeTrack(time.Now(), "adminGitHandler")
 
 	title := "Git Management"
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
+
 	var owithnewlines []byte
 
 	o, err := gitIsClean()
@@ -2326,16 +2295,13 @@ func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	
 	a := &tagMap
 
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
 
 	tagpage := &tagMapPage{
 		page:    p,
 		TagKeys: *a,
 	}
-	err = renderTemplate(w, r.Context(), "tag_list.tmpl", tagpage)
+	err := renderTemplate(w, r.Context(), "tag_list.tmpl", tagpage)
 	if err != nil {
 		log.Println("render tag_list error:")
 		log.Println(err)
@@ -2349,11 +2315,8 @@ func createWiki(w http.ResponseWriter, r *http.Request, name string) {
 	if username != "" {
 		w.WriteHeader(404)
 		//title := "Create " + name + "?"
-		p, err := loadPage(r)
-		if err != nil {
-			log.Fatalln(err)
-			return
-		}
+		p := loadPage(r)
+
 		/*gp := &genPage{
 			p,
 			name,
@@ -2368,7 +2331,7 @@ func createWiki(w http.ResponseWriter, r *http.Request, name string) {
 				},
 			},
 		}
-		err = renderTemplate(w, r.Context(), "wiki_create.tmpl", wp)
+		err := renderTemplate(w, r.Context(), "wiki_create.tmpl", wp)
 		if err != nil {
 			//panic(err)
 			log.Println("wiki_create error:")
@@ -2816,10 +2779,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	p, err := loadPage(r)
-	if err != nil {
-		log.Fatalln(err)
-	}
+	p := loadPage(r)
 
 	//query := bleve.NewMatchQuery(name)
 
@@ -2864,7 +2824,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s := &searchPage{p, results}
-	err = renderTemplate(w, r.Context(), "search_results.tmpl", s)
+	err := renderTemplate(w, r.Context(), "search_results.tmpl", s)
 	if err != nil {
 		log.Fatalln(err)
 	}
