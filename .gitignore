@@ -1,6 +1,9 @@
 .DS_Store
+.directory
+bower_components/**
+node_modules/**
 http.log
 wiki
-.directory
 data/**
 rice-box.go
+npm-debug.log
