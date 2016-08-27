@@ -145,6 +145,12 @@ var (
 	tagsBuf bytes.Buffer
 	index bleve.Index
 	wikiList map[string][]*wiki
+	ErrNotInGit = errors.New("given file not in Git repo")
+	ErrNoFile = errors.New("no such file")
+	ErrNoDirIndex = errors.New("no such directory index")
+	ErrBaseNotDir = errors.New("cannot create subdirectory of a file")
+	ErrGitDirty = errors.New("directory is dirty")
+	ErrBadPath = errors.New("given path is invalid")
 )
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -478,7 +484,7 @@ func gitIsClean() ([]byte, error) {
 	}
 
 	if len(o) != 0 {
-		return o, errors.New("directory is dirty")
+		return o, ErrGitDirty
 	}
 
 	return nil, nil
@@ -545,7 +551,7 @@ func gitGetCtime(filename string) (int64, error) {
 	// If output is blank, no point in wasting CPU doing the rest
 	if ostring == "" {
 		log.Println(filename + " is not checked into Git")
-		return 0, errors.New("NOT_IN_GIT")
+		return 0, ErrNotInGit
 	}
 	ctime, err := strconv.ParseInt(ostring, 10, 64)
 	if err != nil {
@@ -891,7 +897,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 		log.Fatalln(err)
 	}
 	ctime, err := gitGetCtime(name)
-	if err != nil && err.Error() != "NOT_IN_GIT" {
+	if err != nil && err != ErrNotInGit {
 		log.Panicln(err)
 	}
 	mtime, err := gitGetFileCommitMtime(commit)
@@ -1131,7 +1137,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 				fm.Tags = []string{}
 			}
 			ctime, err := gitGetCtime(file)
-			if err != nil && err.Error() != "NOT_IN_GIT" {
+			if err != nil && err != ErrNotInGit {
 				log.Panicln(err)
 			}
 			mtime, err := gitGetMtime(file)
@@ -1388,7 +1394,7 @@ func doesPageExist(name string) (bool, error) {
 		return false, err
 	}
 	if strings.HasPrefix(rel, "../") {
-		return false, errors.New("BAD_PATH")
+		return false, ErrBadPath
 	}
 	base := filepath.Dir(fullfilename)
 
@@ -1418,14 +1424,12 @@ func doesPageExist(name string) (bool, error) {
 	if basefierr == nil {
 		basefimode := basefi.Mode()
 		if !basefimode.IsDir() {
-			errn := errors.New("Base is not dir")
 			//http.Error(w, basefi.Name()+" is not a directory.", 500)
-			return false, errn
+			return false, ErrBaseNotDir
 		}
 		if basefimode.IsRegular() {
-			errn := errors.New("Base is not dir")
 			//http.Error(w, basefi.Name()+" is not a directory.", 500)
-			return false, errn
+			return false, ErrBaseNotDir
 		}
 	}
 
@@ -1442,8 +1446,7 @@ func doesPageExist(name string) (bool, error) {
 		dirindex, _ := os.Open(fullfilename)
 		_, dirindexfierr := dirindex.Stat()
 		if os.IsNotExist(dirindexfierr) {
-			errn := errors.New("No such dir index")
-			return false, errn
+			return false, ErrNoDirIndex
 		}
 	}
 
@@ -1479,24 +1482,20 @@ func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 	// Get Wiki
 	p, err := loadWikiPage(r, name)
 	if err != nil {
-		if err.Error() == "No such dir index" {
+		if err == ErrNoDirIndex {
 			log.Println("No such dir index...creating one.")
 			http.Redirect(w, r, "/"+name+"/index", http.StatusTemporaryRedirect)
 			return
-		} else if err.Error() == "NO_SUCH_FILE" {
+		} else if err == ErrNoFile {
 			log.Println("No such file...creating one.")
 			//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
 			createWiki(w, r, name)
 			return
-		} else if err.Error() == "Base is not dir" {
+		} else if err == ErrBaseNotDir {
 			log.Println("Cannot create subdir of a file.")
 			http.Error(w, "Cannot create subdir of a file.", 500)
 			return
-			// If gitGetCtime returns NOT_IN_GIT, we handle it here
-		//} else if err.Error() == "NOT_IN_GIT" {
-		//	http.Redirect(w, r, "/gitadd?file="+name, http.StatusSeeOther)
-		//	return
-		} else if err.Error() == "NO_DIR_INDEX" {
+		} else if err == ErrNoDirIndex {
 			log.Println("No directory index. Does this even need to be an error?")
 			http.Error(w, "Cannot create subdir of a file.", 500)
 			return
@@ -1505,7 +1504,6 @@ func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 			log.Println("loadWikiPage error:")
 			log.Println(err)
 		}
-		//log.Println(err.Error())
 		http.NotFound(w, r)
 		return
 	}
@@ -1537,7 +1535,7 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 
 	wikip, err := loadWiki(name)
 	if err != nil {
-		if err.Error() == "NO_SUCH_FILE" {
+		if err == ErrNoFile {
 			newwp := &wikiPage{
 				page: p,
 				Wiki: &wiki{
@@ -1575,7 +1573,7 @@ func editHandler(w http.ResponseWriter, r *http.Request, name string) {
 	p, err := loadWikiPage(r, name)
 
 	if err != nil {
-		if err.Error() == "NO_SUCH_FILE" {
+		if err == ErrNoFile {
 			//log.Println("No such file...creating one.")
 			terr := renderTemplate(w, r.Context(), "wiki_edit.tmpl", p)
 			if terr != nil {
@@ -1812,8 +1810,7 @@ func loadWiki(name string) (*wiki, error) {
 	if !fileExists && feErr == nil {
 		// NOW: Using os.Stat to properly check for file existence, using IsNotExist()
 		// This should mean file is non-existent, so create new page
-		errn := errors.New("NO_SUCH_FILE")
-		return nil, errn
+		return nil, ErrNoFile
 	}
 
 	// Directory without specified index
@@ -1826,7 +1823,7 @@ func loadWiki(name string) (*wiki, error) {
 		dirindex, _ := os.Open(fullfilename)
 		_, dirindexfierr := dirindex.Stat()
 		if os.IsNotExist(dirindexfierr) {
-			return nil, errors.New("NO_DIR_INDEX")
+			return nil, ErrNoDirIndex
 		}
 	}
 
@@ -1858,7 +1855,7 @@ func loadWiki(name string) (*wiki, error) {
 	ctime, err := gitGetCtime(name)
 	if err != nil {
 		// If not in git, redirect to gitadd
-		if err.Error() == "NOT_IN_GIT" {
+		if err == ErrNotInGit {
 			return nil, err
 		}
 		log.Println("gitGetCtime error:")
@@ -2171,7 +2168,7 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 		owithnewlines = []byte(file)
 	} else {
 		o, err := gitIsClean()
-		if err != nil && err.Error() != "directory is dirty" {
+		if err != nil && err != ErrGitDirty {
 			log.Fatalln(err)
 		}
 		owithnewlines = bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
@@ -2257,7 +2254,7 @@ func adminGitHandler(w http.ResponseWriter, r *http.Request) {
 	var owithnewlines []byte
 
 	o, err := gitIsClean()
-	if err != nil && err.Error() != "directory is dirty" {
+	if err != nil && err != ErrGitDirty {
 		log.Fatalln(err)
 	}
 	owithnewlines = bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
@@ -2604,7 +2601,7 @@ func bleveIndex() {
 				}
 				
 				ctime, err := gitGetCtime(file)
-				if err != nil && err.Error() != "NOT_IN_GIT" {
+				if err != nil && err != ErrNotInGit {
 					log.Panicln(err)
 				}
 				mtime, err := gitGetMtime(file)
@@ -2724,7 +2721,7 @@ func bleveIndex() {
 				}
 				
 				ctime, err := gitGetCtime(file)
-				if err != nil && err.Error() != "NOT_IN_GIT" {
+				if err != nil && err != ErrNotInGit {
 					log.Panicln(err)
 				}
 				mtime, err := gitGetMtime(file)
@@ -2903,7 +2900,7 @@ func crawlWiki() {
 				fm.Tags = []string{}
 			}
 			ctime, err := gitGetCtime(file)
-			if err != nil && err.Error() != "NOT_IN_GIT" {
+			if err != nil && err != ErrNotInGit {
 				log.Panicln(err)
 			}
 			mtime, err := gitGetMtime(file)
