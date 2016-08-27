@@ -1,7 +1,0 @@
-{
-    "Port": "3000",
-    "GitRepo": "gituser@example.com:conf/wiki-data.git",
-    "AuthConf":{
-      "AdminUser": "admin"
-    }
-}
