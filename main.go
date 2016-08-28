@@ -23,6 +23,7 @@ package main
 // Markdown stuff from https://raw.githubusercontent.com/gogits/gogs/master/modules/markdown/markdown.go
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -40,28 +41,27 @@ import (
 	"strings"
 	"time"
 	"unicode"
-	"bufio"
 
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
 	//"github.com/rhinoman/go-commonmark"
 	//bf "gopkg.in/russross/blackfriday.v2"
+	"context"
+	"github.com/BurntSushi/toml"
+	"github.com/GeertJohan/go.rice"
+	"github.com/aqtrans/ctx-csrf"
+	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/analysis/analyzers/keyword_analyzer"
+	"github.com/blevesearch/bleve/analysis/language/en"
+	"github.com/dimfeld/httptreemux"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/spf13/viper"
 	"github.com/thoas/stats"
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
-	"jba.io/go/utils"
-	"context"
-	"github.com/dimfeld/httptreemux"
-	"github.com/GeertJohan/go.rice"
+	"jba.io/go/httputils"
 	"regexp"
-	"github.com/BurntSushi/toml"
-	"github.com/aqtrans/ctx-csrf"
-	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/analysis/analyzers/keyword_analyzer"
-	"github.com/blevesearch/bleve/analysis/language/en"
 )
 
 type key int
@@ -88,25 +88,25 @@ const (
 		blackfriday.EXTENSION_NO_EMPTY_LINE_BEFORE_BLOCK |
 		blackfriday.EXTENSION_FOOTNOTES |
 		blackfriday.EXTENSION_TITLEBLOCK
-	
-	/*
-	commonHTMLFlags2 = 0 |
-		bf.FootnoteReturnLinks |
-		bf.NofollowLinks
 
-	commonExtensions2 = 0 |
-		bf.NoIntraEmphasis |
-		bf.Tables |
-		bf.FencedCode |
-		bf.Autolink |
-		bf.Strikethrough |
-		bf.AutoHeaderIDs |
-		bf.BackslashLineBreak |
-		bf.DefinitionLists |
-		bf.NoEmptyLineBeforeBlock |
-		bf.Footnotes |
-		bf.Titleblock |
-		bf.TOC
+	/*
+		commonHTMLFlags2 = 0 |
+			bf.FootnoteReturnLinks |
+			bf.NofollowLinks
+
+		commonExtensions2 = 0 |
+			bf.NoIntraEmphasis |
+			bf.Tables |
+			bf.FencedCode |
+			bf.Autolink |
+			bf.Strikethrough |
+			bf.AutoHeaderIDs |
+			bf.BackslashLineBreak |
+			bf.DefinitionLists |
+			bf.NoEmptyLineBeforeBlock |
+			bf.Footnotes |
+			bf.Titleblock |
+			bf.TOC
 	*/
 )
 
@@ -132,25 +132,25 @@ type Renderer struct {
 }
 
 var (
-	linkPattern = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
-	bufpool   *bpool.BufferPool
-	templates map[string]*template.Template
-	_24K      int64 = (1 << 20) * 24
-	fLocal    bool
-	debug     = utils.Debug
-	fInit     bool
-	gitPath   string
-	favbuf    bytes.Buffer
-	tagMap  map[string][]string
-	tagsBuf bytes.Buffer
-	index bleve.Index
-	wikiList map[string][]*wiki
-	ErrNotInGit = errors.New("given file not in Git repo")
-	ErrNoFile = errors.New("no such file")
+	linkPattern   = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
+	bufpool       *bpool.BufferPool
+	templates     map[string]*template.Template
+	_24K          int64 = (1 << 20) * 24
+	fLocal        bool
+	debug         = httputils.Debug
+	fInit         bool
+	gitPath       string
+	favbuf        bytes.Buffer
+	tagMap        map[string][]string
+	tagsBuf       bytes.Buffer
+	index         bleve.Index
+	wikiList      map[string][]*wiki
+	ErrNotInGit   = errors.New("given file not in Git repo")
+	ErrNoFile     = errors.New("no such file")
 	ErrNoDirIndex = errors.New("no such directory index")
 	ErrBaseNotDir = errors.New("cannot create subdirectory of a file")
-	ErrGitDirty = errors.New("directory is dirty")
-	ErrBadPath = errors.New("given path is invalid")
+	ErrGitDirty   = errors.New("directory is dirty")
+	ErrBadPath    = errors.New("given path is invalid")
 )
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -180,32 +180,32 @@ type badFrontmatter struct {
 }
 
 type wiki struct {
-	Title    string
-	Filename string
+	Title       string
+	Filename    string
 	Frontmatter *frontmatter
-	Content  []byte
-	CreateTime int64
-	ModTime    int64	
+	Content     []byte
+	CreateTime  int64
+	ModTime     int64
 }
 
 type wikiPage struct {
 	*page
-	Wiki *wiki
+	Wiki     *wiki
 	Rendered string
 }
 
 type commitPage struct {
 	*page
-	Wiki *wiki
-	Commit     string
-	Rendered    string
-	Diff       string
+	Wiki     *wiki
+	Commit   string
+	Rendered string
+	Diff     string
 }
 type listPage struct {
 	*page
-	Wikis        []*wiki
-	PublicWikis  []*wiki
-	AdminWikis   []*wiki
+	Wikis       []*wiki
+	PublicWikis []*wiki
+	AdminWikis  []*wiki
 }
 
 type genPage struct {
@@ -222,7 +222,7 @@ type gitPage struct {
 
 type historyPage struct {
 	*page
-	Wiki *wiki
+	Wiki        *wiki
 	Filename    string
 	FileHistory []*commitLog
 }
@@ -284,7 +284,7 @@ var conf configuration
 
 func init() {
 	//toml.DecodeFile("./data/conf.toml", &conf);
-	
+
 	// Viper config.
 	viper.SetDefault("Port", "3000")
 	viper.SetDefault("Email", "unused@the.moment")
@@ -302,10 +302,7 @@ func init() {
 		fmt.Println("No configuration file loaded - using defaults")
 	}
 	//viper.SetConfigType("toml")
-	
-	
 
-	
 	/*
 			Port     string
 			Email    string
@@ -330,7 +327,7 @@ func init() {
 	//Flag '-l' enables go.dev and *.dev domain resolution
 	flag.BoolVar(&fLocal, "l", false, "Turn on localhost resolving for Handlers")
 	//Flag '-d' enabled debug logging
-	flag.BoolVar(&utils.Debug, "d", false, "Enabled debug logging")
+	flag.BoolVar(&httputils.Debug, "d", false, "Enabled debug logging")
 	//Flag '-init' enables pulling of remote git repo into wikiDir
 	flag.BoolVar(&fInit, "init", false, "Enable auto-cloning of remote wikiDir")
 
@@ -344,28 +341,27 @@ func init() {
 		log.Fatal("git must be installed")
 	}*/
 	/*
-	templatesDir := "./templates/"
-	layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
-	if err != nil {
-		log.Fatal(err)
-	}
-	includes, err := filepath.Glob(templatesDir + "includes/*.tmpl")
-	if err != nil {
-		log.Fatal(err)
-	}
+		templatesDir := "./templates/"
+		layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
+		if err != nil {
+			log.Fatal(err)
+		}
+		includes, err := filepath.Glob(templatesDir + "includes/*.tmpl")
+		if err != nil {
+			log.Fatal(err)
+		}
 
-	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isAdmin": isAdmin, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
+		funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isAdmin": isAdmin, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
 
-	for _, layout := range layouts {
-		files := append(includes, layout)
-		//DEBUG TEMPLATE LOADING
-		utils.Debugln(files)
-		templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFiles(files...))
-	}
+		for _, layout := range layouts {
+			files := append(includes, layout)
+			//DEBUG TEMPLATE LOADING
+			utils.Debugln(files)
+			templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFiles(files...))
+		}
 	*/
 
 	//var err error
-	
 
 }
 
@@ -393,7 +389,7 @@ func timeNewContext(c context.Context, t time.Time) context.Context {
 func timeFromContext(c context.Context) time.Time {
 	t, ok := c.Value(TimerKey).(time.Time)
 	if !ok {
-		utils.Debugln("No startTime in context.")
+		httputils.Debugln("No startTime in context.")
 		t = time.Now()
 	}
 	return t
@@ -429,16 +425,16 @@ func jsTags(tagS []string) string {
 // Special Markdown render helper to convert [/empty/wiki/links]() to a full <a href> link
 // Borrowed most of this from https://raw.githubusercontent.com/gogits/gogs/master/modules/markdown/markdown.go
 func replaceInterwikiLinks(rawBytes []byte, urlPrefix string) []byte {
-	return linkPattern.ReplaceAll(rawBytes, []byte(fmt.Sprintf(`<a href="%s/$1">/$1</a>`, urlPrefix, )))
+	return linkPattern.ReplaceAll(rawBytes, []byte(fmt.Sprintf(`<a href="%s/$1">/$1</a>`, urlPrefix)))
 	/*
-	ms := linkPattern.FindAll(rawBytes, -1)
-	for _, m := range ms {
-		m2 := bytes.TrimPrefix(m, []byte("["))
-		m2 = bytes.TrimSuffix(m2, []byte("]()"))
-		//log.Println(string(m2))
-		rawBytes = []byte(fmt.Sprintf(`<a href="%s%s">%s</a>`, urlPrefix, m2, m2, ))
-		//rawBytes = link
-	}
+		ms := linkPattern.FindAll(rawBytes, -1)
+		for _, m := range ms {
+			m2 := bytes.TrimPrefix(m, []byte("["))
+			m2 = bytes.TrimSuffix(m2, []byte("]()"))
+			//log.Println(string(m2))
+			rawBytes = []byte(fmt.Sprintf(`<a href="%s%s">%s</a>`, urlPrefix, m2, m2, ))
+			//rawBytes = link
+		}
 	*/
 	//return rawBytes
 }
@@ -447,7 +443,7 @@ func replaceInterwikiLinks(rawBytes []byte, urlPrefix string) []byte {
 // Construct an *exec.Cmd for `git {args}` with a workingDirectory
 func gitCommand(args ...string) *exec.Cmd {
 	c := exec.Command(gitPath, args...)
-	c.Dir = viper.GetString("WikiDir") 
+	c.Dir = viper.GetString("WikiDir")
 	return c
 }
 
@@ -681,7 +677,7 @@ func gitHistory() ([]string, error) {
 	// Get rid of first _END
 	o = bytes.Replace(o, []byte("_END"), []byte(""), 1)
 	o = bytes.Replace(o, []byte("\x00"), []byte("\n"), -1)
-	
+
 	// Now remove all _END tags
 	b := bytes.SplitAfter(o, []byte("_END"))
 	var s []string
@@ -690,7 +686,7 @@ func gitHistory() ([]string, error) {
 		v = bytes.Replace(v, []byte("_END"), []byte(""), -1)
 		s = append(s, string(v))
 	}
-	
+
 	return s, nil
 }
 
@@ -738,7 +734,7 @@ func markdownRender(content []byte) string {
 	md := markdownCommon(result)
 
 	p := bluemonday.UGCPolicy()
-	p.AllowElements("nav")	
+	p.AllowElements("nav")
 
 	html := p.SanitizeBytes(md)
 
@@ -748,7 +744,7 @@ func markdownRender(content []byte) string {
 }
 
 /* Markdown renderers used for benchmarks
-// May come back to using Blackfriday.v2 when it's stabalized, 
+// May come back to using Blackfriday.v2 when it's stabalized,
 // and this should be a good starting point
 func markdownCommon2(input []byte) []byte {
 	// set up the HTML renderer
@@ -774,7 +770,7 @@ func markdownRender2(content []byte) string {
 	//html := markdownCommon2(content)
 	ast := bf.Parse(content, opt)
 	domain := "//" + viper.GetString("Domain")
-	
+
 	var buff bytes.Buffer
 	//defaultRenderer := bf.NewHTMLRenderer(bf.HTMLRendererParameters{})
 	ast.Walk(func(node *bf.Node, entering bool) bf.WalkStatus {
@@ -791,7 +787,7 @@ func markdownRender2(content []byte) string {
 			}
 		} else {
 			renderer.RenderNode(&buff, node, entering)
-		}		
+		}
 		return bf.GoToNext
 	})
 	//log.Println(string(buff.Bytes()))
@@ -804,7 +800,7 @@ func commonmarkRender(content []byte) string {
 	domain := "//" + viper.GetString("Domain")
 
 	result := RenderLinkCurrentPattern(content, domain)
-	
+
 	md := commonmark.Md2Html(string(result), commonmark.CMARK_OPT_DEFAULT)
 
 	p := bluemonday.UGCPolicy()
@@ -827,7 +823,6 @@ func loadPage(r *http.Request) *page {
 
 	//log.Println("Message: ")
 	//log.Println(msg)
-
 
 	var message string
 	if msg != "" {
@@ -942,16 +937,16 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 	cp := &commitPage{
 		page: p,
 		Wiki: &wiki{
-			Title: pagetitle,
-			Filename: name,
+			Title:       pagetitle,
+			Filename:    name,
 			Frontmatter: &fm,
-			Content:  content,
-			CreateTime: ctime,
-			ModTime: mtime,
+			Content:     content,
+			CreateTime:  ctime,
+			ModTime:     mtime,
 		},
-		Commit: commit,
+		Commit:   commit,
 		Rendered: pageContent,
-		Diff: diffstring,
+		Diff:     diffstring,
 	}
 
 	err = renderTemplate(w, r.Context(), "wiki_commit.tmpl", cp)
@@ -963,8 +958,8 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 
 // TODO: Fix this
 func recentHandler(w http.ResponseWriter, r *http.Request) {
-	
-	p := loadPage(r)	
+
+	p := loadPage(r)
 
 	gh, err := gitHistory()
 	if err != nil {
@@ -973,8 +968,8 @@ func recentHandler(w http.ResponseWriter, r *http.Request) {
 	//log.Println(gh)
 	//log.Println(gh[10])
 	/*
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(200)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(200)
 	*/
 	var split []string
 	var split2 []string
@@ -993,8 +988,8 @@ func recentHandler(w http.ResponseWriter, r *http.Request) {
 		if len(split2) >= 2 {
 
 			r := &recent{
-				Date: date,
-				Commit: split2[0],
+				Date:      date,
+				Commit:    split2[0],
 				Filenames: strings.Split(split2[1], "\n"),
 			}
 			//w.Write([]byte(v + "<br>"))
@@ -1058,17 +1053,17 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 						//return filepath.SkipDir
 					}
 				}
-			}			
+			}
 		}
 		fileList = append(fileList, path)
 		return nil
 	})*/
-	
+
 	fileList, err := gitLs()
 	if err != nil {
 		log.Fatalln(err)
 	}
-	
+
 	//w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	//w.WriteHeader(200)
 
@@ -1076,7 +1071,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	var publicwps []*wiki
 	var adminwps []*wiki
 	for _, file := range fileList {
-		
+
 		// If using Git, build the full path:
 		fullname := filepath.Join(viper.GetString("WikiDir"), file)
 		//file = viper.GetString("WikiDir")+file
@@ -1149,29 +1144,29 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			//   So we only check on rendering
 			if fm.Admin {
 				wp = &wiki{
-					Title: pagetitle,
-					Filename: file,
+					Title:       pagetitle,
+					Filename:    file,
 					Frontmatter: &fm,
-					CreateTime: ctime,
-					ModTime: mtime,
+					CreateTime:  ctime,
+					ModTime:     mtime,
 				}
 				adminwps = append(adminwps, wp)
 			} else if fm.Public {
 				wp = &wiki{
-					Title: pagetitle,
-					Filename: file,
+					Title:       pagetitle,
+					Filename:    file,
 					Frontmatter: &fm,
-					CreateTime: ctime,
-					ModTime: mtime,
+					CreateTime:  ctime,
+					ModTime:     mtime,
 				}
 				publicwps = append(publicwps, wp)
 			} else {
 				wp = &wiki{
-					Title: pagetitle,
-					Filename: file,
+					Title:       pagetitle,
+					Filename:    file,
 					Frontmatter: &fm,
-					CreateTime: ctime,
-					ModTime: mtime,
+					CreateTime:  ctime,
+					ModTime:     mtime,
 				}
 				wps = append(wps, wp)
 			}
@@ -1248,45 +1243,45 @@ func readFront(data []byte) (fmdata []byte, content []byte, err error) {
 }
 
 func readFrontBuf(filepath string) (fmdata []byte, content []byte, err error) {
-    f, err := os.Open(filepath)
-    if err != nil {
-        log.Println(err)
-    }
-    defer f.Close()
+	f, err := os.Open(filepath)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
 
-    topbuf := new(bytes.Buffer)
-    bottombuf := new(bytes.Buffer)
-    s := bufio.NewScanner(f)
-    line := 0
-    start := false
-    end := false
-    for s.Scan() {
-        //log.Println(end)
-        if start && end {
-            bottombuf.Write(s.Bytes())
-            bottombuf.WriteString("\n")
-        }
-        if start && !end {
-            // Anything after the --- tag, add to the topbuffer
-            if s.Text() != yamlsep {
-                topbuf.Write(s.Bytes())
-                topbuf.WriteString("\n")
-            }
-            if s.Text() == yamlsep {
-                end = true
-            }
-        }     
+	topbuf := new(bytes.Buffer)
+	bottombuf := new(bytes.Buffer)
+	s := bufio.NewScanner(f)
+	line := 0
+	start := false
+	end := false
+	for s.Scan() {
+		//log.Println(end)
+		if start && end {
+			bottombuf.Write(s.Bytes())
+			bottombuf.WriteString("\n")
+		}
+		if start && !end {
+			// Anything after the --- tag, add to the topbuffer
+			if s.Text() != yamlsep {
+				topbuf.Write(s.Bytes())
+				topbuf.WriteString("\n")
+			}
+			if s.Text() == yamlsep {
+				end = true
+			}
+		}
 
-        // Hopefully catch the first --- tag
-        if s.Text() == yamlsep && !start {
-            start = true
-        }
-        line = line+1
-    }
-    //log.Println("TOP: ")
-    //log.Println(topbuf.String())
-    //log.Println("-----")
-    //log.Println(bottombuf.String())
+		// Hopefully catch the first --- tag
+		if s.Text() == yamlsep && !start {
+			start = true
+		}
+		line = line + 1
+	}
+	//log.Println("TOP: ")
+	//log.Println(topbuf.String())
+	//log.Println("-----")
+	//log.Println(bottombuf.String())
 	return topbuf.Bytes(), bottombuf.Bytes(), nil
 }
 
@@ -1324,7 +1319,7 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter, err error) {
 			fm.Admin = admin
 		}
 	}
-	return fm, nil	
+	return fm, nil
 }
 
 func renderTemplate(w http.ResponseWriter, c context.Context, name string, data interface{}) error {
@@ -1378,8 +1373,6 @@ func parseBool(value string) bool {
 	return boolValue
 }
 
-
-
 // This does various checks to see if an existing page exists or not
 // Also checks for and returns an error on some edge cases
 // So we only proceed if this returns false AND nil
@@ -1388,7 +1381,7 @@ func parseBool(value string) bool {
 // - If name is a /directory/file combo, but /directory is actually a file
 func doesPageExist(name string) (bool, error) {
 	//fullfilename := cfg.WikiDir + name
-	fullfilename := filepath.Join(viper.GetString("WikiDir"), name) 
+	fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
 	rel, err := filepath.Rel(viper.GetString("WikiDir"), fullfilename)
 	if err != nil {
 		return false, err
@@ -1433,7 +1426,6 @@ func doesPageExist(name string) (bool, error) {
 		}
 	}
 
-
 	// Directory without specified index
 	if strings.HasSuffix(name, "/") {
 		//if dir != "" && name == "" {
@@ -1462,14 +1454,14 @@ func doesPageExist(name string) (bool, error) {
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "indexHandler")
+	defer httputils.TimeTrack(time.Now(), "indexHandler")
 
 	//http.Redirect(w, r, "/index", http.StatusSeeOther)
 	viewHandler(w, r, "index")
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
-	defer utils.TimeTrack(time.Now(), "viewHandler")
+	defer httputils.TimeTrack(time.Now(), "viewHandler")
 
 	// If this is a commit, pass along the SHA1 to that function
 	if r.URL.Query().Get("commit") != "" {
@@ -1539,13 +1531,13 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 			newwp := &wikiPage{
 				page: p,
 				Wiki: &wiki{
-					Title: name,
+					Title:    name,
 					Filename: name,
 					Frontmatter: &frontmatter{
 						Title: name,
 					},
 					CreateTime: 0,
-					ModTime: 0,
+					ModTime:    0,
 				},
 			}
 			return newwp, err
@@ -1559,16 +1551,15 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 	//markdownRender2(wikip.Content)
 
 	wp := &wikiPage{
-		page: p,
-		Wiki: wikip,
+		page:     p,
+		Wiki:     wikip,
 		Rendered: md,
 	}
 	return wp, nil
 }
 
-
 func editHandler(w http.ResponseWriter, r *http.Request, name string) {
-	defer utils.TimeTrack(time.Now(), "editHandler")
+	defer httputils.TimeTrack(time.Now(), "editHandler")
 
 	p, err := loadWikiPage(r, name)
 
@@ -1598,7 +1589,7 @@ func editHandler(w http.ResponseWriter, r *http.Request, name string) {
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
-	defer utils.TimeTrack(time.Now(), "saveHandler")
+	defer httputils.TimeTrack(time.Now(), "saveHandler")
 
 	r.ParseForm()
 	//txt := r.Body
@@ -1639,15 +1630,15 @@ func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 		Title:    title,
 		Tags:     tagsA,
 		Favorite: favoritebool,
-		Public:  publicbool,
+		Public:   publicbool,
 		Admin:    adminbool,
 	}
 
 	thewiki := &wiki{
-		Title: title,
-		Filename: name,
+		Title:       title,
+		Filename:    name,
 		Frontmatter: fm,
-		Content: []byte(content),
+		Content:     []byte(content),
 	}
 
 	err := thewiki.save()
@@ -1670,7 +1661,7 @@ func setFlash(msg string, w http.ResponseWriter, r *http.Request) {
 }
 
 func newHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "newHandler")
+	defer httputils.TimeTrack(time.Now(), "newHandler")
 
 	pagetitle := r.FormValue("newwiki")
 
@@ -1751,10 +1742,10 @@ func readFavs(path string, info os.FileInfo, err error) error {
 }
 
 func favsHandler(favs chan []string) {
-	defer utils.TimeTrack(time.Now(), "favsHandler")
+	defer httputils.TimeTrack(time.Now(), "favsHandler")
 
 	favss := favbuf.String()
-	utils.Debugln("Favorites: " + favss)
+	httputils.Debugln("Favorites: " + favss)
 	sfavs := strings.Fields(favss)
 
 	favs <- sfavs
@@ -1868,18 +1859,18 @@ func loadWiki(name string) (*wiki, error) {
 	}
 
 	return &wiki{
-		Title: pagetitle,
-		Filename: name,
+		Title:       pagetitle,
+		Filename:    name,
 		Frontmatter: &fm,
-		Content:  content,
-		CreateTime: ctime,
-		ModTime: mtime,
+		Content:     content,
+		CreateTime:  ctime,
+		ModTime:     mtime,
 	}, nil
 
 }
 
 func (wiki *wiki) save() error {
-	defer utils.TimeTrack(time.Now(), "wiki.save()")
+	defer httputils.TimeTrack(time.Now(), "wiki.save()")
 
 	dir, filename := filepath.Split(wiki.Filename)
 	fullfilename := filepath.Join(viper.GetString("WikiDir"), dir, filename)
@@ -1902,7 +1893,6 @@ func (wiki *wiki) save() error {
 		log.Println("originalFile ReadFile error:")
 		log.Println(err)
 	}
-
 
 	// Create a buffer where we build the content of the file
 	buffer := new(bytes.Buffer)
@@ -1953,7 +1943,7 @@ func (wiki *wiki) save() error {
 }
 
 func loginPageHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "loginPageHandler")
+	defer httputils.TimeTrack(time.Now(), "loginPageHandler")
 
 	title := "login"
 	p := loadPage(r)
@@ -1971,7 +1961,7 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func signupPageHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "signupPageHandler")
+	defer httputils.TimeTrack(time.Now(), "signupPageHandler")
 
 	title := "signup"
 	p := loadPage(r)
@@ -1989,7 +1979,7 @@ func signupPageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func adminUsersHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "adminUsersHandler")
+	defer httputils.TimeTrack(time.Now(), "adminUsersHandler")
 
 	title := "admin-users"
 	p := loadPage(r)
@@ -2021,7 +2011,7 @@ func adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func adminUserHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "adminUserHandler")
+	defer httputils.TimeTrack(time.Now(), "adminUserHandler")
 
 	title := "admin-user"
 	p := loadPage(r)
@@ -2066,7 +2056,7 @@ func adminUserPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func adminMainHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "adminMainHandler")
+	defer httputils.TimeTrack(time.Now(), "adminMainHandler")
 
 	title := "admin-main"
 	p := loadPage(r)
@@ -2084,7 +2074,7 @@ func adminMainHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func adminConfigHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "adminConfigHandler")
+	defer httputils.TimeTrack(time.Now(), "adminConfigHandler")
 
 	var cfg configuration
 	// To save config to toml:
@@ -2099,7 +2089,7 @@ func adminConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := struct {
 		*page
-		Title string
+		Title  string
 		Config configuration
 	}{
 		p,
@@ -2130,12 +2120,12 @@ func adminConfigPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cfg := &configuration{
-		Domain: domain,
-		Port: port,
-		Email: email,
-		WikiDir: wikidir,
-		GitRepo: gitrepo,
-		AdminUser: adminuser,
+		Domain:     domain,
+		Port:       port,
+		Email:      email,
+		WikiDir:    wikidir,
+		GitRepo:    gitrepo,
+		AdminUser:  adminuser,
 		PushOnSave: pushonsave,
 	}
 
@@ -2146,7 +2136,7 @@ func adminConfigPostHandler(w http.ResponseWriter, r *http.Request) {
 	viper.Set("GitRepo", gitrepo)
 	viper.Set("AdminUser", adminuser)
 	viper.Set("PushOnSave", pushonsave)
-	
+
 	bo := cfg.save()
 	if !bo {
 		log.Println(bo)
@@ -2156,7 +2146,7 @@ func adminConfigPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "gitCheckinHandler")
+	defer httputils.TimeTrack(time.Now(), "gitCheckinHandler")
 
 	title := "Git Checkin"
 	p := loadPage(r)
@@ -2189,7 +2179,7 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "gitCheckinPostHandler")
+	defer httputils.TimeTrack(time.Now(), "gitCheckinPostHandler")
 
 	var path string
 
@@ -2220,7 +2210,7 @@ func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func gitPushPostHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "gitPushPostHandler")
+	defer httputils.TimeTrack(time.Now(), "gitPushPostHandler")
 
 	err := gitPush()
 	if err != nil {
@@ -2233,7 +2223,7 @@ func gitPushPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func gitPullPostHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "gitPullPostHandler")
+	defer httputils.TimeTrack(time.Now(), "gitPullPostHandler")
 
 	err := gitPull()
 	if err != nil {
@@ -2246,7 +2236,7 @@ func gitPullPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func adminGitHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "adminGitHandler")
+	defer httputils.TimeTrack(time.Now(), "adminGitHandler")
 
 	title := "Git Management"
 	p := loadPage(r)
@@ -2289,8 +2279,8 @@ func checkWikiGit(next http.Handler) http.Handler {
 }
 
 func tagMapHandler(w http.ResponseWriter, r *http.Request) {
-	defer utils.TimeTrack(time.Now(), "tagMapHandler")
-	
+	defer httputils.TimeTrack(time.Now(), "tagMapHandler")
+
 	a := &tagMap
 
 	p := loadPage(r)
@@ -2322,7 +2312,7 @@ func createWiki(w http.ResponseWriter, r *http.Request, name string) {
 		wp := &wikiPage{
 			page: p,
 			Wiki: &wiki{
-				Title: name,
+				Title:    name,
 				Filename: name,
 				Frontmatter: &frontmatter{
 					Title: name,
@@ -2367,7 +2357,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		// Replacing these for now:
 		name := params["name"]
 		fullname := filepath.Join(viper.GetString("WikiDir"), name)
-		
+
 		//dir := filepath.Dir(name)
 		//wikipage := cfg.WikiDir + name
 
@@ -2392,7 +2382,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		}
 
 		if !fileExists && feErr != nil {
-			log.Println(name+" does not exist, but has an error:")
+			log.Println(name + " does not exist, but has an error:")
 			log.Println(feErr)
 			return
 		}
@@ -2414,7 +2404,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		if err == nil && fm.Public {
 			fn(w, r, name)
 			return
-		}		
+		}
 		if err == nil {
 			if fm.Admin {
 				if !isAdmin {
@@ -2423,13 +2413,12 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 					http.Redirect(w, r, "/", http.StatusSeeOther)
 					return
 				}
-			}			
+			}
 		}
-
 
 		if username == "" {
 			rurl := r.URL.String()
-			utils.Debugln("wikiHandler mitigating: " + r.Host + rurl)
+			httputils.Debugln("wikiHandler mitigating: " + r.Host + rurl)
 			//w.Write([]byte("OMG"))
 
 			// Detect if we're in an endless loop, if so, just panic
@@ -2472,7 +2461,7 @@ func riceInit() error {
 	includes, err := templateBox.Open("includes")
 	if err != nil {
 		return err
-	}	
+	}
 	includeDir, err := includes.Readdir(-1)
 	if err != nil {
 		return err
@@ -2481,20 +2470,20 @@ func riceInit() error {
 	layouts, err := templateBox.Open("layouts")
 	if err != nil {
 		return err
-	}	
+	}
 	layoutsDir, err := layouts.Readdir(-1)
 	if err != nil {
 		return err
-	}	
+	}
 	var boxT []string
 	var templateIBuff bytes.Buffer
 	for _, v := range includeDir {
 		boxT = append(boxT, "includes/"+v.Name())
-		iString, _ := templateBox.String("includes/"+v.Name())
+		iString, _ := templateBox.String("includes/" + v.Name())
 		templateIBuff.WriteString(iString)
 	}
-	
-	funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
+
+	funcMap := template.FuncMap{"prettyDate": httputils.PrettyDate, "safeHTML": httputils.SafeHTML, "imgClass": httputils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
 
 	// Here we are prefacing every layout with what should be every includes/ .tmpl file
 	// Ex: includes/sidebar.tmpl includes/bottom.tmpl includes/base.tmpl layouts/list.tmpl
@@ -2503,7 +2492,7 @@ func riceInit() error {
 		boxT = append(boxT, "layouts/"+layout.Name())
 		//DEBUG TEMPLATE LOADING
 		//utils.Debugln(files)
-		lString, _ := templateBox.String("layouts/"+layout.Name())
+		lString, _ := templateBox.String("layouts/" + layout.Name())
 		fstring := templateIBuff.String() + lString
 		templates[layout.Name()] = template.Must(template.New(layout.Name()).Funcs(funcMap).Parse(fstring))
 	}
@@ -2540,7 +2529,7 @@ func initWikiDir() {
 }
 
 func bleveIndex() {
-	
+
 	var err error
 	timestamp := "2006-01-02 at 03:04:05PM"
 	index, err = bleve.Open("./data/index.bleve")
@@ -2599,7 +2588,7 @@ func bleveIndex() {
 				if fm.Tags == nil {
 					fm.Tags = []string{}
 				}
-				
+
 				ctime, err := gitGetCtime(file)
 				if err != nil && err != ErrNotInGit {
 					log.Panicln(err)
@@ -2608,28 +2597,27 @@ func bleveIndex() {
 				if err != nil {
 					log.Panicln(err)
 				}
-				
 
 				data := struct {
-					Name    string `json:"name"`
-					Public  bool
-					Tags    []string `json:"tags"`
-					Content string `json:"content"`
-					Created string
+					Name     string `json:"name"`
+					Public   bool
+					Tags     []string `json:"tags"`
+					Content  string   `json:"content"`
+					Created  string
 					Modified string
 				}{
-					Name: pagetitle,
-					Public: fm.Public,
-					Tags: fm.Tags,
-					Content: string(content),
-					Created: time.Unix(ctime, 0).Format(timestamp),
+					Name:     pagetitle,
+					Public:   fm.Public,
+					Tags:     fm.Tags,
+					Content:  string(content),
+					Created:  time.Unix(ctime, 0).Format(timestamp),
 					Modified: time.Unix(mtime, 0).Format(timestamp),
 				}
 
 				index.Index(file, data)
-				
-			}			
-		}		
+
+			}
+		}
 	}
 
 	// If index does not exist, create mapping and then index
@@ -2642,7 +2630,6 @@ func bleveIndex() {
 
 		boolMapping := bleve.NewBooleanFieldMapping()
 
-		
 		dateMapping := bleve.NewDateTimeFieldMapping()
 		//dateMapping.DateFormat = timestamp
 
@@ -2719,7 +2706,7 @@ func bleveIndex() {
 				if fm.Tags == nil {
 					fm.Tags = []string{}
 				}
-				
+
 				ctime, err := gitGetCtime(file)
 				if err != nil && err != ErrNotInGit {
 					log.Panicln(err)
@@ -2728,27 +2715,26 @@ func bleveIndex() {
 				if err != nil {
 					log.Panicln(err)
 				}
-				
 
 				data := struct {
-					Name    string `json:"name"`
-					Public  bool
-					Tags    []string `json:"tags"`
-					Content string `json:"content"`
-					Created string
+					Name     string `json:"name"`
+					Public   bool
+					Tags     []string `json:"tags"`
+					Content  string   `json:"content"`
+					Created  string
 					Modified string
 				}{
-					Name: pagetitle,
-					Public: fm.Public,
-					Tags: fm.Tags,
-					Content: string(content),
-					Created: time.Unix(ctime, 0).Format(timestamp),
+					Name:     pagetitle,
+					Public:   fm.Public,
+					Tags:     fm.Tags,
+					Content:  string(content),
+					Created:  time.Unix(ctime, 0).Format(timestamp),
 					Modified: time.Unix(mtime, 0).Format(timestamp),
 				}
 
 				index.Index(file, data)
-				
-			}			
+
+			}
 		}
 
 	}
@@ -2805,14 +2791,14 @@ func search(w http.ResponseWriter, r *http.Request) {
 	//log.Println(searchResult.String())
 
 	var results []*result
-	
+
 	//var results map[string]string
 	for _, v := range searchResult.Hits {
 		for _, fragments := range v.Fragments {
 			for _, fragment := range fragments {
 				var r *result
 				r = &result{
-					Name: v.ID,
+					Name:   v.ID,
 					Result: fragment,
 				}
 				//results[v.ID] = fragment
@@ -2839,7 +2825,7 @@ func crawlWiki() {
 	var publicwps []*wiki
 	var adminwps []*wiki
 	for _, file := range fileList {
-		
+
 		// If using Git, build the full path:
 		fullname := filepath.Join(viper.GetString("WikiDir"), file)
 		//file = viper.GetString("WikiDir")+file
@@ -2912,29 +2898,29 @@ func crawlWiki() {
 			//   So we only check on rendering
 			if fm.Admin {
 				wp = &wiki{
-					Title: pagetitle,
-					Filename: file,
+					Title:       pagetitle,
+					Filename:    file,
 					Frontmatter: &fm,
-					CreateTime: ctime,
-					ModTime: mtime,
+					CreateTime:  ctime,
+					ModTime:     mtime,
 				}
 				adminwps = append(adminwps, wp)
 			} else if fm.Public {
 				wp = &wiki{
-					Title: pagetitle,
-					Filename: file,
+					Title:       pagetitle,
+					Filename:    file,
 					Frontmatter: &fm,
-					CreateTime: ctime,
-					ModTime: mtime,
+					CreateTime:  ctime,
+					ModTime:     mtime,
 				}
 				publicwps = append(publicwps, wp)
 			} else {
 				wp = &wiki{
-					Title: pagetitle,
-					Filename: file,
+					Title:       pagetitle,
+					Filename:    file,
 					Frontmatter: &fm,
-					CreateTime: ctime,
-					ModTime: mtime,
+					CreateTime:  ctime,
+					ModTime:     mtime,
 				}
 				wps = append(wps, wp)
 			}
@@ -2965,7 +2951,7 @@ func refreshStuff() {
 	if err != nil {
 		//log.Fatal(err)
 		log.Println("init: unable to crawl for tags")
-	}	
+	}
 }
 
 func main() {
@@ -2981,7 +2967,7 @@ func main() {
 	}
 	defer auth.Authdb.Close()
 
-	utils.AssetsBox = rice.MustFindBox("assets")
+	httputils.AssetsBox = rice.MustFindBox("assets")
 	auth.AdminUser = viper.GetString("AdminUser")
 
 	err = riceInit()
@@ -2990,15 +2976,15 @@ func main() {
 	}
 
 	initWikiDir()
-	
+
 	refreshStuff()
 
 	// HTTP stuff from here on out
-	s := alice.New(timer, utils.Logger, auth.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(false)))
+	s := alice.New(timer, httputils.Logger, auth.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(false)))
 
 	r := httptreemux.New()
 	r.PanicHandler = httptreemux.ShowErrorsPanicHandler
-	
+
 	statsdata := stats.New()
 
 	r.GET("/", indexHandler)
@@ -3062,10 +3048,10 @@ func main() {
 	r.GET(`/history/*name`, wikiHandler(historyHandler))
 	r.GET(`/*name`, wikiHandler(viewHandler))
 
-	http.HandleFunc("/robots.txt", utils.RobotsHandler)
-	http.HandleFunc("/favicon.ico", utils.FaviconHandler)
-	http.HandleFunc("/favicon.png", utils.FaviconHandler)
-	http.HandleFunc("/assets/", utils.StaticHandler)
+	http.HandleFunc("/robots.txt", httputils.RobotsHandler)
+	http.HandleFunc("/favicon.ico", httputils.FaviconHandler)
+	http.HandleFunc("/favicon.png", httputils.FaviconHandler)
+	http.HandleFunc("/assets/", httputils.StaticHandler)
 	http.Handle("/", s.Then(r))
 
 	log.Println("Listening on port " + viper.GetString("Port"))

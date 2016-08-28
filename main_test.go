@@ -12,16 +12,14 @@ import (
 	//"github.com/gorilla/context"
 	//"fmt"
 	//"log"
+	"context"
+	"github.com/dimfeld/httptreemux"
+	"jba.io/go/auth"
 	"net/url"
 	"os"
-	//"jba.io/go/auth"
 	"strings"
-	"context"
-	//"github.com/gorilla/mux"
-	"jba.io/go/auth"
-	"github.com/dimfeld/httptreemux"
 	//"jba.io/go/utils"
-	"github.com/boltdb/bolt"
+	//"github.com/boltdb/bolt"
 	"github.com/spf13/viper"
 	//"github.com/rhinoman/go-commonmark"
 	//"github.com/GeertJohan/go.rice"
@@ -63,15 +61,12 @@ func tempfile() string {
 }
 
 type DB struct {
-	*bolt.DB
+	*auth.AuthDB
 }
 
 // MustOpenDB returns a new, open DB at a temporary location.
 func mustOpenDB() *DB {
-	db, err := bolt.Open(tempfile(), 0666, nil)
-	if err != nil {
-		panic(err)
-	}
+	db := auth.Open(tempfile())
 	return &DB{db}
 }
 
@@ -86,13 +81,12 @@ func (db *DB) MustClose() {
 	}
 }
 
-
-
 func TestAuthInit(t *testing.T) {
 	//authDB := mustOpenDB()
 	db := mustOpenDB()
 	t.Log(db.Path())
-	auth.Authdb = db.DB
+	auth.Authdb = db.AuthDB
+	//auth.Authdb.DB = db.DB
 	autherr := auth.AuthDbInit()
 	if autherr != nil {
 		t.Fatal(autherr)
@@ -104,7 +98,7 @@ func TestRiceInit(t *testing.T) {
 	err := riceInit()
 	if err != nil {
 		t.Fatal(err)
-	}	
+	}
 }
 
 func TestWikiInit(t *testing.T) {
@@ -120,48 +114,48 @@ func TestWikiInit(t *testing.T) {
 
 // TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
 func TestNewWikiPage(t *testing.T) {
-    // Create a request to pass to our handler. We don't have any query parameters for now, so we'll
-    // pass 'nil' as the third parameter.
+	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+	// pass 'nil' as the third parameter.
 	randPage := auth.RandKey(8)
-    req, err := http.NewRequest("GET", "/"+randPage, nil)
-    if err != nil {
-        t.Fatal(err)
-    }
+	req, err := http.NewRequest("GET", "/"+randPage, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	handler := http.HandlerFunc(wikiHandler(viewHandler))
 
-    // We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
-    rr := httptest.NewRecorder()
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
 		Username: "admin",
-		IsAdmin: true,
+		IsAdmin:  true,
 	})
 	params := make(map[string]string)
 	params["name"] = randPage
 	ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
 	rctx := req.WithContext(ctx)
 
-    // Our handlers satisfy http.Handler, so we can call their ServeHTTP method 
-    // directly and pass in our Request and ResponseRecorder.
-    handler.ServeHTTP(rr, rctx)
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	handler.ServeHTTP(rr, rctx)
 	//t.Log(rr.Body.String())
 	//t.Log(randPage)
 	//t.Log(rr.Code)
-	
-    // Check the status code is what we expect.
-    if status := rr.Code; status != http.StatusNotFound {
-        t.Errorf("handler returned wrong status code: got %v want %v",
-            status, http.StatusNotFound)
-    }
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusNotFound {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusNotFound)
+	}
 
 	/*
-    // Check the response body is what we expect.
-    expected := `{"alive": true}`
-    if rr.Body.String() != expected {
-        t.Errorf("handler returned unexpected body: got %v want %v",
-            rr.Body.String(), expected)
-    }
+	   // Check the response body is what we expect.
+	   expected := `{"alive": true}`
+	   if rr.Body.String() != expected {
+	       t.Errorf("handler returned unexpected body: got %v want %v",
+	           rr.Body.String(), expected)
+	   }
 	*/
 }
 
@@ -243,139 +237,139 @@ func TestNewHandler(t *testing.T) {
 
 // TestIndex tests if viewing the index page, as a logged in user, properly returns a 200
 func TestIndexPage(t *testing.T) {
-    // Create a request to pass to our handler. We don't have any query parameters for now, so we'll
-    // pass 'nil' as the third parameter.
-    req, err := http.NewRequest("GET", "/", nil)
-    if err != nil {
-        t.Fatal(err)
-    }
+	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+	// pass 'nil' as the third parameter.
+	req, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	handler := http.HandlerFunc(wikiHandler(viewHandler))
 
-    // We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
-    rr := httptest.NewRecorder()
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
 		Username: "admin",
-		IsAdmin: true,
+		IsAdmin:  true,
 	})
 	params := make(map[string]string)
 	params["name"] = "index"
 	ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
 	rctx := req.WithContext(ctx)
 
-    // Our handlers satisfy http.Handler, so we can call their ServeHTTP method 
-    // directly and pass in our Request and ResponseRecorder.
-    handler.ServeHTTP(rr, rctx)
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	handler.ServeHTTP(rr, rctx)
 	//t.Log(rr.Body.String())
 	//t.Log(randPage)
 	//t.Log(rr.Code)
-	
-    // Check the status code is what we expect.
-    if status := rr.Code; status != http.StatusOK {
-        t.Errorf("handler returned wrong status code: got %v want %v",
-            status, http.StatusOK)
-    }
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
 
 	/*
-    // Check the response body is what we expect.
-    expected := `{"alive": true}`
-    if rr.Body.String() != expected {
-        t.Errorf("handler returned unexpected body: got %v want %v",
-            rr.Body.String(), expected)
-    }
+	   // Check the response body is what we expect.
+	   expected := `{"alive": true}`
+	   if rr.Body.String() != expected {
+	       t.Errorf("handler returned unexpected body: got %v want %v",
+	           rr.Body.String(), expected)
+	   }
 	*/
 }
 
 // TestIndexHistoryPage tests if viewing the history of the index page, as a logged in user, properly returns a 200
 func TestIndexHistoryPage(t *testing.T) {
-    // Create a request to pass to our handler. We don't have any query parameters for now, so we'll
-    // pass 'nil' as the third parameter.
-    req, err := http.NewRequest("GET", "/history/index", nil)
-    if err != nil {
-        t.Fatal(err)
-    }
+	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+	// pass 'nil' as the third parameter.
+	req, err := http.NewRequest("GET", "/history/index", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	handler := http.HandlerFunc(wikiHandler(historyHandler))
 
-    // We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
-    rr := httptest.NewRecorder()
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
 		Username: "admin",
-		IsAdmin: true,
+		IsAdmin:  true,
 	})
 	params := make(map[string]string)
 	params["name"] = "index"
 	ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
 	rctx := req.WithContext(ctx)
 
-    // Our handlers satisfy http.Handler, so we can call their ServeHTTP method 
-    // directly and pass in our Request and ResponseRecorder.
-    handler.ServeHTTP(rr, rctx)
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	handler.ServeHTTP(rr, rctx)
 	//t.Log(rr.Body.String())
 	//t.Log(randPage)
 	//t.Log(rr.Code)
-	
-    // Check the status code is what we expect.
-    if status := rr.Code; status != http.StatusOK {
-        t.Errorf("handler returned wrong status code: got %v want %v",
-            status, http.StatusOK)
-    }
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
 
 	/*
-    // Check the response body is what we expect.
-    expected := `{"alive": true}`
-    if rr.Body.String() != expected {
-        t.Errorf("handler returned unexpected body: got %v want %v",
-            rr.Body.String(), expected)
-    }
+	   // Check the response body is what we expect.
+	   expected := `{"alive": true}`
+	   if rr.Body.String() != expected {
+	       t.Errorf("handler returned unexpected body: got %v want %v",
+	           rr.Body.String(), expected)
+	   }
 	*/
 }
 
 // TestIndexEditPage tests if trying to edit the index page, as a logged in user, properly returns a 200
 func TestIndexEditPage(t *testing.T) {
-    // Create a request to pass to our handler. We don't have any query parameters for now, so we'll
-    // pass 'nil' as the third parameter.
-    req, err := http.NewRequest("GET", "/edit/index", nil)
-    if err != nil {
-        t.Fatal(err)
-    }
+	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+	// pass 'nil' as the third parameter.
+	req, err := http.NewRequest("GET", "/edit/index", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	handler := http.HandlerFunc(auth.AuthMiddle(wikiHandler(editHandler)))
 
-    // We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
-    rr := httptest.NewRecorder()
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
 		Username: "admin",
-		IsAdmin: true,
+		IsAdmin:  true,
 	})
 	params := make(map[string]string)
 	params["name"] = "index"
 	ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
 	rctx := req.WithContext(ctx)
 
-    // Our handlers satisfy http.Handler, so we can call their ServeHTTP method 
-    // directly and pass in our Request and ResponseRecorder.
-    handler.ServeHTTP(rr, rctx)
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	handler.ServeHTTP(rr, rctx)
 	//t.Log(rr.Body.String())
 	//t.Log(randPage)
 	//t.Log(rr.Code)
-	
-    // Check the status code is what we expect.
-    if status := rr.Code; status != http.StatusOK {
-        t.Errorf("handler returned wrong status code: got %v want %v",
-            status, http.StatusOK)
-    }
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
 
 	/*
-    // Check the response body is what we expect.
-    expected := `{"alive": true}`
-    if rr.Body.String() != expected {
-        t.Errorf("handler returned unexpected body: got %v want %v",
-            rr.Body.String(), expected)
-    }
+	   // Check the response body is what we expect.
+	   expected := `{"alive": true}`
+	   if rr.Body.String() != expected {
+	       t.Errorf("handler returned unexpected body: got %v want %v",
+	           rr.Body.String(), expected)
+	   }
 	*/
 }
 
@@ -397,7 +391,7 @@ func TestMarkdownRender(t *testing.T) {
 
 	rawmds := markdownRender(rawmd)
 	//rawmds := commonmarkRender(rawmd)
-	
+
 	if rawmds != rendermds {
 		//ioutil.WriteFile("./tests/test.html", []byte(rawmds), 0755)
 		t.Error("Converted Markdown does not equal test" + "\n Output: \n" + rawmds + "Expected: \n" + rendermds)
@@ -430,7 +424,6 @@ func TestMarkdownRender2(t *testing.T) {
 	}
 }
 
-
 // Tests my custom link renderer, without YAML frontmatter
 func TestMarkdownRender3(t *testing.T) {
 	rawmdf := "./tests/test3.md"
@@ -454,7 +447,7 @@ func TestMarkdownRender3(t *testing.T) {
 		//ioutil.WriteFile("./tests/test3.html", []byte(rawmds), 0755)
 		t.Error("Converted Markdown does not equal test3" + "\n Output: \n" + rawmds + "Expected: \n" + rendermds)
 	}
-	
+
 }
 
 // Tests my custom link renderer, with YAML frontmatter
@@ -464,7 +457,7 @@ func TestMarkdownRender4(t *testing.T) {
 	if err != nil {
 		t.Error("Unable to access test4.md")
 	}
-	
+
 	// Read what rendered Markdown HTML should look like
 	rendermdf := "./tests/test4.html"
 	rendermd, err := ioutil.ReadFile(rendermdf)
@@ -480,7 +473,7 @@ func TestMarkdownRender4(t *testing.T) {
 	if rawmds != rendermds {
 		//ioutil.WriteFile("./tests/test4.html", []byte(rawmds), 0755)
 		t.Error("Converted Markdown does not equal test4" + "\n Output: \n" + rawmds + "Expected: \n" + rendermds)
-	}	
+	}
 }
 
 // Below is for testing the difference between just writing the Tags string directly as fed in from the wiki form, or using a []string as the source, but having to write them using a for loop
