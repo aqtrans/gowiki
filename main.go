@@ -61,6 +61,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
 	"jba.io/go/httputils"
+	"github.com/getsentry/raven-go"
 	"regexp"
 )
 
@@ -285,6 +286,8 @@ var conf configuration
 func init() {
 	//toml.DecodeFile("./data/conf.toml", &conf);
 
+	raven.SetDSN("https://5ab2f68b0f524799b1d0b324350cc2ae:e01dbad12f8e4fd0bce97681a772a072@app.getsentry.com/94753")
+
 	// Viper config.
 	viper.SetDefault("Port", "3000")
 	viper.SetDefault("Email", "unused@the.moment")
@@ -363,6 +366,11 @@ func init() {
 
 	//var err error
 
+}
+
+func errorHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
+	log.Println(err)
+	w.WriteHeader(http.StatusInternalServerError)
 }
 
 func (conf *configuration) save() bool {
@@ -2500,7 +2508,7 @@ func riceInit() error {
 }
 
 func authInit(authDB string) error {
-	auth.Open(authDB)
+	auth.Authdb = auth.Open(authDB)
 	autherr := auth.AuthDbInit()
 	if autherr != nil {
 		return autherr
@@ -2974,7 +2982,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
+	
 	initWikiDir()
 
 	refreshStuff()
@@ -2984,6 +2992,7 @@ func main() {
 
 	r := httptreemux.New()
 	r.PanicHandler = httptreemux.ShowErrorsPanicHandler
+	//r.PanicHandler = errorHandler
 
 	statsdata := stats.New()
 
