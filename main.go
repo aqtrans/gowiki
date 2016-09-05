@@ -1657,6 +1657,14 @@ func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 		return
 	}
 
+	// If PushOnSave is enabled, push to remote repo after save
+	if (viper.GetBool("PushOnSave")) {
+		err := gitPush()
+		if err != nil {
+			log.Fatalln(err)
+		}		
+	}
+
 	go refreshStuff()
 
 	auth.SetSession("flash", "Wiki page successfully saved.", w, r)
@@ -2149,7 +2157,7 @@ func adminConfigPostHandler(w http.ResponseWriter, r *http.Request) {
 	if !bo {
 		log.Println(bo)
 	}
-	http.Redirect(w, r, "/admin/config", http.StatusOK)
+	http.Redirect(w, r, "/admin/config", http.StatusSeeOther)
 	return
 }
 
@@ -2409,21 +2417,32 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 			return
 		}
 
+		// If user is logged in, check if wiki git repo is clean, then continue
+		if username != "" {
+			_, err := gitIsClean()
+			if err != nil {
+				log.Println("There are wiki files waiting to be checked in.")
+				http.Redirect(w, r, "/gitadd", http.StatusSeeOther)
+				return
+			}
+			fn(w, r, name)
+			return
+		}
+
+		// If this is a public page, just serve it
 		if err == nil && fm.Public {
 			fn(w, r, name)
 			return
 		}
-		if err == nil {
-			if fm.Admin {
-				if !isAdmin {
-					log.Println(username + " attempting to access restricted URL.")
-					auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
-					http.Redirect(w, r, "/", http.StatusSeeOther)
-					return
-				}
-			}
+		// If this is an admin page, check if we're admin before serving
+		if err == nil && fm.Admin && !isAdmin {
+			log.Println(username + " attempting to access restricted URL.")
+			auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
 		}
 
+		// If not logged in
 		if username == "" {
 			rurl := r.URL.String()
 			httputils.Debugln("wikiHandler mitigating: " + r.Host + rurl)
@@ -2436,10 +2455,9 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 			auth.SetSession("flash", "Please login to view that page.", w, r)
 			http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
 			return
-		} else {
-			fn(w, r, name)
-			return
 		}
+
+
 	}
 }
 
@@ -2964,9 +2982,12 @@ func refreshStuff() {
 
 func main() {
 
-	viper.WatchConfig()
+	//viper.WatchConfig()
 
 	flag.Parse()
+
+	httputils.AssetsBox = rice.MustFindBox("assets")
+	auth.AdminUser = viper.GetString("AdminUser")
 
 	// Open and initialize auth database
 	err := authInit("./data/auth.db")
@@ -2974,9 +2995,6 @@ func main() {
 		log.Fatalln(err)
 	}
 	defer auth.Authdb.Close()
-
-	httputils.AssetsBox = rice.MustFindBox("assets")
-	auth.AdminUser = viper.GetString("AdminUser")
 
 	err = riceInit()
 	if err != nil {
