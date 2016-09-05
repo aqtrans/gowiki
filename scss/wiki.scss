@@ -65,6 +65,10 @@
 body {
     @include flex-grid-row;
     > nav {
+
+        [type="text"] {
+            width: 50%;
+        }
         /*
         @include flex-grid-column(15%, 0);
         //max-width: 300px;
@@ -180,11 +184,6 @@ header {
         background-color: $white;
         color: $black;
     }
-}
-
-.badge a, a:hover {
-    color: $white;
-    text-decoration: none;
 }
 
 p {
