@@ -88,12 +88,6 @@
 <script src="/assets/js/commonmark.js"></script>
 <script src="/assets/js/tagdog.min.js"></script>
 <script type="text/javascript" charset="utf-8">
- 
-/*$('#tags').tagsInput({
-   'height':'3rem',
-   'width':'100%',
-});
-*/
 
 $(document).foundation();
 
@@ -116,12 +110,19 @@ document.getElementsByName("editor")[0].value = initial_text;
 
 document.getElementById("preview").onclick = function() {
     var editortxt = document.getElementsByName("editor")[0].value;
-    var parsed = reader.parse(editortxt);
-    var result = writer.render(parsed);
-    document.getElementById("preview_content").innerHTML=result;
+    //var parsed = reader.parse(editortxt);
+    //var result = writer.render(parsed);
+    $.ajax({
+        type: "GET",
+        url: "/md_render",
+        data: { md: editortxt },
+        success: function (msg) {
+            document.getElementById("preview_content").innerHTML = msg;
+        },
+        dataType: "html"
+    });    
+    //document.getElementById("preview_content").innerHTML=result;
 };
-
-
 
 </script>
 {{ end }}
