@@ -2980,6 +2980,12 @@ func refreshStuff() {
 	}
 }
 
+func markdownPreview(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	log.Println(r.FormValue("md"))
+	w.Write([]byte(markdownRender([]byte(r.FormValue("md")))))
+}
+
 func main() {
 
 	//viper.WatchConfig()
@@ -3007,6 +3013,7 @@ func main() {
 
 	// HTTP stuff from here on out
 	s := alice.New(timer, httputils.Logger, auth.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(false)))
+	
 
 	r := httptreemux.New()
 	r.PanicHandler = httptreemux.ShowErrorsPanicHandler
@@ -3060,6 +3067,8 @@ func main() {
 
 	r.POST("/gitadd", auth.AuthMiddle(gitCheckinPostHandler))
 	r.GET("/gitadd", auth.AuthMiddle(gitCheckinHandler))
+
+	r.GET("/md_render", markdownPreview)
 
 	r.GET("/stats", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
