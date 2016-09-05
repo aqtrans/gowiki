@@ -2982,7 +2982,7 @@ func refreshStuff() {
 
 func markdownPreview(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	log.Println(r.FormValue("md"))
+	//log.Println(r.FormValue("md"))
 	w.Write([]byte(markdownRender([]byte(r.FormValue("md")))))
 }
 
