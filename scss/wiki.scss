@@ -62,12 +62,33 @@
 .material-icons.md-48 { font-size: 3rem; }
 .material-icons.md-16 { font-size: 0.8rem; }
 
+@media (min-width: 38em) {
+  html {
+    font-size: 100%;
+  }
+}
+
+@media (min-width: 48em) {
+  html {
+    font-size: 110%;
+  }
+}
+@media (min-width: 58em) {
+  html {
+    font-size: 120%;
+  }
+}
+
+.usernav {
+    margin-top: 1em;
+}
+
 body {
     @include flex-grid-row;
     > nav {
 
         [type="text"] {
-            width: 50%;
+            width: 0;
         }
         /*
         @include flex-grid-column(15%, 0);
@@ -151,6 +172,11 @@ body {
                     li {
                         display: inline-block;
                         border-right: 1px solid transparentize($body-font-color, 0.8);
+                        padding: 0.2em;
+                        height: 3.8em;
+                    }
+                    li:first-child {
+                        border-left: 1px solid transparentize($body-font-color, 0.8);
                     }
                     .stat span.warning.label {
                         margin-right: 0.2em;
@@ -209,6 +235,10 @@ p.date {
 
 ul.tabs {
     border: 0;
+    background-color: unset;
+    > li {
+        background-color: $black;
+    }
     > li.is-active {
         background-color: $almostblack;
         a {
