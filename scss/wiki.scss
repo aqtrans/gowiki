@@ -73,7 +73,7 @@
     font-size: 110%;
   }
 }
-@media (min-width: 58em) {
+@media (min-width: 68em) {
   html {
     font-size: 120%;
   }
@@ -89,6 +89,9 @@ body {
 
         [type="text"] {
             width: 0;
+        }
+        form {
+            margin-top: 0.5em;
         }
         /*
         @include flex-grid-column(15%, 0);
@@ -119,7 +122,13 @@ body {
         fieldset.fieldset {
             margin: 0;
             padding: 0;
-        }        
+        }
+        .usernav > fieldset {
+            border: 0;
+            legend {
+                background-color: unset;
+            }
+        } 
     }
     > section {
         /*
@@ -236,8 +245,14 @@ p.date {
 ul.tabs {
     border: 0;
     background-color: unset;
+    white-space: nowrap;
     > li {
         background-color: $black;
+        margin-right: 0.5em;
+        width: 100%;
+        @include breakpoint(640px) {
+            width: auto;
+        }
     }
     > li.is-active {
         background-color: $almostblack;
