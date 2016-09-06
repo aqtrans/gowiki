@@ -1,7 +1,7 @@
 {{ define "usernav" }}
 <div class="usernav">
-<h5><i class="fa fa-user" aria-hidden="true"></i>User: {{ if .UN }}<span><small>(logged in as {{ .page.UN }})</small></span>{{ end }}</h5> 
-<hr>
+<fieldset class="fieldset">
+  <legend><i class="fa fa-user" aria-hidden="true"></i>User: {{ if .UN }}<span><small>(logged in as {{ .page.UN }})</small></span>{{ end }}</legend>
 <ul>
 {{ if .UN }}
     <li><a href="/auth/logout">Logout</a></li>
@@ -12,5 +12,6 @@
 <li><a href="/login">Login</a></li>
 {{ end }}
 </ul>
+</fieldset>
 </div>
 {{ end }}
