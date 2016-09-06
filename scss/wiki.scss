@@ -229,7 +229,15 @@ p {
 footer {
     text-align: center;
     color: transparentize($body-font-color, 0.6);
-    font-weight: 300;    
+    font-weight: 300;
+    font-size: 70%;
+    > ul {
+        margin: 0;
+    }
+}
+
+i.fa:after {
+    content: "\00a0";
 }
 
 p.date {
@@ -237,7 +245,7 @@ p.date {
     font-size: 0.8rem;
     margin-bottom: 0.5em;
     > span + span:before {
-        content: "| ";
+        content: "|\00a0";
         //padding: 0 1em;
     }
 }
