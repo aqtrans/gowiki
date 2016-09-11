@@ -17,13 +17,13 @@
     </div>
   </article>
 
-  <ul class="tabs">
-    <li class="tabs-title is-active"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
-    <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
-    <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
+  <ul class="ui top attached tabular menu">
+    <li class="active item"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
+    <li class="item"><a href="/edit/{{.Wiki.Filename}}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
+    <li class="item"><a href="/history/{{.Wiki.Filename}}"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
   </ul>
 
-  <article>
+  <article class="ui bottom attached active tab segment">
       {{.Rendered | safeHTML}}
         <footer>
           <ul>
