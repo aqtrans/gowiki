@@ -663,39 +663,6 @@ input::selection {
 /*******************************
          Site Overrides
 *******************************/
-
-div.input-wrapper {
-  box-sizing: border-box;
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -ms-flex-flow: row nowrap;
-  flex-flow: row nowrap;
-  /* Example styling ------------------- */
-  height: 2.2em;
-}
-
-div.input-wrapper > input,
-div.input-wrapper > button {
-  box-sizing: border-box;
-  height: 100%;
-  border: 1px solid #999;
-}
-
-div.input-wrapper > input {
-  -webkit-box-flex: 1;
-  -ms-flex: 1 1 auto;
-  flex: 1 1 auto;
-  border-right: 0;
-  border-radius: 0;
-}
-
-div.input-wrapper > button {
-  -ms-flex-negative: 0;
-  flex-shrink: 0;
-  margin: 0;
-  border-radius: 0;
-}
 /*!
  * # Semantic UI 2.2.4 - Button
  * http://github.com/semantic-org/semantic-ui/
@@ -7183,8 +7150,8 @@ a.ui.inverted.grey.header:hover {
 
 @font-face {
   font-family: 'Icons';
-  src: url("/assets/fonts/icons.eot");
-  src: url("/assets/fonts/icons.eot?#iefix") format('embedded-opentype'), url("/assets/fonts/icons.woff2") format('woff2'), url("/assets/fonts/icons.woff") format('woff'), url("/assets/fonts/icons.ttf") format('truetype'), url("/assets/fonts/icons.svg#icons") format('svg');
+  src: url("./themes/default/assets/fonts/icons.eot");
+  src: url("./themes/default/assets/fonts/icons.eot?#iefix") format('embedded-opentype'), url("./themes/default/assets/fonts/icons.woff2") format('woff2'), url("./themes/default/assets/fonts/icons.woff") format('woff'), url("./themes/default/assets/fonts/icons.ttf") format('truetype'), url("./themes/default/assets/fonts/icons.svg#icons") format('svg');
   font-style: normal;
   font-weight: normal;
   font-variant: normal;
@@ -28766,8 +28733,10 @@ body.dimmable > .dimmer {
 .blurring.dimmable > :not(.dimmer) {
   -webkit-filter: blur(0px) grayscale(0);
   filter: blur(0px) grayscale(0);
-  -webkit-transition: 800ms filter ease;
+  -webkit-transition: 800ms -webkit-filter ease;
+  transition: 800ms -webkit-filter ease;
   transition: 800ms filter ease;
+  transition: 800ms filter ease, 800ms -webkit-filter ease;
 }
 
 .blurring.dimmed.dimmable > :not(.dimmer) {

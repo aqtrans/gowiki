@@ -158,33 +158,3 @@ input::selection {
          Site Overrides
 *******************************/
 
-div.input-wrapper {
-  box-sizing: border-box;
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -ms-flex-flow: row nowrap;
-      flex-flow: row nowrap;
-  
-/* Example styling ------------------- */
-  height: 2.2em;
-}
-div.input-wrapper > input,
-div.input-wrapper > button {
-  box-sizing: border-box;
-  height: 100%;
-  border: 1px solid #999;
-}
-div.input-wrapper > input {
-  -webkit-box-flex: 1;
-      -ms-flex: 1 1 auto;
-          flex: 1 1 auto;
-  border-right: 0;
-  border-radius: 0;
-}
-div.input-wrapper > button {
-  -ms-flex-negative: 0;
-      flex-shrink: 0;
-  margin: 0;
-  border-radius: 0;
-}
