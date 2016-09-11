@@ -1,0 +1,13 @@
+/*******************************
+    User Variable Overrides
+*******************************/
+
+@fontName: 'icons';
+@fallbackSRC: url("/assets/fonts/icons.eot");
+@src:
+  url("/assets/fonts/icons.eot?#iefix") format('embedded-opentype'),
+  url("/assets/fonts/icons.woff2") format('woff2'),
+  url("/assets/fonts/icons.woff") format('woff'),
+  url("/assets/fonts/icons.ttf") format('truetype'),
+  url("/assets/fonts/icons.svg#icons") format('svg')
+;
