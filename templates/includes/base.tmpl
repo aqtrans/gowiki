@@ -8,14 +8,17 @@
   <meta name="description" content="Gowiki">
   <link rel="shortcut icon" type="image/png" href="/assets/favicon.png"/>
   <link rel="shortcut icon" type="image/ico" href="/assets/favicon.ico" />
-  <link rel="stylesheet" href="/assets/css/wiki.css">
+  <link rel="stylesheet" href="/assets/semantic.min.css">
+  <script src="/assets/js/jquery.min.js"></script>  
+  <script src="/assets/semantic.min.js"></script>
 </head>
 <body>
-  <nav>
+<div class="ui stackable two column grid">
+  <nav class="four wide column">
     <header><a href="/">Wiki</a></header>
       {{ template "sidebar" . }}
   </nav>
-  <section>
+  <section class="twelve wide column">
     {{ .page.FlashMsg |safeHTML }}
     {{ template "content" . }}
 {{ end }}
