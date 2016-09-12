@@ -12,7 +12,13 @@
         <li><p>Favorite</p>
         <div class="stat">{{ .Wiki.Frontmatter.Favorite }}</div></li>
         <li><p>Tags</p>
-        <div class="stat">{{ range .Wiki.Frontmatter.Tags }}<span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i>{{ . }}</span>{{ end }}</div></li>
+        <div class="stat">
+        {{ if .Wiki.Frontmatter.Tags }}
+        {{ range .Wiki.Frontmatter.Tags }}<span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i>{{ . }}</span>{{ end }}
+        </div></li>
+        {{ else }}
+        <span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i></span>
+        {{ end }}
       </ul>
     </div>
   </article>
