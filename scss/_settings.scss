@@ -66,7 +66,7 @@ $almostblack: #202020;
 $body-background: $solarized;
 $body-font-color: #eee8d5;
 
-$dark-font-color: transparentize($body-font-color, 0.6);
+$dark-font-color: $almostblack;
 
 $body-font-family: Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 $body-antialiased: true;
@@ -111,7 +111,7 @@ $block-grid-max: 8;
 $header-font-family: $body-font-family;
 $header-font-weight: $global-weight-normal;
 $header-font-style: normal;
-$font-family-monospace: Consolas, 'Liberation Mono', Courier, monospace;
+$font-family-monospace: monospace;
 $header-sizes: (
   small: (
     'h1': 24,
