@@ -122,6 +122,16 @@ func TestNewWikiPage(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	db := mustOpenDB()
+	t.Log(db.Path())
+	auth.Authdb = db.AuthDB
+	//auth.Authdb.DB = db.DB
+	autherr := auth.AuthDbInit()
+	if autherr != nil {
+		t.Fatal(autherr)
+	}
+	defer db.MustClose()
+
 	handler := http.HandlerFunc(wikiHandler(viewHandler))
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
@@ -131,6 +141,8 @@ func TestNewWikiPage(t *testing.T) {
 		Username: "admin",
 		IsAdmin:  true,
 	})
+	//t.Log(auth.IsLoggedIn(ctx))
+	//t.Log(auth.GetUsername(ctx))
 	params := make(map[string]string)
 	params["name"] = randPage
 	ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
@@ -246,6 +258,16 @@ func TestIndexPage(t *testing.T) {
 
 	handler := http.HandlerFunc(wikiHandler(viewHandler))
 
+	db := mustOpenDB()
+	t.Log(db.Path())
+	auth.Authdb = db.AuthDB
+	//auth.Authdb.DB = db.DB
+	autherr := auth.AuthDbInit()
+	if autherr != nil {
+		t.Fatal(autherr)
+	}
+	defer db.MustClose()
+
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
@@ -292,6 +314,16 @@ func TestIndexHistoryPage(t *testing.T) {
 
 	handler := http.HandlerFunc(wikiHandler(historyHandler))
 
+	db := mustOpenDB()
+	t.Log(db.Path())
+	auth.Authdb = db.AuthDB
+	//auth.Authdb.DB = db.DB
+	autherr := auth.AuthDbInit()
+	if autherr != nil {
+		t.Fatal(autherr)
+	}
+	defer db.MustClose()
+
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
@@ -337,6 +369,16 @@ func TestIndexEditPage(t *testing.T) {
 	}
 
 	handler := http.HandlerFunc(auth.AuthMiddle(wikiHandler(editHandler)))
+
+	db := mustOpenDB()
+	t.Log(db.Path())
+	auth.Authdb = db.AuthDB
+	//auth.Authdb.DB = db.DB
+	autherr := auth.AuthDbInit()
+	if autherr != nil {
+		t.Fatal(autherr)
+	}
+	defer db.MustClose()
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
