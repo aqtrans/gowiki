@@ -2315,8 +2315,9 @@ func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func createWiki(w http.ResponseWriter, r *http.Request, name string) {
-	username, _ := auth.GetUsername(r.Context())
-	if username != "" {
+	//username, _ := auth.GetUsername(r.Context())
+	//if username != "" {
+	if auth.IsLoggedIn(r.Context()) {
 		w.WriteHeader(404)
 		//title := "Create " + name + "?"
 		p := loadPage(r)
@@ -2418,7 +2419,8 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		}
 
 		// If user is logged in, check if wiki git repo is clean, then continue
-		if username != "" {
+		//if username != "" {
+		if auth.IsLoggedIn(r.Context()) {
 			_, err := gitIsClean()
 			if err != nil {
 				log.Println("There are wiki files waiting to be checked in.")
@@ -2443,7 +2445,8 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		}
 
 		// If not logged in
-		if username == "" {
+		//if username == "" {
+		if !auth.IsLoggedIn(r.Context()) {
 			rurl := r.URL.String()
 			httputils.Debugln("wikiHandler mitigating: " + r.Host + rurl)
 			//w.Write([]byte("OMG"))
@@ -2799,8 +2802,9 @@ func search(w http.ResponseWriter, r *http.Request) {
 
 	public := false
 
-	username, _ := auth.GetUsername(r.Context())
-	if username != "" {
+	//username, _ := auth.GetUsername(r.Context())
+	//if username != "" {
+	if auth.IsLoggedIn(r.Context()) {
 		public = true
 	}
 
