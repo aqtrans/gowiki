@@ -13,7 +13,7 @@
 // @include foundation-range-input;
 @include foundation-accordion;
 //@include foundation-accordion-menu;
-@include foundation-badge;
+//@include foundation-badge;
 @include foundation-breadcrumbs;
 @include foundation-button-group;
 @include foundation-callout;
@@ -25,10 +25,10 @@
 //@include foundation-dropdown-menu;
 //@include foundation-flex-video;
 @include foundation-label;
-@include foundation-media-object;
+//@include foundation-media-object;
 //@include foundation-off-canvas;
 //@include foundation-orbit;
-@include foundation-pagination;
+//@include foundation-pagination;
 //@include foundation-progress-bar;
 // @include foundation-progress-element;
 // @include foundation-meter-element;
@@ -39,8 +39,8 @@
 @include foundation-table;
 @include foundation-tabs;
 @include foundation-thumbnail;
-@include foundation-title-bar;
-@include foundation-tooltip;
+//@include foundation-title-bar;
+//@include foundation-tooltip;
 //@include foundation-top-bar;
 @include foundation-visibility-classes;
 //@include foundation-float-classes;
@@ -49,18 +49,15 @@
 @include motion-ui-transitions;
 @include motion-ui-animations;
 
-@import url('https://fonts.googleapis.com/css?family=Khand|Open+Sans|Roboto+Condensed:300italic,400italic,700italic,400,700,300|Roboto:400,100,100italic,300,300italic,400italic,500,500italic,700,700italic');
+//@import url('https://fonts.googleapis.com/css?family=Khand|Open+Sans|Roboto+Condensed:300italic,400italic,700italic,400,700,300|Roboto:400,100,100italic,300,300italic,400italic,500,500italic,700,700italic');
 //@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
-@import url('https://use.fontawesome.com/107df40317.css');
+//@import url('https://use.fontawesome.com/107df40317.css');
 
 @mixin card() {
     background-color: $almostblack;
     //border-radius: 3px;
     box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);    
 }
-
-.material-icons.md-48 { font-size: 3rem; }
-.material-icons.md-16 { font-size: 0.8rem; }
 
 @media (min-width: 38em) {
   html {
