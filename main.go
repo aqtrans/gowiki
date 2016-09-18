@@ -3015,8 +3015,13 @@ func main() {
 
 	refreshStuff()
 
+	csrfSecure := true
+	if fLocal {
+		csrfSecure = false
+	} 
+
 	// HTTP stuff from here on out
-	s := alice.New(timer, httputils.Logger, auth.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(false)))
+	s := alice.New(timer, httputils.Logger, auth.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
 	
 
 	r := httptreemux.New()
