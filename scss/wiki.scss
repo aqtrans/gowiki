@@ -59,6 +59,7 @@
     box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);    
 }
 
+/*
 @media (min-width: 38em) {
   html {
     font-size: 100%;
@@ -75,6 +76,7 @@
     font-size: 120%;
   }
 }
+*/
 
 .usernav {
     margin-top: 1em;
@@ -222,7 +224,7 @@ header {
 }
 
 p {
-    font-weight: lighter;
+    //font-weight: lighter;
     //font-family: 'Roboto Condensed', sans-serif;
     margin-bottom: 0;
 }

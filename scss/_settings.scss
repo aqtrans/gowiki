@@ -68,7 +68,7 @@ $body-font-color: #eee8d5;
 
 $dark-font-color: $almostblack;
 
-$body-font-family: 'Open Sans', 'Roboto Condensed', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+$body-font-family: 'Noto Sans', 'Open Sans', 'Roboto Condensed', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 $body-antialiased: true;
 $global-margin: 1rem;
 $global-padding: 1rem;
@@ -108,7 +108,7 @@ $block-grid-max: 8;
 // 4. Base Typography
 // ------------------
 
-$header-font-family: Tinos, serif;
+$header-font-family: 'Noto Serif', Tinos, serif;
 $header-font-weight: $global-weight-normal;
 $header-font-style: normal;
 $font-family-monospace: 'Source Code Pro', monospace;
