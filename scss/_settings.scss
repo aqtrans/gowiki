@@ -68,7 +68,7 @@ $body-font-color: #eee8d5;
 
 $dark-font-color: $almostblack;
 
-$body-font-family: Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+$body-font-family: 'Open Sans', 'Roboto Condensed', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 $body-antialiased: true;
 $global-margin: 1rem;
 $global-padding: 1rem;
@@ -76,7 +76,7 @@ $global-weight-normal: normal;
 $global-weight-bold: bold;
 $global-radius: 0;
 $global-text-direction: ltr;
-$global-flexbox: true;
+$global-flexbox: false;
 $print-transparent-backgrounds: true;
 
 @include add-foundation-colors;
@@ -108,10 +108,10 @@ $block-grid-max: 8;
 // 4. Base Typography
 // ------------------
 
-$header-font-family: $body-font-family;
+$header-font-family: Tinos, serif;
 $header-font-weight: $global-weight-normal;
 $header-font-style: normal;
-$font-family-monospace: monospace;
+$font-family-monospace: 'Source Code Pro', monospace;
 $header-sizes: (
   small: (
     'h1': 24,
