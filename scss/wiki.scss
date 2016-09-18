@@ -5,8 +5,8 @@
 @import 'motion-ui';
 
 @include foundation-global-styles;
-// @include foundation-grid;
-@include foundation-flex-grid;
+@include foundation-grid;
+//@include foundation-flex-grid;
 @include foundation-typography;
 @include foundation-button;
 @include foundation-forms;
@@ -21,7 +21,7 @@
 @include foundation-menu;
 @include foundation-menu-icon;
 //@include foundation-drilldown-menu;
-//@include foundation-dropdown;
+@include foundation-dropdown;
 //@include foundation-dropdown-menu;
 //@include foundation-flex-video;
 @include foundation-label;
@@ -43,8 +43,8 @@
 //@include foundation-tooltip;
 //@include foundation-top-bar;
 @include foundation-visibility-classes;
-//@include foundation-float-classes;
-@include foundation-flex-classes;
+@include foundation-float-classes;
+//@include foundation-flex-classes;
 
 @include motion-ui-transitions;
 @include motion-ui-animations;
@@ -81,8 +81,12 @@
 }
 
 body {
-    @include flex-grid-row;
+    @include grid-row;
     > nav {
+        @include grid-column;
+        @include breakpoint(medium) {
+            @include grid-column(3, 0.5rem);
+        }
 
         [type="text"] {
             width: 0;
@@ -90,20 +94,10 @@ body {
         form {
             margin-top: 0.5em;
         }
-        /*
-        @include flex-grid-column(15%, 0);
-        //max-width: 300px;
-        @include breakpoint(640px down) {
-            @include flex-grid-column(100%);
-        }
-        */
-        @include flex-grid-column(100%);
-        //max-width: 300px;
-        @include breakpoint(640px) {
-            @include flex-grid-column(15%, 0.5rem);
-        }
+
+
         > h5 {
-            font-weight: 100;
+            font-weight: lighter;
         }
         > header {
             font-size: 3rem;
@@ -128,15 +122,9 @@ body {
         } 
     }
     > section {
-        /*
-        @include flex-grid-column(85%, 0);
-        @include breakpoint(640px down) {
-            @include flex-grid-column(100%);
-        }
-        */
-        @include flex-grid-column(100%);
-        @include breakpoint(640px) {
-            @include flex-grid-column(85%, 0);
+        @include grid-column;
+        @include breakpoint(medium) {
+            @include grid-column(9, 0);
         }
         > main {
             article {
@@ -163,15 +151,22 @@ body {
                 }
             }
             article:first-child {
-                @include flex-grid-row;
+                display: flex;
+                flex-flow: row nowrap;
+
                 margin-bottom: 1em;
                 > header {
-                    @include flex-grid-column(shrink);
+                    flex-grow: 1;
                     font-size: 2.6rem;
-                    margin-left: 0.2em;
                 }
-                > div.stats {
-                    @include flex-grid-column(shrink);
+                #stats-dropdown {
+                    width: auto;
+                    background-color: $almostblack;
+                }
+                div.stats {
+                    flex-shrink: 1;
+                    font-family: $header-font-family;
+
                     ul {
                         margin: 0;
                     }
@@ -183,9 +178,13 @@ body {
                         p {
                             margin-bottom: 1rem;
                         }
+                        white-space: nowrap;
                     }
                     li:first-child {
                         border-left: 1px solid transparentize($body-font-color, 0.8);
+                    }
+                    .stat {
+                        font-weight: bold;
                     }
                     .stat span.warning.label {
                         margin-right: 0.2em;
@@ -197,10 +196,10 @@ body {
     }
 }
 header {
-    font-family: 'Khand', sans-serif;
-    font-weight: 400;
+    //font-family: 'Khand', sans-serif;
+    font-weight: bold;
     //font-size: 3rem;
-    //font-family: $header-font-family;
+    font-family: $header-font-family;
     text-decoration: none;
     //border-bottom: $card-border;
     //padding-left: 0.2em;
@@ -223,15 +222,15 @@ header {
 }
 
 p {
-    font-weight: 300;
-    font-family: 'Roboto Condensed', sans-serif;
+    font-weight: lighter;
+    //font-family: 'Roboto Condensed', sans-serif;
     margin-bottom: 0;
 }
 
 footer {
     text-align: center;
     color: transparentize($body-font-color, 0.6);
-    font-weight: 300;
+    font-weight: lighter;
     font-size: 70%;
     > ul {
         margin: 0;
