@@ -5,13 +5,16 @@
 package httptreemux
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/url"
 
 	"github.com/dimfeld/httppath"
 )
+
+// The params argument contains the parameters parsed from wildcards and catch-alls in the URL.
+type HandlerFunc func(http.ResponseWriter, *http.Request, map[string]string)
+type PanicHandler func(http.ResponseWriter, *http.Request, interface{})
 
 // RedirectBehavior sets the behavior when the router redirects the request to the
 // canonical version of the requested URL using RedirectTrailingSlash or RedirectClean.
@@ -34,8 +37,6 @@ type RedirectBehavior int
 
 type PathSource int
 
-type contextVar int
-
 const (
 	Redirect301 RedirectBehavior = iota // Return 301 Moved Permanently
 	Redirect307                         // Return 307 HTTP/1.1 Temporary Redirect
@@ -44,10 +45,6 @@ const (
 
 	RequestURI PathSource = iota // Use r.RequestURI
 	URLPath                      // Use r.URL.Path
-
-	errorContextKey contextVar = iota
-	ParamsContextKey
-	methodsContextKey
 )
 
 type TreeMux struct {
@@ -56,14 +53,14 @@ type TreeMux struct {
 	Group
 
 	// The default PanicHandler just returns a 500 code.
-	PanicHandler http.HandlerFunc
+	PanicHandler PanicHandler
 
 	// The default NotFoundHandler is http.NotFound.
-	NotFoundHandler http.HandlerFunc
+	NotFoundHandler func(w http.ResponseWriter, r *http.Request)
 
 	// Any OPTIONS request that matches a path without its own OPTIONS handler will use this handler,
 	// if set, instead of calling MethodNotAllowedHandler.
-	OptionsHandler http.HandlerFunc
+	OptionsHandler HandlerFunc
 
 	// MethodNotAllowedHandler is called when a pattern matches, but that
 	// pattern does not have a handler for the requested method. The default
@@ -71,7 +68,8 @@ type TreeMux struct {
 	// the required Allowed header.
 	// The methods parameter contains the map of each method to the corresponding
 	// handler function.
-	MethodNotAllowedHandler http.HandlerFunc
+	MethodNotAllowedHandler func(w http.ResponseWriter, r *http.Request,
+		methods map[string]HandlerFunc)
 
 	// HeadCanUseGet allows the router to use the GET handler to respond to
 	// HEAD requests if no explicit HEAD handler has been added for the
@@ -109,6 +107,11 @@ type TreeMux struct {
 	// better compatibility with some utility functions in the http
 	// library that modify the Request before passing it to the router.
 	PathSource PathSource
+
+	// EscapeAddedRoutes controls URI escaping behavior when adding a route to the tree.
+	// If set to true, the router will add both the route as originally passed, and
+	// a version passed through URL.EscapedPath. This behavior is disabled by default.
+	EscapeAddedRoutes bool
 }
 
 // Dump returns a text representation of the routing tree.
@@ -118,8 +121,7 @@ func (t *TreeMux) Dump() string {
 
 func (t *TreeMux) serveHTTPPanic(w http.ResponseWriter, r *http.Request) {
 	if err := recover(); err != nil {
-		r = r.WithContext(context.WithValue(r.Context(), errorContextKey, err))
-		t.PanicHandler(w, r)
+		t.PanicHandler(w, r, err)
 	}
 }
 
@@ -205,33 +207,13 @@ func (t *TreeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	var paramMap map[string]string
-	if len(params) != 0 {
-		if len(params) != len(n.leafWildcardNames) {
-			// Need better behavior here. Should this be a panic?
-			panic(fmt.Sprintf("httptreemux parameter list length mismatch: %v, %v",
-				params, n.leafWildcardNames))
-		}
-
-		paramMap = make(map[string]string)
-		numParams := len(params)
-		for index := 0; index < numParams; index++ {
-			paramMap[n.leafWildcardNames[numParams-index-1]] = params[index]
-		}
-	}
-
 	if handler == nil {
 		if r.Method == "OPTIONS" && t.OptionsHandler != nil {
 			handler = t.OptionsHandler
 		}
 
 		if handler == nil {
-			ctx := context.WithValue(r.Context(), methodsContextKey, n.leafHandler)
-			if paramMap != nil {
-				ctx = context.WithValue(ctx, ParamsContextKey, paramMap)
-			}
-			r = r.WithContext(ctx)
-			t.MethodNotAllowedHandler(w, r)
+			t.MethodNotAllowedHandler(w, r, n.leafHandler)
 			return
 		}
 	}
@@ -252,18 +234,30 @@ func (t *TreeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if paramMap != nil {
-		r = r.WithContext(context.WithValue(r.Context(), ParamsContextKey, paramMap))
+	var paramMap map[string]string
+	if len(params) != 0 {
+		if len(params) != len(n.leafWildcardNames) {
+			// Need better behavior here. Should this be a panic?
+			panic(fmt.Sprintf("httptreemux parameter list length mismatch: %v, %v",
+				params, n.leafWildcardNames))
+		}
+
+		paramMap = make(map[string]string)
+		numParams := len(params)
+		for index := 0; index < numParams; index++ {
+			paramMap[n.leafWildcardNames[numParams-index-1]] = params[index]
+		}
 	}
-	handler(w, r)
+
+	handler(w, r, paramMap)
 }
 
 // MethodNotAllowedHandler is the default handler for TreeMux.MethodNotAllowedHandler,
 // which is called for patterns that match, but do not have a handler installed for the
 // requested method. It simply writes the status code http.StatusMethodNotAllowed.
-func MethodNotAllowedHandler(w http.ResponseWriter, r *http.Request) {
+func MethodNotAllowedHandler(w http.ResponseWriter, r *http.Request,
+	methods map[string]HandlerFunc) {
 
-	methods := ContextMethods(r.Context())
 	for m := range methods {
 		w.Header().Add("Allow", m)
 	}
@@ -276,13 +270,13 @@ func New() *TreeMux {
 		root:                    &node{path: "/"},
 		NotFoundHandler:         http.NotFound,
 		MethodNotAllowedHandler: MethodNotAllowedHandler,
-		PanicHandler:            SimplePanicHandler,
 		HeadCanUseGet:           true,
 		RedirectTrailingSlash:   true,
 		RedirectCleanPath:       true,
 		RedirectBehavior:        Redirect301,
 		RedirectMethodBehavior:  make(map[string]RedirectBehavior),
 		PathSource:              RequestURI,
+		EscapeAddedRoutes:       false,
 	}
 	tm.Group.mux = tm
 	return tm
