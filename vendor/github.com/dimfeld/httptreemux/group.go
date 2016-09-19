@@ -2,7 +2,8 @@ package httptreemux
 
 import (
 	"fmt"
-	"net/http"
+	"net/url"
+	"strings"
 )
 
 type Group struct {
@@ -87,67 +88,78 @@ func (g *Group) NewGroup(path string) *Group {
 // 	GET /posts will redirect to /posts/.
 // 	GET /posts/ will match normally.
 // 	POST /posts will redirect to /posts/, because the GET method used a trailing slash.
+func (g *Group) Handle(method string, path string, handler HandlerFunc) {
+	addSlash := false
+	addOne := func(thePath string) {
+		node := g.mux.root.addPath(thePath[1:], nil, false)
+		if addSlash {
+			node.addSlash = true
+		}
+		node.setHandler(method, handler, false)
 
-func (g *Group) setHandler(method string, path string, handler http.HandlerFunc) {
+		if g.mux.HeadCanUseGet && method == "GET" && node.leafHandler["HEAD"] == nil {
+			node.setHandler("HEAD", handler, true)
+		}
+	}
+
 	checkPath(path)
 	path = g.path + path
 	if len(path) == 0 {
 		panic("Cannot map an empty path")
 	}
-	addSlash := false
+
 	if len(path) > 1 && path[len(path)-1] == '/' && g.mux.RedirectTrailingSlash {
 		addSlash = true
 		path = path[:len(path)-1]
 	}
 
-	node := g.mux.root.addPath(path[1:], nil, false)
-	if addSlash {
-		node.addSlash = true
+	if g.mux.EscapeAddedRoutes {
+		u, err := url.ParseRequestURI(path)
+		if err != nil {
+			panic("URL parsing error " + err.Error() + " on url " + path)
+		}
+		escapedPath := unescapeSpecial(u.String())
+
+		if escapedPath != path {
+			addOne(escapedPath)
+		}
 	}
 
-	node.setHandler(method, handler, false)
-
-	if g.mux.HeadCanUseGet && method == "GET" && node.leafHandler["HEAD"] == nil {
-		node.setHandler("HEAD", handler, true)
-	}
-}
-
-func (g *Group) Handle(method string, path string, handler http.HandlerFunc) {
-	g.setHandler(method, path, handler)
+	addOne(path)
 }
 
 // Syntactic sugar for Handle("GET", path, handler)
-func (g *Group) GET(path string, handler http.HandlerFunc) {
+func (g *Group) GET(path string, handler HandlerFunc) {
 	g.Handle("GET", path, handler)
 }
 
 // Syntactic sugar for Handle("POST", path, handler)
-func (g *Group) POST(path string, handler http.HandlerFunc) {
+func (g *Group) POST(path string, handler HandlerFunc) {
 	g.Handle("POST", path, handler)
 }
 
 // Syntactic sugar for Handle("PUT", path, handler)
-func (g *Group) PUT(path string, handler http.HandlerFunc) {
+func (g *Group) PUT(path string, handler HandlerFunc) {
 	g.Handle("PUT", path, handler)
 }
 
 // Syntactic sugar for Handle("DELETE", path, handler)
-func (g *Group) DELETE(path string, handler http.HandlerFunc) {
+func (g *Group) DELETE(path string, handler HandlerFunc) {
 	g.Handle("DELETE", path, handler)
 }
 
 // Syntactic sugar for Handle("PATCH", path, handler)
-func (g *Group) PATCH(path string, handler http.HandlerFunc) {
+func (g *Group) PATCH(path string, handler HandlerFunc) {
 	g.Handle("PATCH", path, handler)
 }
 
 // Syntactic sugar for Handle("HEAD", path, handler)
-func (g *Group) HEAD(path string, handler http.HandlerFunc) {
+func (g *Group) HEAD(path string, handler HandlerFunc) {
 	g.Handle("HEAD", path, handler)
 }
 
 // Syntactic sugar for Handle("OPTIONS", path, handler)
-func (g *Group) OPTIONS(path string, handler http.HandlerFunc) {
+func (g *Group) OPTIONS(path string, handler HandlerFunc) {
 	g.Handle("OPTIONS", path, handler)
 }
 
@@ -156,4 +168,25 @@ func checkPath(path string) {
 	if len(path) > 0 && path[0] != '/' {
 		panic(fmt.Sprintf("Path %s must start with slash", path))
 	}
+}
+
+func unescapeSpecial(s string) string {
+	// Look for sequences of \*, *, and \: that were escaped, and undo some of that escaping.
+
+	// Unescape /* since it references a wildcard token.
+	s = strings.Replace(s, "/%2A", "/*", -1)
+
+	// Unescape /\: since it references a literal colon
+	s = strings.Replace(s, "/%5C:", "/\\:", -1)
+
+	// Replace escaped /\\: with /\:
+	s = strings.Replace(s, "/%5C%5C:", "/%5C:", -1)
+
+	// Replace escaped /\* with /*
+	s = strings.Replace(s, "/%5C%2A", "/%2A", -1)
+
+	// Replace escaped /\\* with /\*
+	s = strings.Replace(s, "/%5C%5C%2A", "/%5C%2A", -1)
+
+	return s
 }
