@@ -10,15 +10,14 @@ import (
 )
 
 // SimplePanicHandler just returns error 500.
-func SimplePanicHandler(w http.ResponseWriter, r *http.Request) {
+func SimplePanicHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
 	w.WriteHeader(http.StatusInternalServerError)
 }
 
 // ShowErrorsPanicHandler prints a nice representation of an error to the browser.
 // This was taken from github.com/gocraft/web, which adapted it from the Traffic project.
-func ShowErrorsPanicHandler(w http.ResponseWriter, r *http.Request) {
+func ShowErrorsPanicHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
 	const size = 4096
-	err := r.Context().Value(errorContextKey)
 	stack := make([]byte, size)
 	stack = stack[:runtime.Stack(stack, false)]
 	renderPrettyError(w, r, err, stack)

@@ -2,7 +2,6 @@ package httptreemux
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 )
@@ -29,7 +28,7 @@ type node struct {
 	// If true, the head handler was set implicitly, so let it also be set explicitly.
 	implicitHead bool
 	// If this node is the end of the URL, then call the handler, if applicable.
-	leafHandler map[string]http.HandlerFunc
+	leafHandler map[string]HandlerFunc
 
 	// The names of the parameters to apply.
 	leafWildcardNames []string
@@ -43,9 +42,9 @@ func (n *node) sortStaticChild(i int) {
 	}
 }
 
-func (n *node) setHandler(verb string, handler http.HandlerFunc, implicitHead bool) {
+func (n *node) setHandler(verb string, handler HandlerFunc, implicitHead bool) {
 	if n.leafHandler == nil {
-		n.leafHandler = make(map[string]http.HandlerFunc)
+		n.leafHandler = make(map[string]HandlerFunc)
 	}
 	_, ok := n.leafHandler[verb]
 	if ok && (verb != "HEAD" || !n.implicitHead) {
@@ -233,7 +232,7 @@ func (n *node) splitCommonPrefix(existingNodeIndex int, path string) (*node, int
 	return newNode, i
 }
 
-func (n *node) search(method, path string) (found *node, handler http.HandlerFunc, params []string) {
+func (n *node) search(method, path string) (found *node, handler HandlerFunc, params []string) {
 	// if test != nil {
 	// 	test.Logf("Searching for %s in %s", path, n.dumpTree("", ""))
 	// }
@@ -268,9 +267,9 @@ func (n *node) search(method, path string) (found *node, handler http.HandlerFun
 
 	if n.wildcardChild != nil {
 		// Didn't find a static token, so check for a wildcard.
-		nextSlash := 0
-		for nextSlash < pathLen && path[nextSlash] != '/' {
-			nextSlash++
+		nextSlash := strings.IndexByte(path, '/')
+		if nextSlash < 0 {
+			nextSlash = pathLen
 		}
 
 		thisToken := path[0:nextSlash]

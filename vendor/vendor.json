@@ -20,12 +20,12 @@
 			"revisionTime": "2014-05-15T16:47:37Z"
 		},
 		{
-			"checksumSHA1": "h9BDYXnyuduC58qYWY+1657zGa0=",
+			"checksumSHA1": "ruRok10rBvF72wI7xgibi16F91w=",
 			"path": "github.com/dimfeld/httptreemux",
-			"revision": "cf13f404cb13ff573314339e15e257cff8818a50",
-			"revisionTime": "2016-05-23T03:51:43Z",
-			"version": "=contextmux",
-			"versionExact": "contextmux"
+			"revision": "96acf0909c0b45ebf4a25a816cedc6d317e63679",
+			"revisionTime": "2016-09-14T05:32:48Z",
+			"version": "v3.3.0",
+			"versionExact": "v3.3.0"
 		},
 		{
 			"path": "github.com/gorilla/mux",
