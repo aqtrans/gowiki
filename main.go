@@ -2495,6 +2495,8 @@ func bleveIndex() {
 	timestamp := "2006-01-02 at 03:04:05PM"
 	index, err = bleve.Open("./data/index.bleve")
 
+	log.Println("Search crawling: started")
+
 	// If index exists, crawl and re-index
 	if err == nil {
 		fileList, flerr := gitLs()
@@ -2700,6 +2702,8 @@ func bleveIndex() {
 
 	}
 
+	log.Println("Search crawling: done")
+
 }
 
 // Simple function to get the httptreemux params, setting it blank if there aren't any
@@ -2898,19 +2902,23 @@ func crawlWiki() {
 // This should be all the stuff we need to be refreshed on startup and when pages are saved
 func refreshStuff() {
 	// Update search index
-	bleveIndex()
+	go bleveIndex()
 
 	// Crawl for new favorites only on startup and save
+	log.Println("Fav crawling: started")
 	err := filepath.Walk(viper.GetString("WikiDir"), readFavs)
 	if err != nil {
 		log.Println("init: unable to crawl for favorites")
 	}
+	log.Println("Fav crawling: done")
 
 	// Crawl for tags only on startup and save
+	log.Println("Tag crawling: started")
 	err = filepath.Walk(viper.GetString("WikiDir"), readTags)
 	if err != nil {
 		log.Println("init: unable to crawl for tags")
 	}
+	log.Println("Tag crawling: done")
 }
 
 func markdownPreview(w http.ResponseWriter, r *http.Request) {
