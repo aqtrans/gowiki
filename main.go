@@ -953,9 +953,6 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 	// Render remaining content after frontmatter
 	md := markdownRender(content)
 	//md := commonmarkRender(content)
-	if fm.Public {
-		log.Println("Public page!")
-	}
 	if fm.Title != "" {
 		pagetitle = fm.Title
 	} else {
@@ -1838,10 +1835,6 @@ func loadWiki(name string) (*wiki, error) {
 		content = []byte("")
 	}
 
-	// TODO: improve this so private pages are actually protected
-	if fm.Public {
-		log.Println("Public page!")
-	}
 	if fm.Title != "" {
 		pagetitle = fm.Title
 	} else {
