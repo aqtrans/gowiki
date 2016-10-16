@@ -11,12 +11,15 @@ package main
 //TODO:
 // - wikidata should be periodically pushed to git@jba.io:conf/gowiki-data.git
 //    - Unsure how/when to do this, possibly in a go-routine after every commit?
+// - WRITE SOME TESTS!!
+//   - Mainly testing Admin, Public, and Private/default pages
 
 // x GUI for Tags - taggle.js should do this for me
 // x LDAP integration
 // - Buttons
 // x Private pages
 // - Tests
+// x cache gitLs output, based on latest sha1
 
 // YAML frontmatter based on http://godoc.org/j4k.co/fmatter
 
@@ -1034,7 +1037,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 
 	// ~~Currently doing a filepath.Walk over cfg.WikiDir to build a list of wiki pages~~
 	// ~~But since we use git...should we use git to retrieve the list?~~
-	fileList := []string{}
+	//fileList := []string{}
+
 	//privFileList := []string{}
 
 	/*_ = filepath.Walk(cfg.WikiDir, func(path string, f os.FileInfo, err error) error {
@@ -1080,6 +1084,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		fileList = append(fileList, path)
 		return nil
 	})*/
+
+	/*
 
 	fileList, err := gitLs()
 	if err != nil {
@@ -1197,7 +1203,10 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
+	
 	l := &listPage{p, wps, publicwps, adminwps}
+	*/
+	l := &listPage{p, wikiList["private"], wikiList["public"], wikiList["admin"]}
 	renderTemplate(w, r.Context(), "list.tmpl", l)
 }
 
@@ -2293,14 +2302,8 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		// and call the provided handler 'fn'
 
 		params := getParams(r.Context())
-
-		// Replacing these for now:
 		name := params["name"]
 		fullname := filepath.Join(viper.GetString("WikiDir"), name)
-
-		//dir := filepath.Dir(name)
-		//wikipage := cfg.WikiDir + name
-
 		username, isAdmin := auth.GetUsername(r.Context())
 
 		// Check if file exists before doing anything else
@@ -2329,14 +2332,13 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 
 		// Read YAML frontmatter into fm
 		// If err, just return, as file should not contain frontmatter
-		fmbytes, _, err := readFileAndFront(fullname)
-		if err != nil {
-			log.Println(err)
+		fmbytes, _, fmberr := readFileAndFront(fullname)
+		if fmberr != nil {
+			log.Println(fmberr)
 			return
 		}
-		var fm frontmatter
-		fm, err = marshalFrontmatter(fmbytes)
-		if err != nil {
+		fm, fmerr := marshalFrontmatter(fmbytes)
+		if fmerr != nil {
 			log.Println("YAML unmarshal error in: " + name)
 			return
 		}
@@ -2355,20 +2357,19 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		}
 
 		// If this is a public page, just serve it
-		if err == nil && fm.Public {
+		if fm.Public {
 			fn(w, r, name)
 			return
 		}
-		// If this is an admin page, check if we're admin before serving
-		if err == nil && fm.Admin && !isAdmin {
+		// If this is an admin page, check if user is admin before serving
+		if fm.Admin && !isAdmin {
 			log.Println(username + " attempting to access restricted URL.")
 			auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 
-		// If not logged in
-		//if username == "" {
+		// If not logged in, mitigate, as the page is presumed private
 		if !auth.IsLoggedIn(r.Context()) {
 			rurl := r.URL.String()
 			httputils.Debugln("wikiHandler mitigating: " + r.Host + rurl)
@@ -2773,6 +2774,8 @@ func search(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, r.Context(), "search_results.tmpl", s)
 }
 
+// crawlWiki builds a list of wiki pages, stored in memory
+//  saves time to reference this, rebuilding on saving
 func crawlWiki() {
 
 	fileList, err := gitLs()
@@ -2787,8 +2790,8 @@ func crawlWiki() {
 		// If using Git, build the full path:
 		fullname := filepath.Join(viper.GetString("WikiDir"), file)
 		//file = viper.GetString("WikiDir")+file
-		log.Println(file)
-		log.Println(fullname)
+		//log.Println(file)
+		//log.Println(fullname)
 
 		// check if the source dir exist
 		src, err := os.Stat(fullname)
@@ -2887,6 +2890,9 @@ func crawlWiki() {
 		}
 
 	}
+	if wikiList == nil {
+		wikiList = make(map[string][]*wiki)
+	}	
 	wikiList["public"] = publicwps
 	wikiList["admin"] = adminwps
 	wikiList["private"] = wps
@@ -2896,6 +2902,9 @@ func crawlWiki() {
 func refreshStuff() {
 	// Update search index
 	go bleveIndex()
+
+	// Update list of wiki pages
+	go crawlWiki()
 
 	// Crawl for new favorites only on startup and save
 	log.Println("Fav crawling: started")
