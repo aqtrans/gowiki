@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
+	"log"
 	"testing"
 	//"github.com/drewolson/testflight"
 	"net/http"
@@ -13,11 +14,12 @@ import (
 	//"fmt"
 	//"log"
 	"context"
-	"github.com/dimfeld/httptreemux"
-	"jba.io/go/auth"
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/dimfeld/httptreemux"
+	"jba.io/go/auth"
 	//"jba.io/go/utils"
 	//"github.com/boltdb/bolt"
 	"github.com/spf13/viper"
@@ -205,50 +207,79 @@ func TestHealthCheckHandler(t *testing.T) {
 }
 
 func TestNewHandler(t *testing.T) {
-	//setup()
+	db := mustOpenDB()
+	auth.Authdb = db.AuthDB
+	//auth.Authdb.DB = db.DB
+	autherr := auth.AuthDbInit()
+	if autherr != nil {
+		log.Fatal(autherr)
+	}
+	defer db.MustClose()
+	err := riceInit()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Create a request to pass to our handler.
 	form := url.Values{}
 	form.Add("newwiki", "omg/yeah/what")
-	//log.Println(form)
 	reader = strings.NewReader(form.Encode())
 	req, err := http.NewRequest("POST", "/new", reader)
 	if err != nil {
 		t.Fatal(err)
 	}
-	//log.Println(reader)
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	rr := httptest.NewRecorder()
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
+		Username: "admin",
+		IsAdmin:  true,
+	})
+	rctx := req.WithContext(ctx)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	handler := http.HandlerFunc(newHandler)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	handler.ServeHTTP(rr, req)
-
-	//log.Println(rr.Header())
+	handler.ServeHTTP(rr, rctx)
 
 	// Check the status code is what we expect.
-	if status := rr.Code; status != http.StatusTemporaryRedirect {
+	if status := rr.Code; status != http.StatusNotFound {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusCreated)
+			status, http.StatusNotFound)
 	}
 
 	//log.Println(rr.Header().Get("Location"))
-
-	// Check the response body is what we expect.
-	expected := `/edit/omg/yeah/what`
-	if rr.Header().Get("Location") != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			rr.Header().Get("Location"), expected)
-	}
+	/*
+		// Check the response body is what we expect.
+		expected := `/edit/omg/yeah/what`
+		if rr.Header().Get("Location") != expected {
+			t.Errorf("handler returned unexpected body: got %v want %v",
+				rr.Header().Get("Location"), expected)
+		}
+	*/
 
 }
 
 // TestIndex tests if viewing the index page, as a logged in user, properly returns a 200
 func TestIndexPage(t *testing.T) {
+	db := mustOpenDB()
+	auth.Authdb = db.AuthDB
+	//auth.Authdb.DB = db.DB
+	autherr := auth.AuthDbInit()
+	if autherr != nil {
+		log.Fatal(autherr)
+	}
+	defer db.MustClose()
+	err := riceInit()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("GET", "/", nil)
@@ -256,17 +287,7 @@ func TestIndexPage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler := http.HandlerFunc(wikiHandler(viewHandler))
-
-	db := mustOpenDB()
-	t.Log(db.Path())
-	auth.Authdb = db.AuthDB
-	//auth.Authdb.DB = db.DB
-	autherr := auth.AuthDbInit()
-	if autherr != nil {
-		t.Fatal(autherr)
-	}
-	defer db.MustClose()
+	handler := http.HandlerFunc(indexHandler)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -275,9 +296,9 @@ func TestIndexPage(t *testing.T) {
 		Username: "admin",
 		IsAdmin:  true,
 	})
-	params := make(map[string]string)
-	params["name"] = "index"
-	ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
+	//params := make(map[string]string)
+	//params["name"] = "index"
+	//ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
 	rctx := req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
@@ -305,6 +326,19 @@ func TestIndexPage(t *testing.T) {
 
 // TestIndexHistoryPage tests if viewing the history of the index page, as a logged in user, properly returns a 200
 func TestIndexHistoryPage(t *testing.T) {
+	db := mustOpenDB()
+	auth.Authdb = db.AuthDB
+	//auth.Authdb.DB = db.DB
+	autherr := auth.AuthDbInit()
+	if autherr != nil {
+		log.Fatal(autherr)
+	}
+	defer db.MustClose()
+	err := riceInit()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("GET", "/history/index", nil)
@@ -313,16 +347,6 @@ func TestIndexHistoryPage(t *testing.T) {
 	}
 
 	handler := http.HandlerFunc(wikiHandler(historyHandler))
-
-	db := mustOpenDB()
-	t.Log(db.Path())
-	auth.Authdb = db.AuthDB
-	//auth.Authdb.DB = db.DB
-	autherr := auth.AuthDbInit()
-	if autherr != nil {
-		t.Fatal(autherr)
-	}
-	defer db.MustClose()
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -339,7 +363,7 @@ func TestIndexHistoryPage(t *testing.T) {
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
 	handler.ServeHTTP(rr, rctx)
-	//t.Log(rr.Body.String())
+	t.Log(rr.Body.String())
 	//t.Log(randPage)
 	//t.Log(rr.Code)
 
@@ -413,6 +437,53 @@ func TestIndexEditPage(t *testing.T) {
 	           rr.Body.String(), expected)
 	   }
 	*/
+}
+
+// TestDirBaseHandler tests if trying to create a file 'inside' a file fails
+func TestDirBaseHandler(t *testing.T) {
+	//setup()
+	// Create a request to pass to our handler.
+	form := url.Values{}
+	form.Add("newwiki", "index/what/omg")
+	//log.Println(form)
+	reader = strings.NewReader(form.Encode())
+	req, err := http.NewRequest("POST", "/new", reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	//log.Println(reader)
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	rr := httptest.NewRecorder()
+
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	handler := http.HandlerFunc(newHandler)
+
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	handler.ServeHTTP(rr, req)
+
+	//log.Println(rr.Header())
+	//log.Println(rr.Body)
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusInternalServerError {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusInternalServerError)
+	}
+	/*
+		//log.Println(rr.Header().Get("Location"))
+
+		// Check the response body is what we expect.
+
+			expected := `/edit/omg/yeah/what`
+			if rr.Header().Get("Location") != expected {
+				t.Errorf("handler returned unexpected body: got %v want %v",
+					rr.Header().Get("Location"), expected)
+			}
+	*/
+
 }
 
 func TestMarkdownRender(t *testing.T) {
