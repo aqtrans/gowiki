@@ -309,9 +309,9 @@ func TestIndexPage(t *testing.T) {
 	//t.Log(rr.Code)
 
 	// Check the status code is what we expect.
-	if status := rr.Code; status != http.StatusOK {
+	if status := rr.Code; status != http.StatusSeeOther {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
+			status, http.StatusSeeOther)
 	}
 
 	/*
