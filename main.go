@@ -13,6 +13,7 @@ package main
 //    - Unsure how/when to do this, possibly in a go-routine after every commit?
 // - WRITE SOME TESTS!!
 //   - Mainly testing Admin, Public, and Private/default pages
+// - Move some of the wikiHandler logic to viewHandler
 
 // x GUI for Tags - taggle.js should do this for me
 // x LDAP integration
@@ -117,10 +118,47 @@ const (
 	*/
 )
 
-func markdownCommon(input []byte) []byte {
-	renderer := blackfriday.HtmlRenderer(commonHtmlFlags, "", "")
-	return blackfriday.MarkdownOptions(input, renderer, blackfriday.Options{
+type renderer struct {
+	*blackfriday.Html
+}
+
+func markdownRender(input []byte) string {
+	renderer := &renderer{Html: blackfriday.HtmlRenderer(commonHtmlFlags, "", "").(*blackfriday.Html)}
+
+	unsanitized := blackfriday.MarkdownOptions(input, renderer, blackfriday.Options{
 		Extensions: commonExtensions})
+	p := bluemonday.UGCPolicy()
+	p.AllowElements("nav")
+
+	return string(p.SanitizeBytes(unsanitized))
+}
+
+// Task List support.
+func (r *renderer) ListItem(out *bytes.Buffer, text []byte, flags int) {
+	switch {
+	case bytes.HasPrefix(text, []byte("[ ] ")):
+		text = append([]byte(`<input type="checkbox" disabled="">`), text[3:]...)
+	case bytes.HasPrefix(text, []byte("[x] ")) || bytes.HasPrefix(text, []byte("[X] ")):
+		text = append([]byte(`<input type="checkbox" checked="" disabled="">`), text[3:]...)
+	}
+	r.Html.ListItem(out, text, flags)
+}
+
+func (r *renderer) NormalText(out *bytes.Buffer, text []byte) {
+
+	switch {
+	case linkPattern.Match(text):
+		//log.Println("text " + string(text))
+		domain := "//" + viper.GetString("Domain")
+		//log.Println(string(linkPattern.ReplaceAll(text, []byte(domain+"/$1"))))
+		link := linkPattern.ReplaceAll(text, []byte(domain+"/$1"))
+		title := linkPattern.ReplaceAll(text, []byte("/$1"))
+		r.Html.Link(out, link, []byte(""), title)
+		return
+	}
+	r.Html.NormalText(out, text)
+	//log.Println("title " + string(title))
+	//log.Println("content " + string(content))
 }
 
 type configuration struct {
@@ -486,6 +524,7 @@ func jsTags(tagS []string) string {
 	return tags
 }
 
+/*
 // Special Markdown render helper to convert [/empty/wiki/links]() to a full <a href> link
 // Borrowed most of this from https://raw.githubusercontent.com/gogits/gogs/master/modules/markdown/markdown.go
 func replaceInterwikiLinks(rawBytes []byte, urlPrefix string) []byte {
@@ -499,9 +538,10 @@ func replaceInterwikiLinks(rawBytes []byte, urlPrefix string) []byte {
 			rawBytes = []byte(fmt.Sprintf(`<a href="%s%s">%s</a>`, urlPrefix, m2, m2, ))
 			//rawBytes = link
 		}
-	*/
+
 	//return rawBytes
 }
+*/
 
 // CUSTOM GIT WRAPPERS
 // Construct an *exec.Cmd for `git {args}` with a workingDirectory
@@ -787,6 +827,7 @@ func isPrivateA(tags []string) bool {
 	return false
 }
 
+/*
 func markdownRender(content []byte) string {
 	//md := markdown.New(markdown.HTML(true), markdown.Nofollow(true), markdown.Breaks(true))
 	//mds := md.RenderToString(content)
@@ -806,6 +847,7 @@ func markdownRender(content []byte) string {
 	//return mds
 	return string(html)
 }
+*/
 
 /* Markdown renderers used for benchmarks
 // May come back to using Blackfriday.v2 when it's stabalized,
@@ -1568,8 +1610,8 @@ func checkName(name string) (string, error) {
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "indexHandler")
 
-	//http.Redirect(w, r, "/index", http.StatusSeeOther)
-	viewHandler(w, r, "index")
+	http.Redirect(w, r, "/index", http.StatusSeeOther)
+	//viewHandler(w, r, "index")
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
@@ -2390,6 +2432,31 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, `{"alive": true}`)
 }
 
+func checkFiletype(fullname string) string {
+	// Detect filetype first
+	file, err := os.Open(fullname)
+	if err != nil {
+		log.Println(err)
+	}
+	buff := make([]byte, 512)
+	_, err = file.Read(buff)
+	if err != nil {
+		log.Println(err)
+	}
+	filetype := http.DetectContentType(buff)
+
+	//log.Println(string(buff[:3]))
+	//switch filetype {
+	//case "application/octet-stream":
+	// Try and detect mis-detected wiki pages
+	if bytes.Equal(buff[:3], []byte("---")) {
+		filetype = "text/plain; charset=utf-8"
+	}
+	//}
+	log.Println(filetype)
+	return filetype
+}
+
 // wikiHandler wraps around all wiki page handlers
 // Currently it retrieves the page name from params, checks for file existence, and checks for private pages
 func wikiHandler(fn wHandler) http.HandlerFunc {
@@ -2422,6 +2489,13 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		} else if feErr != nil {
 			httpErrorHandler(w, r, feErr)
 			return
+		}
+
+		// Detect filetypes
+		filetype := checkFiletype(fullname)
+		if filetype != "text/plain; charset=utf-8" {
+
+			http.ServeFile(w, r, fullname)
 		}
 
 		// Read YAML frontmatter into fm
