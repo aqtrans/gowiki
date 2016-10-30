@@ -1610,7 +1610,7 @@ func checkName(name string) (string, error) {
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "indexHandler")
 
-	http.Redirect(w, r, "/index", http.StatusSeeOther)
+	http.Redirect(w, r, "/index", http.StatusOK)
 	//viewHandler(w, r, "index")
 }
 
@@ -2453,7 +2453,7 @@ func checkFiletype(fullname string) string {
 		filetype = "text/plain; charset=utf-8"
 	}
 	//}
-	log.Println(filetype)
+	//log.Println(filetype)
 	return filetype
 }
 
