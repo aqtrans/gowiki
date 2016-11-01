@@ -2038,6 +2038,12 @@ func (wiki *wiki) save() error {
 	}
 
 	// Create a buffer where we build the content of the file
+	f, err := os.Open(fullfilename)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+
 	buffer := new(bytes.Buffer)
 	_, err = buffer.Write([]byte("---\n"))
 	if err != nil {
@@ -2062,7 +2068,12 @@ func (wiki *wiki) save() error {
 	}
 
 	// Write contents of above buffer, which should be Frontmatter+WikiContent
-	ioutil.WriteFile(fullfilename, buffer.Bytes(), 0755)
+	//ioutil.WriteFile(fullfilename, buffer.Bytes(), 0755)
+	w := bufio.NewWriter(f)
+	_, err = w.Write(buffer.Bytes())
+	if err != nil {
+		return err
+	}
 
 	gitfilename := dir + filename
 
@@ -2444,6 +2455,8 @@ func checkFiletype(fullname string) string {
 		log.Println(err)
 	}
 	filetype := http.DetectContentType(buff)
+
+	log.Println(filetype)
 
 	//log.Println(string(buff[:3]))
 	//switch filetype {
