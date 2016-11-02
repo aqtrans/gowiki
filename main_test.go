@@ -676,7 +676,12 @@ func BenchmarkReadFront(b *testing.B) {
 
 func BenchmarkReadFrontBuffer(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		readFrontBuf("./tests/bench.md")
+		f, err := os.Open("./tests/bench.md")
+		if err != nil {
+			log.Println(err)
+		}
+		defer f.Close()
+		readWikiPage(f)
 	}
 }
 
