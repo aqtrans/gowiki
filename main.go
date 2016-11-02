@@ -1336,16 +1336,20 @@ func readFront(data []byte) (fmdata []byte, content []byte, err error) {
 	return data[yamlStart:yamlEnd], data[yamlEnd:], nil
 }
 
-func readFrontBuf(filepath string) (fmdata []byte, content []byte, err error) {
+func readWikiPage(reader io.Reader) (fmdata []byte, content []byte, err error) {
+	/* 
+	This should be taken care of before calling this func
 	f, err := os.Open(filepath)
 	if err != nil {
 		log.Println(err)
 	}
 	defer f.Close()
+	*/
+
+	s := bufio.NewScanner(reader)
 
 	topbuf := new(bytes.Buffer)
 	bottombuf := new(bytes.Buffer)
-	s := bufio.NewScanner(f)
 	line := 0
 	start := false
 	end := false
