@@ -1285,9 +1285,16 @@ func readFile(filepath string) []byte {
 	return data
 }
 
-func readFileAndFront(filepath string) (fmdata []byte, content []byte, err error) {
-	data := readFile(filepath)
-	return readFront(data)
+func readFileAndFront(filename string) (fmdata []byte, content []byte, err error) {
+	//data := readFile(filepath)
+	//return readFront(data)
+	//fullfilename := filepath.Join(viper.GetString("WikiDir"), filename)
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	return readWikiPage(f)
 }
 
 func readFront(data []byte) (fmdata []byte, content []byte, err error) {
@@ -1337,50 +1344,115 @@ func readFront(data []byte) (fmdata []byte, content []byte, err error) {
 }
 
 func readWikiPage(reader io.Reader) (fmdata []byte, content []byte, err error) {
-	/* 
-	This should be taken care of before calling this func
-	f, err := os.Open(filepath)
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
+	/*
+		This should be taken care of before calling this func
+		f, err := os.Open(filepath)
+		if err != nil {
+			log.Println(err)
+		}
+		defer f.Close()
 	*/
 
 	s := bufio.NewScanner(reader)
+	s.Split(scanWiki)
 
 	topbuf := new(bytes.Buffer)
 	bottombuf := new(bytes.Buffer)
-	line := 0
-	start := false
-	end := false
+	//line := 0
+	//start := false
+	//end := false
+	//line := 0
 	for s.Scan() {
-		//log.Println(end)
-		if start && end {
+		//log.Println(s.Text())
+		if bytes.Equal(s.Bytes()[:4], []byte("---\n")) {
+			topbuf.Write(s.Bytes())
+		} else {
 			bottombuf.Write(s.Bytes())
-			bottombuf.WriteString("\n")
 		}
-		if start && !end {
-			// Anything after the --- tag, add to the topbuffer
-			if s.Text() != yamlsep {
-				topbuf.Write(s.Bytes())
-				topbuf.WriteString("\n")
+		//log.Println(end)
+		/*
+			if start && end {
+				bottombuf.Write(s.Bytes())
+				bottombuf.WriteString("\n")
 			}
-			if s.Text() == yamlsep {
-				end = true
+			if start && !end {
+				// Anything after the --- tag, add to the topbuffer
+				if s.Text() != yamlsep {
+					topbuf.Write(s.Bytes())
+					topbuf.WriteString("\n")
+				}
+				if s.Text() == yamlsep {
+					end = true
+				}
 			}
-		}
 
-		// Hopefully catch the first --- tag
-		if s.Text() == yamlsep && !start {
-			start = true
-		}
-		line = line + 1
+			// Hopefully catch the first --- tag
+			if s.Text() == yamlsep && !start {
+				start = true
+			}
+			line = line + 1
+		*/
 	}
 	//log.Println("TOP: ")
 	//log.Println(topbuf.String())
 	//log.Println("-----")
 	//log.Println(bottombuf.String())
 	return topbuf.Bytes(), bottombuf.Bytes(), nil
+}
+
+// ScanLines is a split function for a Scanner that returns each line of
+// text, stripped of any trailing end-of-line marker. The returned line may
+// be empty. The end-of-line marker is one optional carriage return followed
+// by one mandatory newline. In regular expression notation, it is `\r?\n`.
+// The last non-empty line of input will be returned even if it has no
+// newline.
+func scanWiki(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+	// Check for beginning ---
+	if i := strings.Index(string(data), yamlsep); i == 0 {
+		//log.Println("Start tag detected")
+		//return 4, data[4:], nil
+		// Check for an ending ... before a ---
+		if i3 := strings.Index(string(data[3:]), "..."); i3 > 0 {
+			//log.Println("End period tag detected")
+			//log.Println(i2)
+			//log.Println(string(data[i:]))
+			return i3 + 6, data[:i3+3], nil
+		}
+		// Check for the next ---
+		if i2 := strings.Index(string(data[3:]), yamlsep); i2 > 0 {
+			//log.Println("End hyphen tag detected")
+			//log.Println(i2)
+			//log.Println(string(data[i:]))
+			return i2 + 6, data[:i2+3], nil
+		}
+
+	}
+
+	/*
+		if i := strings.Index(string(data), "---\n"); i >= 0 {
+			log.Println(i)
+
+				if i2 := strings.Index(string(data[4:]), "---"); i2 >= 0 {
+					log.Println(string(data[i2+4:]))
+					return i2 + 1, data[i2+4:], nil
+				}
+			//log.Println(string(data[4:]))
+			return i + 4, data[0:i], nil
+		}
+			if i := bytes.IndexByte(data, '\n'); i >= 0 {
+				// We have a full newline-terminated line.
+				return i + 1, dropCR(data[0:i]), nil
+			}
+	*/
+	// If we're at EOF, we have a final, non-terminated line. Return it.
+	if atEOF {
+		return len(data), data, nil
+	}
+	// Request more data.
+	return 0, nil, nil
 }
 
 func marshalFrontmatter(fmdata []byte) (fm frontmatter, err error) {
@@ -2460,17 +2532,18 @@ func checkFiletype(fullname string) string {
 	}
 	filetype := http.DetectContentType(buff)
 
-	log.Println(filetype)
+	//log.Println(filetype)
 
 	//log.Println(string(buff[:3]))
 	//switch filetype {
 	//case "application/octet-stream":
 	// Try and detect mis-detected wiki pages
-	if bytes.Equal(buff[:3], []byte("---")) {
+	if bytes.Equal(buff[:3], []byte("---")) && filetype != "text/plain; charset=utf-8" {
+		log.Println(fullname + " has malformed filetype.")
 		filetype = "text/plain; charset=utf-8"
 	}
 	//}
-	log.Println(fullname + " is " + filetype)
+	//log.Println(fullname + " is " + filetype)
 	return filetype
 }
 
@@ -2525,6 +2598,9 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		fm, fmerr := marshalFrontmatter(fmbytes)
 		if fmerr != nil {
 			log.Println("YAML unmarshal error in: " + name)
+			if fmbytes != nil {
+				log.Println(string(fmbytes))
+			}
 			return
 		}
 
@@ -2706,6 +2782,9 @@ func bleveIndex() {
 				if err != nil {
 					log.Println("YAML unmarshal error in: " + file)
 					log.Println(err)
+					if fmbytes != nil {
+						log.Println(string(fmbytes))
+					}
 				}
 				if fm.Public {
 					//log.Println("Private page!")
@@ -3113,6 +3192,22 @@ func markdownPreview(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(markdownRender([]byte(r.FormValue("md")))))
 }
 
+func testStuff() {
+	//f, err := os.Open("./tests/yamltest")
+	f, err := os.Open("./tests/yamltest2")
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	fm, c, err := readWikiPage(f)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println("FM " + string(fm))
+	log.Println("C " + string(c))
+
+}
+
 func main() {
 
 	//viper.WatchConfig()
@@ -3137,6 +3232,8 @@ func main() {
 	initWikiDir()
 
 	refreshStuff()
+
+	testStuff()
 
 	csrfSecure := true
 	if fLocal {
