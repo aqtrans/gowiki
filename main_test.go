@@ -671,13 +671,13 @@ func benchmarkIsPrivateArray(size int, b *testing.B) {
 func benchmarkReadFront(num int, b *testing.B) {
 	for i := 0; i < num; i++ {
 		for n := 0; n < b.N; n++ {
-			readFileAndFront("./tests/bench.md")
+			oldReadFileAndFront("./tests/gowiki-testdata/index")
 		}
 	}
 }
 
 func benchmarkReadFrontBuffer(num int, b *testing.B) {
-	f, err := os.Open("./tests/bench.md")
+	f, err := os.Open("./tests/gowiki-testdata/index")
 	if err != nil {
 		log.Println(err)
 	}
@@ -688,6 +688,20 @@ func benchmarkReadFrontBuffer(num int, b *testing.B) {
 		}
 	}
 }
+
+func benchmarkReadFrontBufferSplit(num int, b *testing.B) {
+	f, err := os.Open("./tests/gowiki-testdata/index")
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	for i := 0; i < num; i++ {
+		for n := 0; n < b.N; n++ {
+			readWikiPage2(f)
+		}
+	}
+}
+
 
 func BenchmarkMarkdownRender(b *testing.B) {
 	for n := 0; n < b.N; n++ {
@@ -738,8 +752,9 @@ func BenchmarkMarkdown2Render(b *testing.B) {
 func BenchmarkIsPrivate10000(b *testing.B)      { benchmarkIsPrivate(10000, b) }
 func BenchmarkIsPrivateArray10000(b *testing.B) { benchmarkIsPrivateArray(10000, b) }
 
-func BenchmarkReadFront10000(b *testing.B)       { benchmarkReadFront(10000, b) }
-func BenchmarkReadFrontBuffer10000(b *testing.B) { benchmarkReadFrontBuffer(10, b) }
+func BenchmarkReadFront10(b *testing.B)       { benchmarkReadFront(10, b) }
+func BenchmarkReadFrontBuffer10(b *testing.B) { benchmarkReadFrontBuffer(10, b) }
+func BenchmarkReadFrontBufferSplit10(b *testing.B) { benchmarkReadFrontBufferSplit(10, b) }
 
 //func BenchmarkIsPrivate100000(b *testing.B) { benchmarkIsPrivate(100000, b) }
 //func BenchmarkIsPrivateArray100000(b *testing.B) { benchmarkIsPrivateArray(100000, b) }

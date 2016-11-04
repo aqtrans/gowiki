@@ -1297,6 +1297,20 @@ func readFileAndFront(filename string) (fmdata []byte, content []byte, err error
 	return readWikiPage(f)
 }
 
+func oldReadFileAndFront(filename string) (fmdata []byte, content []byte, err error) {
+	data := readFile(filename)
+	return readFront(data)
+	//fullfilename := filepath.Join(viper.GetString("WikiDir"), filename)
+	/*
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	return readWikiPage(f)
+	*/
+}
+
 func readFront(data []byte) (fmdata []byte, content []byte, err error) {
 	//defer utils.TimeTrack(time.Now(), "readFront")
 
@@ -1354,44 +1368,122 @@ func readWikiPage(reader io.Reader) (fmdata []byte, content []byte, err error) {
 	*/
 
 	s := bufio.NewScanner(reader)
-	s.Split(scanWiki)
+	//s.Split(scanWiki)
 
 	topbuf := new(bytes.Buffer)
 	bottombuf := new(bytes.Buffer)
-	//line := 0
-	//start := false
-	//end := false
-	//line := 0
+	line := 0
+	start := false
+	end := false
 	for s.Scan() {
 		//log.Println(s.Text())
+		/*
 		if bytes.Equal(s.Bytes()[:4], []byte("---\n")) {
 			topbuf.Write(s.Bytes())
 		} else {
 			bottombuf.Write(s.Bytes())
 		}
-		//log.Println(end)
-		/*
-			if start && end {
-				bottombuf.Write(s.Bytes())
-				bottombuf.WriteString("\n")
-			}
-			if start && !end {
-				// Anything after the --- tag, add to the topbuffer
-				if s.Text() != yamlsep {
-					topbuf.Write(s.Bytes())
-					topbuf.WriteString("\n")
-				}
-				if s.Text() == yamlsep {
-					end = true
-				}
-			}
-
-			// Hopefully catch the first --- tag
-			if s.Text() == yamlsep && !start {
-				start = true
-			}
-			line = line + 1
 		*/
+		//log.Println(end)
+		
+		if start && end {
+			bottombuf.Write(s.Bytes())
+			bottombuf.WriteString("\n")
+		}
+		if start && !end {
+			// Anything after the --- tag, add to the topbuffer
+			if s.Text() != yamlsep {
+				topbuf.Write(s.Bytes())
+				topbuf.WriteString("\n")
+			}
+			if s.Text() == yamlsep {
+				end = true
+			}
+		}
+
+		// Hopefully catch the first --- tag
+		if line == 0 && !start && !end {
+			if s.Text() == yamlsep {
+				start = true
+			} else {
+				log.Println("File does not seem to contain YAML")
+				log.Println(s.Text())
+				start = true
+				end = true
+			}
+			
+		}
+		line++
+		
+	}
+	//log.Println("TOP: ")
+	//log.Println(topbuf.String())
+	//log.Println("-----")
+	//log.Println(bottombuf.String())
+	return topbuf.Bytes(), bottombuf.Bytes(), nil
+}
+
+func readWikiPage2(reader io.Reader) (fmdata []byte, content []byte, err error) {
+	/*
+		This should be taken care of before calling this func
+		f, err := os.Open(filepath)
+		if err != nil {
+			log.Println(err)
+		}
+		defer f.Close()
+	*/
+
+	s := bufio.NewScanner(reader)
+	s.Split(scanWiki)
+
+	topbuf := new(bytes.Buffer)
+	bottombuf := new(bytes.Buffer)
+	line := 0
+	//start := false
+	//end := false
+	for s.Scan() {
+		//log.Println(line)
+		//log.Println(s.Text())
+		
+		if line == 0 && bytes.Equal(s.Bytes()[:4], []byte("---\n")) {
+			topbuf.Write(s.Bytes())
+		} else {
+			bottombuf.Write(s.Bytes())
+		}
+		/*
+		//log.Println(end)
+		
+		if start && end {
+			bottombuf.Write(s.Bytes())
+			bottombuf.WriteString("\n")
+		}
+		if start && !end {
+			// Anything after the --- tag, add to the topbuffer
+			if s.Text() != yamlsep {
+				topbuf.Write(s.Bytes())
+				topbuf.WriteString("\n")
+			}
+			if s.Text() == yamlsep {
+				end = true
+			}
+		}
+
+		// Hopefully catch the first --- tag
+		if !start && !end {
+			if s.Text() == yamlsep {
+				start = true
+			} else {
+				log.Println("File does not seem to contain YAML")
+				log.Println(s.Text())
+				start = true
+				end = true
+			}
+			
+		}
+		line = line + 1
+		*/
+		line++
+		
 	}
 	//log.Println("TOP: ")
 	//log.Println(topbuf.String())
