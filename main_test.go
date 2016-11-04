@@ -668,20 +668,24 @@ func benchmarkIsPrivateArray(size int, b *testing.B) {
 	}
 }
 
-func BenchmarkReadFront(b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		readFileAndFront("./tests/bench.md")
+func benchmarkReadFront(num int, b *testing.B) {
+	for i := 0; i < num; i++ {
+		for n := 0; n < b.N; n++ {
+			readFileAndFront("./tests/bench.md")
+		}
 	}
 }
 
-func BenchmarkReadFrontBuffer(b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		f, err := os.Open("./tests/bench.md")
-		if err != nil {
-			log.Println(err)
+func benchmarkReadFrontBuffer(num int, b *testing.B) {
+	f, err := os.Open("./tests/bench.md")
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	for i := 0; i < num; i++ {
+		for n := 0; n < b.N; n++ {
+			readWikiPage(f)
 		}
-		defer f.Close()
-		readWikiPage(f)
 	}
 }
 
@@ -733,6 +737,9 @@ func BenchmarkMarkdown2Render(b *testing.B) {
 
 func BenchmarkIsPrivate10000(b *testing.B)      { benchmarkIsPrivate(10000, b) }
 func BenchmarkIsPrivateArray10000(b *testing.B) { benchmarkIsPrivateArray(10000, b) }
+
+func BenchmarkReadFront10000(b *testing.B)       { benchmarkReadFront(10000, b) }
+func BenchmarkReadFrontBuffer10000(b *testing.B) { benchmarkReadFrontBuffer(10, b) }
 
 //func BenchmarkIsPrivate100000(b *testing.B) { benchmarkIsPrivate(100000, b) }
 //func BenchmarkIsPrivateArray100000(b *testing.B) { benchmarkIsPrivateArray(100000, b) }
