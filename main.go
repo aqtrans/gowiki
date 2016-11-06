@@ -77,6 +77,7 @@ type key int
 const TimerKey key = 0
 
 const yamlsep = "---"
+const yamlsep2 = "..."
 
 const (
 	commonHtmlFlags = 0 |
@@ -1005,18 +1006,14 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 	}
 
 	// Read YAML frontmatter into fm
-	fmbytes, content, err := readFront(body)
+	reader := bytes.NewReader(body)
+	fm, content, err := readWikiPage(reader)
 	if err != nil {
-		log.Println("viewCommitHandler readFront error:")
+		log.Println("viewCommitHandler readWikiPage error:")
 		log.Println(err)
 	}
 	if content == nil {
 		content = []byte("")
-	}
-
-	fm, err = marshalFrontmatter(fmbytes)
-	if err != nil {
-		log.Println(err)
 	}
 
 	// Render remaining content after frontmatter
@@ -1097,227 +1094,36 @@ func recentHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
-	//searchDir := cfg.WikiDir
 
 	p := loadPage(r)
 
-	// ~~Currently doing a filepath.Walk over cfg.WikiDir to build a list of wiki pages~~
-	// ~~But since we use git...should we use git to retrieve the list?~~
-	//fileList := []string{}
-
-	//privFileList := []string{}
-
-	/*_ = filepath.Walk(cfg.WikiDir, func(path string, f os.FileInfo, err error) error {
-		// check and skip .git
-		if f.IsDir() && f.Name() == ".git" {
-			return filepath.SkipDir
-		}
-		//log.Println(path)
-		// If not .git, check if there is an index file within
-		// If there is, check the frontmatter for private/admin
-		// If THAT exists, we'll set SkipDir, and run a separate function for these dirs
-		/*if f.IsDir() && f.Name() != ".git" {
-			dirindexpath := path + "/" + "index"
-			//log.Println(dirindexpath)
-			dirindex, _ := os.Open(dirindexpath)
-			_, dirindexfierr := dirindex.Stat()
-			if !os.IsNotExist(dirindexfierr) {
-				dread, err := ioutil.ReadFile(dirindexpath)
-				if err != nil {
-					log.Println("wikiauth dir index ReadFile error:")
-					log.Println(err)
-				}
-
-				// Read YAML frontmatter into fm
-				// If err, just return, as file should not contain frontmatter
-				var dfm frontmatter
-				dfm, _, err = readFront(dread)
-				if err != nil {
-					log.Println("wikiauth readFront error:")
-					log.Println(err)
-					//return nil
-				}
-				if err == nil {
-					if dfm.Private || dfm.Admin {
-						//log.Println(path)
-						//log.Println(filepath.Dir(path))
-						//log.Println(f.Name())
-						//return filepath.SkipDir
-					}
-				}
-			}
-		}
-		fileList = append(fileList, path)
-		return nil
-	})*/
-
-	/*
-
-		fileList, err := gitLs()
-		if err != nil {
-			panic(err)
-		}
-
-		//w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		//w.WriteHeader(200)
-
-		var wps []*wiki
-		var publicwps []*wiki
-		var adminwps []*wiki
-		for _, file := range fileList {
-
-			// If using Git, build the full path:
-			fullname := filepath.Join(viper.GetString("WikiDir"), file)
-			//file = viper.GetString("WikiDir")+file
-			//log.Println(file)
-			//log.Println(fullname)
-
-			// check if the source dir exist
-			src, err := os.Stat(fullname)
-			if err != nil {
-				panic(err)
-			}
-			// If not a directory, get frontmatter from file and add to list
-			if !src.IsDir() {
-
-				_, filename := filepath.Split(file)
-
-				// If this is an absolute path, including the cfg.WikiDir, trim it
-				//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
-				//fileURL := strings.TrimPrefix(file, withoutdotslash)
-
-				var wp *wiki
-				var fm frontmatter
-				var pagetitle string
-
-				//log.Println(file)
-
-				// Read YAML frontmatter into fm
-				fmbytes, _, err := readFileAndFront(fullname)
-				if err != nil {
-					log.Println(err)
-				}
-				fm, err = marshalFrontmatter(fmbytes)
-				if err != nil {
-					log.Println("YAML unmarshal error in: " + file)
-					log.Println(err)
-				}
-
-				if fm.Public {
-					//log.Println("Private page!")
-				}
-				pagetitle = filename
-				if fm.Title != "" {
-					pagetitle = fm.Title
-				}
-				if fm.Title == "" {
-					fm.Title = file
-				}
-				if fm.Public != true {
-					fm.Public = false
-				}
-				if fm.Admin != true {
-					fm.Admin = false
-				}
-				if fm.Favorite != true {
-					fm.Favorite = false
-				}
-				if fm.Tags == nil {
-					fm.Tags = []string{}
-				}
-				ctime, err := gitGetCtime(file)
-				if err != nil && err != ErrNotInGit {
-					panic(err)
-				}
-				mtime, err := gitGetMtime(file)
-				if err != nil {
-					panic(err)
-				}
-
-				// If pages are Admin or Public, add to a separate wikiPage slice
-				//   So we only check on rendering
-				if fm.Admin {
-					wp = &wiki{
-						Title:       pagetitle,
-						Filename:    file,
-						Frontmatter: &fm,
-						CreateTime:  ctime,
-						ModTime:     mtime,
-					}
-					adminwps = append(adminwps, wp)
-				} else if fm.Public {
-					wp = &wiki{
-						Title:       pagetitle,
-						Filename:    file,
-						Frontmatter: &fm,
-						CreateTime:  ctime,
-						ModTime:     mtime,
-					}
-					publicwps = append(publicwps, wp)
-				} else {
-					wp = &wiki{
-						Title:       pagetitle,
-						Filename:    file,
-						Frontmatter: &fm,
-						CreateTime:  ctime,
-						ModTime:     mtime,
-					}
-					wps = append(wps, wp)
-				}
-				//log.Println(string(body))
-				//log.Println(string(wp.wiki.Content))
-			}
-
-		}
-
-		l := &listPage{p, wps, publicwps, adminwps}
-	*/
 	l := &listPage{p, wikiList["private"], wikiList["public"], wikiList["admin"]}
 	renderTemplate(w, r.Context(), "list.tmpl", l)
 }
 
-func readFile(filepath string) []byte {
-	data, err := ioutil.ReadFile(filepath)
+func readFileAndFront(filename string) (frontmatter, []byte, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	return readWikiPage(f)
+}
+
+func oldReadFileAndFront(filename string) ([]byte, []byte, error) {
+	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		panic(err)
-		return nil
 	}
-	return data
+	return oldreadFront(data)
 }
 
-func readFileAndFront(filename string) (fmdata []byte, content []byte, err error) {
-	//data := readFile(filepath)
-	//return readFront(data)
-	//fullfilename := filepath.Join(viper.GetString("WikiDir"), filename)
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-	return readWikiPage(f)
-}
-
-func oldReadFileAndFront(filename string) (fmdata []byte, content []byte, err error) {
-	data := readFile(filename)
-	return readFront(data)
-	//fullfilename := filepath.Join(viper.GetString("WikiDir"), filename)
-	/*
-	f, err := os.Open(filename)
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-	return readWikiPage(f)
-	*/
-}
-
-func readFront(data []byte) (fmdata []byte, content []byte, err error) {
-	//defer utils.TimeTrack(time.Now(), "readFront")
-
+func oldreadFront(data []byte) ([]byte, []byte, error) {
 	r := bytes.NewBuffer(data)
 
 	// eat away starting whitespace
 	var ch rune = ' '
+	var err error
 	for unicode.IsSpace(ch) {
 		ch, _, err = r.ReadRune()
 		if err != nil {
@@ -1357,70 +1163,85 @@ func readFront(data []byte) (fmdata []byte, content []byte, err error) {
 	return data[yamlStart:yamlEnd], data[yamlEnd:], nil
 }
 
-func readWikiPage(reader io.Reader) (fmdata []byte, content []byte, err error) {
-	/*
-		This should be taken care of before calling this func
-		f, err := os.Open(filepath)
-		if err != nil {
-			log.Println(err)
-		}
-		defer f.Close()
-	*/
+func readWikiPage(reader io.Reader) (frontmatter, []byte, error) {
 
 	s := bufio.NewScanner(reader)
-	//s.Split(scanWiki)
 
 	topbuf := new(bytes.Buffer)
 	bottombuf := new(bytes.Buffer)
-	line := 0
 	start := false
 	end := false
 	for s.Scan() {
-		//log.Println(s.Text())
-		/*
-		if bytes.Equal(s.Bytes()[:4], []byte("---\n")) {
-			topbuf.Write(s.Bytes())
-		} else {
-			bottombuf.Write(s.Bytes())
-		}
-		*/
-		//log.Println(end)
-		
+
 		if start && end {
 			bottombuf.Write(s.Bytes())
 			bottombuf.WriteString("\n")
 		}
 		if start && !end {
 			// Anything after the --- tag, add to the topbuffer
-			if s.Text() != yamlsep {
+			if s.Text() != yamlsep || s.Text() != yamlsep2 {
 				topbuf.Write(s.Bytes())
 				topbuf.WriteString("\n")
 			}
-			if s.Text() == yamlsep {
+			if s.Text() == yamlsep || s.Text() == yamlsep2 {
 				end = true
 			}
 		}
 
 		// Hopefully catch the first --- tag
-		if line == 0 && !start && !end {
+		if !start && !end {
 			if s.Text() == yamlsep {
 				start = true
 			} else {
-				log.Println("File does not seem to contain YAML")
-				log.Println(s.Text())
 				start = true
 				end = true
 			}
-			
+
 		}
-		line++
-		
 	}
-	//log.Println("TOP: ")
-	//log.Println(topbuf.String())
-	//log.Println("-----")
-	//log.Println(bottombuf.String())
-	return topbuf.Bytes(), bottombuf.Bytes(), nil
+
+	fm, err := marshalFrontmatter(topbuf.Bytes())
+	return fm, bottombuf.Bytes(), err
+}
+
+func readFront(reader io.Reader) (frontmatter, error) {
+
+	s := bufio.NewScanner(reader)
+
+	topbuf := new(bytes.Buffer)
+	start := false
+	end := false
+	for s.Scan() {
+
+		if start && end {
+			break
+		}
+		if start && !end {
+			// Anything after the --- tag, add to the topbuffer
+			if s.Text() != yamlsep || s.Text() != yamlsep2 {
+				topbuf.Write(s.Bytes())
+				topbuf.WriteString("\n")
+			}
+			// This should be the end separator
+			if s.Text() == yamlsep || s.Text() == yamlsep2 {
+				end = true
+				break
+			}
+		}
+
+		// Hopefully catch the first --- tag
+		if !start && !end {
+			if s.Text() == yamlsep {
+				start = true
+			} else {
+				start = true
+				end = true
+			}
+
+		}
+	}
+	return marshalFrontmatter(topbuf.Bytes())
+
 }
 
 func readWikiPage2(reader io.Reader) (fmdata []byte, content []byte, err error) {
@@ -1444,46 +1265,46 @@ func readWikiPage2(reader io.Reader) (fmdata []byte, content []byte, err error) 
 	for s.Scan() {
 		//log.Println(line)
 		//log.Println(s.Text())
-		
+
 		if line == 0 && bytes.Equal(s.Bytes()[:4], []byte("---\n")) {
 			topbuf.Write(s.Bytes())
 		} else {
 			bottombuf.Write(s.Bytes())
 		}
 		/*
-		//log.Println(end)
-		
-		if start && end {
-			bottombuf.Write(s.Bytes())
-			bottombuf.WriteString("\n")
-		}
-		if start && !end {
-			// Anything after the --- tag, add to the topbuffer
-			if s.Text() != yamlsep {
-				topbuf.Write(s.Bytes())
-				topbuf.WriteString("\n")
-			}
-			if s.Text() == yamlsep {
-				end = true
-			}
-		}
+			//log.Println(end)
 
-		// Hopefully catch the first --- tag
-		if !start && !end {
-			if s.Text() == yamlsep {
-				start = true
-			} else {
-				log.Println("File does not seem to contain YAML")
-				log.Println(s.Text())
-				start = true
-				end = true
+			if start && end {
+				bottombuf.Write(s.Bytes())
+				bottombuf.WriteString("\n")
 			}
-			
-		}
-		line = line + 1
+			if start && !end {
+				// Anything after the --- tag, add to the topbuffer
+				if s.Text() != yamlsep {
+					topbuf.Write(s.Bytes())
+					topbuf.WriteString("\n")
+				}
+				if s.Text() == yamlsep {
+					end = true
+				}
+			}
+
+			// Hopefully catch the first --- tag
+			if !start && !end {
+				if s.Text() == yamlsep {
+					start = true
+				} else {
+					log.Println("File does not seem to contain YAML")
+					log.Println(s.Text())
+					start = true
+					end = true
+				}
+
+			}
+			line = line + 1
 		*/
 		line++
-		
+
 	}
 	//log.Println("TOP: ")
 	//log.Println(topbuf.String())
@@ -1548,37 +1369,39 @@ func scanWiki(data []byte, atEOF bool) (advance int, token []byte, err error) {
 }
 
 func marshalFrontmatter(fmdata []byte) (fm frontmatter, err error) {
-	err = yaml.Unmarshal(fmdata, &fm)
-	if err != nil {
-		m := map[string]interface{}{}
-		err = yaml.Unmarshal(fmdata, &m)
+	if fmdata != nil {
+		err = yaml.Unmarshal(fmdata, &fm)
 		if err != nil {
-			return frontmatter{}, err
-		}
+			m := map[string]interface{}{}
+			err = yaml.Unmarshal(fmdata, &m)
+			if err != nil {
+				return frontmatter{}, err
+			}
 
-		title, found := m["title"].(string)
-		if found {
-			fm.Title = title
-		}
-		switch v := m["Tags"].(type) {
-		case string:
-			fm.Tags = strings.Split(v, ",")
-		case []string:
-			fm.Tags = v
-		default:
-			fm.Tags = []string{}
-		}
-		favorite, found := m["favorite"].(bool)
-		if found {
-			fm.Favorite = favorite
-		}
-		public, found := m["public"].(bool)
-		if found {
-			fm.Public = public
-		}
-		admin, found := m["admin"].(bool)
-		if found {
-			fm.Admin = admin
+			title, found := m["title"].(string)
+			if found {
+				fm.Title = title
+			}
+			switch v := m["Tags"].(type) {
+			case string:
+				fm.Tags = strings.Split(v, ",")
+			case []string:
+				fm.Tags = v
+			default:
+				fm.Tags = []string{}
+			}
+			favorite, found := m["favorite"].(bool)
+			if found {
+				fm.Favorite = favorite
+			}
+			public, found := m["public"].(bool)
+			if found {
+				fm.Public = public
+			}
+			admin, found := m["admin"].(bool)
+			if found {
+				fm.Admin = admin
+			}
 		}
 	}
 	return fm, nil
@@ -2029,13 +1852,12 @@ func readFavs(path string, info os.FileInfo, err error) error {
 
 	// Read YAML frontmatter into fm
 	// If err, just return, as file should not contain frontmatter
-
-	fmbytes, _, err := readFileAndFront(path)
+	f, err := os.Open(path)
 	if err != nil {
-		return nil
+		log.Println(err)
 	}
-	var fm frontmatter
-	fm, err = marshalFrontmatter(fmbytes)
+	defer f.Close()
+	fm, err := readFront(f)
 	if err != nil {
 		return nil
 	}
@@ -2084,12 +1906,13 @@ func readTags(path string, info os.FileInfo, err error) error {
 
 	// Read YAML frontmatter into fm
 	// If err, just return, as file should not contain frontmatter
-	fmbytes, _, err := readFileAndFront(path)
+	f, err := os.Open(path)
 	if err != nil {
-		return nil
+		log.Println(err)
 	}
-	var fm frontmatter
-	fm, err = marshalFrontmatter(fmbytes)
+	defer f.Close()
+
+	fm, err := readFront(f)
 	if err != nil {
 		return nil
 	}
@@ -2133,12 +1956,7 @@ func loadWiki(name string) (*wiki, error) {
 		}
 	}
 
-	fmbytes, content, err := readFileAndFront(fullfilename)
-	if err != nil {
-		log.Println(err)
-		return nil, err
-	}
-	fm, err = marshalFrontmatter(fmbytes)
+	fm, content, err := readFileAndFront(fullfilename)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -2611,7 +2429,7 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, `{"alive": true}`)
 }
 
-func checkFiletype(fullname string) string {
+func isWikiPage(fullname string) bool {
 	// Detect filetype first
 	file, err := os.Open(fullname)
 	if err != nil {
@@ -2622,21 +2440,15 @@ func checkFiletype(fullname string) string {
 	if err != nil {
 		log.Println(err)
 	}
-	filetype := http.DetectContentType(buff)
 
-	//log.Println(filetype)
-
-	//log.Println(string(buff[:3]))
-	//switch filetype {
-	//case "application/octet-stream":
 	// Try and detect mis-detected wiki pages
-	if bytes.Equal(buff[:3], []byte("---")) && filetype != "text/plain; charset=utf-8" {
-		log.Println(fullname + " has malformed filetype.")
-		filetype = "text/plain; charset=utf-8"
+	if bytes.Equal(buff[:3], []byte("---")) {
+		log.Println(fullname + " is a wiki page.")
+		return true
 	}
 	//}
 	//log.Println(fullname + " is " + filetype)
-	return filetype
+	return false
 }
 
 // wikiHandler wraps around all wiki page handlers
@@ -2674,25 +2486,25 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		}
 
 		// Detect filetypes
-		filetype := checkFiletype(fullname)
-		if filetype != "text/plain; charset=utf-8" {
+		/*
+			filetype := checkFiletype(fullname)
+			if filetype != "text/plain; charset=utf-8" {
 
-			http.ServeFile(w, r, fullname)
-		}
+				http.ServeFile(w, r, fullname)
+			}
+		*/
 
 		// Read YAML frontmatter into fm
 		// If err, just return, as file should not contain frontmatter
-		fmbytes, _, fmberr := readFileAndFront(fullname)
+		f, err := os.Open(fullname)
+		if err != nil {
+			log.Println(err)
+		}
+		defer f.Close()
+
+		fm, fmberr := readFront(f)
 		if fmberr != nil {
 			log.Println(fmberr)
-			return
-		}
-		fm, fmerr := marshalFrontmatter(fmbytes)
-		if fmerr != nil {
-			log.Println("YAML unmarshal error in: " + name)
-			if fmbytes != nil {
-				log.Println(string(fmbytes))
-			}
 			return
 		}
 
@@ -2866,17 +2678,9 @@ func bleveIndex() {
 				var pagetitle string
 
 				// Read YAML frontmatter into fm
-				fmbytes, content, err := readFileAndFront(fullname)
+				fm, content, err := readFileAndFront(fullname)
 				if err != nil {
 					log.Println(err)
-				}
-				fm, err = marshalFrontmatter(fmbytes)
-				if err != nil {
-					log.Println("YAML unmarshal error in: " + file)
-					log.Println(err)
-					if fmbytes != nil {
-						log.Println(string(fmbytes))
-					}
 				}
 				if fm.Public {
 					//log.Println("Private page!")
@@ -2987,15 +2791,11 @@ func bleveIndex() {
 				var pagetitle string
 
 				// Read YAML frontmatter into fm
-				fmbytes, content, err := readFileAndFront(fullname)
+				fm, content, err := readFileAndFront(fullname)
 				if err != nil {
 					log.Println(err)
 				}
-				fm, err = marshalFrontmatter(fmbytes)
-				if err != nil {
-					log.Println("YAML unmarshal error in: " + file)
-					log.Println(err)
-				}
+
 				if fm.Public {
 					//log.Println("Private page!")
 				}
@@ -3163,19 +2963,19 @@ func crawlWiki() {
 			//fileURL := strings.TrimPrefix(file, withoutdotslash)
 
 			var wp *wiki
-			var fm frontmatter
 			var pagetitle string
 
 			//log.Println(file)
 
 			// Read YAML frontmatter into fm
-			fmbytes, _, err := readFileAndFront(fullname)
+			f, err := os.Open(fullname)
 			if err != nil {
 				log.Println(err)
 			}
-			fm, err = marshalFrontmatter(fmbytes)
+			defer f.Close()
+
+			fm, err := readFront(f)
 			if err != nil {
-				log.Println("YAML unmarshal error in: " + file)
 				log.Println(err)
 			}
 
@@ -3284,22 +3084,6 @@ func markdownPreview(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(markdownRender([]byte(r.FormValue("md")))))
 }
 
-func testStuff() {
-	//f, err := os.Open("./tests/yamltest")
-	f, err := os.Open("./tests/yamltest2")
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-	fm, c, err := readWikiPage(f)
-	if err != nil {
-		log.Println(err)
-	}
-	log.Println("FM " + string(fm))
-	log.Println("C " + string(c))
-
-}
-
 func main() {
 
 	//viper.WatchConfig()
@@ -3324,8 +3108,6 @@ func main() {
 	initWikiDir()
 
 	refreshStuff()
-
-	testStuff()
 
 	csrfSecure := true
 	if fLocal {
