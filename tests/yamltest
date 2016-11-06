@@ -1,9 +1,13 @@
 ---
-title: omg
+title: YAML Test
 public: true
-tags:journal
+admin: false
+tags: 
+- yaml
+- test
+- omg
 ---
-omg
+omg2
 wooooo
 
 
