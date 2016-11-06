@@ -2434,20 +2434,32 @@ func isWikiPage(fullname string) bool {
 	file, err := os.Open(fullname)
 	if err != nil {
 		log.Println(err)
+		return false
 	}
 	buff := make([]byte, 512)
 	_, err = file.Read(buff)
 	if err != nil {
 		log.Println(err)
+		return false
 	}
 
+	filetype := http.DetectContentType(buff)
 	// Try and detect mis-detected wiki pages
-	if bytes.Equal(buff[:3], []byte("---")) {
-		log.Println(fullname + " is a wiki page.")
+	if filetype == "application/octet-stream" {
+		/*
+			if bytes.Equal(buff[:3], []byte("---")) {
+				log.Println(fullname + " is a wiki page.")
+				return true
+			}
+		*/
 		return true
 	}
-	//}
-	//log.Println(fullname + " is " + filetype)
+	if filetype == "text/plain; charset=utf-8" {
+		return true
+	}
+
+	log.Println(fullname + " is " + filetype)
+
 	return false
 }
 
@@ -2465,6 +2477,8 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		// Check if file exists before doing anything else
 		name, feErr := checkName(name)
 		fullname := filepath.Join(viper.GetString("WikiDir"), name)
+
+		isWikiPage(fullname)
 
 		if name != "" && feErr == ErrNoFile {
 			//log.Println(r.URL.RequestURI())
@@ -2664,6 +2678,7 @@ func bleveIndex() {
 		// TODO: Turn this into a bleve.Batch() job!
 		for _, file := range fileList {
 			fullname := filepath.Join(viper.GetString("WikiDir"), file)
+
 			src, err := os.Stat(fullname)
 			if err != nil {
 				panic(err)
