@@ -2032,8 +2032,15 @@ func (wiki *wiki) save() error {
 	}
 
 	// Create a buffer where we build the content of the file
-	f, err := os.Open(fullfilename)
+	var f *os.File
+	f, err = os.Open(fullfilename)
 	if err != nil {
+		if os.IsNotExist(err) {
+			f, err = os.Create(fullfilename)
+			if err != nil {
+				log.Println(err)
+			}
+		}
 		log.Println(err)
 	}
 	defer f.Close()
