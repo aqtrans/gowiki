@@ -3072,7 +3072,7 @@ func main() {
 		//http.Error(w, panic("Unexpected error!"), http.StatusInternalServerError)
 	})*/
 
-	r.POST("/new", auth.AuthMiddle(newHandler))
+	r.GET("/new", auth.AuthMiddle(newHandler))
 	//r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
 	r.GET("/login", loginPageHandler)
 	//r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
