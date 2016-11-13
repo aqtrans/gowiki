@@ -1106,6 +1106,7 @@ func readFileAndFront(filename string) (frontmatter, []byte, error) {
 	if err != nil {
 		log.Println(err)
 	}
+
 	defer f.Close()
 	return readWikiPage(f)
 }
@@ -1665,18 +1666,10 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 
 	wikip, err := loadWiki(name)
 	if err != nil {
-		if err == ErrNoFile {
+		if err == ErrNoFile && wikip != nil {
 			newwp := &wikiPage{
 				page: p,
-				Wiki: &wiki{
-					Title:    name,
-					Filename: name,
-					Frontmatter: &frontmatter{
-						Title: name,
-					},
-					CreateTime: 0,
-					ModTime:    0,
-				},
+				Wiki: wikip,
 			}
 			return newwp, err
 		}
@@ -1954,6 +1947,21 @@ func loadWiki(name string) (*wiki, error) {
 		if os.IsNotExist(dirindexfierr) {
 			return nil, ErrNoDirIndex
 		}
+	}
+
+	// Check for non-existent wiki pages
+	_, fierr := os.Stat(fullfilename)
+	if os.IsNotExist(fierr) {
+		wp := &wiki{
+			Title:    name,
+			Filename: name,
+			Frontmatter: &frontmatter{
+				Title: name,
+			},
+			CreateTime: 0,
+			ModTime:    0,
+		}
+		return wp, ErrNoFile
 	}
 
 	fm, content, err := readFileAndFront(fullfilename)
@@ -3149,7 +3157,7 @@ func main() {
 		//http.Error(w, panic("Unexpected error!"), http.StatusInternalServerError)
 	})*/
 
-	r.POST("/new", auth.AuthMiddle(newHandler))
+	r.GET("/new", auth.AuthMiddle(newHandler))
 	//r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
 	r.GET("/login", loginPageHandler)
 	//r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
