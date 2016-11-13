@@ -309,9 +309,9 @@ func TestIndexPage(t *testing.T) {
 	//t.Log(rr.Code)
 
 	// Check the status code is what we expect.
-	if status := rr.Code; status != http.StatusOK {
+	if status := rr.Code; status != http.StatusSeeOther {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusOK)
+			status, http.StatusSeeOther)
 	}
 
 	/*
@@ -589,6 +589,102 @@ func TestMarkdownRender4(t *testing.T) {
 	}
 }
 
+func TestYamlRender(t *testing.T) {
+	f, err := os.Open("./tests/yamltest")
+	if err != nil {
+		t.Error(err)
+	}
+	defer f.Close()
+	fm, err := readFront(f)
+	if err != nil {
+		t.Error(err)
+	}
+	/*
+		t.Log(fm.Title)
+		t.Log(fm.Admin)
+		t.Log(fm.Public)
+		t.Log(fm.Favorite)
+		t.Log(fm.Tags)
+		t.Log(c)
+		t.Log(len(fm.Tags))
+	*/
+
+	if fm.Title != "YAML Test" {
+		t.Error("FM Title does not equal YAML Test." + "\n Output: " + fm.Title)
+	}
+	if fm.Admin {
+		t.Log(fm.Admin)
+		t.Error("FM Admin is not false.")
+	}
+	if !fm.Public {
+		t.Log(fm.Public)
+		t.Error("FM Public is not true.")
+	}
+	if fm.Favorite {
+		t.Log(fm.Favorite)
+		t.Error("FM Admin is not false.")
+	}
+	tags := []string{"yaml", "test", "omg"}
+	if fm.Tags[0] != tags[0] {
+		t.Error("FM Tags do not equal expected tags.")
+	}
+	if fm.Tags[1] != tags[1] {
+		t.Error("FM Tags do not equal expected tags.")
+	}
+	if fm.Tags[2] != tags[2] {
+		t.Error("FM Tags do not equal expected tags.")
+	}
+
+}
+
+func TestYamlRender2(t *testing.T) {
+	f, err := os.Open("./tests/yamltest2")
+	if err != nil {
+		t.Error(err)
+	}
+	defer f.Close()
+	fm, err := readFront(f)
+	if err != nil {
+		t.Error(err)
+	}
+	/*
+		t.Log(fm.Title)
+		t.Log(fm.Admin)
+		t.Log(fm.Public)
+		t.Log(fm.Favorite)
+		t.Log(fm.Tags)
+		t.Log(c)
+		t.Log(len(fm.Tags))
+	*/
+
+	if fm.Title != "YAML Test" {
+		t.Error("FM Title does not equal YAML Test." + "\n Output: " + fm.Title)
+	}
+	if fm.Admin {
+		t.Log(fm.Admin)
+		t.Error("FM Admin is not false.")
+	}
+	if !fm.Public {
+		t.Log(fm.Public)
+		t.Error("FM Public is not true.")
+	}
+	if fm.Favorite {
+		t.Log(fm.Favorite)
+		t.Error("FM Admin is not false.")
+	}
+	tags := []string{"yaml", "test", "omg"}
+	if fm.Tags[0] != tags[0] {
+		t.Error("FM Tags do not equal expected tags.")
+	}
+	if fm.Tags[1] != tags[1] {
+		t.Error("FM Tags do not equal expected tags.")
+	}
+	if fm.Tags[2] != tags[2] {
+		t.Error("FM Tags do not equal expected tags.")
+	}
+
+}
+
 // Below is for testing the difference between just writing the Tags string directly as fed in from the wiki form, or using a []string as the source, but having to write them using a for loop
 // Results, seems string is the best bet for now:
 //    BenchmarkBufferString-4    10000            996527 ns/op
@@ -668,15 +764,37 @@ func benchmarkIsPrivateArray(size int, b *testing.B) {
 	}
 }
 
-func BenchmarkReadFront(b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		readFileAndFront("./tests/bench.md")
+func benchmarkReadFront(num int, b *testing.B) {
+	for i := 0; i < num; i++ {
+		for n := 0; n < b.N; n++ {
+			oldReadFileAndFront("./tests/gowiki-testdata/index")
+		}
 	}
 }
 
-func BenchmarkReadFrontBuffer(b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		readFrontBuf("./tests/bench.md")
+func benchmarkReadFrontBuffer(num int, b *testing.B) {
+	f, err := os.Open("./tests/gowiki-testdata/index")
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	for i := 0; i < num; i++ {
+		for n := 0; n < b.N; n++ {
+			readWikiPage(f)
+		}
+	}
+}
+
+func benchmarkReadFrontBufferSplit(num int, b *testing.B) {
+	f, err := os.Open("./tests/gowiki-testdata/index")
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+	for i := 0; i < num; i++ {
+		for n := 0; n < b.N; n++ {
+			readWikiPage2(f)
+		}
 	}
 }
 
@@ -728,6 +846,10 @@ func BenchmarkMarkdown2Render(b *testing.B) {
 
 func BenchmarkIsPrivate10000(b *testing.B)      { benchmarkIsPrivate(10000, b) }
 func BenchmarkIsPrivateArray10000(b *testing.B) { benchmarkIsPrivateArray(10000, b) }
+
+func BenchmarkReadFront10(b *testing.B)            { benchmarkReadFront(10, b) }
+func BenchmarkReadFrontBuffer10(b *testing.B)      { benchmarkReadFrontBuffer(10, b) }
+func BenchmarkReadFrontBufferSplit10(b *testing.B) { benchmarkReadFrontBufferSplit(10, b) }
 
 //func BenchmarkIsPrivate100000(b *testing.B) { benchmarkIsPrivate(100000, b) }
 //func BenchmarkIsPrivateArray100000(b *testing.B) { benchmarkIsPrivateArray(100000, b) }
