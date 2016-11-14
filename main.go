@@ -2707,7 +2707,10 @@ func bleveIndex() {
 
 				// Read YAML frontmatter into fm
 				fm, content, err := readFileAndFront(fullname)
-				checkErr("bleveIndex()/readFileAndFront", err)
+				if err != nil {
+					// Do nothing
+				}
+				//checkErr("bleveIndex()/readFileAndFront", err)
 
 				if fm.Public {
 					//log.Println("Private page!")
