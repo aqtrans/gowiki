@@ -2989,8 +2989,8 @@ func crawlWiki() {
 			checkErr("crawlWiki()/Open", err)
 			defer f.Close()
 
-			fm, err := readFront(f)
-			checkErr("crawlWiki()/readFront", err)
+			fm, _ := readFront(f)
+			//checkErr("crawlWiki()/readFront", err)
 
 			pagetitle = filename
 			if fm.Title != "" {
