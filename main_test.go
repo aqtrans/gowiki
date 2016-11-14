@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"io"
 	"io/ioutil"
 	"log"
@@ -685,119 +684,6 @@ func TestYamlRender2(t *testing.T) {
 
 }
 
-// Below is for testing the difference between just writing the Tags string directly as fed in from the wiki form, or using a []string as the source, but having to write them using a for loop
-// Results, seems string is the best bet for now:
-//    BenchmarkBufferString-4    10000            996527 ns/op
-//    BenchmarkBufferArray-4      1000           1651610 ns/op
-
-var title string = "YEAH BENCHMARK OMG"
-var name string = "WOOHOO"
-var tagsarray = []string{"OMG", "YEAH", "WHAT", "ZZZZ", "FFFF", "EEEE", "RRRTRT", "GRHTH", "GBHFT", "QPFLG", "MGJHIB", "LRIGJB", "DJCUDK", "WIFJV", "GKBIBK", "XKSDFM", "RUFJS", "SLDKF", "ZKDJF", "WIFKFG", "EIFLG", "DKFIBJ", "WWRKG", "SLFIBK", "PRIVATE"}
-var tagsstring string = "OMG, YEAH, WHAT, ZZZZ, FFFF, EEEE, RRRTRT, GRHTH, GBHFT, QPFLG, MGJHIB, LRIGJB, DJCUDK, WIFJV, GKBIBK, XKSDFM, RUFJS, SLDKF ,ZKDJF, WIFKFG, EIFLG, DKFIBJ, WWRKG, SLFIBK, PRIVATE"
-var body string = "WOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO\n# OMG \n # YEAH"
-
-func benchmarkBufferString(b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		var buffer bytes.Buffer
-		buffer.WriteString("---\n")
-		if title == "" {
-			title = name
-		}
-		buffer.WriteString("title: " + title)
-		buffer.WriteString("\n")
-		if tagsstring != "" {
-			buffer.WriteString("tags: " + tagsstring)
-			buffer.WriteString("\n")
-		}
-		buffer.WriteString("---\n")
-		buffer.WriteString(body)
-		body = buffer.String()
-	}
-}
-
-func benchmarkBufferArray(b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		var buffer bytes.Buffer
-		buffer.WriteString("---\n")
-		if title == "" {
-			title = name
-		}
-		buffer.WriteString("title: " + title)
-		buffer.WriteString("\n")
-		if tagsarray != nil {
-			buffer.WriteString("tags: [")
-			for _, v := range tagsarray {
-				buffer.WriteString(v + " ")
-			}
-			buffer.WriteString("]")
-			buffer.WriteString("\n")
-		}
-		buffer.WriteString("---\n")
-		buffer.WriteString(body)
-		body = buffer.String()
-	}
-}
-
-// Below is for testing the difference between sorting through a []string and creating a []string using SplitString, then sorting through it
-
-func benchmarkIsPrivate(size int, b *testing.B) {
-	list := "testing"
-	n := size
-	for i := 0; i < n; i++ {
-		list = " " + list
-	}
-	//tags := strings.Split(list, " ")
-	for n := 0; n < b.N; n++ {
-		isPrivate(list)
-	}
-}
-
-func benchmarkIsPrivateArray(size int, b *testing.B) {
-	list := []string{"testing"}
-	n := size
-	for i := 0; i < n; i++ {
-		list = append(list, "testing")
-	}
-	//tags := strings.Split(list, " ")
-	for n := 0; n < b.N; n++ {
-		isPrivateA(list)
-	}
-}
-
-func benchmarkReadFront(num int, b *testing.B) {
-	for i := 0; i < num; i++ {
-		for n := 0; n < b.N; n++ {
-			oldReadFileAndFront("./tests/gowiki-testdata/index")
-		}
-	}
-}
-
-func benchmarkReadFrontBuffer(num int, b *testing.B) {
-	f, err := os.Open("./tests/gowiki-testdata/index")
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-	for i := 0; i < num; i++ {
-		for n := 0; n < b.N; n++ {
-			readWikiPage(f)
-		}
-	}
-}
-
-func benchmarkReadFrontBufferSplit(num int, b *testing.B) {
-	f, err := os.Open("./tests/gowiki-testdata/index")
-	if err != nil {
-		log.Println(err)
-	}
-	defer f.Close()
-	for i := 0; i < num; i++ {
-		for n := 0; n < b.N; n++ {
-			readWikiPage2(f)
-		}
-	}
-}
-
 func BenchmarkMarkdownRender(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		rawmdf := "./tests/bench.md"
@@ -809,47 +695,14 @@ func BenchmarkMarkdownRender(b *testing.B) {
 	}
 }
 
-/*
-func BenchmarkCommonmarkRender(b *testing.B) {
+func BenchmarkReadFront(b *testing.B) {
+	f, err := os.Open("./tests/gowiki-testdata/index")
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+
 	for n := 0; n < b.N; n++ {
-		rawmdf := "./tests/bench.md"
-		rawmd, err := ioutil.ReadFile(rawmdf)
-		if err != nil {
-			b.Error("Unable to access bench.md")
-		}
-		commonmarkRender(rawmd)
+		readWikiPage(f)
 	}
 }
-
-func BenchmarkMarkdown2Render(b *testing.B) {
-	for n := 0; n < b.N; n++ {
-		rawmdf := "./tests/bench.md"
-		rawmd, err := ioutil.ReadFile(rawmdf)
-		if err != nil {
-			b.Error("Unable to access bench.md")
-		}
-		markdownRender2(rawmd)
-	}
-}
-*/
-//func BenchmarkIsPrivate2(b *testing.B) { benchmarkIsPrivate(2, b) }
-//func BenchmarkIsPrivateArray2(b *testing.B) { benchmarkIsPrivateArray(2, b) }
-
-//func BenchmarkIsPrivate10(b *testing.B) { benchmarkIsPrivate(10, b) }
-//func BenchmarkIsPrivateArray10(b *testing.B) { benchmarkIsPrivateArray(10, b) }
-
-//func BenchmarkIsPrivate100(b *testing.B) { benchmarkIsPrivate(100, b) }
-//func BenchmarkIsPrivateArray100(b *testing.B) { benchmarkIsPrivateArray(100, b) }
-
-//func BenchmarkIsPrivate1000(b *testing.B) { benchmarkIsPrivate(1000, b) }
-//func BenchmarkIsPrivateArray1000(b *testing.B) { benchmarkIsPrivateArray(1000, b) }
-
-func BenchmarkIsPrivate10000(b *testing.B)      { benchmarkIsPrivate(10000, b) }
-func BenchmarkIsPrivateArray10000(b *testing.B) { benchmarkIsPrivateArray(10000, b) }
-
-func BenchmarkReadFront10(b *testing.B)            { benchmarkReadFront(10, b) }
-func BenchmarkReadFrontBuffer10(b *testing.B)      { benchmarkReadFrontBuffer(10, b) }
-func BenchmarkReadFrontBufferSplit10(b *testing.B) { benchmarkReadFrontBufferSplit(10, b) }
-
-//func BenchmarkIsPrivate100000(b *testing.B) { benchmarkIsPrivate(100000, b) }
-//func BenchmarkIsPrivateArray100000(b *testing.B) { benchmarkIsPrivateArray(100000, b) }
