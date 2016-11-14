@@ -119,64 +119,6 @@ const (
 	*/
 )
 
-type renderer struct {
-	*blackfriday.Html
-}
-
-func markdownRender(input []byte) string {
-	renderer := &renderer{Html: blackfriday.HtmlRenderer(commonHtmlFlags, "", "").(*blackfriday.Html)}
-
-	unsanitized := blackfriday.MarkdownOptions(input, renderer, blackfriday.Options{
-		Extensions: commonExtensions})
-	p := bluemonday.UGCPolicy()
-	p.AllowElements("nav")
-
-	return string(p.SanitizeBytes(unsanitized))
-}
-
-// Task List support.
-func (r *renderer) ListItem(out *bytes.Buffer, text []byte, flags int) {
-	switch {
-	case bytes.HasPrefix(text, []byte("[ ] ")):
-		text = append([]byte(`<input type="checkbox" disabled="">`), text[3:]...)
-	case bytes.HasPrefix(text, []byte("[x] ")) || bytes.HasPrefix(text, []byte("[X] ")):
-		text = append([]byte(`<input type="checkbox" checked="" disabled="">`), text[3:]...)
-	}
-	r.Html.ListItem(out, text, flags)
-}
-
-func (r *renderer) NormalText(out *bytes.Buffer, text []byte) {
-
-	switch {
-	case linkPattern.Match(text):
-		//log.Println("text " + string(text))
-		domain := "//" + viper.GetString("Domain")
-		//log.Println(string(linkPattern.ReplaceAll(text, []byte(domain+"/$1"))))
-		link := linkPattern.ReplaceAll(text, []byte(domain+"/$1"))
-		title := linkPattern.ReplaceAll(text, []byte("/$1"))
-		r.Html.Link(out, link, []byte(""), title)
-		return
-	}
-	r.Html.NormalText(out, text)
-	//log.Println("title " + string(title))
-	//log.Println("content " + string(content))
-}
-
-type configuration struct {
-	Domain     string
-	Port       string
-	Email      string
-	WikiDir    string
-	GitRepo    string
-	AdminUser  string
-	PushOnSave bool
-}
-
-type Renderer struct {
-	blackfriday.Renderer
-	urlPrefix string
-}
-
 var (
 	linkPattern   = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
 	bufpool       *bpool.BufferPool
@@ -197,6 +139,20 @@ var (
 	ErrGitDirty   = errors.New("directory is dirty")
 	ErrBadPath    = errors.New("given path is invalid")
 )
+
+type renderer struct {
+	*blackfriday.Html
+}
+
+type configuration struct {
+	Domain     string
+	Port       string
+	Email      string
+	WikiDir    string
+	GitRepo    string
+	AdminUser  string
+	PushOnSave bool
+}
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
 type page struct {
@@ -412,12 +368,60 @@ func init() {
 
 }
 
+func markdownRender(input []byte) string {
+	renderer := &renderer{Html: blackfriday.HtmlRenderer(commonHtmlFlags, "", "").(*blackfriday.Html)}
+
+	unsanitized := blackfriday.MarkdownOptions(input, renderer, blackfriday.Options{
+		Extensions: commonExtensions})
+	p := bluemonday.UGCPolicy()
+	p.AllowElements("nav")
+
+	return string(p.SanitizeBytes(unsanitized))
+}
+
+// Task List support.
+func (r *renderer) ListItem(out *bytes.Buffer, text []byte, flags int) {
+	switch {
+	case bytes.HasPrefix(text, []byte("[ ] ")):
+		text = append([]byte(`<input type="checkbox" disabled="">`), text[3:]...)
+	case bytes.HasPrefix(text, []byte("[x] ")) || bytes.HasPrefix(text, []byte("[X] ")):
+		text = append([]byte(`<input type="checkbox" checked="" disabled="">`), text[3:]...)
+	}
+	r.Html.ListItem(out, text, flags)
+}
+
+func (r *renderer) NormalText(out *bytes.Buffer, text []byte) {
+
+	switch {
+	case linkPattern.Match(text):
+		//log.Println("text " + string(text))
+		domain := "//" + viper.GetString("Domain")
+		//log.Println(string(linkPattern.ReplaceAll(text, []byte(domain+"/$1"))))
+		link := linkPattern.ReplaceAll(text, []byte(domain+"/$1"))
+		title := linkPattern.ReplaceAll(text, []byte("/$1"))
+		r.Html.Link(out, link, []byte(""), title)
+		return
+	}
+	r.Html.NormalText(out, text)
+	//log.Println("title " + string(title))
+	//log.Println("content " + string(content))
+}
+
 func checkErr(name string, err error) {
 	if err != nil {
 		log.Println("Function: " + name)
 		log.Println(err)
 		panic(err)
 	}
+}
+
+func checkErrReturn(name string, err error) error {
+	if err != nil {
+		log.Println("Function: " + name)
+		log.Println(err)
+		return err
+	}
+	return nil
 }
 
 func appendIfMissing(slice []string, s string) []string {
@@ -1249,7 +1253,7 @@ func readFront(reader io.Reader) (frontmatter, error) {
 
 }
 
-func readWikiPage2(reader io.Reader) (fmdata []byte, content []byte, err error) {
+func readWikiPage2(reader io.Reader) (frontmatter, []byte, error) {
 	/*
 		This should be taken care of before calling this func
 		f, err := os.Open(filepath)
@@ -1313,7 +1317,8 @@ func readWikiPage2(reader io.Reader) (fmdata []byte, content []byte, err error) 
 	//log.Println(topbuf.String())
 	//log.Println("-----")
 	//log.Println(bottombuf.String())
-	return topbuf.Bytes(), bottombuf.Bytes(), nil
+	fm, err := marshalFrontmatter(topbuf.Bytes())
+	return fm, bottombuf.Bytes(), err
 }
 
 // ScanLines is a split function for a Scanner that returns each line of
@@ -2029,7 +2034,7 @@ func (wiki *wiki) save() error {
 		dirpath := filepath.Join(viper.GetString("WikiDir"), dir)
 		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
 			err := os.MkdirAll(dirpath, 0755)
-			checkErr("save()/MkdirAll", err)
+			checkErrReturn("save()/MkdirAll", err)
 		}
 	}
 	/*
@@ -2041,31 +2046,31 @@ func (wiki *wiki) save() error {
 	var f *os.File
 	var err error
 	f, err = os.OpenFile(fullfilename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
-	checkErr("save()/OpenFile", err)
+	checkErrReturn("save()/OpenFile", err)
 
 	//buffer := new(bytes.Buffer)
 	wb := bufio.NewWriter(f)
 
 	_, err = wb.WriteString("---\n")
-	checkErr("save()/WriteString1", err)
+	checkErrReturn("save()/WriteString1", err)
 
 	yamlBuffer, err := yaml.Marshal(wiki.Frontmatter)
-	checkErr("save()/yaml.Marshal", err)
+	checkErrReturn("save()/yaml.Marshal", err)
 
 	_, err = wb.Write(yamlBuffer)
-	checkErr("save()/Write yamlBuffer", err)
+	checkErrReturn("save()/Write yamlBuffer", err)
 
 	_, err = wb.WriteString("---\n")
-	checkErr("save()/WriteString2", err)
+	checkErrReturn("save()/WriteString2", err)
 
 	_, err = wb.Write(wiki.Content)
-	checkErr("save()/wb.Write wiki.Content", err)
+	checkErrReturn("save()/wb.Write wiki.Content", err)
 
 	err = wb.Flush()
-	checkErr("save()/wb.Flush", err)
+	checkErrReturn("save()/wb.Flush", err)
 
 	err = f.Close()
-	checkErr("save()/f.Close", err)
+	checkErrReturn("save()/f.Close", err)
 
 	// Test equality of the original file, plus the buffer we just built
 	//log.Println(bytes.Equal(originalFile, buffer.Bytes()))
@@ -2089,11 +2094,11 @@ func (wiki *wiki) save() error {
 	gitfilename := dir + filename
 
 	err = gitAddFilepath(gitfilename)
-	checkErr("save()/gitAddFilepath", err)
+	checkErrReturn("save()/gitAddFilepath", err)
 
 	// FIXME: add a message box to edit page, check for it here
 	err = gitCommitEmpty()
-	checkErr("save()/gitCommitEmpty", err)
+	checkErrReturn("save()/gitCommitEmpty", err)
 
 	log.Println(fullfilename + " has been saved.")
 	return nil
@@ -2598,27 +2603,20 @@ func timer(next http.Handler) http.Handler {
 func riceInit() error {
 	// Parent templates directory named 'templates'
 	templateBox, err := rice.FindBox("templates")
-	if err != nil {
-		return err
-	}
+	checkErrReturn("riceInit()/FindBox", err)
+
 	// Child directory 'templates/includes' containing the base templates
 	includes, err := templateBox.Open("includes")
-	if err != nil {
-		return err
-	}
+	checkErrReturn("riceInit()/Open.includes", err)
 	includeDir, err := includes.Readdir(-1)
-	if err != nil {
-		return err
-	}
+	checkErrReturn("riceInit()/includes.Readdir", err)
+
 	// Child directory 'templates/layouts' containing individual page layouts
 	layouts, err := templateBox.Open("layouts")
-	if err != nil {
-		return err
-	}
+	checkErrReturn("riceInit()/Open.layouts", err)
 	layoutsDir, err := layouts.Readdir(-1)
-	if err != nil {
-		return err
-	}
+	checkErrReturn("riceInit()/layouts.Readdir", err)
+
 	var boxT []string
 	var templateIBuff bytes.Buffer
 	for _, v := range includeDir {
@@ -2646,9 +2644,7 @@ func riceInit() error {
 func authInit(authDB string) error {
 	auth.Authdb = auth.Open(authDB)
 	autherr := auth.AuthDbInit()
-	if autherr != nil {
-		return autherr
-	}
+	checkErrReturn("authInit()/AuthDbInit", autherr)
 	return nil
 }
 
