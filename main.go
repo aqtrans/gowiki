@@ -63,7 +63,7 @@ import (
 	"github.com/blevesearch/bleve/analysis/language/en"
 	"github.com/dimfeld/httptreemux"
 	"github.com/getsentry/raven-go"
-	"github.com/microcosm-cc/bluemonday"
+	//"github.com/microcosm-cc/bluemonday"
 	"github.com/spf13/viper"
 	"github.com/thoas/stats"
 	"gopkg.in/yaml.v2"
@@ -372,10 +372,11 @@ func markdownRender(input []byte) string {
 
 	unsanitized := blackfriday.MarkdownOptions(input, renderer, blackfriday.Options{
 		Extensions: commonExtensions})
-	p := bluemonday.UGCPolicy()
-	p.AllowElements("nav")
+	//p := bluemonday.UGCPolicy()
+	//p.AllowElements("nav", "input", "li")
+	//return string(p.SanitizeBytes(unsanitized))
 
-	return string(p.SanitizeBytes(unsanitized))
+	return string(unsanitized)
 }
 
 // Task List support.
