@@ -119,24 +119,27 @@ const (
 )
 
 var (
-	linkPattern   = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
-	bufpool       *bpool.BufferPool
-	templates     map[string]*template.Template
-	_24K          int64 = (1 << 20) * 24
-	fLocal        bool
-	debug         = httputils.Debug
-	fInit         bool
-	gitPath       string
-	favMap        map[string]struct{}
-	tagMap        map[string][]string
-	index         bleve.Index
-	wikiList      map[string][]*wiki
-	ErrNotInGit   = errors.New("given file not in Git repo")
-	ErrNoFile     = errors.New("no such file")
-	ErrNoDirIndex = errors.New("no such directory index")
-	ErrBaseNotDir = errors.New("cannot create subdirectory of a file")
-	ErrGitDirty   = errors.New("directory is dirty")
-	ErrBadPath    = errors.New("given path is invalid")
+	linkPattern    = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
+	bufpool        *bpool.BufferPool
+	templates      map[string]*template.Template
+	_24K           int64 = (1 << 20) * 24
+	fLocal         bool
+	debug          = httputils.Debug
+	fInit          bool
+	gitPath        string
+	favMap         map[string]struct{}
+	tagMap         map[string][]string
+	index          bleve.Index
+	wikiList       map[string][]*wiki
+	ErrNotInGit    = errors.New("given file not in Git repo")
+	ErrNoFile      = errors.New("no such file")
+	ErrNoDirIndex  = errors.New("no such directory index")
+	ErrBaseNotDir  = errors.New("cannot create subdirectory of a file")
+	ErrGitDirty    = errors.New("directory is dirty")
+	ErrBadPath     = errors.New("given path is invalid")
+	ErrGitAhead    = errors.New("Wiki git repo is ahead; Need to push.")
+	ErrGitBehind   = errors.New("Wiki git repo is behind; Need to pull.")
+	ErrGitDiverged = errors.New("Wiki git repo has diverged; Need to intervene manually.")
 )
 
 type renderer struct {
@@ -293,6 +296,7 @@ func init() {
 	viper.SetDefault("WikiDir", "./data/wikidata/")
 	viper.SetDefault("Domain", "wiki.example.com")
 	viper.SetDefault("GitRepo", "git@example.com:user/wikidata.git")
+	viper.SetDefault("AdminUser", "admin")
 	viper.SetDefault("AdminUser", "admin")
 	viper.SetDefault("PushOnSave", false)
 
@@ -596,19 +600,49 @@ func gitClone(repo string) error {
 
 // Execute `git status -s` in directory
 // If there is output, the directory has is dirty
-func gitIsClean() ([]byte, error) {
-	c := gitCommand("status", "-z")
+func gitIsClean() error {
+	gitBehind := []byte("Your branch is behind")
+	gitAhead := []byte("Your branch is ahead")
+	gitDiverged := []byte("have diverged")
+
+	// Check for untracked files first
+	u := gitCommand("ls-files", "--exclude-standard", "--others")
+	uo, err := u.Output()
+	if len(uo) != 0 {
+		return errors.New(string(uo))
+	}
+
+	err = gitCommand("fetch").Run()
+	if err != nil {
+		return err
+	}
+
+	c := gitCommand("status", "-uno")
 
 	o, err := c.Output()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if len(o) != 0 {
-		return o, ErrGitDirty
+	if bytes.Contains(o, gitBehind) {
+		return ErrGitBehind
 	}
 
-	return nil, nil
+	if bytes.Contains(o, gitAhead) {
+		return ErrGitAhead
+	}
+
+	if bytes.Contains(o, gitDiverged) {
+		return ErrGitDiverged
+	}
+
+	/*
+		if len(o) != 0 {
+			return o, ErrGitDirty
+		}
+	*/
+
+	return nil
 }
 
 // Execute `git add {filepath}` in workingDirectory
@@ -1892,23 +1926,26 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 	title := "Git Checkin"
 	p := loadPage(r)
 
-	var owithnewlines []byte
+	var s string
 
 	if r.URL.Query().Get("file") != "" {
 		file := r.URL.Query().Get("file")
-		owithnewlines = []byte(file)
+		s = file
 	} else {
-		o, err := gitIsClean()
-		if err != nil && err != ErrGitDirty {
-			panic(err)
-		}
-		owithnewlines = bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
+		err := gitIsClean()
+		s = err.Error()
+		/*
+			if err != nil && err != ErrGitDirty {
+				panic(err)
+			}
+		*/
+		//owithnewlines = bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
 	}
 
 	gp := &gitPage{
 		p,
 		title,
-		string(owithnewlines),
+		s,
 		viper.GetString("GitRepo"),
 	}
 	renderTemplate(w, r.Context(), "git_checkin.tmpl", gp)
@@ -1973,37 +2010,61 @@ func adminGitHandler(w http.ResponseWriter, r *http.Request) {
 	title := "Git Management"
 	p := loadPage(r)
 
-	var owithnewlines []byte
+	//var owithnewlines []byte
 
-	o, err := gitIsClean()
-	if err != nil && err != ErrGitDirty {
-		panic(err)
-	}
-	owithnewlines = bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
+	err := gitIsClean()
+
+	/*
+		if err != nil && err != ErrGitDirty {
+			panic(err)
+		}
+
+		owithnewlines = bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
+	*/
 
 	gp := &gitPage{
 		p,
 		title,
-		string(owithnewlines),
+		err.Error(),
 		viper.GetString("GitRepo"),
 	}
 	renderTemplate(w, r.Context(), "admin_git.tmpl", gp)
 }
 
 // Middleware to check for "dirty" git repo
+/*
 func checkWikiGit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		_, err := gitIsClean()
+		// Allow logins
+		if r.Method == "POST" && r.URL.RequestURI() == "/auth/login" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		// If at the wiki checkin page, don't check
+		if r.URL.RequestURI() == "/admin/git" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		// If at logging into the checkin page, don't check
+		if r.URL.RequestURI() == "/login?url=/admin/git" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		err := gitIsClean()
 		if err != nil {
-			log.Println("There are wiki files waiting to be checked in.")
-			http.Redirect(w, r, "/gitadd", http.StatusSeeOther)
+			log.Println(err)
+			auth.SetSession("flash", err.Error(), w, r)
+			http.Redirect(w, r, "/admin/git", http.StatusSeeOther)
 			return
 		}
 
 		next.ServeHTTP(w, r)
 	})
 }
+*/
 
 func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "tagMapHandler")
@@ -2153,11 +2214,11 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		// If user is logged in, check if wiki git repo is clean, then continue
 		//if username != "" {
 		if auth.IsLoggedIn(r.Context()) {
-			_, err := gitIsClean()
+			err := gitIsClean()
 			if err != nil {
-				log.Println("There are wiki files waiting to be checked in.")
-				http.Redirect(w, r, "/gitadd", http.StatusSeeOther)
-				return
+				log.Println(err)
+				auth.SetSession("flash", err.Error(), w, r)
+				http.Redirect(w, r, "/admin/git", http.StatusSeeOther)
 			}
 			fn(w, r, name)
 			return
@@ -2733,6 +2794,7 @@ func main() {
 
 	httputils.AssetsBox = rice.MustFindBox("assets")
 	auth.AdminUser = viper.GetString("AdminUser")
+	auth.AdminPass = viper.GetString("AdminPass")
 
 	// Open and initialize auth database
 	err := authInit("./data/auth.db")
