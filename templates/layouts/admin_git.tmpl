@@ -16,7 +16,7 @@
         <p>Push wikidata to {{ .GitRemote }}?</p>
         <form method="post" action="/admin/git/push" id="git_push">
         {{.Token}}
-        <button type="submit" class="button">Submit</button>
+        <button type="submit" class="button">Push</button>
         </form>
         <hr>
 
@@ -24,7 +24,7 @@
         <p>Pull wikidata from {{ .GitRemote }}?</p>
         <form method="post" action="/admin/git/pull" id="git_pull">
         {{.Token}}
-        <button type="submit" class="button">Add User</button>
+        <button type="submit" class="button">Pull</button>
         </form>
         <hr>
 
@@ -33,7 +33,7 @@
         {{ .GitFiles | safeHTML }}
         <form method="post" action="/admin/git/checkin" id="git_checkin">
         {{.Token}}
-        <button type="submit" class="button">Submit</button>
+        <button type="submit" class="button">Check In</button>
         </form>
         <hr>
 
