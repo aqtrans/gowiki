@@ -219,7 +219,7 @@ type genPage struct {
 type gitPage struct {
 	*page
 	Title     string
-	GitFiles  string
+	GitStatus string
 	GitRemote string
 }
 
@@ -625,17 +625,20 @@ func gitIsClean() error {
 	}
 
 	if bytes.Contains(o, gitBehind) {
-		return gitPull()
+		//return gitPull()
+		return errors.New(string(o))
 		//return ErrGitBehind
 	}
 
 	if bytes.Contains(o, gitAhead) {
-		return gitPush()
+		//return gitPush()
+		return errors.New(string(o))
 		//return ErrGitAhead
 	}
 
 	if bytes.Contains(o, gitDiverged) {
-		return ErrGitDiverged
+		return errors.New(string(o))
+		//return ErrGitDiverged
 	}
 
 	/*
@@ -2015,6 +2018,9 @@ func adminGitHandler(w http.ResponseWriter, r *http.Request) {
 	//var owithnewlines []byte
 
 	err := gitIsClean()
+	if err == nil {
+		err = errors.New("Git repo is clean")
+	}
 
 	/*
 		if err != nil && err != ErrGitDirty {
