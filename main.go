@@ -625,11 +625,13 @@ func gitIsClean() error {
 	}
 
 	if bytes.Contains(o, gitBehind) {
-		return ErrGitBehind
+		return gitPull()
+		//return ErrGitBehind
 	}
 
 	if bytes.Contains(o, gitAhead) {
-		return ErrGitAhead
+		return gitPush()
+		//return ErrGitAhead
 	}
 
 	if bytes.Contains(o, gitDiverged) {
