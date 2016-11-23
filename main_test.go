@@ -221,7 +221,7 @@ func TestNewHandler(t *testing.T) {
 
 	// Create a request to pass to our handler.
 	form := url.Values{}
-	form.Add("newwiki", "omg/yeah/what")
+	form.Add("newwiki", "afefwdwdef/dwwafefe/fegegrgr")
 	reader = strings.NewReader(form.Encode())
 	req, err := http.NewRequest("POST", "/new", reader)
 	if err != nil {
