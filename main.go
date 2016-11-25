@@ -2142,8 +2142,8 @@ func createWiki(w http.ResponseWriter, r *http.Request, name string) {
 	}
 
 	auth.SetSession("flash", "Please login to view that page.", w, r)
-	h := viper.GetString("Domain")
-	http.Redirect(w, r, "https://"+h+"/login"+"?url="+r.URL.String(), http.StatusSeeOther)
+	//h := viper.GetString("Domain")
+	http.Redirect(w, r, "/login"+"?url="+r.URL.String(), http.StatusSeeOther)
 	return
 
 }
