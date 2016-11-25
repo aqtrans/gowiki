@@ -344,7 +344,7 @@ func init() {
 
 	gitPath, err = exec.LookPath("git")
 	if err != nil {
-		log.Fatal("git must be installed")
+		log.Fatalln("git must be installed")
 	}
 	/*
 		templatesDir := "./templates/"
@@ -407,8 +407,7 @@ func (r *renderer) NormalText(out *bytes.Buffer, text []byte) {
 		return
 	}
 	r.Html.NormalText(out, text)
-	//log.Println("title " + string(title))
-	//log.Println("content " + string(content))
+
 }
 
 func checkErr(name string, err error) {
@@ -499,7 +498,6 @@ func (conf *configuration) save() bool {
 		checkErr("conf.save()/toml.Encode", err)
 		return false
 	}
-	//log.Println(buf.String())
 
 	err = ioutil.WriteFile("./data/conf.toml", buf.Bytes(), 0644)
 	if err != nil {
@@ -545,28 +543,8 @@ func jsTags(tagS []string) string {
 	}
 	tags = strings.TrimPrefix(tags, ", ")
 	tags = strings.TrimSuffix(tags, ", ")
-	//log.Println(tags)
 	return tags
 }
-
-/*
-// Special Markdown render helper to convert [/empty/wiki/links]() to a full <a href> link
-// Borrowed most of this from https://raw.githubusercontent.com/gogits/gogs/master/modules/markdown/markdown.go
-func replaceInterwikiLinks(rawBytes []byte, urlPrefix string) []byte {
-	return linkPattern.ReplaceAll(rawBytes, []byte(fmt.Sprintf(`<a href="%s/$1">/$1</a>`, urlPrefix)))
-	/*
-		ms := linkPattern.FindAll(rawBytes, -1)
-		for _, m := range ms {
-			m2 := bytes.TrimPrefix(m, []byte("["))
-			m2 = bytes.TrimSuffix(m2, []byte("]()"))
-			//log.Println(string(m2))
-			rawBytes = []byte(fmt.Sprintf(`<a href="%s%s">%s</a>`, urlPrefix, m2, m2, ))
-			//rawBytes = link
-		}
-
-	//return rawBytes
-}
-*/
 
 // CUSTOM GIT WRAPPERS
 // Construct an *exec.Cmd for `git {args}` with a workingDirectory
@@ -612,11 +590,13 @@ func gitIsClean() error {
 		return errors.New(string(uo))
 	}
 
+	// Fetch changes from remote
 	err = gitCommand("fetch").Run()
 	if err != nil {
 		return err
 	}
 
+	// Now check the status, minus untracked files
 	c := gitCommand("status", "-uno")
 
 	o, err := c.Output()
@@ -633,6 +613,60 @@ func gitIsClean() error {
 	if bytes.Contains(o, gitAhead) {
 		//return gitPush()
 		return errors.New(string(o))
+		//return ErrGitAhead
+	}
+
+	if bytes.Contains(o, gitDiverged) {
+		return errors.New(string(o))
+		//return ErrGitDiverged
+	}
+
+	/*
+		if len(o) != 0 {
+			return o, ErrGitDirty
+		}
+	*/
+
+	return nil
+}
+
+func gitIsCleanStartup() error {
+	gitBehind := []byte("Your branch is behind")
+	gitAhead := []byte("Your branch is ahead")
+	gitDiverged := []byte("have diverged")
+
+	// Check for untracked files first
+	u := gitCommand("ls-files", "--exclude-standard", "--others")
+	uo, err := u.Output()
+	if len(uo) != 0 {
+		return errors.New(string(uo))
+	}
+
+	// Fetch changes from remote
+	err = gitCommand("fetch").Run()
+	if err != nil {
+		return err
+	}
+
+	// Now check the status, minus untracked files
+	c := gitCommand("status", "-uno")
+
+	o, err := c.Output()
+	if err != nil {
+		return err
+	}
+
+	if bytes.Contains(o, gitBehind) {
+		log.Println("gitIsCleanStartup: Pulling git repo...")
+		return gitPull()
+		//return errors.New(string(o))
+		//return ErrGitBehind
+	}
+
+	if bytes.Contains(o, gitAhead) {
+		log.Println("gitIsCleanStartup: Pushing git repo...")
+		return gitPush()
+		//return errors.New(string(o))
 		//return ErrGitAhead
 	}
 
@@ -762,7 +796,7 @@ func gitGetFileLog(filename string) ([]*commitLog, error) {
 		}
 		// Now shortening the SHA1 to 7 digits, supposed to be the default git short sha output
 		shortsha := vs[0][0:7]
-		//log.Println(shortsha)
+
 		// vs[0] = commit, vs[1] = date, vs[2] = message
 		theCommit := &commitLog{
 			Filename: filename,
@@ -856,9 +890,6 @@ func loadPage(r *http.Request) *page {
 	//token := auth.GetToken(r.Context())
 	token := csrf.TemplateField(r.Context(), r)
 
-	//log.Println("Message: ")
-	//log.Println(msg)
-
 	var message string
 	if msg != "" {
 		message = `
@@ -879,7 +910,6 @@ func loadPage(r *http.Request) *page {
 	go favsHandler(favs)
 	gofavs := <-favs
 
-	//log.Println(gofavs)
 	return &page{SiteName: "GoWiki", Favs: gofavs, UN: user, IsAdmin: isAdmin, Token: token, FlashMsg: message}
 }
 
@@ -981,8 +1011,6 @@ func recentHandler(w http.ResponseWriter, r *http.Request) {
 	gh, err := gitHistory()
 	checkErr("recentHandler()/gitHistory", err)
 
-	//log.Println(gh)
-	//log.Println(gh[10])
 	/*
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(200)
@@ -991,7 +1019,6 @@ func recentHandler(w http.ResponseWriter, r *http.Request) {
 	var split2 []string
 	var recents []*recent
 
-	//log.Println(gh[0])
 	for _, v := range gh {
 		split = strings.Split(strings.TrimSpace(v), " ")
 		date, err := strconv.ParseInt(split[0], 0, 64)
@@ -2355,7 +2382,7 @@ func bleveIndex() {
 	timestamp := "2006-01-02 at 03:04:05PM"
 	index, err = bleve.Open("./data/index.bleve")
 
-	log.Println("Search crawling: started")
+	httputils.Debugln("bleveIndex: Search crawling: started")
 
 	// If index exists, crawl and re-index
 	if err == nil {
@@ -2546,7 +2573,7 @@ func bleveIndex() {
 
 	}
 
-	log.Println("Search crawling: done")
+	httputils.Debugln("bleveIndex: Search crawling: done")
 
 }
 
@@ -2698,7 +2725,7 @@ func crawlWiki() {
 					favMap = make(map[string]struct{})
 				}
 				if _, ok := favMap[file]; !ok {
-					log.Println(file + " is not already a favorite.")
+					httputils.Debugln("crawlWiki: " + file + " is not already a favorite.")
 					favMap[file] = struct{}{}
 				}
 				//favbuf.WriteString(file + " ")
@@ -2749,8 +2776,6 @@ func crawlWiki() {
 				}
 				wps = append(wps, wp)
 			}
-			//log.Println(string(body))
-			//log.Println(string(wp.wiki.Content))
 		}
 
 	}
@@ -2769,28 +2794,12 @@ func refreshStuff() {
 
 	// Update list of wiki pages
 	go crawlWiki()
-	/*
-		// Crawl for new favorites only on startup and save
-		log.Println("Fav crawling: started")
-		err := filepath.Walk(viper.GetString("WikiDir"), readFavs)
-		if err != nil {
-			log.Println("init: unable to crawl for favorites")
-		}
-		log.Println("Fav crawling: done")
 
-		// Crawl for tags only on startup and save
-		log.Println("Tag crawling: started")
-		err = filepath.Walk(viper.GetString("WikiDir"), readTags)
-		if err != nil {
-			log.Println("init: unable to crawl for tags")
-		}
-		log.Println("Tag crawling: done")
-	*/
 }
 
 func markdownPreview(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
-	//log.Println(r.FormValue("md"))
+
 	w.Write([]byte(markdownRender([]byte(r.FormValue("md")))))
 }
 
@@ -2819,6 +2828,12 @@ func main() {
 	initWikiDir()
 
 	refreshStuff()
+
+	// Check for unclean Git dir on startup
+	err = gitIsCleanStartup()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	csrfSecure := true
 	if fLocal {
