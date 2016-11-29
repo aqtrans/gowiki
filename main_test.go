@@ -222,7 +222,7 @@ func TestNewHandler(t *testing.T) {
 		log.Fatal(autherr)
 	}
 	defer db.MustClose()
-	err := riceInit()
+	err = riceInit()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -286,7 +286,7 @@ func TestIndexPage(t *testing.T) {
 		log.Fatal(autherr)
 	}
 	defer db.MustClose()
-	err := riceInit()
+	err = riceInit()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -349,7 +349,7 @@ func TestIndexHistoryPage(t *testing.T) {
 		log.Fatal(autherr)
 	}
 	defer db.MustClose()
-	err := riceInit()
+	err = riceInit()
 	if err != nil {
 		log.Fatal(err)
 	}
