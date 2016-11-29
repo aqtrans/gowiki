@@ -591,10 +591,13 @@ func gitIsClean() error {
 	}
 
 	// Fetch changes from remote
-	err = gitCommand("fetch").Run()
-	if err != nil {
-		return err
-	}
+	// Commented out for now; adds a solid second to load times!
+	/*
+		err = gitCommand("fetch").Run()
+		if err != nil {
+			return err
+		}
+	*/
 
 	// Now check the status, minus untracked files
 	c := gitCommand("status", "-uno")
