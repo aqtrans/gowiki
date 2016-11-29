@@ -115,6 +115,10 @@ func TestWikiInit(t *testing.T) {
 
 // TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
 func TestNewWikiPage(t *testing.T) {
+	err := gitPull()
+	if err != nil {
+		t.Fatal(err)
+	}
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
 	randPage := auth.RandKey(8)
@@ -206,6 +210,10 @@ func TestHealthCheckHandler(t *testing.T) {
 }
 
 func TestNewHandler(t *testing.T) {
+	err := gitPull()
+	if err != nil {
+		t.Fatal(err)
+	}
 	db := mustOpenDB()
 	auth.Authdb = db.AuthDB
 	//auth.Authdb.DB = db.DB
@@ -266,6 +274,10 @@ func TestNewHandler(t *testing.T) {
 
 // TestIndex tests if viewing the index page, as a logged in user, properly returns a 200
 func TestIndexPage(t *testing.T) {
+	err := gitPull()
+	if err != nil {
+		t.Fatal(err)
+	}
 	db := mustOpenDB()
 	auth.Authdb = db.AuthDB
 	//auth.Authdb.DB = db.DB
@@ -325,6 +337,10 @@ func TestIndexPage(t *testing.T) {
 
 // TestIndexHistoryPage tests if viewing the history of the index page, as a logged in user, properly returns a 200
 func TestIndexHistoryPage(t *testing.T) {
+	err := gitPull()
+	if err != nil {
+		t.Fatal(err)
+	}
 	db := mustOpenDB()
 	auth.Authdb = db.AuthDB
 	//auth.Authdb.DB = db.DB
@@ -384,6 +400,10 @@ func TestIndexHistoryPage(t *testing.T) {
 
 // TestIndexEditPage tests if trying to edit the index page, as a logged in user, properly returns a 200
 func TestIndexEditPage(t *testing.T) {
+	err := gitPull()
+	if err != nil {
+		t.Fatal(err)
+	}
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("GET", "/edit/index", nil)
@@ -440,6 +460,10 @@ func TestIndexEditPage(t *testing.T) {
 
 // TestDirBaseHandler tests if trying to create a file 'inside' a file fails
 func TestDirBaseHandler(t *testing.T) {
+	err := gitPull()
+	if err != nil {
+		t.Fatal(err)
+	}
 	//setup()
 	// Create a request to pass to our handler.
 	form := url.Values{}
