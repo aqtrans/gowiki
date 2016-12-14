@@ -256,6 +256,7 @@ func TestNewHandler(t *testing.T) {
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusNotFound {
+		t.Log(rr.Body.String())
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusNotFound)
 	}
