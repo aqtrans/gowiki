@@ -1285,7 +1285,28 @@ func checkName(name string) (string, error) {
 	//  If so, do some quick checking on that supposed directory
 	dir, _ := filepath.Split(name)
 	if dir != "" {
+		dirErr := checkDir(dir)
+		if dirErr != nil {
+			return "", dirErr
+		}
 
+		// Directory without specified index
+		if strings.HasSuffix(name, "/") {
+			//if dir != "" && name == "" {
+			log.Println("This might be a directory, trying to parse the index")
+			//filename := name + "index"
+			//title := name + " - Index"
+			//fullfilename = cfg.WikiDir + name + "index"
+			fullfilename = filepath.Join(viper.GetString("WikiDir"), name, "index")
+
+			dirindex, _ := os.Open(fullfilename)
+			_, dirindexfierr := dirindex.Stat()
+			if os.IsNotExist(dirindexfierr) {
+				return "", ErrNoDirIndex
+			}
+		}
+
+		/*
 		// Check that the base "directory" is actually a directory
 		// First we get the first path element, using strings.Split
 		// TODO: This should probably be made into a for loop on the strings.Split
@@ -1296,14 +1317,14 @@ func checkName(name string) (string, error) {
 		if baseerr == nil {
 			basefi, basefierr := basefile.Stat()
 			// I don't think these should matter
-			/*
+			
 				if os.IsNotExist(basefierr) {
 					//log.Println("OMG")
 					log.Println("Unhandled basefierr1: ")
 					log.Println(basefierr)
 					return "", basefierr
 				}
-			*/
+			
 			if basefierr != nil && !os.IsNotExist(basefierr) {
 				log.Println("Unhandled basefierr2: ")
 				log.Println(basefierr)
@@ -1337,6 +1358,7 @@ func checkName(name string) (string, error) {
 				return "", ErrNoDirIndex
 			}
 		}
+		*/
 	}
 
 	if fierr != nil {
@@ -1373,6 +1395,44 @@ func checkName(name string) (string, error) {
 	// Just return nothing...
 	log.Println("EXCEPTION: Unaccounted for return in checkName")
 	return "", nil
+}
+
+// checkDir should perform a recursive check over all directory elements of a given path,
+//  and check that we're not trying to overwrite a file with a directory
+func checkDir(dir string) error {
+	dirs := strings.Split(dir, "/")
+	var relpath string 
+	var err error
+	for _, v := range dirs {
+		// relpath progressively builds up the /path/to/file, element by element
+		relpath = filepath.Join(relpath, v)
+		// We combine that with the configured WikiDir to get the fullpath
+		fullpath := filepath.Join(viper.GetString("WikiDir"), relpath)
+		// Then try and open the fullpath to the element in question
+		file, fileOpenErr := os.Open(fullpath)
+		if fileOpenErr != nil {
+			err = fileOpenErr
+		}
+
+		fileInfo, fileInfoErr := file.Stat()
+		// If there is an error, and it's not just a non-existent file, panic
+		if fileInfoErr != nil && !os.IsNotExist(fileInfoErr) {
+			log.Println("Unhandled checkDir/fileInfo error: ")
+			err = fileInfoErr
+		}
+		// If the 'file' can be opened, now determine if it's a file or a directory
+		fileMode := fileInfo.Mode()
+		// I believe this should be the only path to success...
+		if fileMode.IsDir() {
+			err = nil
+		} else {
+			err = ErrBaseNotDir
+		}
+
+		//log.Println(dirs[:k])
+	}
+	//log.Println(relpath)
+	return err
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
