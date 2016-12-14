@@ -1356,23 +1356,28 @@ func checkDir(dir string) error {
 		fullpath := filepath.Join(viper.GetString("WikiDir"), relpath)
 		// Then try and open the fullpath to the element in question
 		file, fileOpenErr := os.Open(fullpath)
-		if fileOpenErr != nil {
+		// If it doesn't exist, move on
+		if os.IsNotExist(fileOpenErr) {
+			err = nil 
+		} else if fileOpenErr != nil && !os.IsNotExist(fileOpenErr) {
 			err = fileOpenErr
-		}
-
-		fileInfo, fileInfoErr := file.Stat()
-		// If there is an error, and it's not just a non-existent file, panic
-		if fileInfoErr != nil && !os.IsNotExist(fileInfoErr) {
-			log.Println("Unhandled checkDir/fileInfo error: ")
-			err = fileInfoErr
-		}
-		// If the 'file' can be opened, now determine if it's a file or a directory
-		fileMode := fileInfo.Mode()
-		// I believe this should be the only path to success...
-		if fileMode.IsDir() {
-			err = nil
-		} else {
-			err = ErrBaseNotDir
+		} else if fileOpenErr == nil {
+			fileInfo, fileInfoErr := file.Stat()
+			// If there is an error, and it's not just a non-existent file, panic
+			if fileInfoErr != nil && !os.IsNotExist(fileInfoErr) {
+				log.Println("Unhandled checkDir/fileInfo error: ")
+				err = fileInfoErr
+			}
+			if fileInfoErr == nil {
+				// If the 'file' can be opened, now determine if it's a file or a directory
+				fileMode := fileInfo.Mode()
+				// I believe this should be the only path to success...
+				if fileMode.IsDir() {
+					err = nil
+				} else {
+					err = ErrBaseNotDir
+				}
+			}
 		}
 
 		//log.Println(dirs[:k])
