@@ -1305,60 +1305,6 @@ func checkName(name string) (string, error) {
 				return "", ErrNoDirIndex
 			}
 		}
-
-		/*
-		// Check that the base "directory" is actually a directory
-		// First we get the first path element, using strings.Split
-		// TODO: This should probably be made into a for loop on the strings.Split
-		//    To ensure multi-level directories are protected the same
-		base := strings.Split(name, "/")[0]
-		basepath := filepath.Join(viper.GetString("WikiDir"), base)
-		basefile, baseerr := os.Open(basepath)
-		if baseerr == nil {
-			basefi, basefierr := basefile.Stat()
-			// I don't think these should matter
-			
-				if os.IsNotExist(basefierr) {
-					//log.Println("OMG")
-					log.Println("Unhandled basefierr1: ")
-					log.Println(basefierr)
-					return "", basefierr
-				}
-			
-			if basefierr != nil && !os.IsNotExist(basefierr) {
-				log.Println("Unhandled basefierr2: ")
-				log.Println(basefierr)
-				return "", basefierr
-			}
-			if basefierr == nil {
-				basefimode := basefi.Mode()
-				if !basefimode.IsDir() {
-					//http.Error(w, basefi.Name()+" is not a directory.", 500)
-					return "", ErrBaseNotDir
-				}
-				if basefimode.IsRegular() {
-					//http.Error(w, basefi.Name()+" is not a directory.", 500)
-					return "", ErrBaseNotDir
-				}
-			}
-		}
-
-		// Directory without specified index
-		if strings.HasSuffix(name, "/") {
-			//if dir != "" && name == "" {
-			log.Println("This might be a directory, trying to parse the index")
-			//filename := name + "index"
-			//title := name + " - Index"
-			//fullfilename = cfg.WikiDir + name + "index"
-			fullfilename = filepath.Join(viper.GetString("WikiDir"), name, "index")
-
-			dirindex, _ := os.Open(fullfilename)
-			_, dirindexfierr := dirindex.Stat()
-			if os.IsNotExist(dirindexfierr) {
-				return "", ErrNoDirIndex
-			}
-		}
-		*/
 	}
 
 	if fierr != nil {
