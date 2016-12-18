@@ -885,6 +885,7 @@ func gitHistory() ([]string, error) {
 }
 
 func loadPage(r *http.Request) *page {
+	defer httputils.TimeTrack(time.Now(), "loadPage")
 	//timer.Step("loadpageFunc")
 
 	// Auth lib middlewares should load the user and tokens into context for reading
@@ -1057,6 +1058,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func readFileAndFront(filename string) (frontmatter, []byte, error) {
+	//defer httputils.TimeTrack(time.Now(), "readFileAndFront")
+
 	f, err := os.Open(filename)
 	checkErr("readFileAndFront()/Open", err)
 
@@ -1065,6 +1068,7 @@ func readFileAndFront(filename string) (frontmatter, []byte, error) {
 }
 
 func readWikiPage(reader io.Reader) (frontmatter, []byte, error) {
+	//defer httputils.TimeTrack(time.Now(), "readWikiPage")
 
 	s := bufio.NewScanner(reader)
 
@@ -1106,6 +1110,7 @@ func readWikiPage(reader io.Reader) (frontmatter, []byte, error) {
 }
 
 func readFront(reader io.Reader) (frontmatter, error) {
+	//defer httputils.TimeTrack(time.Now(), "readFront")
 
 	s := bufio.NewScanner(reader)
 
@@ -1146,6 +1151,8 @@ func readFront(reader io.Reader) (frontmatter, error) {
 }
 
 func marshalFrontmatter(fmdata []byte) (fm frontmatter, err error) {
+	//defer httputils.TimeTrack(time.Now(), "marshalFrontmatter")
+
 	if fmdata != nil {
 		err = yaml.Unmarshal(fmdata, &fm)
 		if err != nil {
@@ -1235,6 +1242,41 @@ func parseBool(value string) bool {
 	return boolValue
 }
 
+// doesPageExist checks if the given name exists, and is a  regular file
+// If there is anything wrong, it panics
+func doesPageExist(name string) bool {
+	defer httputils.TimeTrack(time.Now(), "doesPageExist")
+
+	exists := false
+
+	fileInfo, err := os.Stat(name)
+	if err == nil {
+		fileMode := fileInfo.Mode()
+		if fileMode.IsRegular() {
+			exists = true
+		}
+	}
+	if err != nil {
+		if os.IsNotExist(err) {
+			exists = false
+		} else {
+			panic(err)
+		}
+	}
+
+	return exists
+}
+
+// Check that the given path, full or not, is relative to the configured wikidir
+func relativePathCheck(name string) {
+	defer httputils.TimeTrack(time.Now(), "relativePathCheck")
+
+	_, err := filepath.Rel(viper.GetString("WikiDir"), name)
+	if err != nil {
+		panic(err)
+	}
+}
+
 // This does various checks to see if an existing page exists or not
 // Also checks for and returns an error on some edge cases
 // So we only proceed if this returns false AND nil
@@ -1242,6 +1284,8 @@ func parseBool(value string) bool {
 // - If name is trying to escape or otherwise a bad path
 // - If name is a /directory/file combo, but /directory is actually a file
 func checkName(name string) (string, error) {
+	defer httputils.TimeTrack(time.Now(), "checkName")
+
 	separators := regexp.MustCompile(`[ &_=+:]`)
 	dashes := regexp.MustCompile(`[\-]+`)
 
@@ -1258,28 +1302,10 @@ func checkName(name string) (string, error) {
 	// Build the full path
 	fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
 	// Check that the full path is relative to the configured wikidir
-	_, relerr := filepath.Rel(viper.GetString("WikiDir"), fullfilename)
-	if relerr != nil {
-		log.Println("Unhandled relerr: ")
-		log.Println(relerr)
-		return "", relerr
-	}
-
-	// Normalize the name, but into a separate variable
-	normalName := strings.ToLower(name)
-	normalName = separators.ReplaceAllString(normalName, "-")
-	normalName = dashes.ReplaceAllString(normalName, "-")
-	// Check for existence of normalName now
-	fullNormalFilename := filepath.Join(viper.GetString("WikiDir"), normalName)
-	_, relNerr := filepath.Rel(viper.GetString("WikiDir"), fullNormalFilename)
-	if relNerr != nil {
-		log.Println("Unhandled relNerr: ")
-		log.Println(relNerr)
-		return "", relNerr
-	}
+	relativePathCheck(fullfilename)
 
 	// First check if the file exists (before modifying and normalizing the filename)
-	_, fierr := os.Stat(fullfilename)
+	//_, fierr := os.Stat(fullfilename)
 
 	// Quick check to see if there is a directory here
 	//  If so, do some quick checking on that supposed directory
@@ -1299,43 +1325,64 @@ func checkName(name string) (string, error) {
 			//fullfilename = cfg.WikiDir + name + "index"
 			fullfilename = filepath.Join(viper.GetString("WikiDir"), name, "index")
 
-			dirindex, _ := os.Open(fullfilename)
-			_, dirindexfierr := dirindex.Stat()
-			if os.IsNotExist(dirindexfierr) {
+			if !doesPageExist(fullfilename) {
 				return "", ErrNoDirIndex
 			}
 		}
 	}
 
-	if fierr != nil {
-		// If the filename as-is does not exist, we'll normalize the name before continuing
-		if os.IsNotExist(fierr) {
-			_, fiNerr := os.Stat(fullNormalFilename)
-			if fiNerr != nil {
-				// If the normalName does not exist either, return that name
-				if os.IsNotExist(fiNerr) {
-					return normalName, ErrNoFile
-				}
-				// If there is a fiNerr and it's not IsNotExist, we'll log it
-				log.Println("Unhandled fiNerr: ")
-				log.Println(fiNerr)
-				return normalName, fiNerr
-			}
-			// This should mean the normalName exists, YAY!
-			if fiNerr == nil {
-				return normalName, nil
-			}
-			// If there is a fierr and it's not IsNotExist, we'll log it
-		} else {
-			log.Println("Unhandled fierr: ")
-			log.Println(fierr)
-			return normalName, fierr
+	origExists := doesPageExist(fullfilename)
+
+	// If original filename does not exist, normalize the filename, and check if it exists
+	if !origExists {
+		// Normalize the name, but into a separate variable
+		normalName := strings.ToLower(name)
+		normalName = separators.ReplaceAllString(normalName, "-")
+		normalName = dashes.ReplaceAllString(normalName, "-")
+		fullNormalFilename := filepath.Join(viper.GetString("WikiDir"), normalName)
+
+		// Check (and panic if not) if normalized filename is relative
+		relativePathCheck(fullNormalFilename)
+		normalExists := doesPageExist(fullNormalFilename)
+		if !normalExists {
+			return normalName, ErrNoFile
+		}
+		if normalExists {
+			return normalName, nil
 		}
 	}
-	// This should mean the name exists, YAY!
-	if fierr == nil {
+
+	if origExists {
 		return name, nil
 	}
+
+	/*
+		if fierr != nil {
+			// If the filename as-is does not exist, we'll normalize the name before continuing
+			if os.IsNotExist(fierr) {
+				_, fiNerr := os.Stat(fullNormalFilename)
+				if fiNerr != nil {
+					// If the normalName does not exist either, return that name
+					if os.IsNotExist(fiNerr) {
+						return normalName, ErrNoFile
+					}
+					// If there is a fiNerr and it's not IsNotExist, we'll log it
+					panic(fiNerr)
+				}
+				// This should mean the normalName exists, YAY!
+				if fiNerr == nil {
+					return normalName, nil
+				}
+				// If there is a fierr and it's not IsNotExist, we'll log it
+			} else {
+				panic(fierr)
+			}
+		}
+		// This should mean the name exists, YAY!
+		if fierr == nil {
+			return name, nil
+		}
+	*/
 
 	//return true, nil
 	// Just return nothing...
@@ -1346,8 +1393,10 @@ func checkName(name string) (string, error) {
 // checkDir should perform a recursive check over all directory elements of a given path,
 //  and check that we're not trying to overwrite a file with a directory
 func checkDir(dir string) error {
+	defer httputils.TimeTrack(time.Now(), "checkDir")
+
 	dirs := strings.Split(dir, "/")
-	var relpath string 
+	var relpath string
 	var err error
 	for _, v := range dirs {
 		// relpath progressively builds up the /path/to/file, element by element
@@ -1358,7 +1407,7 @@ func checkDir(dir string) error {
 		file, fileOpenErr := os.Open(fullpath)
 		// If it doesn't exist, move on
 		if os.IsNotExist(fileOpenErr) {
-			err = nil 
+			err = nil
 		} else if fileOpenErr != nil && !os.IsNotExist(fileOpenErr) {
 			err = fileOpenErr
 		} else if fileOpenErr == nil {
@@ -1420,10 +1469,6 @@ func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 			log.Println("Cannot create subdir of a file.")
 			http.Error(w, "Cannot create subdir of a file.", 500)
 			return
-		} else if err == ErrNoDirIndex {
-			log.Println("No directory index. Does this even need to be an error?")
-			http.Error(w, "Cannot create subdir of a file.", 500)
-			return
 		} else {
 			httpErrorHandler(w, r, err)
 		}
@@ -1446,6 +1491,7 @@ type Wiki struct {
 }*/
 /////////////////////////////
 func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
+	defer httputils.TimeTrack(time.Now(), "loadWikiPage")
 
 	//log.Println("Filename: " + name)
 
@@ -1567,6 +1613,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
 }
 
 func setFlash(msg string, w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "setFlash")
 	auth.SetSession("flash", msg, w, r)
 }
 
@@ -1630,6 +1677,8 @@ func favsHandler(favs chan []string) {
 }
 
 func loadWiki(name string) (*wiki, error) {
+	defer httputils.TimeTrack(time.Now(), "loadWiki")
+
 	var fm frontmatter
 	var pagetitle string
 
@@ -1645,34 +1694,37 @@ func loadWiki(name string) (*wiki, error) {
 
 	fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
 
-	// Directory without specified index
-	if strings.HasSuffix(name, "/") {
-		//if dir != "" && name == "" {
-		log.Println("This might be a directory, trying to parse the index")
+	/*
+		// Directory without specified index
+		if strings.HasSuffix(name, "/") {
+			//if dir != "" && name == "" {
+			log.Println("This might be a directory, trying to parse the index")
 
-		fullfilename = filepath.Join(viper.GetString("WikiDir"), name, "index")
+			fullfilename = filepath.Join(viper.GetString("WikiDir"), name, "index")
 
-		dirindex, _ := os.Open(fullfilename)
-		_, dirindexfierr := dirindex.Stat()
-		if os.IsNotExist(dirindexfierr) {
-			return nil, ErrNoDirIndex
+			dirindex, _ := os.Open(fullfilename)
+			_, dirindexfierr := dirindex.Stat()
+			if os.IsNotExist(dirindexfierr) {
+				return nil, ErrNoDirIndex
+			}
 		}
-	}
 
-	// Check for non-existent wiki pages
-	_, fierr := os.Stat(fullfilename)
-	if os.IsNotExist(fierr) {
-		wp := &wiki{
-			Title:    name,
-			Filename: name,
-			Frontmatter: &frontmatter{
-				Title: name,
-			},
-			CreateTime: 0,
-			ModTime:    0,
+		// Check for non-existent wiki pages
+		//_, fierr := os.Stat(fullfilename)
+		//if os.IsNotExist(fierr) {
+		if !doesPageExist(fullfilename) {
+			wp := &wiki{
+				Title:    name,
+				Filename: name,
+				Frontmatter: &frontmatter{
+					Title: name,
+				},
+				CreateTime: 0,
+				ModTime:    0,
+			}
+			return wp, ErrNoFile
 		}
-		return wp, ErrNoFile
-	}
+	*/
 
 	fm, content, err := readFileAndFront(fullfilename)
 	if err != nil {
@@ -2173,17 +2225,18 @@ func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func isWikiPage(fullname string) bool {
+	isIt := false
 	// Detect filetype first
 	file, err := os.Open(fullname)
 	if err != nil {
 		log.Println(err)
-		return false
+		isIt = false
 	}
 	buff := make([]byte, 512)
 	_, err = file.Read(buff)
 	if err != nil {
 		log.Println(err)
-		return false
+		isIt = false
 	}
 
 	filetype := http.DetectContentType(buff)
@@ -2195,15 +2248,15 @@ func isWikiPage(fullname string) bool {
 				return true
 			}
 		*/
-		return true
+		isIt = true
 	}
 	if filetype == "text/plain; charset=utf-8" {
-		return true
+		isIt = true
 	}
 
 	log.Println(fullname + " is " + filetype)
 
-	return false
+	return isIt
 }
 
 // wikiHandler wraps around all wiki page handlers
@@ -2926,7 +2979,8 @@ func main() {
 
 	r.GET(`/edit/*name`, auth.AuthMiddle(wikiHandler(editHandler)))
 	r.POST(`/save/*name`, auth.AuthMiddle(wikiHandler(saveHandler)))
-	r.GET(`/history/*name`, wikiHandler(historyHandler))
+	r.GET(`/history/*name`, auth.AuthMiddle(wikiHandler(historyHandler)))
+	//r.GET(`/new/*name`, auth.AuthMiddle(newHandler))
 	r.GET(`/*name`, wikiHandler(viewHandler))
 
 	http.HandleFunc("/robots.txt", httputils.RobotsHandler)
@@ -2936,6 +2990,6 @@ func main() {
 	http.Handle("/", s.Then(h))
 
 	log.Println("Listening on port " + viper.GetString("Port"))
-	http.ListenAndServe("0.0.0.0:"+viper.GetString("Port"), nil)
+	checkErr("http.ListenAndServe", http.ListenAndServe("0.0.0.0:"+viper.GetString("Port"), nil))
 
 }
