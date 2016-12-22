@@ -43,6 +43,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -1670,8 +1671,11 @@ func favsHandler(favs chan []string) {
 	for fav := range favMap {
 		sfavs = append(sfavs, fav)
 	}
+
 	//httputils.Debugln("Favorites: " + favss)
 	//sfavs := strings.Fields(favss)
+
+	sort.Strings(sfavs)
 
 	favs <- sfavs
 }
@@ -2879,6 +2883,10 @@ func main() {
 	httputils.AssetsBox = rice.MustFindBox("assets")
 	auth.AdminUser = viper.GetString("AdminUser")
 	auth.AdminPass = viper.GetString("AdminPass")
+
+	// Set a static auth.HashKey and BlockKey to keep sessions after restarts:
+	auth.HashKey = []byte("5CO4mHhkuV4BVDZT72pfkNxVhxOMHMN9lTZjGihKJoNWOUQf5j32NF2nx8RQypUh")
+	auth.BlockKey = []byte("YuBmqpu4I40ObfPHw0gl7jeF88bk4eT4")
 
 	// Open and initialize auth database
 	err := authInit("./data/auth.db")
