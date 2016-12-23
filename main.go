@@ -80,7 +80,7 @@ const yamlsep = "---"
 const yamlsep2 = "..."
 
 const (
-	commonHtmlFlags = 0 |
+	commonHTMLFlags = 0 |
 		blackfriday.HTML_FOOTNOTE_RETURN_LINKS |
 		blackfriday.HTML_TOC |
 		blackfriday.HTML_NOFOLLOW_LINKS
@@ -132,15 +132,15 @@ var (
 	tagMap         map[string][]string
 	index          bleve.Index
 	wikiList       map[string][]*wiki
-	ErrNotInGit    = errors.New("given file not in Git repo")
-	ErrNoFile      = errors.New("no such file")
-	ErrNoDirIndex  = errors.New("no such directory index")
-	ErrBaseNotDir  = errors.New("cannot create subdirectory of a file")
-	ErrGitDirty    = errors.New("directory is dirty")
-	ErrBadPath     = errors.New("given path is invalid")
-	ErrGitAhead    = errors.New("Wiki git repo is ahead; Need to push.")
-	ErrGitBehind   = errors.New("Wiki git repo is behind; Need to pull.")
-	ErrGitDiverged = errors.New("Wiki git repo has diverged; Need to intervene manually.")
+	errNotInGit    = errors.New("given file not in Git repo")
+	errNoFile      = errors.New("no such file")
+	errNoDirIndex  = errors.New("no such directory index")
+	errBaseNotDir  = errors.New("cannot create subdirectory of a file")
+	errGitDirty    = errors.New("directory is dirty")
+	errBadPath     = errors.New("given path is invalid")
+	errGitAhead    = errors.New("Wiki git repo is ahead; Need to push.")
+	errGitBehind   = errors.New("Wiki git repo is behind; Need to pull.")
+	errGitDiverged = errors.New("Wiki git repo has diverged; Need to intervene manually.")
 )
 
 type renderer struct {
@@ -154,6 +154,7 @@ type configuration struct {
 	WikiDir    string
 	GitRepo    string
 	AdminUser  string
+	AdminPass  string
 	PushOnSave bool
 }
 
@@ -298,7 +299,7 @@ func init() {
 	viper.SetDefault("Domain", "wiki.example.com")
 	viper.SetDefault("GitRepo", "git@example.com:user/wikidata.git")
 	viper.SetDefault("AdminUser", "admin")
-	viper.SetDefault("AdminUser", "admin")
+	viper.SetDefault("AdminPass", "admin")
 	viper.SetDefault("PushOnSave", false)
 
 	viper.SetConfigName("conf")
@@ -373,7 +374,7 @@ func init() {
 }
 
 func markdownRender(input []byte) string {
-	renderer := &renderer{Html: blackfriday.HtmlRenderer(commonHtmlFlags, "", "").(*blackfriday.Html)}
+	renderer := &renderer{Html: blackfriday.HtmlRenderer(commonHTMLFlags, "", "").(*blackfriday.Html)}
 
 	unsanitized := blackfriday.MarkdownOptions(input, renderer, blackfriday.Options{
 		Extensions: commonExtensions})
@@ -572,7 +573,7 @@ func gitClone(repo string) error {
 	//}
 	o, err := gitCommand("clone", repo, ".").CombinedOutput()
 	if err != nil {
-		return errors.New(fmt.Sprintf("error during `git clone`: %s\n%s", err.Error(), string(o)))
+		return fmt.Errorf("error during `git clone`: %s\n%s", err.Error(), string(o))
 	}
 	return nil
 }
@@ -692,7 +693,7 @@ func gitIsCleanStartup() error {
 func gitAddFilepath(filepath string) error {
 	o, err := gitCommand("add", filepath).CombinedOutput()
 	if err != nil {
-		return errors.New(fmt.Sprintf("error during `git add`: %s\n%s", err.Error(), string(o)))
+		return fmt.Errorf("error during `git add`: %s\n%s", err.Error(), string(o))
 	}
 	return nil
 }
@@ -701,7 +702,7 @@ func gitAddFilepath(filepath string) error {
 func gitCommitWithMessage(msg string) error {
 	o, err := gitCommand("commit", "-m", msg).CombinedOutput()
 	if err != nil {
-		return errors.New(fmt.Sprintf("error during `git commit`: %s\n%s", err.Error(), string(o)))
+		return fmt.Errorf("error during `git commit`: %s\n%s", err.Error(), string(o))
 	}
 
 	return nil
@@ -711,7 +712,7 @@ func gitCommitWithMessage(msg string) error {
 func gitCommitEmpty() error {
 	o, err := gitCommand("commit", "-m", "commit from GoWiki").CombinedOutput()
 	if err != nil {
-		return errors.New(fmt.Sprintf("error during `git commit`: %s\n%s", err.Error(), string(o)))
+		return fmt.Errorf("error during `git commit`: %s\n%s", err.Error(), string(o))
 	}
 
 	return nil
@@ -721,7 +722,7 @@ func gitCommitEmpty() error {
 func gitPush() error {
 	o, err := gitCommand("push", "-u", "origin", "master").CombinedOutput()
 	if err != nil {
-		return errors.New(fmt.Sprintf("error during `git push`: %s\n%s", err.Error(), string(o)))
+		return fmt.Errorf("error during `git push`: %s\n%s", err.Error(), string(o))
 	}
 
 	return nil
@@ -731,7 +732,7 @@ func gitPush() error {
 func gitPull() error {
 	o, err := gitCommand("pull").CombinedOutput()
 	if err != nil {
-		return errors.New(fmt.Sprintf("error during `git pull`: %s\n%s", err.Error(), string(o)))
+		return fmt.Errorf("error during `git pull`: %s\n%s", err.Error(), string(o))
 	}
 
 	return nil
@@ -743,13 +744,13 @@ func gitGetCtime(filename string) (int64, error) {
 	//var ctime int64
 	o, err := gitCommand("log", "--diff-filter=A", "--follow", "--format=%at", "-1", "--", filename).Output()
 	if err != nil {
-		return 0, errors.New(fmt.Sprintf("error during `git log --diff-filter=A --follow --format=%aD -1 --`: %s\n%s", err.Error(), string(o)))
+		return 0, fmt.Errorf("error during `git log --diff-filter=A --follow --format=at -1 --`: %s\n%s", err.Error(), string(o))
 	}
 	ostring := strings.TrimSpace(string(o))
 	// If output is blank, no point in wasting CPU doing the rest
 	if ostring == "" {
 		log.Println(filename + " is not checked into Git")
-		return 0, ErrNotInGit
+		return 0, errNotInGit
 	}
 	ctime, err := strconv.ParseInt(ostring, 10, 64)
 	checkErr("gitGetCtime()/ParseInt", err)
@@ -763,7 +764,7 @@ func gitGetMtime(filename string) (int64, error) {
 	//var mtime int64
 	o, err := gitCommand("log", "--format=%at", "-1", "--", filename).Output()
 	if err != nil {
-		return 0, errors.New(fmt.Sprintf("error during `git log -1 --format=%aD --`: %s\n%s", err.Error(), string(o)))
+		return 0, fmt.Errorf("error during `git log -1 --format=at --`: %s\n%s", err.Error(), string(o))
 	}
 	ostring := strings.TrimSpace(string(o))
 	// If output is blank, no point in wasting CPU doing the rest
@@ -783,7 +784,7 @@ func gitGetMtime(filename string) (int64, error) {
 func gitGetFileLog(filename string) ([]*commitLog, error) {
 	o, err := gitCommand("log", "--pretty=format:%H,%at,%s", filename).Output()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error during `git log`: %s\n%s", err.Error(), string(o)))
+		return nil, fmt.Errorf("error during `git log`: %s\n%s", err.Error(), string(o))
 	}
 	// split each commit onto it's own line
 	logsplit := strings.Split(string(o), "\n")
@@ -820,7 +821,7 @@ func gitGetFileCommit(filename, commit string) ([]byte, error) {
 	fullcommit := commit + ":" + filename
 	o, err := gitCommand("show", fullcommit).CombinedOutput()
 	if err != nil {
-		return []byte{}, errors.New(fmt.Sprintf("error during `git show`: %s\n%s", err.Error(), string(o)))
+		return []byte{}, fmt.Errorf("error during `git show`: %s\n%s", err.Error(), string(o))
 	}
 	return o, nil
 }
@@ -830,7 +831,7 @@ func gitGetFileCommit(filename, commit string) ([]byte, error) {
 func gitGetFileCommitDiff(filename, commit string) ([]byte, error) {
 	o, err := gitCommand("show", commit).CombinedOutput()
 	if err != nil {
-		return []byte{}, errors.New(fmt.Sprintf("error during `git show`: %s\n%s", err.Error(), string(o)))
+		return []byte{}, fmt.Errorf("error during `git show`: %s\n%s", err.Error(), string(o))
 	}
 	return o, nil
 }
@@ -841,7 +842,7 @@ func gitGetFileCommitMtime(commit string) (int64, error) {
 	//var mtime int64
 	o, err := gitCommand("log", "--format=%at", "-1", commit).Output()
 	if err != nil {
-		return 0, errors.New(fmt.Sprintf("error during `git log -1 --format=%aD --`: %s\n%s", err.Error(), string(o)))
+		return 0, fmt.Errorf("error during `git log -1 --format=at --`: %s\n%s", err.Error(), string(o))
 	}
 	ostring := strings.TrimSpace(string(o))
 	mtime, err := strconv.ParseInt(ostring, 10, 64)
@@ -854,7 +855,7 @@ func gitGetFileCommitMtime(commit string) (int64, error) {
 func gitLs() ([]string, error) {
 	o, err := gitCommand("ls-files", "-z").Output()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error during `git ls-files`: %s\n%s", err.Error(), string(o)))
+		return nil, fmt.Errorf("error during `git ls-files`: %s\n%s", err.Error(), string(o))
 	}
 	nul := bytes.Replace(o, []byte("\x00"), []byte("\n"), -1)
 	// split each commit onto it's own line
@@ -866,7 +867,7 @@ func gitLs() ([]string, error) {
 func gitHistory() ([]string, error) {
 	o, err := gitCommand("log", "--name-only", "--pretty=format:_END %at %H", "-z", "HEAD").Output()
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("error during `git history`: %s\n%s", err.Error(), string(o)))
+		return nil, fmt.Errorf("error during `git history`: %s\n%s", err.Error(), string(o))
 	}
 
 	// Get rid of first _END
@@ -956,7 +957,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 		panic(err)
 	}
 	ctime, err := gitGetCtime(name)
-	if err != nil && err != ErrNotInGit {
+	if err != nil && err != errNotInGit {
 		panic(err)
 	}
 	mtime, err := gitGetFileCommitMtime(commit)
@@ -1327,7 +1328,7 @@ func checkName(name string) (string, error) {
 			fullfilename = filepath.Join(viper.GetString("WikiDir"), name, "index")
 
 			if !doesPageExist(fullfilename) {
-				return "", ErrNoDirIndex
+				return "", errNoDirIndex
 			}
 		}
 	}
@@ -1346,7 +1347,7 @@ func checkName(name string) (string, error) {
 		relativePathCheck(fullNormalFilename)
 		normalExists := doesPageExist(fullNormalFilename)
 		if !normalExists {
-			return normalName, ErrNoFile
+			return normalName, errNoFile
 		}
 		if normalExists {
 			return normalName, nil
@@ -1425,7 +1426,7 @@ func checkDir(dir string) error {
 				if fileMode.IsDir() {
 					err = nil
 				} else {
-					err = ErrBaseNotDir
+					err = errBaseNotDir
 				}
 			}
 		}
@@ -1457,23 +1458,21 @@ func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
 	// Get Wiki
 	p, err := loadWikiPage(r, name)
 	if err != nil {
-		if err == ErrNoDirIndex {
+		if err == errNoDirIndex {
 			log.Println("No such dir index...creating one.")
 			http.Redirect(w, r, "/"+name+"/index", http.StatusTemporaryRedirect)
 			return
-		} else if err == ErrNoFile {
+		} else if err == errNoFile {
 			log.Println("No such file...creating one.")
 			//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
 			createWiki(w, r, name)
 			return
-		} else if err == ErrBaseNotDir {
+		} else if err == errBaseNotDir {
 			log.Println("Cannot create subdir of a file.")
 			http.Error(w, "Cannot create subdir of a file.", 500)
 			return
-		} else {
-			httpErrorHandler(w, r, err)
 		}
-		http.NotFound(w, r)
+		httpErrorHandler(w, r, err)
 		return
 	}
 	renderTemplate(w, r.Context(), "wiki_view.tmpl", p)
@@ -1500,7 +1499,7 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 
 	wikip, err := loadWiki(name)
 	if err != nil {
-		if err == ErrNoFile && wikip != nil {
+		if err == errNoFile && wikip != nil {
 			newwp := &wikiPage{
 				page: p,
 				Wiki: wikip,
@@ -1529,7 +1528,7 @@ func editHandler(w http.ResponseWriter, r *http.Request, name string) {
 	p, err := loadWikiPage(r, name)
 
 	if err != nil {
-		if err == ErrNoFile {
+		if err == errNoFile {
 			//log.Println("No such file...creating one.")
 			renderTemplate(w, r.Context(), "wiki_edit.tmpl", p)
 			return
@@ -1639,7 +1638,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 	*/
 	pagetitle2, feErr := checkName(pagetitle)
 	// If page does not exist, ask to create it
-	if pagetitle2 != "" && feErr == ErrNoFile {
+	if pagetitle2 != "" && feErr == errNoFile {
 		createWiki(w, r, pagetitle2)
 		//http.Redirect(w, r, "/edit/"+pagetitle, http.StatusTemporaryRedirect)
 		return
@@ -2218,7 +2217,7 @@ func createWiki(w http.ResponseWriter, r *http.Request, name string) {
 
 }
 
-func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
+func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	// A very simple health check.
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
@@ -2280,7 +2279,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 
 		isWikiPage(fullname)
 
-		if name != "" && feErr == ErrNoFile {
+		if name != "" && feErr == errNoFile {
 			//log.Println(r.URL.RequestURI())
 
 			// If editing or saving, bypass create page
@@ -2945,7 +2944,7 @@ func main() {
 	r.GET("/search/*name", search)
 	r.POST("/search", search)
 	r.GET("/recent", auth.AuthMiddle(recentHandler))
-	r.GET("/health", HealthCheckHandler)
+	r.GET("/health", healthCheckHandler)
 
 	admin := h.NewGroup("/admin").UsingContext()
 	admin.GET("/", auth.AuthAdminMiddle(adminMainHandler))
