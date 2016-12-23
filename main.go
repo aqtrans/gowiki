@@ -74,7 +74,7 @@ import (
 
 type key int
 
-const TimerKey key = 0
+const timerKey key = 0
 
 const yamlsep = "---"
 const yamlsep2 = "..."
@@ -510,11 +510,11 @@ func (conf *configuration) save() bool {
 }
 
 func timeNewContext(c context.Context, t time.Time) context.Context {
-	return context.WithValue(c, TimerKey, t)
+	return context.WithValue(c, timerKey, t)
 }
 
 func timeFromContext(c context.Context) time.Time {
-	t, ok := c.Value(TimerKey).(time.Time)
+	t, ok := c.Value(timerKey).(time.Time)
 	if !ok {
 		httputils.Debugln("No startTime in context.")
 		t = time.Now()
