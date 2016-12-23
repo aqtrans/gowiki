@@ -34,7 +34,7 @@ const RoleKey key = 2
 var (
 	server    *httptest.Server
 	reader    io.Reader //Ignore this for now
-	serverUrl string
+	serverURL string
 	//m         *mux.Router
 	//req       *http.Request
 	//rr        *httptest.ResponseRecorder
@@ -188,7 +188,7 @@ func TestHealthCheckHandler(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
-	handler := http.HandlerFunc(HealthCheckHandler)
+	handler := http.HandlerFunc(healthCheckHandler)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
