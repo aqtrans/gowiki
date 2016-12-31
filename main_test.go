@@ -477,16 +477,33 @@ func TestDirBaseHandler(t *testing.T) {
 	}
 	//log.Println(reader)
 
+	db := mustOpenDB()
+	t.Log(db.Path())
+	auth.Authdb = db.AuthDB
+	//auth.Authdb.DB = db.DB
+	autherr := auth.AuthDbInit()
+	if autherr != nil {
+		t.Fatal(autherr)
+	}
+	defer db.MustClose()
+
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	rr := httptest.NewRecorder()
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
+		Username: "admin",
+		IsAdmin:  true,
+	})
+	rctx := req.WithContext(ctx)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	handler := http.HandlerFunc(newHandler)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	handler.ServeHTTP(rr, req)
+	handler.ServeHTTP(rr, rctx)
 
 	//log.Println(rr.Header())
 	//log.Println(rr.Body)
