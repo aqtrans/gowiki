@@ -137,7 +137,7 @@ func TestNewWikiPage(t *testing.T) {
 	}
 	defer db.MustClose()
 
-	handler := http.HandlerFunc(wikiHandler(viewHandler))
+	handler := http.HandlerFunc(wikiMiddle(viewHandler))
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -362,7 +362,7 @@ func TestIndexHistoryPage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler := http.HandlerFunc(wikiHandler(historyHandler))
+	handler := http.HandlerFunc(wikiMiddle(historyHandler))
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -412,7 +412,7 @@ func TestIndexEditPage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	handler := http.HandlerFunc(auth.AuthMiddle(wikiHandler(editHandler)))
+	handler := http.HandlerFunc(auth.AuthMiddle(wikiMiddle(editHandler)))
 
 	db := mustOpenDB()
 	t.Log(db.Path())

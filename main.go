@@ -75,6 +75,7 @@ import (
 type key int
 
 const timerKey key = 0
+const wikiNameKey key = 1
 
 const yamlsep = "---"
 const yamlsep2 = "..."
@@ -522,6 +523,18 @@ func timeFromContext(c context.Context) time.Time {
 	return t
 }
 
+func newNameContext(c context.Context, t string) context.Context {
+	return context.WithValue(c, wikiNameKey, t)
+}
+
+func nameFromContext(c context.Context) string {
+	t, ok := c.Value(wikiNameKey).(string)
+	if !ok {
+		log.Fatalln("No wikiName in context.")
+	}
+	return t
+}
+
 func isAdmin(s string) bool {
 	if s == "User" {
 		return false
@@ -919,7 +932,9 @@ func loadPage(r *http.Request) *page {
 	return &page{SiteName: "GoWiki", Favs: gofavs, UN: user, IsAdmin: isAdmin, Token: token, FlashMsg: message}
 }
 
-func historyHandler(w http.ResponseWriter, r *http.Request, name string) {
+func historyHandler(w http.ResponseWriter, r *http.Request) {
+	name := nameFromContext(r.Context())
+
 	wikip, err := loadWikiPage(r, name)
 	if err != nil {
 		panic(err)
@@ -1315,7 +1330,7 @@ func checkName(name string) (string, error) {
 	if dir != "" {
 		dirErr := checkDir(dir)
 		if dirErr != nil {
-			return "", dirErr
+			return name, dirErr
 		}
 
 		// Directory without specified index
@@ -1328,7 +1343,7 @@ func checkName(name string) (string, error) {
 			fullfilename = filepath.Join(viper.GetString("WikiDir"), name, "index")
 
 			if !doesPageExist(fullfilename) {
-				return "", errNoDirIndex
+				return name, errNoDirIndex
 			}
 		}
 	}
@@ -1444,8 +1459,10 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	//viewHandler(w, r, "index")
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request, name string) {
+func viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "viewHandler")
+
+	name := nameFromContext(r.Context())
 
 	// If this is a commit, pass along the SHA1 to that function
 	if r.URL.Query().Get("commit") != "" {
@@ -1522,8 +1539,9 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 	return wp, nil
 }
 
-func editHandler(w http.ResponseWriter, r *http.Request, name string) {
+func editHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "editHandler")
+	name := nameFromContext(r.Context())
 
 	p, err := loadWikiPage(r, name)
 
@@ -1539,8 +1557,10 @@ func editHandler(w http.ResponseWriter, r *http.Request, name string) {
 	return
 }
 
-func saveHandler(w http.ResponseWriter, r *http.Request, name string) {
+func saveHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "saveHandler")
+
+	name := nameFromContext(r.Context())
 
 	r.ParseForm()
 	//txt := r.Body
@@ -1686,14 +1706,13 @@ func loadWiki(name string) (*wiki, error) {
 	var pagetitle string
 
 	// Check if file exists before doing anything else
-	/*
-		name, feErr := checkName(name)
-		if name != "" && feErr == ErrNoFile {
-			return nil, ErrNoFile
-		} else if feErr != nil {
-			return nil, feErr
-		}
-	*/
+
+	name, feErr := checkName(name)
+	if name != "" && feErr == errNoFile {
+		return nil, errNoFile
+	} else if feErr != nil {
+		return nil, feErr
+	}
 
 	fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
 
@@ -2873,6 +2892,68 @@ func markdownPreview(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(markdownRender([]byte(r.FormValue("md")))))
 }
 
+func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		params := getParams(r.Context())
+		name := params["name"]
+		username, isAdmin := auth.GetUsername(r.Context())
+		name, feErr := checkName(name)
+		ctx := newNameContext(r.Context(), name)
+
+		// if feErr is nil, file should exist, so read its frontmatter
+		if feErr == nil {
+			// Read YAML frontmatter into fm
+			// If err, just return, as file should not contain frontmatter
+			f, err := os.Open(filepath.Join(viper.GetString("WikiDir"), name))
+			checkErr("wikiMiddle()/Open", err)
+			defer f.Close()
+			fm, fmberr := readFront(f)
+			checkErr("wikiMiddle()/readFront", fmberr)
+
+			// If this is a public page, just serve it
+			if fm.Public {
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+			// If this is an admin page, check if user is admin before serving
+			if fm.Admin && !isAdmin {
+				log.Println(username + " attempting to access restricted URL.")
+				auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
+				http.Redirect(w, r.WithContext(ctx), "/", http.StatusSeeOther)
+				return
+			}
+		}
+
+		if auth.IsLoggedIn(r.Context()) {
+			err := gitIsClean()
+			if err != nil {
+				log.Println(err)
+				auth.SetSession("flash", err.Error(), w, r)
+				http.Redirect(w, r.WithContext(ctx), "/admin/git", http.StatusSeeOther)
+			}
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
+
+		// If not logged in, mitigate, as the page is presumed private
+		if !auth.IsLoggedIn(r.Context()) {
+			rurl := r.URL.String()
+			httputils.Debugln("wikiHandler mitigating: " + r.Host + rurl)
+			//w.Write([]byte("OMG"))
+
+			// Detect if we're in an endless loop, if so, just panic
+			if strings.HasPrefix(rurl, "login?url=/login") {
+				panic("AuthMiddle is in an endless redirect loop")
+			}
+			auth.SetSession("flash", "Please login to view that page.", w, r)
+			http.Redirect(w, r.WithContext(ctx), "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+			return
+		}
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 func main() {
 
 	//viper.WatchConfig()
@@ -2916,6 +2997,7 @@ func main() {
 
 	// HTTP stuff from here on out
 	s := alice.New(timer, httputils.Logger, auth.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
+	//w := s.Append(wikiMiddle)
 
 	h := httptreemux.New()
 	//h.PanicHandler = httptreemux.ShowErrorsPanicHandler
@@ -2984,11 +3066,11 @@ func main() {
 
 	r.GET("/uploads/*", treeMuxWrapper(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads")))))
 
-	r.GET(`/edit/*name`, auth.AuthMiddle(wikiHandler(editHandler)))
-	r.POST(`/save/*name`, auth.AuthMiddle(wikiHandler(saveHandler)))
-	r.GET(`/history/*name`, auth.AuthMiddle(wikiHandler(historyHandler)))
+	r.GET(`/edit/*name`, auth.AuthMiddle(wikiMiddle(editHandler)))
+	r.POST(`/save/*name`, auth.AuthMiddle(wikiMiddle(saveHandler)))
+	r.GET(`/history/*name`, auth.AuthMiddle(wikiMiddle(historyHandler)))
 	//r.GET(`/new/*name`, auth.AuthMiddle(newHandler))
-	r.GET(`/*name`, wikiHandler(viewHandler))
+	r.GET(`/*name`, wikiMiddle(viewHandler))
 
 	http.HandleFunc("/robots.txt", httputils.RobotsHandler)
 	http.HandleFunc("/favicon.ico", httputils.FaviconHandler)
