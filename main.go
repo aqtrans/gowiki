@@ -76,6 +76,7 @@ type key int
 
 const timerKey key = 0
 const wikiNameKey key = 1
+const wikiExistsKey key = 2
 
 const yamlsep = "---"
 const yamlsep2 = "..."
@@ -531,6 +532,18 @@ func nameFromContext(c context.Context) string {
 	t, ok := c.Value(wikiNameKey).(string)
 	if !ok {
 		log.Fatalln("No wikiName in context.")
+	}
+	return t
+}
+
+func newWikiExistsContext(c context.Context, t bool) context.Context {
+	return context.WithValue(c, wikiExistsKey, t)
+}
+
+func wikiExistsFromContext(c context.Context) bool {
+	t, ok := c.Value(wikiExistsKey).(bool)
+	if !ok {
+		log.Fatalln("No wiki in context.")
 	}
 	return t
 }
@@ -1459,7 +1472,9 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 
 	p := loadPage(r)
 
-	wikip, err := loadWiki(name)
+	wikiExists := wikiExistsFromContext(r.Context())
+
+	wikip, err := loadWiki(name, wikiExists)
 	if err != nil {
 		if err == errNoFile && wikip != nil {
 			newwp := &wikiPage{
@@ -1587,8 +1602,16 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 
 	pagetitle := r.FormValue("newwiki")
 
+	relErr := relativePathCheck(pagetitle)
+	if relErr != nil {
+		httpErrorHandler(w, r, relErr)
+		return
+	}
+
+	http.Redirect(w, r, pagetitle, http.StatusSeeOther)
+
+	/* Off-loading most of this, by just redirecting to the pagetitle
 	//fullfilename := cfg.WikiDir + pagetitle
-	/*
 		fullfilename := filepath.Join(viper.GetString("WikiDir"), pagetitle)
 		rel, err := filepath.Rel(viper.GetString("WikiDir"), fullfilename)
 		if err != nil {
@@ -1600,7 +1623,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 
 		_, fierr := os.Stat(pagetitle)
 		if os.IsNotExist(fierr) {
-	*/
+
 	checkName(&pagetitle)
 	fullfilename := filepath.Join(viper.GetString("WikiDir"), pagetitle)
 	feErr := relativePathCheck(pagetitle)
@@ -1624,6 +1647,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	return
+	*/
 
 }
 
@@ -1649,7 +1673,7 @@ func favsHandler(favs chan []string) {
 	favs <- sfavs
 }
 
-func loadWiki(name string) (*wiki, error) {
+func loadWiki(name string, pageExists bool) (*wiki, error) {
 	defer httputils.TimeTrack(time.Now(), "loadWiki")
 
 	var fm frontmatter
@@ -1682,7 +1706,7 @@ func loadWiki(name string) (*wiki, error) {
 			//fullfilename = cfg.WikiDir + name + "index"
 			fullfilename = filepath.Join(viper.GetString("WikiDir"), name, "index")
 
-			if !doesPageExist(fullfilename) {
+			if !pageExists {
 				wp := &wiki{
 					Title:    name,
 					Filename: name,
@@ -1697,7 +1721,7 @@ func loadWiki(name string) (*wiki, error) {
 		}
 	}
 
-	if !doesPageExist(fullfilename) {
+	if !pageExists {
 		wp := &wiki{
 			Title:    name,
 			Filename: name,
@@ -2861,17 +2885,20 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		params := getParams(r.Context())
 		name := params["name"]
 		username, isAdmin := auth.GetUsername(r.Context())
+		userLoggedIn := auth.IsLoggedIn(r.Context())
 		checkName(&name)
-		ctx := newNameContext(r.Context(), name)
 		fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
 		relErr := relativePathCheck(name)
 		if relErr != nil {
 			httpErrorHandler(w, r, relErr)
 			return
 		}
+		nameCtx := newNameContext(r.Context(), name)
+		pageExists := doesPageExist(fullfilename)
+		ctx := newWikiExistsContext(nameCtx, pageExists)
 
 		// if feErr is nil, file should exist, so read its frontmatter
-		if doesPageExist(fullfilename) {
+		if pageExists {
 			// Read YAML frontmatter into fm
 			// If err, just return, as file should not contain frontmatter
 			f, err := os.Open(fullfilename)
@@ -2894,7 +2921,7 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			}
 		}
 
-		if auth.IsLoggedIn(r.Context()) {
+		if userLoggedIn {
 			err := gitIsClean()
 			if err != nil {
 				log.Println(err)
@@ -2907,7 +2934,7 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		// If not logged in, mitigate, as the page is presumed private
-		if !auth.IsLoggedIn(r.Context()) {
+		if !userLoggedIn {
 			rurl := r.URL.String()
 			httputils.Debugln("wikiMiddle mitigating: " + r.Host + rurl)
 			//w.Write([]byte("OMG"))
