@@ -1326,7 +1326,7 @@ func relativePathCheck(name string) error {
 // Edge cases checked for currently:
 // - If name is trying to escape or otherwise a bad path
 // - If name is a /directory/file combo, but /directory is actually a file
-func checkName(name *string) {
+func checkName(name *string) (bool, error) {
 	defer httputils.TimeTrack(time.Now(), "checkName")
 
 	separators := regexp.MustCompile(`[ &_=+:]`)
@@ -1342,23 +1342,34 @@ func checkName(name *string) {
 	*name = strings.Trim(*name, " ")
 	//log.Println(name)
 
-	// Build the full path
-	fullfilename := filepath.Join(viper.GetString("WikiDir"), *name)
-
 	// Directory without specified index
 	if strings.HasSuffix(*name, "/") {
 		*name = filepath.Join(*name, "index")
 	}
 
-	origExists := doesPageExist(fullfilename)
+	// Check that no one is trying to escape out of wikiDir, etc
+	// Very important to check it here, before trying to check if it exists
+	relErr := relativePathCheck(*name)
+	if relErr != nil {
+		return false, relErr
+	}
+
+	// Build the full path
+	fullfilename := filepath.Join(viper.GetString("WikiDir"), *name)
+
+	exists := doesPageExist(fullfilename)
 
 	// If original filename does not exist, normalize the filename, and check if it exists
-	if !origExists {
+	if !exists {
 		// Normalize the name if the original name doesn't exist
 		*name = strings.ToLower(*name)
 		*name = separators.ReplaceAllString(*name, "-")
 		*name = dashes.ReplaceAllString(*name, "-")
+		fullnewfilename := filepath.Join(viper.GetString("WikiDir"), *name)
+		exists = doesPageExist(fullnewfilename)
 	}
+	log.Println(*name, exists, relErr)
+	return exists, relErr
 
 }
 
@@ -1422,6 +1433,31 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	name := nameFromContext(r.Context())
 
+	// Quick check to see if there is a directory here
+	//  If so, do some quick checking on that supposed directory
+	dir, _ := filepath.Split(name)
+	if dir != "" {
+		// Check if this is a directory without /index
+		if strings.HasSuffix(name, "/") {
+			log.Println("This might be a directory, trying to parse the index")
+			dirIndexFilename := filepath.Join(viper.GetString("WikiDir"), name, "index")
+			dirIndexPageExists := doesPageExist(dirIndexFilename)
+			if !dirIndexPageExists {
+				log.Println("No such dir index...creating one.")
+				http.Redirect(w, r, "/"+name+"/index", http.StatusTemporaryRedirect)
+				return
+			}
+		}
+	}
+
+	wikiExists := wikiExistsFromContext(r.Context())
+	if !wikiExists {
+		log.Println("wikiExists false: No such file...creating one.")
+		//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
+		createWiki(w, r, name)
+		return
+	}
+
 	// If this is a commit, pass along the SHA1 to that function
 	if r.URL.Query().Get("commit") != "" {
 		commit := r.URL.Query().Get("commit")
@@ -1433,20 +1469,6 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	// Get Wiki
 	p, err := loadWikiPage(r, name)
 	if err != nil {
-		if err == errNoDirIndex {
-			log.Println("No such dir index...creating one.")
-			http.Redirect(w, r, "/"+name+"/index", http.StatusTemporaryRedirect)
-			return
-		} else if err == errNoFile {
-			log.Println("No such file...creating one.")
-			//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
-			createWiki(w, r, name)
-			return
-		} else if err == errBaseNotDir {
-			log.Println("Cannot create subdir of a file.")
-			http.Error(w, "Cannot create subdir of a file.", 500)
-			return
-		}
 		httpErrorHandler(w, r, err)
 		return
 	}
@@ -1473,16 +1495,31 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 	p := loadPage(r)
 
 	wikiExists := wikiExistsFromContext(r.Context())
+	if !wikiExists {
+		newwp := &wikiPage{
+			page: p,
+			Wiki: &wiki{
+				Title:    name,
+				Filename: name,
+				Frontmatter: &frontmatter{
+					Title: name,
+				},
+				CreateTime: 0,
+				ModTime:    0,
+			},
+		}
+		return newwp, nil
+	}
 
-	wikip, err := loadWiki(name, wikiExists)
+	wikip, err := loadWiki(name)
 	if err != nil {
-		if err == errNoFile && wikip != nil {
+		/*if err == errNoFile && wikip != nil {
 			newwp := &wikiPage{
 				page: p,
 				Wiki: wikip,
 			}
 			return newwp, err
-		}
+		}*/
 		return nil, err
 	}
 
@@ -1502,15 +1539,8 @@ func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
 func editHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "editHandler")
 	name := nameFromContext(r.Context())
-
 	p, err := loadWikiPage(r, name)
-
 	if err != nil {
-		if err == errNoFile {
-			//log.Println("No such file...creating one.")
-			renderTemplate(w, r.Context(), "wiki_edit.tmpl", p)
-			return
-		}
 		httpErrorHandler(w, r, err)
 	}
 	renderTemplate(w, r.Context(), "wiki_edit.tmpl", p)
@@ -1604,11 +1634,16 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 
 	relErr := relativePathCheck(pagetitle)
 	if relErr != nil {
+		if relErr == errBaseNotDir {
+			log.Println("Cannot create subdir of a file.")
+			http.Error(w, "Cannot create subdir of a file.", 500)
+			return
+		}
 		httpErrorHandler(w, r, relErr)
 		return
 	}
 
-	http.Redirect(w, r, pagetitle, http.StatusSeeOther)
+	http.Redirect(w, r, "/"+pagetitle, http.StatusSeeOther)
 
 	/* Off-loading most of this, by just redirecting to the pagetitle
 	//fullfilename := cfg.WikiDir + pagetitle
@@ -1673,7 +1708,7 @@ func favsHandler(favs chan []string) {
 	favs <- sfavs
 }
 
-func loadWiki(name string, pageExists bool) (*wiki, error) {
+func loadWiki(name string) (*wiki, error) {
 	defer httputils.TimeTrack(time.Now(), "loadWiki")
 
 	var fm frontmatter
@@ -1686,16 +1721,11 @@ func loadWiki(name string, pageExists bool) (*wiki, error) {
 	//if relErr != nil {
 	//	return nil, relErr
 	//}
+	/* Moved this to viewHandler()
 	// Quick check to see if there is a directory here
 	//  If so, do some quick checking on that supposed directory
 	dir, _ := filepath.Split(name)
 	if dir != "" {
-		/* This should have already been called in relativePathCheck above
-		dirErr := checkDir(dir)
-		if dirErr != nil {
-			return nil, dirErr
-		}
-		*/
 
 		// Directory without specified index
 		if strings.HasSuffix(name, "/") {
@@ -1720,7 +1750,8 @@ func loadWiki(name string, pageExists bool) (*wiki, error) {
 			}
 		}
 	}
-
+	*/
+	/* Moved this up to loadWikiPage
 	if !pageExists {
 		wp := &wiki{
 			Title:    name,
@@ -1733,6 +1764,7 @@ func loadWiki(name string, pageExists bool) (*wiki, error) {
 		}
 		return wp, errNoFile
 	}
+	*/
 
 	fm, content, err := readFileAndFront(fullfilename)
 	if err != nil {
@@ -2886,15 +2918,20 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		name := params["name"]
 		username, isAdmin := auth.GetUsername(r.Context())
 		userLoggedIn := auth.IsLoggedIn(r.Context())
-		checkName(&name)
+		pageExists, relErr := checkName(&name)
 		fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
-		relErr := relativePathCheck(name)
+		//relErr := relativePathCheck(name)
 		if relErr != nil {
+			if relErr == errBaseNotDir {
+				log.Println("Cannot create subdir of a file.")
+				http.Error(w, "Cannot create subdir of a file.", 500)
+				return
+			}
 			httpErrorHandler(w, r, relErr)
 			return
 		}
 		nameCtx := newNameContext(r.Context(), name)
-		pageExists := doesPageExist(fullfilename)
+		//pageExists := doesPageExist(fullfilename)
 		ctx := newWikiExistsContext(nameCtx, pageExists)
 
 		// if feErr is nil, file should exist, so read its frontmatter
