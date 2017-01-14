@@ -255,10 +255,10 @@ func TestNewHandler(t *testing.T) {
 	handler.ServeHTTP(rr, rctx)
 
 	// Check the status code is what we expect.
-	if status := rr.Code; status != http.StatusNotFound {
+	if status := rr.Code; status != http.StatusSeeOther {
 		t.Log(rr.Body.String())
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusNotFound)
+			status, http.StatusSeeOther)
 	}
 
 	//log.Println(rr.Header().Get("Location"))
