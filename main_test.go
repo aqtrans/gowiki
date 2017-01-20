@@ -748,3 +748,31 @@ func BenchmarkReadFront(b *testing.B) {
 		readWikiPage(f)
 	}
 }
+
+func BenchmarkWholeWiki(b *testing.B) {
+	req, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	handler := http.HandlerFunc(indexHandler)
+
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
+		Username: "admin",
+		IsAdmin:  true,
+	})
+	//params := make(map[string]string)
+	//params["name"] = "index"
+	//ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
+	rctx := req.WithContext(ctx)
+
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+
+	for n := 0; n < b.N; n++ {
+		handler.ServeHTTP(rr, rctx)
+	}
+}
