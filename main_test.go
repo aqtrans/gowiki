@@ -607,10 +607,7 @@ func TestMarkdownRender3(t *testing.T) {
 // Tests my custom link renderer, with YAML frontmatter
 func TestMarkdownRender4(t *testing.T) {
 	rawmdf := "./tests/test4.md"
-	_, rawmd, err := readFileAndFront(rawmdf)
-	if err != nil {
-		t.Error("Unable to access test4.md")
-	}
+	_, rawmd := readFileAndFront(rawmdf)
 
 	// Read what rendered Markdown HTML should look like
 	rendermdf := "./tests/test4.html"
@@ -636,10 +633,8 @@ func TestYamlRender(t *testing.T) {
 		t.Error(err)
 	}
 	defer f.Close()
-	fm, err := readFront(f)
-	if err != nil {
-		t.Error(err)
-	}
+	fm := readFront(f)
+
 	/*
 		t.Log(fm.Title)
 		t.Log(fm.Admin)
@@ -684,10 +679,7 @@ func TestYamlRender2(t *testing.T) {
 		t.Error(err)
 	}
 	defer f.Close()
-	fm, err := readFront(f)
-	if err != nil {
-		t.Error(err)
-	}
+	fm := readFront(f)
 	/*
 		t.Log(fm.Title)
 		t.Log(fm.Admin)
