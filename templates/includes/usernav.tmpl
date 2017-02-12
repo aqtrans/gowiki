@@ -7,7 +7,8 @@
     <li><a href="/auth/logout">Logout</a></li>
     {{ if .page.IsAdmin }}    
         <li><a href="/admin">Admin Panel</a></li>
-    {{ end }}    
+    {{ end }}
+    <li>{{ .page.GitStatus }}</li>
 {{ else }}
 <li><a href="/login">Login</a></li>
 {{ end }}

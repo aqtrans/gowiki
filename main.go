@@ -77,6 +77,7 @@ type key int
 const timerKey key = 0
 const wikiNameKey key = 1
 const wikiExistsKey key = 2
+const wikiKey key = 3
 
 const yamlsep = "---"
 const yamlsep2 = "..."
@@ -162,12 +163,13 @@ type configuration struct {
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
 type page struct {
-	SiteName string
-	Favs     []string
-	UN       string
-	IsAdmin  bool
-	Token    template.HTML
-	FlashMsg string
+	SiteName  string
+	Favs      []string
+	UN        string
+	IsAdmin   bool
+	Token     template.HTML
+	FlashMsg  string
+	GitStatus string
 }
 
 type frontmatter struct {
@@ -942,16 +944,34 @@ func loadPage(r *http.Request) *page {
 	go favsHandler(favs)
 	gofavs := <-favs
 
-	return &page{SiteName: "GoWiki", Favs: gofavs, UN: user, IsAdmin: isAdmin, Token: token, FlashMsg: message}
+	// Grab git status
+	gitStatusErr := gitIsClean()
+	if gitStatusErr == nil {
+		gitStatusErr = errors.New("Git repo is clean")
+	}
+
+	return &page{
+		SiteName:  "GoWiki",
+		Favs:      gofavs,
+		UN:        user,
+		IsAdmin:   isAdmin,
+		Token:     token,
+		FlashMsg:  message,
+		GitStatus: gitStatusErr.Error(),
+	}
 }
 
 func historyHandler(w http.ResponseWriter, r *http.Request) {
 	name := nameFromContext(r.Context())
-
-	wikip, err := loadWikiPage(r, name)
-	if err != nil {
-		panic(err)
+	wikiExists := wikiExistsFromContext(r.Context())
+	if !wikiExists {
+		log.Println("wikiExists false: No such file...creating one.")
+		//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
+		createWiki(w, r, name)
+		return
 	}
+
+	wikip := loadWikiPage(r, name)
 
 	history, err := gitGetFileLog(name)
 	if err != nil {
@@ -999,7 +1019,7 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 
 	// Read YAML frontmatter into fm
 	reader := bytes.NewReader(body)
-	fm, content, err := readWikiPage(reader)
+	fm, content := readWikiPage(reader)
 	checkErr("viewCommitHandler()/readWikiPage", err)
 
 	if content == nil {
@@ -1087,17 +1107,21 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, r.Context(), "list.tmpl", l)
 }
 
-func readFileAndFront(filename string) (frontmatter, []byte, error) {
+func readFileAndFront(filename string) (frontmatter, []byte) {
 	//defer httputils.TimeTrack(time.Now(), "readFileAndFront")
 
 	f, err := os.Open(filename)
-	checkErr("readFileAndFront()/Open", err)
+	//checkErr("readFileAndFront()/Open", err)
+	if err != nil {
+		f.Close()
+		return frontmatter{}, []byte("")
+	}
 
 	defer f.Close()
 	return readWikiPage(f)
 }
 
-func readWikiPage(reader io.Reader) (frontmatter, []byte, error) {
+func readWikiPage(reader io.Reader) (frontmatter, []byte) {
 	//defer httputils.TimeTrack(time.Now(), "readWikiPage")
 
 	s := bufio.NewScanner(reader)
@@ -1135,11 +1159,11 @@ func readWikiPage(reader io.Reader) (frontmatter, []byte, error) {
 		}
 	}
 
-	fm, err := marshalFrontmatter(topbuf.Bytes())
-	return fm, bottombuf.Bytes(), err
+	fm := marshalFrontmatter(topbuf.Bytes())
+	return fm, bottombuf.Bytes()
 }
 
-func readFront(reader io.Reader) (frontmatter, error) {
+func readFront(reader io.Reader) frontmatter {
 	//defer httputils.TimeTrack(time.Now(), "readFront")
 
 	s := bufio.NewScanner(reader)
@@ -1180,16 +1204,18 @@ func readFront(reader io.Reader) (frontmatter, error) {
 
 }
 
-func marshalFrontmatter(fmdata []byte) (fm frontmatter, err error) {
+func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 	//defer httputils.TimeTrack(time.Now(), "marshalFrontmatter")
 
 	if fmdata != nil {
-		err = yaml.Unmarshal(fmdata, &fm)
+		err := yaml.Unmarshal(fmdata, &fm)
 		if err != nil {
+			//log.Println("marshalFrontmatter()/yaml.Unmarshal 1", err)
 			m := map[string]interface{}{}
-			err = yaml.Unmarshal(fmdata, &m)
-			if err != nil {
-				return frontmatter{}, err
+			err2 := yaml.Unmarshal(fmdata, &m)
+			if err2 != nil {
+				//log.Println("marshalFrontmatter()/yaml.Unmarshal 2", err)
+				return frontmatter{}
 			}
 
 			title, found := m["title"].(string)
@@ -1218,7 +1244,7 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter, err error) {
 			}
 		}
 	}
-	return fm, nil
+	return fm
 }
 
 func renderTemplate(w http.ResponseWriter, c context.Context, name string, data interface{}) {
@@ -1368,7 +1394,7 @@ func checkName(name *string) (bool, error) {
 		fullnewfilename := filepath.Join(viper.GetString("WikiDir"), *name)
 		exists = doesPageExist(fullnewfilename)
 	}
-	log.Println(*name, exists, relErr)
+	log.Println("checkName() name, exists, relErr:", *name, exists, relErr)
 	return exists, relErr
 
 }
@@ -1467,82 +1493,15 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get Wiki
-	p, err := loadWikiPage(r, name)
-	if err != nil {
-		httpErrorHandler(w, r, err)
-		return
-	}
+	p := loadWikiPage(r, name)
+
 	renderTemplate(w, r.Context(), "wiki_view.tmpl", p)
-}
-
-//////////////////////////////
-/* Get type WikiPage struct {
-	PageTitle    string
-	Filename     string
-	*Frontmatter
-	*Wiki
-}
-type Wiki struct {
-	Rendered     string
-    Content      string
-}*/
-/////////////////////////////
-func loadWikiPage(r *http.Request, name string) (*wikiPage, error) {
-	defer httputils.TimeTrack(time.Now(), "loadWikiPage")
-
-	//log.Println("Filename: " + name)
-
-	p := loadPage(r)
-
-	wikiExists := wikiExistsFromContext(r.Context())
-	if !wikiExists {
-		newwp := &wikiPage{
-			page: p,
-			Wiki: &wiki{
-				Title:    name,
-				Filename: name,
-				Frontmatter: &frontmatter{
-					Title: name,
-				},
-				CreateTime: 0,
-				ModTime:    0,
-			},
-		}
-		return newwp, nil
-	}
-
-	wikip, err := loadWiki(name)
-	if err != nil {
-		/*if err == errNoFile && wikip != nil {
-			newwp := &wikiPage{
-				page: p,
-				Wiki: wikip,
-			}
-			return newwp, err
-		}*/
-		return nil, err
-	}
-
-	// Render remaining content after frontmatter
-	md := markdownRender(wikip.Content)
-	//md := commonmarkRender(wikip.Content)
-	//markdownRender2(wikip.Content)
-
-	wp := &wikiPage{
-		page:     p,
-		Wiki:     wikip,
-		Rendered: md,
-	}
-	return wp, nil
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "editHandler")
 	name := nameFromContext(r.Context())
-	p, err := loadWikiPage(r, name)
-	if err != nil {
-		httpErrorHandler(w, r, err)
-	}
+	p := loadWikiPage(r, name)
 	renderTemplate(w, r.Context(), "wiki_edit.tmpl", p)
 	return
 }
@@ -1708,7 +1667,7 @@ func favsHandler(favs chan []string) {
 	favs <- sfavs
 }
 
-func loadWiki(name string) (*wiki, error) {
+func loadWiki(name string) *wiki {
 	defer httputils.TimeTrack(time.Now(), "loadWiki")
 
 	var fm frontmatter
@@ -1766,11 +1725,7 @@ func loadWiki(name string) (*wiki, error) {
 	}
 	*/
 
-	fm, content, err := readFileAndFront(fullfilename)
-	if err != nil {
-		checkErr("loadWiki()/readFileAndFront", err)
-		return nil, err
-	}
+	fm, content := readFileAndFront(fullfilename)
 
 	//log.Println(fm)
 	if content == nil {
@@ -1784,10 +1739,7 @@ func loadWiki(name string) (*wiki, error) {
 	}
 
 	ctime, err := gitGetCtime(name)
-	if err != nil {
-		checkErr("loadWiki()/gitGetCtime", err)
-		return nil, err
-	}
+	checkErr("loadWiki()/gitGetCtime", err)
 
 	mtime, err := gitGetMtime(name)
 	checkErr("loadWiki()/gitGetMtime", err)
@@ -1799,8 +1751,59 @@ func loadWiki(name string) (*wiki, error) {
 		Content:     content,
 		CreateTime:  ctime,
 		ModTime:     mtime,
-	}, nil
+	}
 
+}
+
+//////////////////////////////
+/* Get type WikiPage struct {
+	PageTitle    string
+	Filename     string
+	*Frontmatter
+	*Wiki
+}
+type Wiki struct {
+	Rendered     string
+    Content      string
+}*/
+/////////////////////////////
+func loadWikiPage(r *http.Request, name string) *wikiPage {
+	defer httputils.TimeTrack(time.Now(), "loadWikiPage")
+
+	//log.Println("Filename: " + name)
+
+	p := loadPage(r)
+
+	wikiExists := wikiExistsFromContext(r.Context())
+	if !wikiExists {
+		newwp := &wikiPage{
+			page: p,
+			Wiki: &wiki{
+				Title:    name,
+				Filename: name,
+				Frontmatter: &frontmatter{
+					Title: name,
+				},
+				CreateTime: 0,
+				ModTime:    0,
+			},
+		}
+		return newwp
+	}
+
+	wikip := loadWiki(name)
+
+	// Render remaining content after frontmatter
+	md := markdownRender(wikip.Content)
+	//md := commonmarkRender(wikip.Content)
+	//markdownRender2(wikip.Content)
+
+	wp := &wikiPage{
+		page:     p,
+		Wiki:     wikip,
+		Rendered: md,
+	}
+	return wp
 }
 
 func (wiki *wiki) save() error {
@@ -2517,11 +2520,7 @@ func bleveIndex() {
 				var pagetitle string
 
 				// Read YAML frontmatter into fm
-				fm, content, err := readFileAndFront(fullname)
-				if err != nil {
-					// Do nothing
-				}
-				//checkErr("bleveIndex()/readFileAndFront", err)
+				fm, content := readFileAndFront(fullname)
 
 				if fm.Public {
 					//log.Println("Private page!")
@@ -2628,8 +2627,7 @@ func bleveIndex() {
 				var pagetitle string
 
 				// Read YAML frontmatter into fm
-				fm, content, err := readFileAndFront(fullname)
-				checkErr("bleveIndex()/readFileAndFront", err)
+				fm, content := readFileAndFront(fullname)
 
 				if fm.Public {
 					//log.Println("Private page!")
@@ -2803,7 +2801,7 @@ func crawlWiki() {
 			checkErr("crawlWiki()/Open", err)
 			defer f.Close()
 
-			fm, _ := readFront(f)
+			fm := readFront(f)
 			//checkErr("crawlWiki()/readFront", err)
 
 			pagetitle = filename
@@ -2941,8 +2939,7 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			f, err := os.Open(fullfilename)
 			checkErr("wikiMiddle()/Open", err)
 			defer f.Close()
-			fm, fmberr := readFront(f)
-			checkErr("wikiMiddle()/readFront", fmberr)
+			fm := readFront(f)
 
 			// If this is a public page, just serve it
 			if fm.Public {
@@ -2959,13 +2956,16 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if userLoggedIn {
-			err := gitIsClean()
-			if err != nil {
-				log.Println(err)
-				auth.SetSession("flash", err.Error(), w, r)
-				http.Redirect(w, r.WithContext(ctx), "/admin/git", http.StatusSeeOther)
-				return
-			}
+			/* Don't auto-redirect on unclean git repo
+			   Instead use GitStatus in page{} struct
+				err := gitIsClean()
+				if err != nil {
+					log.Println(err)
+					auth.SetSession("flash", err.Error(), w, r)
+					http.Redirect(w, r.WithContext(ctx), "/admin/git", http.StatusSeeOther)
+					return
+				}
+			*/
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
