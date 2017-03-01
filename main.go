@@ -70,6 +70,9 @@ import (
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
 	"jba.io/go/httputils"
+	git2 "srcd.works/go-git.v4"
+	"srcd.works/go-git.v4/plumbing/object"
+	"srcd.works/go-git.v4/plumbing"
 )
 
 type key int
@@ -2489,6 +2492,7 @@ func initWikiDir() {
 }
 
 func bleveIndex() {
+	defer httputils.TimeTrack(time.Now(), "bleveIndex")
 
 	var err error
 	timestamp := "2006-01-02 at 03:04:05PM"
@@ -2658,10 +2662,10 @@ func bleveIndex() {
 				checkErr("bleveIndex()/gitGetMtime", err)
 
 				data := struct {
-					Name     string `json:"name"`
+					Name     string
 					Public   bool
-					Tags     []string `json:"tags"`
-					Content  string   `json:"content"`
+					Tags     []string
+					Content  string
 					Created  string
 					Modified string
 				}{
@@ -2682,6 +2686,20 @@ func bleveIndex() {
 
 	httputils.Debugln("bleveIndex: Search crawling: done")
 
+}
+
+func searchSample() {
+	query := bleve.NewTermQuery("index")
+	nameFacet := bleve.NewFacetRequest("name", 1)
+	search := bleve.NewSearchRequest(query)
+	search.AddFacet("name", nameFacet)
+	searchResults, err := index.Search(search)
+	fields, err := index.Fields()
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(fields)
+	log.Println(searchResults.Hits[1].Fields)
 }
 
 // Simple function to get the httptreemux params, setting it blank if there aren't any
@@ -2758,26 +2776,149 @@ func search(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, r.Context(), "search_results.tmpl", s)
 }
 
+func gitLsNew() (*object.FileIter, error) {
+    repo, err := git2.PlainOpen("./gowiki-data")
+    head, err := repo.Head()
+    commit, err := repo.Commit(head.Hash())
+	tree, err := commit.Tree()
+	return tree.Files(), err
+}
+
+func references(c *object.Commit, path string) []*object.Commit {
+	var result []*object.Commit
+	seen := make(map[plumbing.Hash]struct{}, 0)
+	if err := walkGraph(&result, &seen, c, path); err != nil {
+		return nil
+	}
+
+	object.SortCommits(result)
+
+	// for merges of identical cherry-picks
+	return result
+}
+
+// Recursive traversal of the commit graph, generating a linear history of the
+// path.
+func walkGraph(result *[]*object.Commit, seen *map[plumbing.Hash]struct{}, current *object.Commit, path string) error {
+	// check and update seen
+	if _, ok := (*seen)[current.Hash]; ok {
+		return nil
+	}
+	(*seen)[current.Hash] = struct{}{}
+
+	// if the path is not in the current commit, stop searching.
+	if _, err := current.File(path); err != nil {
+		return nil
+	}
+
+	// optimization: don't traverse branches that does not
+	// contain the path.
+	parents := parentsContainingPath(path, current)
+
+	switch len(parents) {
+	// if the path is not found in any of its parents, the path was
+	// created by this commit; we must add it to the revisions list and
+	// stop searching. This includes the case when current is the
+	// initial commit.
+	case 0:
+		*result = append(*result, current)
+		return nil
+	case 1: // only one parent contains the path
+		// if the file contents has change, add the current commit
+		/*
+		different, err := differentContents(path, current, parents)
+		if err != nil {
+			return err
+		}
+		if len(different) == 1 {
+		*/
+		*result = append(*result, current)
+		//}
+		// in any case, walk the parent
+		return walkGraph(result, seen, parents[0], path)
+	default: // more than one parent contains the path
+		// TODO: detect merges that had a conflict, because they must be
+		// included in the result here.
+		for _, p := range parents {
+			err := walkGraph(result, seen, p, path)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// TODO: benchmark this making git.object.Commit.parent public instead of using
+// an iterator
+func parentsContainingPath(path string, c *object.Commit) []*object.Commit {
+	var result []*object.Commit
+	iter := c.Parents()
+	for {
+		parent, err := iter.Next()
+		if err != nil {
+			if err == io.EOF {
+				return result
+			}
+			panic("unreachable")
+		}
+		if _, err := parent.File(path); err == nil {
+			result = append(result, parent)
+		}
+	}
+}
+
+func gitGetTimes(filename string) (ctime, mtime int64) {
+	defer httputils.TimeTrack(time.Now(), "gitGetTimes")
+
+    repo, err := git2.PlainOpen(viper.GetString("WikiDir"))
+	checkErr("crawl", err)
+    head, err := repo.Head()
+	checkErr("crawl", err)
+    commit, err := repo.Commit(head.Hash())
+	checkErr("crawl", err)
+	ref := references(commit, filename)
+	return ref[0].Author.When.Unix(), ref[len(ref)-1].Author.When.Unix()
+}
+
 // crawlWiki builds a list of wiki pages, stored in memory
 //  saves time to reference this, rebuilding on saving
 func crawlWiki() {
+	defer httputils.TimeTrack(time.Now(), "crawlWiki")
 
+    repo, err := git2.PlainOpen(viper.GetString("WikiDir"))
+	checkErr("crawl", err)
+    head, err := repo.Head()
+	checkErr("crawl", err)
+    commit, err := repo.Commit(head.Hash())
+	checkErr("crawl", err)
+	tree, err := commit.Tree()
+	checkErr("crawl", err)	
+
+	treeFiles := tree.Files()
+
+	/*
 	fileList, err := gitLs()
 	if err != nil {
 		panic(err)
 	}
+	*/
 	var wps []*wiki
 	var publicwps []*wiki
 	var adminwps []*wiki
-	for _, file := range fileList {
+	//for _, file := range fileList {
+	treeFiles.ForEach(func (f *object.File) error {
+		log.Println(f.Name)
 
 		// If using Git, build the full path:
-		fullname := filepath.Join(viper.GetString("WikiDir"), file)
+		//fullname := filepath.Join(viper.GetString("WikiDir"), file)
+
 		//file = viper.GetString("WikiDir")+file
 		//log.Println(file)
 		//log.Println(fullname)
 
 		// check if the source dir exist
+		/*
 		src, err := os.Stat(fullname)
 		if err != nil {
 			panic(err)
@@ -2786,6 +2927,7 @@ func crawlWiki() {
 		if !src.IsDir() {
 
 			_, filename := filepath.Split(file)
+		*/
 
 			// If this is an absolute path, including the cfg.WikiDir, trim it
 			//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
@@ -2797,14 +2939,18 @@ func crawlWiki() {
 			//log.Println(file)
 
 			// Read YAML frontmatter into fm
-			f, err := os.Open(fullname)
-			checkErr("crawlWiki()/Open", err)
-			defer f.Close()
+			//f, err := os.Open(fullname)
+			//checkErr("crawlWiki()/Open", err)
+			//defer f.Close()
+			reader, err := f.Reader()
+			checkErr("crawl", err)
+			file := f.Name
+			
 
-			fm := readFront(f)
+			fm := readFront(reader)
 			//checkErr("crawlWiki()/readFront", err)
 
-			pagetitle = filename
+			pagetitle = f.Name
 			if fm.Title != "" {
 				pagetitle = fm.Title
 			}
@@ -2847,11 +2993,16 @@ func crawlWiki() {
 					}
 				}
 			}
-
+			/*
 			ctime, err := gitGetCtime(file)
 			checkErr("crawlWiki()/gitGetCtime", err)
 			mtime, err := gitGetMtime(file)
 			checkErr("crawlWiki()/gitGetMtime", err)
+			*/
+			
+			//ctime, mtime := gitGetTimes(file)
+			var ctime int64 = 0
+			var mtime int64 = 0
 
 			// If pages are Admin or Public, add to a separate wikiPage slice
 			//   So we only check on rendering
@@ -2883,9 +3034,9 @@ func crawlWiki() {
 				}
 				wps = append(wps, wp)
 			}
-		}
-
-	}
+		//}
+		return nil
+	})
 	if wikiList == nil {
 		wikiList = make(map[string][]*wiki)
 	}
@@ -3112,6 +3263,8 @@ func main() {
 	http.HandleFunc("/favicon.png", httputils.FaviconHandler)
 	http.HandleFunc("/assets/", httputils.StaticHandler)
 	http.Handle("/", s.Then(h))
+
+	searchSample()
 
 	log.Println("Listening on port " + viper.GetString("Port"))
 	checkErr("http.ListenAndServe", http.ListenAndServe("0.0.0.0:"+viper.GetString("Port"), nil))
