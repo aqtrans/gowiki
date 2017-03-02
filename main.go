@@ -60,8 +60,8 @@ import (
 	"github.com/GeertJohan/go.rice"
 	"github.com/aqtrans/ctx-csrf"
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/analysis/analyzers/keyword_analyzer"
-	"github.com/blevesearch/bleve/analysis/language/en"
+	//"github.com/blevesearch/bleve/analysis/analyzers/keyword_analyzer"
+	//"github.com/blevesearch/bleve/analysis/language/en"
 	"github.com/dimfeld/httptreemux"
 	"github.com/getsentry/raven-go"
 	//"github.com/microcosm-cc/bluemonday"
@@ -71,8 +71,8 @@ import (
 	"jba.io/go/auth"
 	"jba.io/go/httputils"
 	git2 "srcd.works/go-git.v4"
-	"srcd.works/go-git.v4/plumbing/object"
 	"srcd.works/go-git.v4/plumbing"
+	"srcd.works/go-git.v4/plumbing/object"
 )
 
 type key int
@@ -2518,10 +2518,10 @@ func bleveIndex() {
 			if !src.IsDir() {
 
 				//log.Println(file)
-				_, filename := filepath.Split(file)
+				//_, filename := filepath.Split(file)
 				//var wp *wiki
 				var fm frontmatter
-				var pagetitle string
+				//var pagetitle string
 
 				// Read YAML frontmatter into fm
 				fm, content := readFileAndFront(fullname)
@@ -2529,13 +2529,15 @@ func bleveIndex() {
 				if fm.Public {
 					//log.Println("Private page!")
 				}
-				pagetitle = filename
-				if fm.Title != "" {
-					pagetitle = fm.Title
-				}
-				if fm.Title == "" {
-					fm.Title = file
-				}
+				/*
+					pagetitle = filename
+					if fm.Title != "" {
+						pagetitle = fm.Title
+					}
+					if fm.Title == "" {
+						fm.Title = file
+					}
+				*/
 				if fm.Public != true {
 					fm.Public = false
 				}
@@ -2555,14 +2557,14 @@ func bleveIndex() {
 				checkErr("bleveIndex()/gitGetMtime", err)
 
 				data := struct {
-					Name     string `json:"name"`
-					Public   bool
+					Name     string   `json:"name"`
+					Public   bool     `json:"public"`
 					Tags     []string `json:"tags"`
 					Content  string   `json:"content"`
-					Created  string
-					Modified string
+					Created  string   `json:"ctime"`
+					Modified string   `json:"mtime"`
 				}{
-					Name:     pagetitle,
+					Name:     file,
 					Public:   fm.Public,
 					Tags:     fm.Tags,
 					Content:  string(content),
@@ -2579,18 +2581,19 @@ func bleveIndex() {
 	// If index does not exist, create mapping and then index
 	if err == bleve.ErrorIndexPathDoesNotExist {
 		nameMapping := bleve.NewTextFieldMapping()
-		nameMapping.Analyzer = keyword_analyzer.Name
+		nameMapping.Analyzer = "en"
 
 		contentMapping := bleve.NewTextFieldMapping()
-		contentMapping.Analyzer = en.AnalyzerName
+		contentMapping.Analyzer = "en"
 
 		boolMapping := bleve.NewBooleanFieldMapping()
 
-		dateMapping := bleve.NewDateTimeFieldMapping()
+		//dateMapping := bleve.NewDateTimeFieldMapping()
 		//dateMapping.DateFormat = timestamp
+		dateMapping := bleve.NewTextFieldMapping()
 
 		tagMapping := bleve.NewTextFieldMapping()
-		tagMapping.Analyzer = keyword_analyzer.Name
+		//tagMapping.Analyzer = keyword_analyzer.Name
 
 		wikiMapping := bleve.NewDocumentMapping()
 		wikiMapping.AddFieldMappingsAt("Name", nameMapping)
@@ -2625,10 +2628,10 @@ func bleveIndex() {
 			if !src.IsDir() {
 
 				//log.Println(file)
-				_, filename := filepath.Split(file)
+				//_, filename := filepath.Split(file)
 				//var wp *wiki
 				var fm frontmatter
-				var pagetitle string
+				//var pagetitle string
 
 				// Read YAML frontmatter into fm
 				fm, content := readFileAndFront(fullname)
@@ -2636,13 +2639,15 @@ func bleveIndex() {
 				if fm.Public {
 					//log.Println("Private page!")
 				}
-				pagetitle = filename
-				if fm.Title != "" {
-					pagetitle = fm.Title
-				}
-				if fm.Title == "" {
-					fm.Title = file
-				}
+				/*
+					pagetitle = filename
+					if fm.Title != "" {
+						pagetitle = fm.Title
+					}
+					if fm.Title == "" {
+						fm.Title = file
+					}
+				*/
 				if fm.Public != true {
 					fm.Public = false
 				}
@@ -2662,14 +2667,14 @@ func bleveIndex() {
 				checkErr("bleveIndex()/gitGetMtime", err)
 
 				data := struct {
-					Name     string
-					Public   bool
-					Tags     []string
-					Content  string
-					Created  string
-					Modified string
+					Name     string   `json:"name"`
+					Public   bool     `json:"public"`
+					Tags     []string `json:"tags"`
+					Content  string   `json:"content"`
+					Created  string   `json:"ctime"`
+					Modified string   `json:"mtime"`
 				}{
-					Name:     pagetitle,
+					Name:     file,
 					Public:   fm.Public,
 					Tags:     fm.Tags,
 					Content:  string(content),
@@ -2689,17 +2694,54 @@ func bleveIndex() {
 }
 
 func searchSample() {
-	query := bleve.NewTermQuery("index")
-	nameFacet := bleve.NewFacetRequest("name", 1)
-	search := bleve.NewSearchRequest(query)
-	search.AddFacet("name", nameFacet)
-	searchResults, err := index.Search(search)
-	fields, err := index.Fields()
+	//bleveIndex()
+	/*
+
+		query := bleve.NewQueryStringQuery("name:index")
+		search := bleve.NewSearchRequest(query)
+		searchResults, _ := index.Search(search)
+		//log.Println(searchResults.Hits[0])
+		//log.Println(searchResults.Hits[0].Fields)
+		log.Println(searchResults.String())
+	*/
+
+	index, err := bleve.Open("./data/index.bleve")
 	if err != nil {
 		log.Println(err)
+		return
 	}
-	log.Println(fields)
-	log.Println(searchResults.Hits[1].Fields)
+	doc, err := index.Document("index")
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	log.Println(doc.Fields)
+
+	for _, v := range doc.Fields {
+		//log.Println(v.Fields)
+
+		log.Println(v.Name(), string(v.Value()))
+		/*for _, fragments := range v.Fragments {
+			for _, fragment := range fragments {
+				log.Println(v.ID, fragment)
+			}
+		}*/
+	}
+
+	/*
+		query := bleve.NewTermQuery("index")
+		nameFacet := bleve.NewFacetRequest("name", 1)
+		search := bleve.NewSearchRequest(query)
+		search.AddFacet("name", nameFacet)
+		searchResults, err := index.Search(search)
+		fields, err := index.Fields()
+		if err != nil {
+			log.Println(err)
+		}
+		log.Println(fields)
+		log.Println(searchResults.Hits[1].Fields)
+	*/
 }
 
 // Simple function to get the httptreemux params, setting it blank if there aren't any
@@ -2731,9 +2773,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 
 	//query := bleve.NewMatchQuery(name)
 
-	must := make([]bleve.Query, 1)
-	mustNot := make([]bleve.Query, 1)
-	must[0] = bleve.NewMatchQuery(name)
+	must := bleve.NewMatchQuery(name)
 
 	public := false
 
@@ -2743,10 +2783,12 @@ func search(w http.ResponseWriter, r *http.Request) {
 		public = true
 	}
 
-	mustNot[0] = bleve.NewBoolFieldQuery(public)
-	mustNot[0].SetField("Public")
+	mustNot := bleve.NewBoolFieldQuery(public)
+	mustNot.SetField("Public")
 
-	query := bleve.NewBooleanQuery(must, nil, mustNot)
+	query := bleve.NewBooleanQuery()
+	query.AddMust(must)
+	query.AddMustNot(mustNot)
 
 	searchRequest := bleve.NewSearchRequest(query)
 
@@ -2777,9 +2819,9 @@ func search(w http.ResponseWriter, r *http.Request) {
 }
 
 func gitLsNew() (*object.FileIter, error) {
-    repo, err := git2.PlainOpen("./gowiki-data")
-    head, err := repo.Head()
-    commit, err := repo.Commit(head.Hash())
+	repo, err := git2.PlainOpen("./gowiki-data")
+	head, err := repo.Head()
+	commit, err := repo.Commit(head.Hash())
 	tree, err := commit.Tree()
 	return tree.Files(), err
 }
@@ -2826,11 +2868,11 @@ func walkGraph(result *[]*object.Commit, seen *map[plumbing.Hash]struct{}, curre
 	case 1: // only one parent contains the path
 		// if the file contents has change, add the current commit
 		/*
-		different, err := differentContents(path, current, parents)
-		if err != nil {
-			return err
-		}
-		if len(different) == 1 {
+			different, err := differentContents(path, current, parents)
+			if err != nil {
+				return err
+			}
+			if len(different) == 1 {
 		*/
 		*result = append(*result, current)
 		//}
@@ -2871,11 +2913,11 @@ func parentsContainingPath(path string, c *object.Commit) []*object.Commit {
 func gitGetTimes(filename string) (ctime, mtime int64) {
 	defer httputils.TimeTrack(time.Now(), "gitGetTimes")
 
-    repo, err := git2.PlainOpen(viper.GetString("WikiDir"))
+	repo, err := git2.PlainOpen(viper.GetString("WikiDir"))
 	checkErr("crawl", err)
-    head, err := repo.Head()
+	head, err := repo.Head()
 	checkErr("crawl", err)
-    commit, err := repo.Commit(head.Hash())
+	commit, err := repo.Commit(head.Hash())
 	checkErr("crawl", err)
 	ref := references(commit, filename)
 	return ref[0].Author.When.Unix(), ref[len(ref)-1].Author.When.Unix()
@@ -2886,28 +2928,28 @@ func gitGetTimes(filename string) (ctime, mtime int64) {
 func crawlWiki() {
 	defer httputils.TimeTrack(time.Now(), "crawlWiki")
 
-    repo, err := git2.PlainOpen(viper.GetString("WikiDir"))
+	repo, err := git2.PlainOpen(viper.GetString("WikiDir"))
 	checkErr("crawl", err)
-    head, err := repo.Head()
+	head, err := repo.Head()
 	checkErr("crawl", err)
-    commit, err := repo.Commit(head.Hash())
+	commit, err := repo.Commit(head.Hash())
 	checkErr("crawl", err)
 	tree, err := commit.Tree()
-	checkErr("crawl", err)	
+	checkErr("crawl", err)
 
 	treeFiles := tree.Files()
 
 	/*
-	fileList, err := gitLs()
-	if err != nil {
-		panic(err)
-	}
+		fileList, err := gitLs()
+		if err != nil {
+			panic(err)
+		}
 	*/
 	var wps []*wiki
 	var publicwps []*wiki
 	var adminwps []*wiki
 	//for _, file := range fileList {
-	treeFiles.ForEach(func (f *object.File) error {
+	treeFiles.ForEach(func(f *object.File) error {
 		log.Println(f.Name)
 
 		// If using Git, build the full path:
@@ -2919,121 +2961,120 @@ func crawlWiki() {
 
 		// check if the source dir exist
 		/*
-		src, err := os.Stat(fullname)
-		if err != nil {
-			panic(err)
-		}
-		// If not a directory, get frontmatter from file and add to list
-		if !src.IsDir() {
+			src, err := os.Stat(fullname)
+			if err != nil {
+				panic(err)
+			}
+			// If not a directory, get frontmatter from file and add to list
+			if !src.IsDir() {
 
-			_, filename := filepath.Split(file)
+				_, filename := filepath.Split(file)
 		*/
 
-			// If this is an absolute path, including the cfg.WikiDir, trim it
-			//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
-			//fileURL := strings.TrimPrefix(file, withoutdotslash)
+		// If this is an absolute path, including the cfg.WikiDir, trim it
+		//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
+		//fileURL := strings.TrimPrefix(file, withoutdotslash)
 
-			var wp *wiki
-			var pagetitle string
+		var wp *wiki
+		var pagetitle string
 
-			//log.Println(file)
+		//log.Println(file)
 
-			// Read YAML frontmatter into fm
-			//f, err := os.Open(fullname)
-			//checkErr("crawlWiki()/Open", err)
-			//defer f.Close()
-			reader, err := f.Reader()
-			checkErr("crawl", err)
-			file := f.Name
-			
+		// Read YAML frontmatter into fm
+		//f, err := os.Open(fullname)
+		//checkErr("crawlWiki()/Open", err)
+		//defer f.Close()
+		reader, err := f.Reader()
+		checkErr("crawl", err)
+		file := f.Name
 
-			fm := readFront(reader)
-			//checkErr("crawlWiki()/readFront", err)
+		fm := readFront(reader)
+		//checkErr("crawlWiki()/readFront", err)
 
-			pagetitle = f.Name
-			if fm.Title != "" {
-				pagetitle = fm.Title
-			}
-			if fm.Title == "" {
-				fm.Title = file
-			}
-			if fm.Public != true {
-				fm.Public = false
-			}
-			if fm.Admin != true {
-				fm.Admin = false
-			}
-			if fm.Favorite != true {
-				fm.Favorite = false
-			}
-			if fm.Tags == nil {
-				fm.Tags = []string{}
-			}
+		pagetitle = f.Name
+		if fm.Title != "" {
+			pagetitle = fm.Title
+		}
+		if fm.Title == "" {
+			fm.Title = file
+		}
+		if fm.Public != true {
+			fm.Public = false
+		}
+		if fm.Admin != true {
+			fm.Admin = false
+		}
+		if fm.Favorite != true {
+			fm.Favorite = false
+		}
+		if fm.Tags == nil {
+			fm.Tags = []string{}
+		}
 
-			// Tags and Favorites building
-			// Replacing readFavs and readTags
-			if fm.Favorite {
-				//log.Println(file + " is a favorite.")
-				if favMap == nil {
-					favMap = make(map[string]struct{})
+		// Tags and Favorites building
+		// Replacing readFavs and readTags
+		if fm.Favorite {
+			//log.Println(file + " is a favorite.")
+			if favMap == nil {
+				favMap = make(map[string]struct{})
+			}
+			if _, ok := favMap[file]; !ok {
+				httputils.Debugln("crawlWiki: " + file + " is not already a favorite.")
+				favMap[file] = struct{}{}
+			}
+			//favbuf.WriteString(file + " ")
+		}
+		if fm.Tags != nil {
+			for _, tag := range fm.Tags {
+				if tagMap == nil {
+					tagMap = make(map[string][]string)
 				}
-				if _, ok := favMap[file]; !ok {
-					httputils.Debugln("crawlWiki: " + file + " is not already a favorite.")
-					favMap[file] = struct{}{}
-				}
-				//favbuf.WriteString(file + " ")
-			}
-			if fm.Tags != nil {
-				for _, tag := range fm.Tags {
-					if tagMap == nil {
-						tagMap = make(map[string][]string)
-					}
-					if _, ok := tagMap[tag]; !ok {
-						tagMap[tag] = append(tagMap[tag], file)
-					}
+				if _, ok := tagMap[tag]; !ok {
+					tagMap[tag] = append(tagMap[tag], file)
 				}
 			}
-			/*
+		}
+		/*
 			ctime, err := gitGetCtime(file)
 			checkErr("crawlWiki()/gitGetCtime", err)
 			mtime, err := gitGetMtime(file)
 			checkErr("crawlWiki()/gitGetMtime", err)
-			*/
-			
-			//ctime, mtime := gitGetTimes(file)
-			var ctime int64 = 0
-			var mtime int64 = 0
+		*/
 
-			// If pages are Admin or Public, add to a separate wikiPage slice
-			//   So we only check on rendering
-			if fm.Admin {
-				wp = &wiki{
-					Title:       pagetitle,
-					Filename:    file,
-					Frontmatter: &fm,
-					CreateTime:  ctime,
-					ModTime:     mtime,
-				}
-				adminwps = append(adminwps, wp)
-			} else if fm.Public {
-				wp = &wiki{
-					Title:       pagetitle,
-					Filename:    file,
-					Frontmatter: &fm,
-					CreateTime:  ctime,
-					ModTime:     mtime,
-				}
-				publicwps = append(publicwps, wp)
-			} else {
-				wp = &wiki{
-					Title:       pagetitle,
-					Filename:    file,
-					Frontmatter: &fm,
-					CreateTime:  ctime,
-					ModTime:     mtime,
-				}
-				wps = append(wps, wp)
+		//ctime, mtime := gitGetTimes(file)
+		var ctime int64 = 0
+		var mtime int64 = 0
+
+		// If pages are Admin or Public, add to a separate wikiPage slice
+		//   So we only check on rendering
+		if fm.Admin {
+			wp = &wiki{
+				Title:       pagetitle,
+				Filename:    file,
+				Frontmatter: &fm,
+				CreateTime:  ctime,
+				ModTime:     mtime,
 			}
+			adminwps = append(adminwps, wp)
+		} else if fm.Public {
+			wp = &wiki{
+				Title:       pagetitle,
+				Filename:    file,
+				Frontmatter: &fm,
+				CreateTime:  ctime,
+				ModTime:     mtime,
+			}
+			publicwps = append(publicwps, wp)
+		} else {
+			wp = &wiki{
+				Title:       pagetitle,
+				Filename:    file,
+				Frontmatter: &fm,
+				CreateTime:  ctime,
+				ModTime:     mtime,
+			}
+			wps = append(wps, wp)
+		}
 		//}
 		return nil
 	})
@@ -3168,7 +3209,7 @@ func main() {
 
 	initWikiDir()
 
-	refreshStuff()
+	//refreshStuff()
 
 	// Check for unclean Git dir on startup
 	err = gitIsCleanStartup()

@@ -1,11 +1,16 @@
 //  Copyright (c) 2014 Couchbase, Inc.
-//  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
-//  except in compliance with the License. You may obtain a copy of the License at
-//    http://www.apache.org/licenses/LICENSE-2.0
-//  Unless required by applicable law or agreed to in writing, software distributed under the
-//  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-//  either express or implied. See the License for the specific language governing permissions
-//  and limitations under the License.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 		http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package search
 
@@ -16,7 +21,10 @@ import (
 )
 
 type FacetBuilder interface {
-	Update(index.FieldTerms)
+	StartDoc()
+	UpdateVisitor(field string, term []byte)
+	EndDoc()
+
 	Result() *FacetResult
 	Field() string
 }
@@ -24,6 +32,7 @@ type FacetBuilder interface {
 type FacetsBuilder struct {
 	indexReader index.IndexReader
 	facets      map[string]FacetBuilder
+	fields      []string
 }
 
 func NewFacetsBuilder(indexReader index.IndexReader) *FacetsBuilder {
@@ -35,21 +44,29 @@ func NewFacetsBuilder(indexReader index.IndexReader) *FacetsBuilder {
 
 func (fb *FacetsBuilder) Add(name string, facetBuilder FacetBuilder) {
 	fb.facets[name] = facetBuilder
+	fb.fields = append(fb.fields, facetBuilder.Field())
 }
 
-func (fb *FacetsBuilder) Update(docMatch *DocumentMatch) error {
-	var fields []string
+func (fb *FacetsBuilder) RequiredFields() []string {
+	return fb.fields
+}
+
+func (fb *FacetsBuilder) StartDoc() {
 	for _, facetBuilder := range fb.facets {
-		fields = append(fields, facetBuilder.Field())
+		facetBuilder.StartDoc()
 	}
-	fieldTerms, err := fb.indexReader.DocumentFieldTermsForFields(docMatch.IndexInternalID, fields)
-	if err != nil {
-		return err
-	}
+}
+
+func (fb *FacetsBuilder) EndDoc() {
 	for _, facetBuilder := range fb.facets {
-		facetBuilder.Update(fieldTerms)
+		facetBuilder.EndDoc()
 	}
-	return nil
+}
+
+func (fb *FacetsBuilder) UpdateVisitor(field string, term []byte) {
+	for _, facetBuilder := range fb.facets {
+		facetBuilder.UpdateVisitor(field, term)
+	}
 }
 
 type TermFacet struct {
@@ -87,11 +104,34 @@ type NumericRangeFacet struct {
 	Count int      `json:"count"`
 }
 
+func (nrf *NumericRangeFacet) Same(other *NumericRangeFacet) bool {
+	if nrf.Min == nil && other.Min != nil {
+		return false
+	}
+	if nrf.Min != nil && other.Min == nil {
+		return false
+	}
+	if nrf.Min != nil && other.Min != nil && *nrf.Min != *other.Min {
+		return false
+	}
+	if nrf.Max == nil && other.Max != nil {
+		return false
+	}
+	if nrf.Max != nil && other.Max == nil {
+		return false
+	}
+	if nrf.Max != nil && other.Max != nil && *nrf.Max != *other.Max {
+		return false
+	}
+
+	return true
+}
+
 type NumericRangeFacets []*NumericRangeFacet
 
 func (nrf NumericRangeFacets) Add(numericRangeFacet *NumericRangeFacet) NumericRangeFacets {
 	for _, existingNr := range nrf {
-		if numericRangeFacet.Min == existingNr.Min && numericRangeFacet.Max == existingNr.Max {
+		if numericRangeFacet.Same(existingNr) {
 			existingNr.Count += numericRangeFacet.Count
 			return nrf
 		}
