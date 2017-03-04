@@ -70,7 +70,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
 	"jba.io/go/httputils"
-	git2 "srcd.works/go-git.v4"
+	gogit "srcd.works/go-git.v4"
 	"srcd.works/go-git.v4/plumbing"
 	"srcd.works/go-git.v4/plumbing/object"
 )
@@ -126,17 +126,17 @@ const (
 )
 
 var (
-	linkPattern    = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
-	bufpool        *bpool.BufferPool
-	templates      map[string]*template.Template
-	_24K           int64 = (1 << 20) * 24
-	fLocal         bool
-	debug          = httputils.Debug
-	fInit          bool
-	gitPath        string
-	favMap         map[string]struct{}
-	tagMap         map[string][]string
-	index          bleve.Index
+	linkPattern = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
+	bufpool     *bpool.BufferPool
+	templates   map[string]*template.Template
+	_24K        int64 = (1 << 20) * 24
+	fLocal      bool
+	debug       = httputils.Debug
+	fInit       bool
+	gitPath     string
+	favMap      map[string]struct{}
+	tagMap      map[string][]string
+	//index          bleve.Index
 	wikiList       map[string][]*wiki
 	errNotInGit    = errors.New("given file not in Git repo")
 	errNoFile      = errors.New("no such file")
@@ -2496,7 +2496,7 @@ func bleveIndex() {
 
 	var err error
 	timestamp := "2006-01-02 at 03:04:05PM"
-	index, err = bleve.Open("./data/index.bleve")
+	index, err := bleve.Open("./data/index.bleve")
 
 	httputils.Debugln("bleveIndex: Search crawling: started")
 
@@ -2742,6 +2742,7 @@ func searchSample() {
 		log.Println(fields)
 		log.Println(searchResults.Hits[1].Fields)
 	*/
+	index.Close()
 }
 
 // Simple function to get the httptreemux params, setting it blank if there aren't any
@@ -2757,6 +2758,9 @@ func getParams(c context.Context) map[string]string {
 }
 
 func search(w http.ResponseWriter, r *http.Request) {
+	index, err := bleve.Open("./data/index.bleve")
+	checkErr("search", err)
+
 	params := getParams(r.Context())
 	name := params["name"]
 
@@ -2819,7 +2823,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 }
 
 func gitLsNew() (*object.FileIter, error) {
-	repo, err := git2.PlainOpen("./gowiki-data")
+	repo, err := gogit.PlainOpen("./gowiki-data")
 	head, err := repo.Head()
 	commit, err := repo.Commit(head.Hash())
 	tree, err := commit.Tree()
@@ -2832,9 +2836,7 @@ func references(c *object.Commit, path string) []*object.Commit {
 	if err := walkGraph(&result, &seen, c, path); err != nil {
 		return nil
 	}
-
 	object.SortCommits(result)
-
 	// for merges of identical cherry-picks
 	return result
 }
@@ -2911,24 +2913,27 @@ func parentsContainingPath(path string, c *object.Commit) []*object.Commit {
 }
 
 func gitGetTimes(filename string) (ctime, mtime int64) {
-	defer httputils.TimeTrack(time.Now(), "gitGetTimes")
+	//defer httputils.TimeTrack(time.Now(), "gitGetTimes")
 
-	repo, err := git2.PlainOpen(viper.GetString("WikiDir"))
-	checkErr("crawl", err)
+	repo, err := gogit.PlainOpen(viper.GetString("WikiDir"))
+	checkErr("gitGetTimes", err)
 	head, err := repo.Head()
-	checkErr("crawl", err)
+	checkErr("gitGetTimes", err)
 	commit, err := repo.Commit(head.Hash())
-	checkErr("crawl", err)
+	checkErr("gitGetTimes", err)
 	ref := references(commit, filename)
+
 	return ref[0].Author.When.Unix(), ref[len(ref)-1].Author.When.Unix()
 }
 
 // crawlWiki builds a list of wiki pages, stored in memory
 //  saves time to reference this, rebuilding on saving
 func crawlWiki() {
+	httputils.Debugln("Search crawling: started")
+
 	defer httputils.TimeTrack(time.Now(), "crawlWiki")
 
-	repo, err := git2.PlainOpen(viper.GetString("WikiDir"))
+	repo, err := gogit.PlainOpen(viper.GetString("WikiDir"))
 	checkErr("crawl", err)
 	head, err := repo.Head()
 	checkErr("crawl", err)
@@ -2939,57 +2944,58 @@ func crawlWiki() {
 
 	treeFiles := tree.Files()
 
-	/*
-		fileList, err := gitLs()
+	index, err := bleve.Open("./data/index.bleve")
+	// If index does not exist, create mapping and then index
+	if err == bleve.ErrorIndexPathDoesNotExist {
+		nameMapping := bleve.NewTextFieldMapping()
+		nameMapping.Analyzer = "en"
+
+		contentMapping := bleve.NewTextFieldMapping()
+		contentMapping.Analyzer = "en"
+
+		boolMapping := bleve.NewBooleanFieldMapping()
+
+		//dateMapping := bleve.NewDateTimeFieldMapping()
+		//dateMapping.DateFormat = timestamp
+		dateMapping := bleve.NewTextFieldMapping()
+
+		tagMapping := bleve.NewTextFieldMapping()
+		//tagMapping.Analyzer = keyword_analyzer.Name
+
+		wikiMapping := bleve.NewDocumentMapping()
+		wikiMapping.AddFieldMappingsAt("Name", nameMapping)
+		wikiMapping.AddFieldMappingsAt("Tags", tagMapping)
+		wikiMapping.AddFieldMappingsAt("Content", contentMapping)
+		wikiMapping.AddFieldMappingsAt("Public", boolMapping)
+		wikiMapping.AddFieldMappingsAt("Created", dateMapping)
+		wikiMapping.AddFieldMappingsAt("Modified", dateMapping)
+
+		indexMapping := bleve.NewIndexMapping()
+		indexMapping.AddDocumentMapping("PublicWiki", wikiMapping)
+		indexMapping.TypeField = "type"
+		indexMapping.DefaultAnalyzer = "en"
+
+		index, err = bleve.New("./data/index.bleve", indexMapping)
 		if err != nil {
 			panic(err)
 		}
-	*/
+	}
+
 	var wps []*wiki
 	var publicwps []*wiki
 	var adminwps []*wiki
-	//for _, file := range fileList {
 	treeFiles.ForEach(func(f *object.File) error {
-		log.Println(f.Name)
-
-		// If using Git, build the full path:
-		//fullname := filepath.Join(viper.GetString("WikiDir"), file)
-
-		//file = viper.GetString("WikiDir")+file
-		//log.Println(file)
-		//log.Println(fullname)
-
-		// check if the source dir exist
-		/*
-			src, err := os.Stat(fullname)
-			if err != nil {
-				panic(err)
-			}
-			// If not a directory, get frontmatter from file and add to list
-			if !src.IsDir() {
-
-				_, filename := filepath.Split(file)
-		*/
-
-		// If this is an absolute path, including the cfg.WikiDir, trim it
-		//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
-		//fileURL := strings.TrimPrefix(file, withoutdotslash)
+		//log.Println(f.Name)
 
 		var wp *wiki
 		var pagetitle string
 
-		//log.Println(file)
-
-		// Read YAML frontmatter into fm
-		//f, err := os.Open(fullname)
-		//checkErr("crawlWiki()/Open", err)
-		//defer f.Close()
 		reader, err := f.Reader()
 		checkErr("crawl", err)
 		file := f.Name
 
-		fm := readFront(reader)
-		//checkErr("crawlWiki()/readFront", err)
+		//fm := readFront(reader)
+		fm, content := readWikiPage(reader)
 
 		pagetitle = f.Name
 		if fm.Title != "" {
@@ -3041,9 +3047,27 @@ func crawlWiki() {
 			checkErr("crawlWiki()/gitGetMtime", err)
 		*/
 
-		//ctime, mtime := gitGetTimes(file)
-		var ctime int64 = 0
-		var mtime int64 = 0
+		ctime, mtime := gitGetTimes(file)
+		//var ctime int64 = 0
+		//var mtime int64 = 0
+
+		data := struct {
+			Name     string   `json:"name"`
+			Public   bool     `json:"public"`
+			Tags     []string `json:"tags"`
+			Content  string   `json:"content"`
+			Created  string   `json:"ctime"`
+			Modified string   `json:"mtime"`
+		}{
+			Name:     file,
+			Public:   fm.Public,
+			Tags:     fm.Tags,
+			Content:  string(content),
+			Created:  strconv.FormatInt(ctime, 10),
+			Modified: strconv.FormatInt(mtime, 10),
+		}
+
+		index.Index(file, data)
 
 		// If pages are Admin or Public, add to a separate wikiPage slice
 		//   So we only check on rendering
@@ -3075,7 +3099,6 @@ func crawlWiki() {
 			}
 			wps = append(wps, wp)
 		}
-		//}
 		return nil
 	})
 	if wikiList == nil {
@@ -3084,12 +3107,16 @@ func crawlWiki() {
 	wikiList["public"] = publicwps
 	wikiList["admin"] = adminwps
 	wikiList["private"] = wps
+
+	index.Close()
+
+	httputils.Debugln("Search crawling: done")
 }
 
 // This should be all the stuff we need to be refreshed on startup and when pages are saved
 func refreshStuff() {
 	// Update search index
-	go bleveIndex()
+	//go bleveIndex()
 
 	// Update list of wiki pages
 	go crawlWiki()
@@ -3304,6 +3331,8 @@ func main() {
 	http.HandleFunc("/favicon.png", httputils.FaviconHandler)
 	http.HandleFunc("/assets/", httputils.StaticHandler)
 	http.Handle("/", s.Then(h))
+
+	crawlWiki()
 
 	searchSample()
 
