@@ -139,7 +139,7 @@ var (
 	tagMap      map[string][]string
 	//index          bleve.Index
 	wikiList       map[string][]*wiki
-	wikiMap        map[string]*wiki
+	wikiCache      map[string]*cacheWiki
 	errNotInGit    = errors.New("given file not in Git repo")
 	errNoFile      = errors.New("no such file")
 	errNoDirIndex  = errors.New("no such directory index")
@@ -166,10 +166,16 @@ type configuration struct {
 	PushOnSave bool
 }
 
+type cacheWiki struct {
+	Filename   string
+	Type       string
+	CreateTime int64
+	ModTime    int64
+}
+
 type cacheGob struct {
 	HeadSha1 string
-	WikiList map[string][]*wiki
-	WikiMap  map[string]*wiki
+	WikiList map[string]*cacheWiki
 }
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -3015,6 +3021,7 @@ func saveCache(c *cacheGob) {
 	if err == nil {
 		encoder := gob.NewEncoder(file)
 		encoder.Encode(c)
+
 	}
 	check(err)
 	file.Close()
@@ -3048,7 +3055,7 @@ func crawlWiki() {
 		log.Println("Loaded ./data/cache.gob! Comparing hashes...")
 		if head.Hash().String() == cache.HeadSha1 {
 			log.Println("Hashes match! Using wikiList cache.")
-			wikiList = cache.WikiList
+			wikiCache = cache.WikiList
 			return
 		}
 	}
@@ -3056,8 +3063,8 @@ func crawlWiki() {
 		log.Println(err)
 	}
 
-	if wikiMap == nil {
-		wikiMap = make(map[string]*wiki)
+	if wikiCache == nil {
+		wikiCache = make(map[string]*cacheWiki)
 	}
 
 	commit, err := repo.Commit(head.Hash())
@@ -3211,14 +3218,20 @@ func crawlWiki() {
 			wps = append(wps, wp)
 		}
 
-		wp = &wiki{
-			Title:       pagetitle,
-			Filename:    file,
-			Frontmatter: &fm,
-			CreateTime:  ctime,
-			ModTime:     mtime,
+		var pageType = "private"
+		if fm.Admin {
+			pageType = "admin"
 		}
-		wikiMap[file] = wp
+		if fm.Public {
+			pageType = "public"
+		}
+
+		wikiCache[file] = &cacheWiki{
+			Filename:   file,
+			Type:       pageType,
+			CreateTime: ctime,
+			ModTime:    mtime,
+		}
 
 		return nil
 	})
@@ -3231,8 +3244,7 @@ func crawlWiki() {
 
 	cache = cacheGob{
 		HeadSha1: head.Hash().String(),
-		WikiList: wikiList,
-		WikiMap:  wikiMap,
+		WikiList: wikiCache,
 	}
 
 	saveCache(&cache)
