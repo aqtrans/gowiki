@@ -30,6 +30,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -138,6 +139,7 @@ var (
 	tagMap      map[string][]string
 	//index          bleve.Index
 	wikiList       map[string][]*wiki
+	wikiMap        map[string]*wiki
 	errNotInGit    = errors.New("given file not in Git repo")
 	errNoFile      = errors.New("no such file")
 	errNoDirIndex  = errors.New("no such directory index")
@@ -162,6 +164,12 @@ type configuration struct {
 	AdminUser  string
 	AdminPass  string
 	PushOnSave bool
+}
+
+type cacheGob struct {
+	HeadSha1 string
+	WikiList map[string][]*wiki
+	WikiMap  map[string]*wiki
 }
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -434,6 +442,16 @@ func checkErrReturn(name string, err error) error {
 		return err
 	}
 	return nil
+}
+
+func check(err error) {
+	if err != nil {
+		pc, _, line, ok := runtime.Caller(1)
+		details := runtime.FuncForPC(pc)
+		if ok && details != nil {
+			log.Fatalln(line, " Func: ", details.Name(), " Err: ", err)
+		}
+	}
 }
 
 func appendIfMissing(slice []string, s string) []string {
@@ -1218,6 +1236,18 @@ func readWikiPage(reader io.Reader) (frontmatter, []byte) {
 	}
 
 	fm := marshalFrontmatter(topbuf.Bytes())
+	if fm.Public != true {
+		fm.Public = false
+	}
+	if fm.Admin != true {
+		fm.Admin = false
+	}
+	if fm.Favorite != true {
+		fm.Favorite = false
+	}
+	if fm.Tags == nil {
+		fm.Tags = []string{}
+	}
 	return fm, bottombuf.Bytes()
 }
 
@@ -2980,17 +3010,56 @@ func gitGetTimes(filename string) (ctime, mtime int64) {
 	return ref[0].Author.When.Unix(), ref[len(ref)-1].Author.When.Unix()
 }
 
+func saveCache(c *cacheGob) {
+	file, err := os.Create("./data/cache.gob")
+	if err == nil {
+		encoder := gob.NewEncoder(file)
+		encoder.Encode(c)
+	}
+	check(err)
+	file.Close()
+}
+
+func loadCache(c *cacheGob) error {
+	file, err := os.Open("./data/cache.gob")
+	if err == nil {
+		decoder := gob.NewDecoder(file)
+		err = decoder.Decode(&c)
+	}
+	file.Close()
+	return err
+}
+
 // crawlWiki builds a list of wiki pages, stored in memory
 //  saves time to reference this, rebuilding on saving
 func crawlWiki() {
 	httputils.Debugln("Search crawling: started")
-
 	defer httputils.TimeTrack(time.Now(), "crawlWiki")
 
+	// Load up to the repo head, to compare it's hash with the cached one
 	repo, err := gogit.PlainOpen(viper.GetString("WikiDir"))
 	checkErr("crawl", err)
 	head, err := repo.Head()
 	checkErr("crawl", err)
+
+	var cache cacheGob
+	err = loadCache(&cache)
+	if err == nil {
+		log.Println("Loaded ./data/cache.gob! Comparing hashes...")
+		if head.Hash().String() == cache.HeadSha1 {
+			log.Println("Hashes match! Using wikiList cache.")
+			wikiList = cache.WikiList
+			return
+		}
+	}
+	if err != nil {
+		log.Println(err)
+	}
+
+	if wikiMap == nil {
+		wikiMap = make(map[string]*wiki)
+	}
+
 	commit, err := repo.Commit(head.Hash())
 	checkErr("crawl", err)
 	tree, err := commit.Tree()
@@ -3057,18 +3126,6 @@ func crawlWiki() {
 		}
 		if fm.Title == "" {
 			fm.Title = file
-		}
-		if fm.Public != true {
-			fm.Public = false
-		}
-		if fm.Admin != true {
-			fm.Admin = false
-		}
-		if fm.Favorite != true {
-			fm.Favorite = false
-		}
-		if fm.Tags == nil {
-			fm.Tags = []string{}
 		}
 
 		// Tags and Favorites building
@@ -3153,6 +3210,16 @@ func crawlWiki() {
 			}
 			wps = append(wps, wp)
 		}
+
+		wp = &wiki{
+			Title:       pagetitle,
+			Filename:    file,
+			Frontmatter: &fm,
+			CreateTime:  ctime,
+			ModTime:     mtime,
+		}
+		wikiMap[file] = wp
+
 		return nil
 	})
 	if wikiList == nil {
@@ -3161,6 +3228,14 @@ func crawlWiki() {
 	wikiList["public"] = publicwps
 	wikiList["admin"] = adminwps
 	wikiList["private"] = wps
+
+	cache = cacheGob{
+		HeadSha1: head.Hash().String(),
+		WikiList: wikiList,
+		WikiMap:  wikiMap,
+	}
+
+	saveCache(&cache)
 
 	index.Close()
 
