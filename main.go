@@ -789,6 +789,61 @@ func gitGetCtime(filename string) (int64, error) {
 	return ctime, nil
 }
 
+func gitGetCtimeBleve(filename string) (int64, error) {
+	index, err := bleve.Open("./data/index.bleve")
+	defer index.Close()
+	if err != nil {
+		log.Println(err)
+		return 0, err
+	}
+	doc, err := index.Document(filename)
+	if err != nil {
+		log.Println(err)
+		return 0, err
+	}
+	var ctime int64
+	for _, v := range doc.Fields {
+		log.Println(v.Name())
+		if v.Name() == "ctime" {
+			ctimeString := string(v.Value())
+			log.Println(ctimeString)
+			ctime, err = strconv.ParseInt(ctimeString, 10, 64)
+			if err != nil {
+				log.Println(err)
+				return 0, err
+			}
+		}
+		//log.Println(v.Name(), string(v.Value()))
+	}
+	return ctime, nil
+}
+
+func gitGetMtimeBleve(filename string) (int64, error) {
+	index, err := bleve.Open("./data/index.bleve")
+	defer index.Close()
+	if err != nil {
+		log.Println(err)
+		return 0, err
+	}
+	doc, err := index.Document(filename)
+	if err != nil {
+		log.Println(err)
+		return 0, err
+	}
+	var mtime int64
+	for _, v := range doc.Fields {
+		if v.Name() == "mtime" {
+			mtimeString := string(v.Value())
+			mtime, err = strconv.ParseInt(mtimeString, 10, 64)
+			if err != nil {
+				return 0, err
+			}
+		}
+		//log.Println(v.Name(), string(v.Value()))
+	}
+	return mtime, nil
+}
+
 // File modification time, output to UNIX time
 // git log -1 --format=%at -- [filename]
 func gitGetMtime(filename string) (int64, error) {
@@ -1740,11 +1795,10 @@ func loadWiki(name string) *wiki {
 	} else {
 		pagetitle = name
 	}
-
-	ctime, err := gitGetCtime(name)
+	ctime, err := gitGetCtimeBleve(name)
 	checkErr("loadWiki()/gitGetCtime", err)
 
-	mtime, err := gitGetMtime(name)
+	mtime, err := gitGetMtimeBleve(name)
 	checkErr("loadWiki()/gitGetMtime", err)
 
 	return &wiki{
