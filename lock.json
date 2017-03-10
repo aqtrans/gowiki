@@ -1,0 +1,354 @@
+{
+    "memo": "e5c664ad70ba4a9829ed465c521a4f9d6abde99a982a9972485c6fcca601aaad",
+    "projects": [
+        {
+            "name": "github.com/BurntSushi/toml",
+            "branch": "master",
+            "revision": "e643e9ef00b049d75de26e61109c5ea01885cd21",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/GeertJohan/go.rice",
+            "branch": "master",
+            "revision": "4bbccbfa39e784796e483270451217d3369ecfbe",
+            "packages": [
+                ".",
+                "embedded"
+            ]
+        },
+        {
+            "name": "github.com/aqtrans/ctx-csrf",
+            "branch": "master",
+            "revision": "34ea4febb888510333219edeeba4a57eb618ae00",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/blevesearch/bleve",
+            "branch": "master",
+            "revision": "1bcfe4efa1156ae472a4fb174cde202ec065f27c",
+            "packages": [
+                ".",
+                "analysis",
+                "analysis/analyzer/standard",
+                "analysis/datetime/flexible",
+                "analysis/datetime/optional",
+                "analysis/lang/en",
+                "analysis/token/lowercase",
+                "analysis/token/porter",
+                "analysis/token/stop",
+                "analysis/tokenizer/unicode",
+                "document",
+                "index",
+                "index/store",
+                "index/store/boltdb",
+                "index/store/gtreap",
+                "index/upsidedown",
+                "mapping",
+                "numeric",
+                "registry",
+                "search",
+                "search/collector",
+                "search/facet",
+                "search/highlight",
+                "search/highlight/format/html",
+                "search/highlight/fragmenter/simple",
+                "search/highlight/highlighter/html",
+                "search/highlight/highlighter/simple",
+                "search/query",
+                "search/scorer",
+                "search/searcher"
+            ]
+        },
+        {
+            "name": "github.com/blevesearch/go-porterstemmer",
+            "branch": "master",
+            "revision": "23a2c8e5cf1f380f27722c6d2ae8896431dc7d0e",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/blevesearch/segment",
+            "branch": "master",
+            "revision": "762005e7a34fd909a84586299f1dd457371d36ee",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/boltdb/bolt",
+            "branch": "master",
+            "revision": "e9cf4fae01b5a8ff89d0ec6b32f0d9c9f79aefdd",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/certifi/gocertifi",
+            "branch": "master",
+            "revision": "03be5e6bb9874570ea7fb0961225d193cbc374c5",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/daaku/go.zipexe",
+            "branch": "master",
+            "revision": "a5fe2436ffcb3236e175e5149162b41cd28bd27d",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/dimfeld/httptreemux",
+            "version": "v3.8.0",
+            "revision": "86f7c217d9043ebc6adfd8e2ed04a0bb1e1db651",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/fsnotify/fsnotify",
+            "branch": "master",
+            "revision": "7d7316ed6e1ed2de075aab8dfc76de5d158d66e1",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/getsentry/raven-go",
+            "branch": "master",
+            "revision": "aff752b3f9b36599a3ab28ac36255bea069b440b",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/golang/protobuf",
+            "branch": "master",
+            "revision": "c9c7427a2a70d2eb3bafa0ab2dc163e45f143317",
+            "packages": [
+                "proto"
+            ]
+        },
+        {
+            "name": "github.com/gorilla/securecookie",
+            "branch": "master",
+            "revision": "e59506cc896acb7f7bf732d4fdf5e25f7ccd8983",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/hashicorp/hcl",
+            "branch": "master",
+            "revision": "630949a3c5fa3c613328e1b8256052cbc2327c9b",
+            "packages": [
+                ".",
+                "hcl/ast",
+                "hcl/parser",
+                "hcl/scanner",
+                "hcl/strconv",
+                "hcl/token",
+                "json/parser",
+                "json/scanner",
+                "json/token"
+            ]
+        },
+        {
+            "name": "github.com/justinas/alice",
+            "branch": "master",
+            "revision": "1051eaf52fcafdd87ead59d28b065f1fcb8274ec",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/kardianos/osext",
+            "branch": "master",
+            "revision": "9d302b58e975387d0b4d9be876622c86cefe64be",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/magiconair/properties",
+            "branch": "master",
+            "revision": "b3b15ef068fd0b17ddf408a23669f20811d194d2",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/mitchellh/mapstructure",
+            "branch": "master",
+            "revision": "53818660ed4955e899c0bcafa97299a388bd7c8e",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/oxtoacart/bpool",
+            "branch": "master",
+            "revision": "4e1c5567d7c2dd59fa4c7c83d34c2f3528b025d6",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/pelletier/go-buffruneio",
+            "branch": "master",
+            "revision": "c37440a7cf42ac63b919c752ca73a85067e05992",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/pelletier/go-toml",
+            "branch": "master",
+            "revision": "13d49d4606eb801b8f01ae542b4afc4c6ee3d84a",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/russross/blackfriday",
+            "branch": "master",
+            "revision": "5f33e7b7878355cd2b7e6b8eefc48a5472c69f70",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/shurcooL/sanitized_anchor_name",
+            "branch": "master",
+            "revision": "1dba4b3954bc059efc3991ec364f9f9a35f597d2",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/spf13/afero",
+            "branch": "master",
+            "revision": "9be650865eab0c12963d8753212f4f9c66cdcf12",
+            "packages": [
+                ".",
+                "mem"
+            ]
+        },
+        {
+            "name": "github.com/spf13/cast",
+            "branch": "master",
+            "revision": "ce135a4ebeee6cfe9a26c93ee0d37825f26113c7",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/spf13/jwalterweatherman",
+            "branch": "master",
+            "revision": "fa7ca7e836cf3a8bb4ebf799f472c12d7e903d66",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/spf13/pflag",
+            "branch": "master",
+            "revision": "9ff6c6923cfffbcd502984b8e0c80539a94968b7",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/spf13/viper",
+            "branch": "master",
+            "revision": "7538d73b4eb9511d85a9f1dfef202eeb8ac260f4",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/steveyen/gtreap",
+            "branch": "master",
+            "revision": "0abe01ef9be25c4aedc174758ec2d917314d6d70",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/thoas/stats",
+            "branch": "master",
+            "revision": "152b5d051953fdb6e45f14b6826962aadc032324",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "golang.org/x/crypto",
+            "branch": "master",
+            "revision": "453249f01cfeb54c3d549ddb75ff152ca243f9d8",
+            "packages": [
+                "bcrypt",
+                "blowfish"
+            ]
+        },
+        {
+            "name": "golang.org/x/net",
+            "branch": "master",
+            "revision": "a6577fac2d73be281a500b310739095313165611",
+            "packages": [
+                "context"
+            ]
+        },
+        {
+            "name": "golang.org/x/sys",
+            "branch": "master",
+            "revision": "99f16d856c9836c42d24e7ab64ea72916925fa97",
+            "packages": [
+                "unix"
+            ]
+        },
+        {
+            "name": "golang.org/x/text",
+            "branch": "master",
+            "revision": "f28f36722d5ef2f9655ad3de1f248e3e52ad5ebd",
+            "packages": [
+                "internal/gen",
+                "internal/triegen",
+                "internal/ucd",
+                "transform",
+                "unicode/cldr",
+                "unicode/norm"
+            ]
+        },
+        {
+            "name": "gopkg.in/yaml.v2",
+            "branch": "master",
+            "revision": "a3f3340b5840cee44f372bddb5880fcbc419b46a",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "jba.io/go/auth",
+            "branch": "master",
+            "revision": "8a26cd81e065f799956dd42be89c60679f3e972c",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "jba.io/go/httputils",
+            "branch": "master",
+            "revision": "fa951ea5983bce1802ec3ef51d88d8736a4abc27",
+            "packages": [
+                "."
+            ]
+        }
+    ]
+}
