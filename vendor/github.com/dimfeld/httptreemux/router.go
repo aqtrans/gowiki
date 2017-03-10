@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-
-	"github.com/dimfeld/httppath"
 )
 
 // The params argument contains the parameters parsed from wildcards and catch-alls in the URL.
@@ -46,73 +44,6 @@ const (
 	RequestURI PathSource = iota // Use r.RequestURI
 	URLPath                      // Use r.URL.Path
 )
-
-type TreeMux struct {
-	root *node
-
-	Group
-
-	// The default PanicHandler just returns a 500 code.
-	PanicHandler PanicHandler
-
-	// The default NotFoundHandler is http.NotFound.
-	NotFoundHandler func(w http.ResponseWriter, r *http.Request)
-
-	// Any OPTIONS request that matches a path without its own OPTIONS handler will use this handler,
-	// if set, instead of calling MethodNotAllowedHandler.
-	OptionsHandler HandlerFunc
-
-	// MethodNotAllowedHandler is called when a pattern matches, but that
-	// pattern does not have a handler for the requested method. The default
-	// handler just writes the status code http.StatusMethodNotAllowed and adds
-	// the required Allowed header.
-	// The methods parameter contains the map of each method to the corresponding
-	// handler function.
-	MethodNotAllowedHandler func(w http.ResponseWriter, r *http.Request,
-		methods map[string]HandlerFunc)
-
-	// HeadCanUseGet allows the router to use the GET handler to respond to
-	// HEAD requests if no explicit HEAD handler has been added for the
-	// matching pattern. This is true by default.
-	HeadCanUseGet bool
-
-	// RedirectCleanPath allows the router to try clean the current request path,
-	// if no handler is registered for it, using CleanPath from github.com/dimfeld/httppath.
-	// This is true by default.
-	RedirectCleanPath bool
-
-	// RedirectTrailingSlash enables automatic redirection in case router doesn't find a matching route
-	// for the current request path but a handler for the path with or without the trailing
-	// slash exists. This is true by default.
-	RedirectTrailingSlash bool
-
-	// RemoveCatchAllTrailingSlash removes the trailing slash when a catch-all pattern
-	// is matched, if set to true. By default, catch-all paths are never redirected.
-	RemoveCatchAllTrailingSlash bool
-
-	// RedirectBehavior sets the default redirect behavior when RedirectTrailingSlash or
-	// RedirectCleanPath are true. The default value is Redirect301.
-	RedirectBehavior RedirectBehavior
-
-	// RedirectMethodBehavior overrides the default behavior for a particular HTTP method.
-	// The key is the method name, and the value is the behavior to use for that method.
-	RedirectMethodBehavior map[string]RedirectBehavior
-
-	// PathSource determines from where the router gets its path to search.
-	// By default it pulls the data from the RequestURI member, but this can
-	// be overridden to use URL.Path instead.
-	//
-	// There is a small tradeoff here. Using RequestURI allows the router to handle
-	// encoded slashes (i.e. %2f) in the URL properly, while URL.Path provides
-	// better compatibility with some utility functions in the http
-	// library that modify the Request before passing it to the router.
-	PathSource PathSource
-
-	// EscapeAddedRoutes controls URI escaping behavior when adding a route to the tree.
-	// If set to true, the router will add both the route as originally passed, and
-	// a version passed through URL.EscapedPath. This behavior is disabled by default.
-	EscapeAddedRoutes bool
-}
 
 // Dump returns a text representation of the routing tree.
 func (t *TreeMux) Dump() string {
@@ -156,12 +87,7 @@ func redirect(w http.ResponseWriter, r *http.Request, newPath string, statusCode
 	http.Redirect(w, r, newURL.String(), statusCode)
 }
 
-func (t *TreeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
-	if t.PanicHandler != nil {
-		defer t.serveHTTPPanic(w, r)
-	}
-
+func (t *TreeMux) lookup(w http.ResponseWriter, r *http.Request) (HandlerFunc, map[string]string) {
 	path := r.RequestURI
 	pathLen := len(path)
 	if pathLen > 0 && t.PathSource == RequestURI {
@@ -183,27 +109,27 @@ func (t *TreeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if trailingSlash && t.RedirectTrailingSlash {
 		path = path[:pathLen-1]
 	}
+
 	n, handler, params := t.root.search(r.Method, path[1:])
 	if n == nil {
 		if t.RedirectCleanPath {
 			// Path was not found. Try cleaning it up and search again.
 			// TODO Test this
-			cleanPath := httppath.Clean(path)
+			cleanPath := Clean(path)
 			n, handler, params = t.root.search(r.Method, cleanPath[1:])
 			if n == nil {
 				// Still nothing found.
 				t.NotFoundHandler(w, r)
-				return
-			} else {
-				if statusCode, ok := t.redirectStatusCode(r.Method); ok {
-					// Redirect to the actual path
-					redirect(w, r, cleanPath, statusCode)
-					return
-				}
+				return nil, nil
+			}
+			if statusCode, ok := t.redirectStatusCode(r.Method); ok {
+				// Redirect to the actual path
+				redirect(w, r, cleanPath, statusCode)
+				return nil, nil
 			}
 		} else {
 			t.NotFoundHandler(w, r)
-			return
+			return nil, nil
 		}
 	}
 
@@ -214,7 +140,7 @@ func (t *TreeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		if handler == nil {
 			t.MethodNotAllowedHandler(w, r, n.leafHandler)
-			return
+			return nil, nil
 		}
 	}
 
@@ -229,7 +155,7 @@ func (t *TreeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					// beginning of the function.
 					redirect(w, r, path, statusCode)
 				}
-				return
+				return nil, nil
 			}
 		}
 	}
@@ -249,7 +175,30 @@ func (t *TreeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	handler(w, r, paramMap)
+	return handler, paramMap
+}
+
+func (t *TreeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if t.PanicHandler != nil {
+		defer t.serveHTTPPanic(w, r)
+	}
+
+	if t.SafeAddRoutesWhileRunning {
+		// In concurrency safe mode, we acquire a read lock on the mutex for any access.
+		// This is optional to avoid potential performance loss in high-usage scenarios.
+		t.mutex.RLock()
+	}
+
+	handler, paramMap := t.lookup(w, r)
+
+	if t.SafeAddRoutesWhileRunning {
+		t.mutex.RUnlock()
+	}
+
+	if handler != nil {
+		r = t.setDefaultRequestContext(r)
+		handler(w, r, paramMap)
+	}
 }
 
 // MethodNotAllowedHandler is the default handler for TreeMux.MethodNotAllowedHandler,

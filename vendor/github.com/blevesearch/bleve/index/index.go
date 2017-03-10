@@ -1,11 +1,16 @@
 //  Copyright (c) 2014 Couchbase, Inc.
-//  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
-//  except in compliance with the License. You may obtain a copy of the License at
-//    http://www.apache.org/licenses/LICENSE-2.0
-//  Unless required by applicable law or agreed to in writing, software distributed under the
-//  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-//  either express or implied. See the License for the specific language governing permissions
-//  and limitations under the License.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 		http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package index
 
@@ -13,7 +18,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/blevesearch/bleve/document"
 	"github.com/blevesearch/bleve/index/store"
@@ -25,18 +29,12 @@ type Index interface {
 	Open() error
 	Close() error
 
-	DocCount() (uint64, error)
-
 	Update(doc *document.Document) error
 	Delete(id string) error
 	Batch(batch *Batch) error
 
 	SetInternal(key, val []byte) error
 	DeleteInternal(key []byte) error
-
-	DumpAll() chan interface{}
-	DumpDoc(id string) chan interface{}
-	DumpFields() chan interface{}
 
 	// Reader returns a low-level accessor on the index data. Close it to
 	// release associated resources.
@@ -50,25 +48,14 @@ type Index interface {
 	Advanced() (store.KVStore, error)
 }
 
-// AsyncIndex is an interface for indexes which perform
-// some important operations asynchronously.
-type AsyncIndex interface {
-	// Wait will block until asynchronous operations started
-	// before this call have finished or until the specified
-	// timeout has been reached.  If the timeout is reached
-	// an error is returned.
-	Wait(timeout time.Duration) error
-}
+type DocumentFieldTermVisitor func(field string, term []byte)
 
 type IndexReader interface {
 	TermFieldReader(term []byte, field string, includeFreq, includeNorm, includeTermVectors bool) (TermFieldReader, error)
 
-	// DocIDReader returns an iterator over documents which identifiers are
-	// greater than or equal to start and smaller than end. Set start to the
-	// empty string to iterate from the first document, end to the empty string
-	// to iterate to the last one.
+	// DocIDReader returns an iterator over all doc ids
 	// The caller must close returned instance to release associated resources.
-	DocIDReader(start, end string) (DocIDReader, error)
+	DocIDReaderAll() (DocIDReader, error)
 
 	DocIDReaderOnly(ids []string) (DocIDReader, error)
 
@@ -79,21 +66,46 @@ type IndexReader interface {
 	FieldDictPrefix(field string, termPrefix []byte) (FieldDict, error)
 
 	Document(id string) (*document.Document, error)
-	DocumentFieldTerms(id IndexInternalID) (FieldTerms, error)
-	DocumentFieldTermsForFields(id IndexInternalID, fields []string) (FieldTerms, error)
+	DocumentVisitFieldTerms(id IndexInternalID, fields []string, visitor DocumentFieldTermVisitor) error
 
 	Fields() ([]string, error)
 
 	GetInternal(key []byte) ([]byte, error)
 
-	DocCount() uint64
+	DocCount() (uint64, error)
 
-	FinalizeDocID(id IndexInternalID) (string, error)
+	ExternalID(id IndexInternalID) (string, error)
+	InternalID(id string) (IndexInternalID, error)
+
+	DumpAll() chan interface{}
+	DumpDoc(id string) chan interface{}
+	DumpFields() chan interface{}
 
 	Close() error
 }
 
+// FieldTerms contains the terms used by a document, keyed by field
 type FieldTerms map[string][]string
+
+// FieldsNotYetCached returns a list of fields not yet cached out of a larger list of fields
+func (f FieldTerms) FieldsNotYetCached(fields []string) []string {
+	rv := make([]string, 0, len(fields))
+	for _, field := range fields {
+		if _, ok := f[field]; !ok {
+			rv = append(rv, field)
+		}
+	}
+	return rv
+}
+
+// Merge will combine two FieldTerms
+// it assumes that the terms lists are complete (thus do not need to be merged)
+// field terms from the other list always replace the ones in the receiver
+func (f FieldTerms) Merge(other FieldTerms) {
+	for field, terms := range other {
+		f[field] = terms
+	}
+}
 
 type TermFieldVector struct {
 	Field          string
@@ -165,7 +177,7 @@ type FieldDict interface {
 // Close the reader to release associated resources.
 type DocIDReader interface {
 	// Next returns the next document internal identifier in the natural
-	// index order, or io.EOF when the end of the sequence is reached.
+	// index order, nil when the end of the sequence is reached.
 	Next() (IndexInternalID, error)
 
 	// Advance resets the iteration to the first internal identifier greater than

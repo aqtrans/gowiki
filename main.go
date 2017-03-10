@@ -53,6 +53,7 @@ import (
 	"regexp"
 	"runtime"
 
+	"github.com/blevesearch/bleve"
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
@@ -60,7 +61,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/GeertJohan/go.rice"
 	"github.com/aqtrans/ctx-csrf"
-	"github.com/blevesearch/bleve"
+	//"github.com/blevesearch/bleve"
 	"github.com/dimfeld/httptreemux"
 	"github.com/getsentry/raven-go"
 	//"github.com/microcosm-cc/bluemonday"
@@ -2715,9 +2716,9 @@ func search(w http.ResponseWriter, r *http.Request) {
 
 	//query := bleve.NewMatchQuery(name)
 
-	must := make([]bleve.Query, 1)
-	mustNot := make([]bleve.Query, 1)
-	must[0] = bleve.NewMatchQuery(name)
+	//must := make([]bleve.Query, 1)
+	//mustNot := make([]bleve.Query, 1)
+	must := bleve.NewMatchQuery(name)
 
 	public := false
 
@@ -2727,10 +2728,12 @@ func search(w http.ResponseWriter, r *http.Request) {
 		public = true
 	}
 
-	mustNot[0] = bleve.NewBoolFieldQuery(public)
-	mustNot[0].SetField("Public")
+	mustNot := bleve.NewBoolFieldQuery(public)
+	mustNot.SetField("Public")
 
-	query := bleve.NewBooleanQuery(must, nil, mustNot)
+	query := bleve.NewBooleanQuery()
+	query.AddMust(must)
+	query.AddMustNot(mustNot)
 
 	searchRequest := bleve.NewSearchRequest(query)
 
@@ -3092,14 +3095,15 @@ func main() {
 	s := alice.New(timer, httputils.Logger, auth.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
 	//w := s.Append(wikiMiddle)
 
-	h := httptreemux.New()
+	//h := httptreemux.New()
+	r := httptreemux.NewContextMux()
 	//h.PanicHandler = httptreemux.ShowErrorsPanicHandler
-	h.PanicHandler = errorHandler
+	r.PanicHandler = errorHandler
 	//r.PanicHandler = errorHandler
 
 	statsdata := stats.New()
 
-	r := h.UsingContext()
+	//r := h.UsingContext()
 
 	r.GET("/", indexHandler)
 
@@ -3121,7 +3125,7 @@ func main() {
 	r.GET("/recent", auth.AuthMiddle(recentHandler))
 	r.GET("/health", healthCheckHandler)
 
-	admin := h.NewGroup("/admin").UsingContext()
+	admin := r.NewContextGroup("/admin")
 	admin.GET("/", auth.AuthAdminMiddle(adminMainHandler))
 	admin.GET("/config", auth.AuthAdminMiddle(adminConfigHandler))
 	admin.POST("/config", auth.AuthAdminMiddle(adminConfigPostHandler))
@@ -3137,7 +3141,7 @@ func main() {
 	admin.POST("/user/password_change", auth.AuthAdminMiddle(auth.AdminUserPassChangePostHandler))
 	admin.POST("/user/delete", auth.AuthAdminMiddle(auth.AdminUserDeletePostHandler))
 
-	a := h.NewGroup("/auth").UsingContext()
+	a := r.NewContextGroup("/auth")
 	a.POST("/login", auth.LoginPostHandler)
 	a.POST("/logout", auth.LogoutHandler)
 	a.GET("/logout", auth.LogoutHandler)
@@ -3169,7 +3173,7 @@ func main() {
 	http.HandleFunc("/favicon.ico", httputils.FaviconHandler)
 	http.HandleFunc("/favicon.png", httputils.FaviconHandler)
 	http.HandleFunc("/assets/", httputils.StaticHandler)
-	http.Handle("/", s.Then(h))
+	http.Handle("/", s.Then(r))
 
 	log.Println("Listening on port " + viper.GetString("Port"))
 	checkErr("http.ListenAndServe", http.ListenAndServe("0.0.0.0:"+viper.GetString("Port"), nil))

@@ -1,35 +1,45 @@
 //  Copyright (c) 2014 Couchbase, Inc.
-//  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
-//  except in compliance with the License. You may obtain a copy of the License at
-//    http://www.apache.org/licenses/LICENSE-2.0
-//  Unless required by applicable law or agreed to in writing, software distributed under the
-//  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-//  either express or implied. See the License for the specific language governing permissions
-//  and limitations under the License.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 		http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package search
 
-import "github.com/blevesearch/bleve/index"
+import (
+	"fmt"
 
-type Location struct {
-	Pos            float64   `json:"pos"`
-	Start          float64   `json:"start"`
-	End            float64   `json:"end"`
-	ArrayPositions []float64 `json:"array_positions"`
-}
+	"github.com/blevesearch/bleve/document"
+	"github.com/blevesearch/bleve/index"
+)
 
-// SameArrayElement returns true if two locations are point to
-// the same array element
-func (l *Location) SameArrayElement(other *Location) bool {
-	if len(l.ArrayPositions) != len(other.ArrayPositions) {
+type ArrayPositions []uint64
+
+func (ap ArrayPositions) Equals(other ArrayPositions) bool {
+	if len(ap) != len(other) {
 		return false
 	}
-	for i, elem := range l.ArrayPositions {
-		if other.ArrayPositions[i] != elem {
+	for i := range ap {
+		if ap[i] != other[i] {
 			return false
 		}
 	}
 	return true
+}
+
+type Location struct {
+	Pos            uint64         `json:"pos"`
+	Start          uint64         `json:"start"`
+	End            uint64         `json:"end"`
+	ArrayPositions ArrayPositions `json:"array_positions"`
 }
 
 type Locations []*Location
@@ -37,15 +47,7 @@ type Locations []*Location
 type TermLocationMap map[string]Locations
 
 func (t TermLocationMap) AddLocation(term string, location *Location) {
-	existingLocations, exists := t[term]
-	if exists {
-		existingLocations = append(existingLocations, location)
-		t[term] = existingLocations
-	} else {
-		locations := make(Locations, 1)
-		locations[0] = location
-		t[term] = locations
-	}
+	t[term] = append(t[term], location)
 }
 
 type FieldTermLocationMap map[string]TermLocationMap
@@ -60,11 +62,18 @@ type DocumentMatch struct {
 	Expl            *Explanation          `json:"explanation,omitempty"`
 	Locations       FieldTermLocationMap  `json:"locations,omitempty"`
 	Fragments       FieldFragmentMap      `json:"fragments,omitempty"`
+	Sort            []string              `json:"sort,omitempty"`
 
 	// Fields contains the values for document fields listed in
 	// SearchRequest.Fields. Text fields are returned as strings, numeric
 	// fields as float64s and date fields as time.RFC3339 formatted strings.
 	Fields map[string]interface{} `json:"fields,omitempty"`
+
+	// if we load the document for this hit, remember it so we dont load again
+	Document *document.Document `json:"-"`
+
+	// used to maintain natural index order
+	HitNumber uint64 `json:"-"`
 }
 
 func (dm *DocumentMatch) AddFieldValue(name string, value interface{}) {
@@ -91,12 +100,20 @@ func (dm *DocumentMatch) AddFieldValue(name string, value interface{}) {
 // Reset allows an already allocated DocumentMatch to be reused
 func (dm *DocumentMatch) Reset() *DocumentMatch {
 	// remember the []byte used for the IndexInternalID
-	indexInternalId := dm.IndexInternalID
+	indexInternalID := dm.IndexInternalID
+	// remember the []interface{} used for sort
+	sort := dm.Sort
 	// idiom to copy over from empty DocumentMatch (0 allocations)
 	*dm = DocumentMatch{}
 	// reuse the []byte already allocated (and reset len to 0)
-	dm.IndexInternalID = indexInternalId[:0]
+	dm.IndexInternalID = indexInternalID[:0]
+	// reuse the []interface{} already allocated (and reset len to 0)
+	dm.Sort = sort[:0]
 	return dm
+}
+
+func (dm *DocumentMatch) String() string {
+	return fmt.Sprintf("[%s-%f]", string(dm.IndexInternalID), dm.Score)
 }
 
 type DocumentMatchCollection []*DocumentMatch
@@ -115,6 +132,11 @@ type Searcher interface {
 	Min() int
 
 	DocumentMatchPoolSize() int
+}
+
+type SearcherOptions struct {
+	Explain            bool
+	IncludeTermVectors bool
 }
 
 // SearchContext represents the context around a single search
