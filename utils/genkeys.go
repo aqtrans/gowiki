@@ -1,13 +1,14 @@
 package main
 
 import (
-    "jba.io/go/utils"
-    "log"
+	"log"
+
+	"jba.io/go/httputils"
 )
 
 func main() {
 
-log.Println(utils.RandKey(32))
-log.Println(utils.RandKey(64))
+	log.Println(httputils.RandKey(32))
+	log.Println(httputils.RandKey(64))
 
 }
