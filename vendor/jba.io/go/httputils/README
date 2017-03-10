@@ -1,0 +1,8 @@
+This library includes functions of various usefulness that I use in my Golang web applications.
+
+Included amongst them are:
+- [go.rice](github.com/GeertJohan/go.rice)-powered static file handling
+  - Including favicon and robots.txt helpers
+- Generate random bytes and strings
+- HTTP logger middleware
+- Some html/template helpers
