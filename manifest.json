@@ -1,0 +1,46 @@
+{
+    "dependencies": {
+        "github.com/BurntSushi/toml": {
+            "branch": "master"
+        },
+        "github.com/GeertJohan/go.rice": {
+            "branch": "master"
+        },
+        "github.com/aqtrans/ctx-csrf": {
+            "branch": "master"
+        },
+        "github.com/blevesearch/bleve": {
+            "branch": "master"
+        },
+        "github.com/dimfeld/httptreemux": {
+            "version": "^3.8.0"
+        },
+        "github.com/getsentry/raven-go": {
+            "branch": "master"
+        },
+        "github.com/justinas/alice": {
+            "branch": "master"
+        },
+        "github.com/oxtoacart/bpool": {
+            "branch": "master"
+        },
+        "github.com/russross/blackfriday": {
+            "branch": "master"
+        },
+        "github.com/spf13/viper": {
+            "branch": "master"
+        },
+        "github.com/thoas/stats": {
+            "branch": "master"
+        },
+        "gopkg.in/yaml.v2": {
+            "branch": "master"
+        },
+        "jba.io/go/auth": {
+            "branch": "master"
+        },
+        "jba.io/go/httputils": {
+            "branch": "master"
+        }
+    }
+}
