@@ -2839,10 +2839,10 @@ func crawlWiki() {
 			// Read YAML frontmatter into fm
 			f, err := os.Open(fullname)
 			checkErr("crawlWiki()/Open", err)
-			defer f.Close()
 
 			//fm := readFront(f)
 			fm, content := readWikiPage(f)
+			f.Close()
 			//checkErr("crawlWiki()/readFront", err)
 
 			pagetitle = filename
