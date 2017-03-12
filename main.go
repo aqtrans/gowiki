@@ -60,10 +60,9 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/GeertJohan/go.rice"
-	"github.com/aqtrans/ctx-csrf"
-	//"github.com/blevesearch/bleve"
 	"github.com/dimfeld/httptreemux"
 	"github.com/getsentry/raven-go"
+	"github.com/gorilla/csrf"
 	//"github.com/microcosm-cc/bluemonday"
 	"github.com/spf13/viper"
 	"github.com/thoas/stats"
@@ -986,7 +985,7 @@ func loadPage(r *http.Request) *page {
 	user, isAdmin := auth.GetUsername(r.Context())
 	msg := auth.GetFlash(r.Context())
 	//token := auth.GetToken(r.Context())
-	token := csrf.TemplateField(r.Context(), r)
+	token := csrf.TemplateField(r)
 
 	var message string
 	if msg != "" {
