@@ -18,6 +18,6 @@
       {{ template "sidebar" . }}
   </nav>
   <section>
-    {{ .page.FlashMsg |safeHTML }}
+    {{ .page.FlashMsg }}
     {{ template "content" . }}
 {{ end }}
