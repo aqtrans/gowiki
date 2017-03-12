@@ -166,8 +166,8 @@ type page struct {
 	UN        string
 	IsAdmin   bool
 	Token     template.HTML
-	FlashMsg  string
-	GitStatus string
+	FlashMsg  template.HTML
+	GitStatus template.HTML
 }
 
 type frontmatter struct {
@@ -702,19 +702,19 @@ func gitIsClean() error {
 
 	if bytes.Contains(o, gitBehind) {
 		//return gitPull()
-		return errors.New(string(o))
-		//return ErrGitBehind
+		//return errors.New(string(o))
+		return errGitBehind
 	}
 
 	if bytes.Contains(o, gitAhead) {
 		//return gitPush()
-		return errors.New(string(o))
-		//return ErrGitAhead
+		//return errors.New(string(o))
+		return errGitAhead
 	}
 
 	if bytes.Contains(o, gitDiverged) {
-		return errors.New(string(o))
-		//return ErrGitDiverged
+		//return errors.New(string(o))
+		return errGitDiverged
 	}
 
 	/*
@@ -987,9 +987,9 @@ func loadPage(r *http.Request) *page {
 	//token := auth.GetToken(r.Context())
 	token := csrf.TemplateField(r)
 
-	var message string
+	var message template.HTML
 	if msg != "" {
-		message = `
+		message = template.HTML(`
 			<div class="alert callout" data-closable>
 			<h5>Alert!</h5>
 			<p>` + msg + `</p>
@@ -997,9 +997,9 @@ func loadPage(r *http.Request) *page {
 				<span aria-hidden="true">&times;</span>
 			</button>
 			</div>			
-        `
+        `)
 	} else {
-		message = ""
+		message = template.HTML("")
 	}
 
 	// Grab list of favs from channel
@@ -1009,9 +1009,12 @@ func loadPage(r *http.Request) *page {
 
 	// Grab git status
 	gitStatusErr := gitIsClean()
-	if gitStatusErr == nil {
-		gitStatusErr = errors.New("Git repo is clean")
-	}
+	gitHTML := gitIsCleanURLs(gitStatusErr, token)
+	/*
+		if gitStatusErr == nil {
+			gitStatusErr = errors.New("Git repo is clean")
+		}
+	*/
 
 	return &page{
 		SiteName:  "GoWiki",
@@ -1020,7 +1023,20 @@ func loadPage(r *http.Request) *page {
 		IsAdmin:   isAdmin,
 		Token:     token,
 		FlashMsg:  message,
-		GitStatus: gitStatusErr.Error(),
+		GitStatus: gitHTML,
+	}
+}
+
+func gitIsCleanURLs(err error, token template.HTML) template.HTML {
+	switch err {
+	case errGitAhead:
+		return template.HTML(`<form method="post" action="/admin/git/push" id="git_push">` + token + `<i class="fa fa-cloud-upload" aria-hidden="true"></i><button type="submit" class="button">Push git</button></form>`)
+	case errGitBehind:
+		return template.HTML(`<form method="post" action="/admin/git/pull" id="git_pull">` + token + `<i class="fa fa-cloud-download" aria-hidden="true"></i><button type="submit" class="button">Pull git</button></form>`)
+	case errGitDiverged:
+		return template.HTML(`<a href="/admin/git"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>Issue with git:wiki!</a>`)
+	default:
+		return template.HTML(`<p>Git repo is clean.</p>`)
 	}
 }
 
@@ -1457,7 +1473,7 @@ func checkName(name *string) (bool, error) {
 		fullnewfilename := filepath.Join(viper.GetString("WikiDir"), *name)
 		exists = doesPageExist(fullnewfilename)
 	}
-	log.Println("checkName() name, exists, relErr:", *name, exists, relErr)
+	//log.Println("checkName() name, exists, relErr:", *name, exists, relErr)
 	return exists, relErr
 
 }
@@ -2140,7 +2156,7 @@ func gitPushPostHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	http.Redirect(w, r, "/admin/git", http.StatusSeeOther)
+	http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 
 }
 
@@ -2152,7 +2168,7 @@ func gitPullPostHandler(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	http.Redirect(w, r, "/admin/git", http.StatusSeeOther)
+	http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 
 }
 
@@ -2766,45 +2782,86 @@ func search(w http.ResponseWriter, r *http.Request) {
 //  saves time to reference this, rebuilding on saving
 func crawlWiki() {
 
+	httputils.Debugln("bleveIndex: Search crawling: started")
+
 	fileList, err := gitLs()
 	if err != nil {
 		panic(err)
 	}
 
 	index, err := bleve.Open("./data/index.bleve")
-	// If index does not exist, create mapping and then index
-	if err == bleve.ErrorIndexPathDoesNotExist {
-		nameMapping := bleve.NewTextFieldMapping()
-		nameMapping.Analyzer = "en"
+	if err != nil {
+		// If there's some weird error, just nuke the bleve index and start over
+		if err != bleve.ErrorIndexPathDoesNotExist {
+			rmerr := os.Remove("./data/index.bleve")
+			check(rmerr)
+			nameMapping := bleve.NewTextFieldMapping()
+			nameMapping.Analyzer = "en"
 
-		contentMapping := bleve.NewTextFieldMapping()
-		contentMapping.Analyzer = "en"
+			contentMapping := bleve.NewTextFieldMapping()
+			contentMapping.Analyzer = "en"
 
-		boolMapping := bleve.NewBooleanFieldMapping()
+			boolMapping := bleve.NewBooleanFieldMapping()
 
-		//dateMapping := bleve.NewDateTimeFieldMapping()
-		//dateMapping.DateFormat = timestamp
-		dateMapping := bleve.NewTextFieldMapping()
+			//dateMapping := bleve.NewDateTimeFieldMapping()
+			//dateMapping.DateFormat = timestamp
+			dateMapping := bleve.NewTextFieldMapping()
 
-		tagMapping := bleve.NewTextFieldMapping()
-		//tagMapping.Analyzer = keyword_analyzer.Name
+			tagMapping := bleve.NewTextFieldMapping()
+			//tagMapping.Analyzer = keyword_analyzer.Name
 
-		wikiMapping := bleve.NewDocumentMapping()
-		wikiMapping.AddFieldMappingsAt("Name", nameMapping)
-		wikiMapping.AddFieldMappingsAt("Tags", tagMapping)
-		wikiMapping.AddFieldMappingsAt("Content", contentMapping)
-		wikiMapping.AddFieldMappingsAt("Public", boolMapping)
-		wikiMapping.AddFieldMappingsAt("Created", dateMapping)
-		wikiMapping.AddFieldMappingsAt("Modified", dateMapping)
+			wikiMapping := bleve.NewDocumentMapping()
+			wikiMapping.AddFieldMappingsAt("Name", nameMapping)
+			wikiMapping.AddFieldMappingsAt("Tags", tagMapping)
+			wikiMapping.AddFieldMappingsAt("Content", contentMapping)
+			wikiMapping.AddFieldMappingsAt("Public", boolMapping)
+			wikiMapping.AddFieldMappingsAt("Created", dateMapping)
+			wikiMapping.AddFieldMappingsAt("Modified", dateMapping)
 
-		indexMapping := bleve.NewIndexMapping()
-		indexMapping.AddDocumentMapping("PublicWiki", wikiMapping)
-		indexMapping.TypeField = "type"
-		indexMapping.DefaultAnalyzer = "en"
+			indexMapping := bleve.NewIndexMapping()
+			indexMapping.AddDocumentMapping("PublicWiki", wikiMapping)
+			indexMapping.TypeField = "type"
+			indexMapping.DefaultAnalyzer = "en"
 
-		index, err = bleve.New("./data/index.bleve", indexMapping)
-		if err != nil {
-			panic(err)
+			index, err = bleve.New("./data/index.bleve", indexMapping)
+			if err != nil {
+				panic(err)
+			}
+		}
+		// If index does not exist, create mapping and then index
+		if err == bleve.ErrorIndexPathDoesNotExist {
+			nameMapping := bleve.NewTextFieldMapping()
+			nameMapping.Analyzer = "en"
+
+			contentMapping := bleve.NewTextFieldMapping()
+			contentMapping.Analyzer = "en"
+
+			boolMapping := bleve.NewBooleanFieldMapping()
+
+			//dateMapping := bleve.NewDateTimeFieldMapping()
+			//dateMapping.DateFormat = timestamp
+			dateMapping := bleve.NewTextFieldMapping()
+
+			tagMapping := bleve.NewTextFieldMapping()
+			//tagMapping.Analyzer = keyword_analyzer.Name
+
+			wikiMapping := bleve.NewDocumentMapping()
+			wikiMapping.AddFieldMappingsAt("Name", nameMapping)
+			wikiMapping.AddFieldMappingsAt("Tags", tagMapping)
+			wikiMapping.AddFieldMappingsAt("Content", contentMapping)
+			wikiMapping.AddFieldMappingsAt("Public", boolMapping)
+			wikiMapping.AddFieldMappingsAt("Created", dateMapping)
+			wikiMapping.AddFieldMappingsAt("Modified", dateMapping)
+
+			indexMapping := bleve.NewIndexMapping()
+			indexMapping.AddDocumentMapping("PublicWiki", wikiMapping)
+			indexMapping.TypeField = "type"
+			indexMapping.DefaultAnalyzer = "en"
+
+			index, err = bleve.New("./data/index.bleve", indexMapping)
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 
