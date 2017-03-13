@@ -61,38 +61,22 @@ func tempfile() string {
 	return f.Name()
 }
 
-type DB struct {
-	*auth.AuthDB
-}
-
 // MustOpenDB returns a new, open DB at a temporary location.
-func mustOpenDB() *DB {
-	db := auth.Open(tempfile())
-	return &DB{db}
-}
-
-func (db *DB) Close() error {
-	defer os.Remove(db.Path())
-	return db.DB.Close()
-}
-
-func (db *DB) MustClose() {
-	if err := db.Close(); err != nil {
+func newState() *auth.AuthState {
+	authState, err := auth.NewAuthState(tempfile())
+	if err != nil {
 		panic(err)
 	}
+	return authState
 }
 
 func TestAuthInit(t *testing.T) {
 	//authDB := mustOpenDB()
-	db := mustOpenDB()
-	t.Log(db.Path())
-	auth.Authdb = db.AuthDB
-	//auth.Authdb.DB = db.DB
-	autherr := auth.AuthDbInit()
-	if autherr != nil {
-		t.Fatal(autherr)
+	authState = newState()
+	_, err := authState.Userlist()
+	if err != nil {
+		t.Fatal(err)
 	}
-	db.MustClose()
 }
 
 func TestRiceInit(t *testing.T) {
@@ -127,15 +111,7 @@ func TestNewWikiPage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	db := mustOpenDB()
-	t.Log(db.Path())
-	auth.Authdb = db.AuthDB
-	//auth.Authdb.DB = db.DB
-	autherr := auth.AuthDbInit()
-	if autherr != nil {
-		t.Fatal(autherr)
-	}
-	defer db.MustClose()
+	authState = newState()
 
 	handler := http.HandlerFunc(wikiMiddle(viewHandler))
 
@@ -214,14 +190,7 @@ func TestNewHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	db := mustOpenDB()
-	auth.Authdb = db.AuthDB
-	//auth.Authdb.DB = db.DB
-	autherr := auth.AuthDbInit()
-	if autherr != nil {
-		log.Fatal(autherr)
-	}
-	defer db.MustClose()
+	authState = newState()
 	err = riceInit()
 	if err != nil {
 		log.Fatal(err)
@@ -279,14 +248,7 @@ func TestIndexPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	db := mustOpenDB()
-	auth.Authdb = db.AuthDB
-	//auth.Authdb.DB = db.DB
-	autherr := auth.AuthDbInit()
-	if autherr != nil {
-		log.Fatal(autherr)
-	}
-	defer db.MustClose()
+	authState = newState()
 	err = riceInit()
 	if err != nil {
 		log.Fatal(err)
@@ -342,14 +304,7 @@ func TestIndexHistoryPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	db := mustOpenDB()
-	auth.Authdb = db.AuthDB
-	//auth.Authdb.DB = db.DB
-	autherr := auth.AuthDbInit()
-	if autherr != nil {
-		log.Fatal(autherr)
-	}
-	defer db.MustClose()
+	authState = newState()
 	err = riceInit()
 	if err != nil {
 		log.Fatal(err)
@@ -411,18 +366,9 @@ func TestIndexEditPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	authState = newState()
 
-	handler := http.HandlerFunc(auth.AuthMiddle(wikiMiddle(editHandler)))
-
-	db := mustOpenDB()
-	t.Log(db.Path())
-	auth.Authdb = db.AuthDB
-	//auth.Authdb.DB = db.DB
-	autherr := auth.AuthDbInit()
-	if autherr != nil {
-		t.Fatal(autherr)
-	}
-	defer db.MustClose()
+	handler := http.HandlerFunc(authState.AuthMiddle(wikiMiddle(editHandler)))
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -477,15 +423,7 @@ func TestDirBaseHandler(t *testing.T) {
 	}
 	//log.Println(reader)
 
-	db := mustOpenDB()
-	t.Log(db.Path())
-	auth.Authdb = db.AuthDB
-	//auth.Authdb.DB = db.DB
-	autherr := auth.AuthDbInit()
-	if autherr != nil {
-		t.Fatal(autherr)
-	}
-	defer db.MustClose()
+	authState = newState()
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
