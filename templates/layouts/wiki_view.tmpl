@@ -1,27 +1,25 @@
 {{ define "title" }}<title>{{.page.SiteName}}|{{ .Wiki.Title }}</title>{{ end }}
 {{ define "content" }}
 <main>
-  <article>
-    <header>{{.Wiki.Title}}</header>
-    <div class="stats">
-      <ul>
-        <li><p>Filename</p>
-        <div class="stat">{{ .Wiki.Filename }}</div></li>
-        <li><p>Public</p>
-        <div class="stat">{{ .Wiki.Frontmatter.Public }}</div></li>
-        <li><p>Favorite</p>
-        <div class="stat">{{ .Wiki.Frontmatter.Favorite }}</div></li>
-        <li><p>Tags</p>
-        <div class="stat">
-        {{ if .Wiki.Frontmatter.Tags }}
-        {{ range .Wiki.Frontmatter.Tags }}<span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i>{{ . }}</span>{{ end }}
-        </div></li>
-        {{ else }}
-        <span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i></span>
-        {{ end }}
-      </ul>
-    </div>
-  </article>
+  <header>
+    <h1>{{.Wiki.Title}}</h1>
+    <ul>
+      <li><p>Filename</p>
+      <div class="stat">{{ .Wiki.Filename }}</div></li>
+      <li><p>Public</p>
+      <div class="stat">{{ .Wiki.Frontmatter.Public }}</div></li>
+      <li><p>Favorite</p>
+      <div class="stat">{{ .Wiki.Frontmatter.Favorite }}</div></li>
+      <li><p>Tags</p>
+      <div class="stat">
+      {{ if .Wiki.Frontmatter.Tags }}
+      {{ range .Wiki.Frontmatter.Tags }}<span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i>{{ . }}</span>{{ end }}
+      </div></li>
+      {{ else }}
+      <span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i></span>
+      {{ end }}
+    </ul>
+  </header>
 
   <ul class="tabs">
     <li class="tabs-title is-active"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
