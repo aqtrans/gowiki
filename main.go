@@ -3107,8 +3107,8 @@ func main() {
 	flag.Parse()
 
 	httputils.AssetsBox = rice.MustFindBox("assets")
-	auth.AdminUser = "admin"
-	auth.AdminPass = "admin"
+	auth.AdminUser = viper.GetString("AdminUser")
+	auth.AdminPass = viper.GetString("AdminPass")
 	var err error
 	authState, err = auth.NewAuthState("./data/auth.db")
 	check(err)
