@@ -122,6 +122,7 @@ const (
 )
 
 var (
+	authState      *auth.AuthState
 	linkPattern    = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
 	bufpool        *bpool.BufferPool
 	templates      map[string]*template.Template
@@ -1655,14 +1656,14 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	go refreshStuff()
 
-	auth.SetSession("flash", "Wiki page successfully saved.", w, r)
+	authState.SetSession("flash", "Wiki page successfully saved.", w, r)
 	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
 	log.Println(name + " page saved!")
 }
 
 func setFlash(msg string, w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "setFlash")
-	auth.SetSession("flash", msg, w, r)
+	authState.SetSession("flash", msg, w, r)
 }
 
 func newHandler(w http.ResponseWriter, r *http.Request) {
@@ -1949,7 +1950,7 @@ func adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 	title := "admin-users"
 	p := loadPage(r)
 
-	userlist, err := auth.Userlist()
+	userlist, err := authState.Userlist()
 	if err != nil {
 		panic(err)
 	}
@@ -1977,7 +1978,7 @@ func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	title := "admin-user"
 	p := loadPage(r)
 
-	userlist, err := auth.Userlist()
+	userlist, err := authState.Userlist()
 	if err != nil {
 		panic(err)
 	}
@@ -2254,7 +2255,7 @@ func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 func createWiki(w http.ResponseWriter, r *http.Request, name string) {
 	//username, _ := auth.GetUsername(r.Context())
 	//if username != "" {
-	if auth.IsLoggedIn(r.Context()) {
+	if authState.IsLoggedIn(r.Context()) {
 		w.WriteHeader(404)
 		//title := "Create " + name + "?"
 		p := loadPage(r)
@@ -2277,7 +2278,7 @@ func createWiki(w http.ResponseWriter, r *http.Request, name string) {
 		return
 	}
 
-	auth.SetSession("flash", "Please login to view that page.", w, r)
+	authState.SetSession("flash", "Please login to view that page.", w, r)
 	//h := viper.GetString("Domain")
 	http.Redirect(w, r, "/login"+"?url="+r.URL.String(), http.StatusSeeOther)
 	return
@@ -2483,13 +2484,6 @@ func riceInit() error {
 		fstring := templateIBuff.String() + lString
 		templates[layout.Name()] = template.Must(template.New(layout.Name()).Funcs(funcMap).Parse(fstring))
 	}
-	return nil
-}
-
-func authInit(authDB string) error {
-	auth.Authdb = auth.Open(authDB)
-	autherr := auth.AuthDbInit()
-	checkErrReturn("authInit()/AuthDbInit", autherr)
 	return nil
 }
 
@@ -2739,7 +2733,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 
 	//username, _ := auth.GetUsername(r.Context())
 	//if username != "" {
-	if auth.IsLoggedIn(r.Context()) {
+	if authState.IsLoggedIn(r.Context()) {
 		public = true
 	}
 
@@ -3032,7 +3026,7 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		params := getParams(r.Context())
 		name := params["name"]
 		username, isAdmin := auth.GetUsername(r.Context())
-		userLoggedIn := auth.IsLoggedIn(r.Context())
+		userLoggedIn := authState.IsLoggedIn(r.Context())
 		pageExists, relErr := checkName(&name)
 		fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
 		//relErr := relativePathCheck(name)
@@ -3066,7 +3060,7 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			// If this is an admin page, check if user is admin before serving
 			if fm.Admin && !isAdmin {
 				log.Println(username + " attempting to access restricted URL.")
-				auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
+				authState.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
 				http.Redirect(w, r.WithContext(ctx), "/", http.StatusSeeOther)
 				return
 			}
@@ -3097,7 +3091,7 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			if strings.HasPrefix(rurl, "login?url=/login") {
 				panic("AuthMiddle is in an endless redirect loop")
 			}
-			auth.SetSession("flash", "Please login to view that page.", w, r)
+			authState.SetSession("flash", "Please login to view that page.", w, r)
 			http.Redirect(w, r.WithContext(ctx), "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
 			return
 		}
@@ -3113,19 +3107,24 @@ func main() {
 	flag.Parse()
 
 	httputils.AssetsBox = rice.MustFindBox("assets")
-	auth.AdminUser = viper.GetString("AdminUser")
-	auth.AdminPass = viper.GetString("AdminPass")
+	auth.AdminUser = "admin"
+	auth.AdminPass = "admin"
+	var err error
+	authState, err = auth.NewAuthState("./data/auth.db")
+	check(err)
 
 	// Set a static auth.HashKey and BlockKey to keep sessions after restarts:
-	auth.HashKey = []byte("5CO4mHhkuV4BVDZT72pfkNxVhxOMHMN9lTZjGihKJoNWOUQf5j32NF2nx8RQypUh")
-	auth.BlockKey = []byte("YuBmqpu4I40ObfPHw0gl7jeF88bk4eT4")
+	/*
+		auth.HashKey = []byte("5CO4mHhkuV4BVDZT72pfkNxVhxOMHMN9lTZjGihKJoNWOUQf5j32NF2nx8RQypUh")
+		auth.BlockKey = []byte("YuBmqpu4I40ObfPHw0gl7jeF88bk4eT4")
 
-	// Open and initialize auth database
-	err := authInit("./data/auth.db")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer auth.Authdb.Close()
+		// Open and initialize auth database
+		err := authInit("./data/auth.db")
+		if err != nil {
+			log.Fatalln(err)
+		}
+		defer auth.Authdb.Close()
+	*/
 
 	err = riceInit()
 	if err != nil {
@@ -3148,7 +3147,7 @@ func main() {
 	}
 
 	// HTTP stuff from here on out
-	s := alice.New(timer, httputils.Logger, auth.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
+	s := alice.New(timer, httputils.Logger, authState.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
 	//w := s.Append(wikiMiddle)
 
 	//h := httptreemux.New()
@@ -3169,44 +3168,44 @@ func main() {
 		//http.Error(w, panic("Unexpected error!"), http.StatusInternalServerError)
 	})*/
 
-	r.GET("/new", auth.AuthMiddle(newHandler))
+	r.GET("/new", authState.AuthMiddle(newHandler))
 	//r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
 	r.GET("/login", loginPageHandler)
 	//r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
-	r.GET("/logout", auth.LogoutHandler)
+	r.GET("/logout", authState.LogoutHandler)
 	//r.GET("/signup", signupPageHandler)
 	r.GET("/list", listHandler)
 	r.GET("/search/*name", search)
 	r.POST("/search", search)
-	r.GET("/recent", auth.AuthMiddle(recentHandler))
+	r.GET("/recent", authState.AuthMiddle(recentHandler))
 	r.GET("/health", healthCheckHandler)
 
 	admin := r.NewContextGroup("/admin")
-	admin.GET("/", auth.AuthAdminMiddle(adminMainHandler))
-	admin.GET("/config", auth.AuthAdminMiddle(adminConfigHandler))
-	admin.POST("/config", auth.AuthAdminMiddle(adminConfigPostHandler))
-	admin.GET("/git", auth.AuthAdminMiddle(adminGitHandler))
-	admin.POST("/git/push", auth.AuthAdminMiddle(gitPushPostHandler))
-	admin.POST("/git/checkin", auth.AuthAdminMiddle(gitCheckinPostHandler))
-	admin.POST("/git/pull", auth.AuthAdminMiddle(gitPullPostHandler))
-	admin.GET("/users", auth.AuthAdminMiddle(adminUsersHandler))
-	admin.POST("/users", auth.AuthAdminMiddle(auth.UserSignupPostHandler))
-	admin.POST("/user", auth.AuthAdminMiddle(adminUserPostHandler))
-	admin.GET("/user/:username", auth.AuthAdminMiddle(adminUserHandler))
-	admin.POST("/user/:username", auth.AuthAdminMiddle(adminUserHandler))
-	admin.POST("/user/password_change", auth.AuthAdminMiddle(auth.AdminUserPassChangePostHandler))
-	admin.POST("/user/delete", auth.AuthAdminMiddle(auth.AdminUserDeletePostHandler))
+	admin.GET("/", authState.AuthAdminMiddle(adminMainHandler))
+	admin.GET("/config", authState.AuthAdminMiddle(adminConfigHandler))
+	admin.POST("/config", authState.AuthAdminMiddle(adminConfigPostHandler))
+	admin.GET("/git", authState.AuthAdminMiddle(adminGitHandler))
+	admin.POST("/git/push", authState.AuthAdminMiddle(gitPushPostHandler))
+	admin.POST("/git/checkin", authState.AuthAdminMiddle(gitCheckinPostHandler))
+	admin.POST("/git/pull", authState.AuthAdminMiddle(gitPullPostHandler))
+	admin.GET("/users", authState.AuthAdminMiddle(adminUsersHandler))
+	admin.POST("/users", authState.AuthAdminMiddle(authState.UserSignupPostHandler))
+	admin.POST("/user", authState.AuthAdminMiddle(adminUserPostHandler))
+	admin.GET("/user/:username", authState.AuthAdminMiddle(adminUserHandler))
+	admin.POST("/user/:username", authState.AuthAdminMiddle(adminUserHandler))
+	admin.POST("/user/password_change", authState.AuthAdminMiddle(authState.AdminUserPassChangePostHandler))
+	admin.POST("/user/delete", authState.AuthAdminMiddle(authState.AdminUserDeletePostHandler))
 
 	a := r.NewContextGroup("/auth")
-	a.POST("/login", auth.LoginPostHandler)
-	a.POST("/logout", auth.LogoutHandler)
-	a.GET("/logout", auth.LogoutHandler)
+	a.POST("/login", authState.LoginPostHandler)
+	a.POST("/logout", authState.LogoutHandler)
+	a.GET("/logout", authState.LogoutHandler)
 	//a.POST("/signup", auth.SignupPostHandler)
 
 	//r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
 
-	r.POST("/gitadd", auth.AuthMiddle(gitCheckinPostHandler))
-	r.GET("/gitadd", auth.AuthMiddle(gitCheckinHandler))
+	r.POST("/gitadd", authState.AuthMiddle(gitCheckinPostHandler))
+	r.GET("/gitadd", authState.AuthMiddle(gitCheckinHandler))
 
 	r.GET("/md_render", markdownPreview)
 
@@ -3219,9 +3218,9 @@ func main() {
 
 	r.GET("/uploads/*", treeMuxWrapper(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads")))))
 
-	r.GET(`/edit/*name`, auth.AuthMiddle(wikiMiddle(editHandler)))
-	r.POST(`/save/*name`, auth.AuthMiddle(wikiMiddle(saveHandler)))
-	r.GET(`/history/*name`, auth.AuthMiddle(wikiMiddle(historyHandler)))
+	r.GET(`/edit/*name`, authState.AuthMiddle(wikiMiddle(editHandler)))
+	r.POST(`/save/*name`, authState.AuthMiddle(wikiMiddle(saveHandler)))
+	r.GET(`/history/*name`, authState.AuthMiddle(wikiMiddle(historyHandler)))
 	//r.GET(`/new/*name`, auth.AuthMiddle(newHandler))
 	r.GET(`/*name`, wikiMiddle(viewHandler))
 
