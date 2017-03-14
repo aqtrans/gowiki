@@ -14,6 +14,8 @@ body {
       display: flex;
       flex-flow: column; }
       body > section > main > header {
+        background-color: #cacaca;
+        box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);
         display: flex;
         flex-flow: row wrap;
         justify-content: center;
@@ -31,13 +33,13 @@ body {
           flex-flow: row nowrap;
           margin: 0; }
         body > section > main > header li {
-          border-right: 1px solid #cacaca;
+          border-right: 1px solid #0a0a0a;
           white-space: nowrap;
           list-style-type: none; }
           body > section > main > header li p {
             margin-bottom: 5px; }
         body > section > main > header li:first-child {
-          border-left: 1px solid #cacaca; }
+          border-left: 1px solid #0a0a0a; }
       body > section > main > ul {
         margin: 0;
         padding: 0;
@@ -48,9 +50,10 @@ body {
           float: left;
           background-color: #202020; }
         body > section > main > ul li.is-active {
-          background-color: #fefefe; }
+          background-color: #cacaca; }
       body > section > main > article {
-        background-color: #202020;
+        background-color: #cacaca;
+        box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);
         flex: 1;
         min-height: 50vh; }
 
