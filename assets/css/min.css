@@ -3,31 +3,59 @@ body {
   flex-flow: row; }
   body > nav {
     flex: 1 6 20%;
-    order: 1; }
+    order: 1;
+    padding-right: 10px; }
+    body > nav ul {
+      list-style-type: square; }
   body > section {
     flex: 3 1 80%;
     order: 2; }
-    body > section > main > header {
+    body > section > main {
       display: flex;
-      flex-flow: row wrap; }
-      body > section > main > header h1 {
-        flex: 1 5 20%;
-        order: 3; }
-      body > section > main > header ul {
-        flex: 1 5 40%;
-        display: inline-flex;
-        flex-flow: row nowrap;
+      flex-flow: column; }
+      body > section > main > header {
+        display: flex;
+        flex-flow: row wrap;
+        justify-content: center;
+        padding-bottom: 20px; }
+        body > section > main > header h1 {
+          flex: 1 5 30%;
+          order: 3; }
+        body > section > main > header small {
+          flex: 1 5 20%;
+          order: 4; }
+        body > section > main > header ul {
+          flex: 1 5 50%;
+          order: 5;
+          display: inline-flex;
+          flex-flow: row nowrap;
+          margin: 0; }
+        body > section > main > header li {
+          border-right: 1px solid #cacaca;
+          white-space: nowrap;
+          list-style-type: none; }
+          body > section > main > header li p {
+            margin-bottom: 5px; }
+        body > section > main > header li:first-child {
+          border-left: 1px solid #cacaca; }
+      body > section > main > ul {
         margin: 0;
-        order: 4; }
-      body > section > main > header li {
-        border-right: 1px solid #cacaca;
-        white-space: nowrap;
+        padding: 0;
         list-style-type: none; }
-        body > section > main > header li p {
-          margin-bottom: 5px; }
-      body > section > main > header li:first-child {
-        border-left: 1px solid #cacaca; }
+        body > section > main > ul li {
+          padding: 5px;
+          margin: 0 10px 0 0;
+          float: left;
+          background-color: #202020; }
+        body > section > main > ul li.is-active {
+          background-color: #fefefe; }
+      body > section > main > article {
+        background-color: #202020;
+        flex: 1;
+        min-height: 50vh; }
 
 @media all and (max-width: 640px) {
   body {
     flex-direction: column; } }
+
+/*# sourceMappingURL=min.css.map */
