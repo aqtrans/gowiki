@@ -7,6 +7,12 @@ $solarized: #073642;
 $almostblack: #202020;
 $body-font-family: 'Noto Sans', 'Open Sans', 'Roboto Condensed', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;
 
+@mixin card() {
+    background-color: $medium-gray;
+    //border-radius: 3px;
+    box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);    
+}
+
 body {
     display: flex;
     flex-flow: row;
@@ -25,6 +31,7 @@ body {
             display: flex;
             flex-flow: column;
             > header {
+                @include card();
                 display: flex;
                 flex-flow: row wrap;
                 justify-content: center;
@@ -46,7 +53,7 @@ body {
                     margin: 0;
                 }
                 li {
-                    border-right: 1px solid $medium-gray;
+                    border-right: 1px solid $black;
                     white-space: nowrap;
                     list-style-type: none;
                     p {
@@ -54,7 +61,7 @@ body {
                     }
                 }
                 li:first-child {
-                    border-left: 1px solid $medium-gray;
+                    border-left: 1px solid $black;
                 }
             }
             > ul {
@@ -68,11 +75,11 @@ body {
                     background-color: $almostblack;
                 }
                 li.is-active {
-                    background-color: #fefefe;
+                    background-color: $medium-gray;
                 }
             }
             > article {
-                background-color: $almostblack;
+                @include card();
                 flex: 1;
                 min-height: 50vh;
             }
