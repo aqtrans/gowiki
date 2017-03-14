@@ -13,25 +13,37 @@ body {
     > nav {
         flex: 1 6 20%;
         order: 1;
+        padding-right: 10px;
+        ul {
+            list-style-type: square;
+        }
     }
     > section {
         flex: 3 1 80%;
         order: 2;
         > main {
+            display: flex;
+            flex-flow: column;
             > header {
                 display: flex;
                 flex-flow: row wrap;
+                justify-content: center;
+                padding-bottom: 20px;
                 h1 {
-                    flex: 1 5 20%;
+                    flex: 1 5 30%;
                     order: 3;
+                }
+                small {
+                    flex: 1 5 20%;
+                    order: 4;
                 }
                 
                 ul {
-                    flex: 1 5 40%;
+                    flex: 1 5 50%;
+                    order: 5;
                     display: inline-flex;
                     flex-flow: row nowrap;                    
                     margin: 0;
-                    order: 4;
                 }
                 li {
                     border-right: 1px solid $medium-gray;
@@ -44,6 +56,25 @@ body {
                 li:first-child {
                     border-left: 1px solid $medium-gray;
                 }
+            }
+            > ul {
+                margin: 0;
+                padding: 0;
+                list-style-type: none;
+                li {
+                    padding: 5px;
+                    margin: 0 10px 0 0;
+                    float: left;
+                    background-color: $almostblack;
+                }
+                li.is-active {
+                    background-color: #fefefe;
+                }
+            }
+            > article {
+                background-color: $almostblack;
+                flex: 1;
+                min-height: 50vh;
             }
         }
     }

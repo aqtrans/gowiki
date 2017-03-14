@@ -21,6 +21,9 @@
     </ul>
   </header>
 
+<small>Created: {{ .Wiki.CreateTime | prettyDate }}<br>
+Last Modified: {{ .Wiki.ModTime | prettyDate }}</small>
+
   <ul class="tabs">
     <li class="tabs-title is-active"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
     <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
