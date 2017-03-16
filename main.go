@@ -39,6 +39,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"runtime/debug"
 	//_ "net/http/pprof"
 	"os"
 	"os/exec"
@@ -128,7 +129,7 @@ var (
 	templates      map[string]*template.Template
 	_24K           int64 = (1 << 20) * 24
 	fLocal         bool
-	debug          = httputils.Debug
+	fDebug         = httputils.Debug
 	fInit          bool
 	gitPath        string
 	favMap         map[string]struct{}
@@ -554,6 +555,16 @@ func errorHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
 			<p>{{ .Error }}</p>
 		</body>
 	</html>`
+
+	defer func() {
+		if rval := recover(); rval != nil {
+			debug.PrintStack()
+			rvalStr := fmt.Sprint(rval)
+			packet := raven.NewPacket(rvalStr, raven.NewException(errors.New(rvalStr), raven.NewStacktrace(2, 3, nil)), raven.NewHttp(r))
+			raven.Capture(packet, nil)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}()
 
 	tpl := template.Must(template.New("ErrorPage").Parse(panicPageTpl))
 	tpl.Execute(w, data)
