@@ -302,7 +302,6 @@ func init() {
 	viper.SetDefault("Domain", "wiki.example.com")
 	viper.SetDefault("GitRepo", "git@example.com:user/wikidata.git")
 	viper.SetDefault("AdminUser", "admin")
-	viper.SetDefault("AdminPass", "admin")
 	viper.SetDefault("PushOnSave", false)
 
 	viper.SetConfigName("conf")
@@ -3067,10 +3066,10 @@ func main() {
 	flag.Parse()
 
 	httputils.AssetsBox = rice.MustFindBox("assets")
-	auth.AdminUser = viper.GetString("AdminUser")
-	auth.AdminPass = viper.GetString("AdminPass")
+
+	// Bring up authState
 	var err error
-	authState, err = auth.NewAuthState("./data/auth.db")
+	authState, err = auth.NewAuthState("./data/auth.db", viper.GetString("AdminUser"))
 	check(err)
 
 	// Set a static auth.HashKey and BlockKey to keep sessions after restarts:
