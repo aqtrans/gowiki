@@ -17,6 +17,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/boltdb/bolt"
 	"github.com/dimfeld/httptreemux"
 	"jba.io/go/auth"
 	"jba.io/go/httputils"
@@ -61,19 +62,51 @@ func tempfile() string {
 	return f.Name()
 }
 
+type DB struct {
+	*bolt.DB
+}
+
 // MustOpenDB returns a new, open DB at a temporary location.
-func newState() *auth.AuthState {
-	authState, err := auth.NewAuthState(tempfile())
+func mustOpenDB() *DB {
+	tmpdb, err := bolt.Open(tempfile(), 0666, nil)
 	if err != nil {
 		panic(err)
 	}
-	return authState
+	return &DB{tmpdb}
 }
 
+func (tmpdb *DB) Close() error {
+	//log.Println(tmpdb.Path())
+	defer os.Remove(tmpdb.Path())
+	return tmpdb.DB.Close()
+}
+
+func (tmpdb *DB) MustClose() {
+	if err := tmpdb.Close(); err != nil {
+		panic(err)
+	}
+}
+
+/*
+func newState() *auth.AuthState {
+	authDB := mustOpenDB()
+	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer authDB.Close()
+	return authState
+}
+*/
+
 func TestAuthInit(t *testing.T) {
-	//authDB := mustOpenDB()
-	authState = newState()
-	_, err := authState.Userlist()
+	authDB := mustOpenDB()
+	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer authDB.Close()
+	_, err = authState.Userlist()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,6 +136,14 @@ func TestNewWikiPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	authDB := mustOpenDB()
+	authState, err = auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer authDB.Close()
+
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
 	randPage, err := httputils.RandKey(8)
@@ -113,8 +154,6 @@ func TestNewWikiPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	authState = newState()
 
 	handler := http.HandlerFunc(wikiMiddle(viewHandler))
 
@@ -158,6 +197,15 @@ func TestNewWikiPage(t *testing.T) {
 func TestHealthCheckHandler(t *testing.T) {
 	//assert := assert.New(t)
 	//setup()
+
+	var err error
+	authDB := mustOpenDB()
+	authState, err = auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer authDB.Close()
+
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("GET", "/health", nil)
@@ -193,7 +241,14 @@ func TestNewHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	authState = newState()
+
+	authDB := mustOpenDB()
+	authState, err = auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer authDB.Close()
+
 	err = riceInit()
 	if err != nil {
 		log.Fatal(err)
@@ -251,7 +306,14 @@ func TestIndexPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	authState = newState()
+
+	authDB := mustOpenDB()
+	authState, err = auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer authDB.Close()
+
 	err = riceInit()
 	if err != nil {
 		log.Fatal(err)
@@ -307,7 +369,14 @@ func TestIndexHistoryPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	authState = newState()
+
+	authDB := mustOpenDB()
+	authState, err = auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer authDB.Close()
+
 	err = riceInit()
 	if err != nil {
 		log.Fatal(err)
@@ -337,7 +406,7 @@ func TestIndexHistoryPage(t *testing.T) {
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
 	handler.ServeHTTP(rr, rctx)
-	t.Log(rr.Body.String())
+	//t.Log(rr.Body.String())
 	//t.Log(randPage)
 	//t.Log(rr.Code)
 
@@ -363,13 +432,20 @@ func TestIndexEditPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	authDB := mustOpenDB()
+	authState, err = auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer authDB.Close()
+
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("GET", "/edit/index", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	authState = newState()
 
 	handler := http.HandlerFunc(authState.AuthMiddle(wikiMiddle(editHandler)))
 
@@ -424,9 +500,13 @@ func TestDirBaseHandler(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	//log.Println(reader)
 
-	authState = newState()
+	authDB := mustOpenDB()
+	authState, err = auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer authDB.Close()
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
