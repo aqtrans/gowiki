@@ -19,7 +19,7 @@ import (
 
 	"github.com/dimfeld/httptreemux"
 	"jba.io/go/auth"
-	//"jba.io/go/utils"
+	"jba.io/go/httputils"
 	//"github.com/boltdb/bolt"
 	"github.com/spf13/viper"
 	//"github.com/rhinoman/go-commonmark"
@@ -105,7 +105,10 @@ func TestNewWikiPage(t *testing.T) {
 	}
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
-	randPage := auth.RandKey(8)
+	randPage, err := httputils.RandKey(8)
+	if err != nil {
+		t.Fatal(err)
+	}
 	req, err := http.NewRequest("GET", "/"+randPage, nil)
 	if err != nil {
 		t.Fatal(err)
