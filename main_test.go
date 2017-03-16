@@ -1,32 +1,22 @@
 package main
 
 import (
+	"context"
 	"io"
 	"io/ioutil"
 	"log"
-	"testing"
-	//"github.com/drewolson/testflight"
 	"net/http"
 	"net/http/httptest"
-	//"html/template"
-	//"github.com/gorilla/context"
-	//"fmt"
-	//"log"
-	"context"
 	"net/url"
 	"os"
 	"strings"
+	"testing"
 
 	"github.com/boltdb/bolt"
 	"github.com/dimfeld/httptreemux"
+	"github.com/spf13/viper"
 	"jba.io/go/auth"
 	"jba.io/go/httputils"
-	//"github.com/boltdb/bolt"
-	"github.com/spf13/viper"
-	//"github.com/rhinoman/go-commonmark"
-	//"github.com/GeertJohan/go.rice"
-	//"gopkg.in/gavv/httpexpect.v1"
-	//"github.com/stretchr/testify/assert"
 )
 
 const UserKey key = 1
