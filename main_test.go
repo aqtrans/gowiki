@@ -62,26 +62,26 @@ func tempfile() string {
 	return f.Name()
 }
 
-type DB struct {
-	*bolt.DB
+type AuthDB struct {
+	*auth.DB
 }
 
 // MustOpenDB returns a new, open DB at a temporary location.
-func mustOpenDB() *DB {
+func mustOpenDB() *AuthDB {
 	tmpdb, err := bolt.Open(tempfile(), 0666, nil)
 	if err != nil {
 		panic(err)
 	}
-	return &DB{tmpdb}
+	return &AuthDB{&auth.DB{tmpdb}}
 }
 
-func (tmpdb *DB) Close() error {
+func (tmpdb *AuthDB) Close() error {
 	//log.Println(tmpdb.Path())
 	defer os.Remove(tmpdb.Path())
 	return tmpdb.DB.Close()
 }
 
-func (tmpdb *DB) MustClose() {
+func (tmpdb *AuthDB) MustClose() {
 	if err := tmpdb.Close(); err != nil {
 		panic(err)
 	}
