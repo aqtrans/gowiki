@@ -1656,14 +1656,9 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	go refreshStuff()
 
-	authState.SetSession("flash", "Wiki page successfully saved.", w, r)
+	authState.SetFlash("Wiki page successfully saved.", w, r)
 	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
 	log.Println(name + " page saved!")
-}
-
-func setFlash(msg string, w http.ResponseWriter, r *http.Request) {
-	defer httputils.TimeTrack(time.Now(), "setFlash")
-	authState.SetSession("flash", msg, w, r)
 }
 
 func newHandler(w http.ResponseWriter, r *http.Request) {
@@ -2203,41 +2198,6 @@ func adminGitHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, r.Context(), "admin_git.tmpl", gp)
 }
 
-// Middleware to check for "dirty" git repo
-/*
-func checkWikiGit(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		// Allow logins
-		if r.Method == "POST" && r.URL.RequestURI() == "/auth/login" {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		// If at the wiki checkin page, don't check
-		if r.URL.RequestURI() == "/admin/git" {
-			next.ServeHTTP(w, r)
-			return
-		}
-		// If at logging into the checkin page, don't check
-		if r.URL.RequestURI() == "/login?url=/admin/git" {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		err := gitIsClean()
-		if err != nil {
-			log.Println(err)
-			auth.SetSession("flash", err.Error(), w, r)
-			http.Redirect(w, r, "/admin/git", http.StatusSeeOther)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-*/
-
 func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "tagMapHandler")
 
@@ -2278,7 +2238,7 @@ func createWiki(w http.ResponseWriter, r *http.Request, name string) {
 		return
 	}
 
-	authState.SetSession("flash", "Please login to view that page.", w, r)
+	authState.SetFlash("Please login to view that page.", w, r)
 	//h := viper.GetString("Domain")
 	http.Redirect(w, r, "/login"+"?url="+r.URL.String(), http.StatusSeeOther)
 	return
@@ -2391,7 +2351,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 			err := gitIsClean()
 			if err != nil {
 				log.Println(err)
-				auth.SetSession("flash", err.Error(), w, r)
+				auth.SetFlash(err.Error(), w, r)
 				http.Redirect(w, r, "/admin/git", http.StatusSeeOther)
 			}
 			fn(w, r, name)
@@ -2406,7 +2366,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 		// If this is an admin page, check if user is admin before serving
 		if fm.Admin && !isAdmin {
 			log.Println(username + " attempting to access restricted URL.")
-			auth.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
+			auth.SetFlash("Sorry, you are not allowed to see that.", w, r)
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
@@ -2421,7 +2381,7 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 			if strings.HasPrefix(rurl, "login?url=/login") {
 				panic("AuthMiddle is in an endless redirect loop")
 			}
-			auth.SetSession("flash", "Please login to view that page.", w, r)
+			auth.SetFlash("Please login to view that page.", w, r)
 			http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
 			return
 		}
@@ -3060,7 +3020,7 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			// If this is an admin page, check if user is admin before serving
 			if fm.Admin && !isAdmin {
 				log.Println(username + " attempting to access restricted URL.")
-				authState.SetSession("flash", "Sorry, you are not allowed to see that.", w, r)
+				authState.SetFlash("Sorry, you are not allowed to see that.", w, r)
 				http.Redirect(w, r.WithContext(ctx), "/", http.StatusSeeOther)
 				return
 			}
@@ -3072,7 +3032,7 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 				err := gitIsClean()
 				if err != nil {
 					log.Println(err)
-					auth.SetSession("flash", err.Error(), w, r)
+					auth.SetFlash(err.Error(), w, r)
 					http.Redirect(w, r.WithContext(ctx), "/admin/git", http.StatusSeeOther)
 					return
 				}
@@ -3091,7 +3051,7 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			if strings.HasPrefix(rurl, "login?url=/login") {
 				panic("AuthMiddle is in an endless redirect loop")
 			}
-			authState.SetSession("flash", "Please login to view that page.", w, r)
+			authState.SetFlash("Please login to view that page.", w, r)
 			http.Redirect(w, r.WithContext(ctx), "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
 			return
 		}
