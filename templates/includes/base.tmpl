@@ -1,4 +1,5 @@
 {{ define "base" }}
+{{ with .Data }}
 <!DOCTYPE html>
 <html lang="en" >
 <head>
@@ -18,11 +19,12 @@
       {{ block "sidebar" . }}{{end}}
   </nav>
   <main>
-    {{ .Data.FlashMsg }}
+    {{ .FlashMsg }}
     {{ block "content" . }}{{end}}
     <footer>
       {{block "wiki_footer" .}}{{end}}
-      Render time: {{.ResponseTime}}
+      {{block "render_time" .}}{{end}}
+      Render time: {{.RenderTime}}
     </footer>
   </main>
   <script src="/assets/js/jquery.min.js"></script>
@@ -33,5 +35,6 @@
   </script>  
   {{ template "extra_scripts" . }}
 </body>
-</html>  
+</html>
+{{ end }}
 {{ end }}

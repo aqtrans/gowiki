@@ -1,4 +1,4 @@
-{{ define "title" }}<title>{{.Data.SiteName}}|List</title>{{ end }}
+{{ define "title" }}<title>{{.SiteName}}|List</title>{{ end }}
 {{ define "content" }}
 <main>
 <article>
@@ -13,9 +13,9 @@
         </tr>
     </thead>
     <tbody>
-    {{ $user := .Data.UN| isLoggedIn }}
-    {{ $admin := .Data.IsAdmin }}
-    {{range .Data.Results}}
+    {{ $user := .UN| isLoggedIn }}
+    {{ $admin := .IsAdmin }}
+    {{range .Results}}
         <tr>
         <td><a href="/{{.Name}}">{{.Name}}</a></td>
         <td>{{.Result | safeHTML}}</td>             
