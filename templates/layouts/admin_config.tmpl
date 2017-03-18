@@ -1,4 +1,4 @@
-{{ define "title" }}<title>{{.SiteName}}|Admin Git Panel</title>{{ end }}
+{{ define "title" }}<title>{{.Data.SiteName}}|Admin Git Panel</title>{{ end }}
 {{ define "content" }}
 <main>
 <article>
@@ -20,7 +20,7 @@
         WikiDir:<input type="text" id="wikidir" name="wikidir" value="{{.Config.WikiDir}}">
         GitRepo:<input type="text" id="gitrepo" name="gitrepo" value="{{.Config.GitRepo}}">
         AdminUser:<input type="text" id="adminuser" name="adminuser" value="{{.Config.AdminUser}}">
-        {{ if .Config.PushOnSave }}
+        {{ if .Data.Config.PushOnSave }}
             <div class="switch tiny">
             PushOnSave:<input class="switch-input" id="pushonsave" type="checkbox" name="pushonsave" checked>
             <label class="switch-paddle" for="pushonsave">
@@ -35,7 +35,7 @@
             </label>
             </div>
         {{ end }}
-        {{.Token}}
+        {{.Data.Token}}
         <button type="submit" class="button">Submit</button>
         </form>
         <hr>

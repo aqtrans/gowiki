@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en" >
 <head>
-  {{ template "title" . }}
+  {{ block "title" . }}{{end}}
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Gowiki">
@@ -15,9 +15,23 @@
 <body>
   <nav>
     <header><a href="/">Wiki</a></header>
-      {{ template "sidebar" . }}
+      {{ block "sidebar" . }}{{end}}
   </nav>
-  <section>
-    {{ .page.FlashMsg }}
-    {{ template "content" . }}
+  <main>
+    {{ .Data.FlashMsg }}
+    {{ block "content" . }}{{end}}
+    <footer>
+      {{block "wiki_footer" .}}{{end}}
+      Render time: {{.ResponseTime}}
+    </footer>
+  </main>
+  <script src="/assets/js/jquery.min.js"></script>
+  <!-- this will include every plugin and utility required by Foundation -->
+  <script src="/assets/js/foundation.min.js"></script>
+  <script type="text/javascript" charset="utf-8">
+  $(document).foundation();
+  </script>  
+  {{ template "extra_scripts" . }}
+</body>
+</html>  
 {{ end }}

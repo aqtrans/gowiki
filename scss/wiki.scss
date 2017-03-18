@@ -5,8 +5,8 @@
 @import 'motion-ui';
 
 @include foundation-global-styles;
-@include foundation-grid;
-//@include foundation-flex-grid;
+//@include foundation-grid;
+@include foundation-flex-grid;
 @include foundation-typography;
 @include foundation-button;
 @include foundation-forms;
@@ -43,8 +43,8 @@
 //@include foundation-tooltip;
 //@include foundation-top-bar;
 @include foundation-visibility-classes;
-@include foundation-float-classes;
-//@include foundation-flex-classes;
+//@include foundation-float-classes;
+@include foundation-flex-classes;
 
 @include motion-ui-transitions;
 @include motion-ui-animations;
@@ -124,99 +124,99 @@ body {
             }
         } 
     }
-    > section {
+    > main {
         @include grid-column;
         @include breakpoint(medium) {
             @include grid-column(78%, 0);
+        }            
+        article {
+            @include card();
+            padding: 0.5em;
+
+            ul {
+                list-style-type: disc;
+
+                li header {
+                    font-size: 2rem;
+                }
+            }
+            pre,code {
+                white-space: pre-wrap;
+                background: darken($solarized, 10%);
+                color: $white;
+            }
+            code {
+                padding: 0;
+            }
+            pre {
+                padding: 0.5rem;
+            }
+            input[type=checkbox] { display:none; } /* to hide the checkbox itself */
+            input[type=checkbox] + label:before {
+                font-family: FontAwesome;
+                display: inline-block;
+            }
+
+            input[type=checkbox] + label {
+                margin-left: 0;
+                margin-right: 0;
+            }
+            input[type=checkbox] + label[for] {
+                cursor: default;
+            }
+
+            input[type=checkbox] + label:before { content: "\f096"; } /* unchecked icon */
+            input[type=checkbox] + label:before { letter-spacing: 10px; } /* space between checkbox and label */
+
+            input[type=checkbox]:checked + label:before { content: "\f046"; } /* checked icon */
+            input[type=checkbox]:checked + label:before { letter-spacing: 5px; } /* allow space for check mark */
         }
-        > main {
-            article {
-                @include card();
-                padding: 0.5em;
+        > header {
+            display: flex;
+            flex-flow: row wrap;
+
+            margin-bottom: 1em;
+            h1 {
+                flex-grow: 1;
+                font-size: 2.6rem;
+            }
+            #stats-dropdown {
+                width: auto;
+                background-color: $almostblack;
+            }
+            div.stats {
+                flex-shrink: 1;
+                font-family: $header-font-family;
 
                 ul {
-                    list-style-type: disc;
-
-                    li header {
-                        font-size: 2rem;
-                    }
+                    margin: 0;
                 }
-                pre,code {
-                    white-space: pre-wrap;
-                    background: darken($solarized, 10%);
-                    color: $white;
-                }
-                code {
-                    padding: 0;
-                }
-                pre {
-                    padding: 0.5rem;
-                }
-                input[type=checkbox] { display:none; } /* to hide the checkbox itself */
-                input[type=checkbox] + label:before {
-                    font-family: FontAwesome;
+                li {
                     display: inline-block;
-                }
-
-                input[type=checkbox] + label {
-                    margin-left: 0;
-                    margin-right: 0;
-                }
-                input[type=checkbox] + label[for] {
-                    cursor: default;
-                }
-
-                input[type=checkbox] + label:before { content: "\f096"; } /* unchecked icon */
-                input[type=checkbox] + label:before { letter-spacing: 10px; } /* space between checkbox and label */
-
-                input[type=checkbox]:checked + label:before { content: "\f046"; } /* checked icon */
-                input[type=checkbox]:checked + label:before { letter-spacing: 5px; } /* allow space for check mark */
-            }
-            article:first-child {
-                display: flex;
-                flex-flow: row nowrap;
-
-                margin-bottom: 1em;
-                > header {
-                    flex-grow: 1;
-                    font-size: 2.6rem;
-                }
-                #stats-dropdown {
-                    width: auto;
-                    background-color: $almostblack;
-                }
-                div.stats {
-                    flex-shrink: 1;
-                    font-family: $header-font-family;
-
-                    ul {
-                        margin: 0;
+                    border-right: 1px solid transparentize($body-font-color, 0.8);
+                    padding: 0.2em;
+                    height: 3.8em;
+                    p {
+                        margin-bottom: 1rem;
                     }
-                    li {
-                        display: inline-block;
-                        border-right: 1px solid transparentize($body-font-color, 0.8);
-                        padding: 0.2em;
-                        height: 3.8em;
-                        p {
-                            margin-bottom: 1rem;
-                        }
-                        white-space: nowrap;
-                    }
-                    li:first-child {
-                        border-left: 1px solid transparentize($body-font-color, 0.8);
-                    }
-                    .stat {
-                        font-weight: bold;
-                    }
-                    .stat span.warning.label {
-                        margin-right: 0.2em;
-                        margin-left: 0.2em;
-                    }
-                }                
-            }
+                    white-space: nowrap;
+                }
+                li:first-child {
+                    border-left: 1px solid transparentize($body-font-color, 0.8);
+                }
+                .stat {
+                    font-weight: bold;
+                    font-size: 2.0rem;
+                }
+                .stat span.warning.label {
+                    margin-right: 0.2em;
+                    margin-left: 0.2em;
+                }
+            }                
         }
     }
 }
+
 header {
     //font-family: 'Khand', sans-serif;
     font-weight: bold;
