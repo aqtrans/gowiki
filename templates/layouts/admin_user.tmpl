@@ -1,4 +1,4 @@
-{{ define "title" }}<title>{{.Data.SiteName}}|Admin User Panel</title>{{ end }}
+{{ define "title" }}<title>{{.SiteName}}|Admin User Panel</title>{{ end }}
 {{ define "content" }}
 <main>
 <article>
@@ -12,12 +12,12 @@
     <li class="tabs-title"><a href="/admin/config"><i class="fa fa-wrench" aria-hidden="true"></i> Manage Config</a></li>
   </ul>
   <article>
-        <h1>Editing User {{.Data.User}}</h1>
+        <h1>Editing User {{.User}}</h1>
         <br>
         <form method="post" action="/admin/user" id="user">
-        {{.Data.Token}}
+        {{.Token}}
         <select name="user">
-        User: {{range .Data.Users }}
+        User: {{range .Users }}
         <option value="{{.}}">{{.}}</option>
         {{ end }}<br>
         </select>
@@ -32,9 +32,9 @@
     <section class="content">
     <div>
         <form method="post" action="/admin/user/password_change" id="pwchange">
-        User:<input type="text" id="username" name="username" placeholder="Username" value="{{.Data.User}}" size="12">
+        User:<input type="text" id="username" name="username" placeholder="Username" value="{{.User}}" size="12">
         Password:<input type="password" id="password" name="password" placeholder="Password" size="12">
-        {{.Data.Token}}
+        {{.Token}}
         <button type="submit" class="button">Change Users Password</button>
         </form>
     </div>
@@ -50,8 +50,8 @@
     <section class="content">
     <div>
         <form method="post" action="/admin/user/delete" id="userdelete">
-        User:<input type="text" id="username" name="username" placeholder="Username" value="{{.Data.User}}" size="12">
-        {{.Data.Token}}
+        User:<input type="text" id="username" name="username" placeholder="Username" value="{{.User}}" size="12">
+        {{.Token}}
         <button type="submit" class="button">Delete user</button>
         </form>
     </div>

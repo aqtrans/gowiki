@@ -1,4 +1,4 @@
-{{ define "title" }}<title>{{.Data.SiteName}}|Admin Git Panel</title>{{ end }}
+{{ define "title" }}<title>{{.SiteName}}|Admin Git Panel</title>{{ end }}
 {{ define "content" }}
 <main>
 <article>
@@ -13,28 +13,28 @@
   </ul>
   <article>
         <h2>Git Status:</h2>
-        <p>{{ .Data.GitStatus }}</p>
+        <p>{{ .GitStatus }}</p>
         <hr>
 
         <h2>Push wikidata to remote Git repo:</h2>
-        <p>Push wikidata to {{ .Data.GitRemote }}?</p>
+        <p>Push wikidata to {{ .GitRemote }}?</p>
         <form method="post" action="/admin/git/push" id="git_push">
-        {{.Data.Token}}
+        {{.Token}}
         <button type="submit" class="button">Push</button>
         </form>
         <hr>
 
         <h2>Pull wikidata from remote Git repo:</h2>
-        <p>Pull wikidata from {{ .Data.GitRemote }}?</p>
+        <p>Pull wikidata from {{ .GitRemote }}?</p>
         <form method="post" action="/admin/git/pull" id="git_pull">
-        {{.Data.Token}}
+        {{.Token}}
         <button type="submit" class="button">Pull</button>
         </form>
         <hr>
 
         <h2>Check files in:</h2>
         <form method="post" action="/admin/git/checkin" id="git_checkin">
-        {{.Data.Token}}
+        {{.Token}}
         <button type="submit" class="button">Check In</button>
         </form>
         <hr>

@@ -1,16 +1,16 @@
-{{ define "title" }}<title>{{.Data.SiteName}}|Check In Files?</title>{{ end }}
+{{ define "title" }}<title>{{.SiteName}}|Check In Files?</title>{{ end }}
 {{ define "content" }}
 <main>
 <article>
-  <header>{{.Data.SiteName}}</header>
+  <header>{{.SiteName}}</header>
 </article>  
 <article>  
     <p>The following files were found to be modified outside of the wiki:</p>
-    {{.Data.GitFiles | safeHTML}}
+    {{.GitFiles | safeHTML}}
     <hr>
     <p>Would you like to check them in now?</p>
   <form method="post">
-    {{.Data.Token}}
+    {{.Token}}
     <button type="submit" class="button">Yes</button>
   </form>
 </article>

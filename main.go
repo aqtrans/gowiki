@@ -173,11 +173,6 @@ type page struct {
 	RenderTime string
 }
 
-type PageData struct {
-	Data         interface{}
-	ResponseTime string
-}
-
 type frontmatter struct {
 	Title    string   `yaml:"title"`
 	Tags     []string `yaml:"tags,omitempty"`
@@ -1353,9 +1348,10 @@ func renderTemplate(w http.ResponseWriter, c context.Context, name string, data 
 	start := timeFromContext(c)
 	elapsed := time.Since(start).String()
 
-	pageData := &PageData{
-		Data:         data,
-		ResponseTime: elapsed,
+	pageData := struct {
+		Data interface{}
+	}{
+		Data: data,
 	}
 
 	// Create buffer to write to and check for errors

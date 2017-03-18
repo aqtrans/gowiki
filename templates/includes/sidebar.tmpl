@@ -11,7 +11,7 @@
 <fieldset class="fieldset">
   <legend>Favorite Pages</legend>
 <ul>
-{{range .Data.Favs}}
+{{range .Favs}}
 <li><a href="/{{.}}">{{.}}</a></li>
 {{end}}
 </ul>
@@ -20,7 +20,7 @@
 <form method="GET" action="/new" id="newwiki">
   <div class="input-wrapper">
       <input type="text" placeholder="Add page" id="newwiki" name="newwiki">
-      {{.Data.Token}}
+      {{.Token}}
       <button type="submit" class="success button"><i class="fa fa-plus" aria-hidden="true"></i></button>
   </div>
 </form>
@@ -28,7 +28,7 @@
 <form method="POST" action="/search" id="searchwiki">
   <div class="input-wrapper">
       <input type="text" placeholder="Search" id="searchwiki" name="searchwiki">
-      {{.Data.Token}}
+      {{.Token}}
       <button type="submit" class="success button"><i class="fa fa-search" aria-hidden="true"></i></button>
   </div>
 </form> 

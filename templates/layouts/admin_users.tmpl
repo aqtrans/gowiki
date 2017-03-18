@@ -1,4 +1,4 @@
-{{ define "title" }}<title>{{.Data.SiteName}}|Admin User Panel</title>{{ end }}
+{{ define "title" }}<title>{{.SiteName}}|Admin User Panel</title>{{ end }}
 {{ define "content" }}
 <main>
 <article>
@@ -14,9 +14,9 @@
   <article>  
         <h2>Edit existing user:</h2>
         <form method="post" action="/admin/user" id="user">
-        {{.Data.Token}}
+        {{.Token}}
         <select name="user">
-        User: {{range .Data.Users }}
+        User: {{range .Users }}
         <option value="{{.}}">{{.}}</option>
         {{ end }}<br>
         </select>
@@ -27,7 +27,7 @@
         <form method="post" action="/auth/signup" id="signup">
         User:<input type="text" id="username" name="username" placeholder="Username" size="12">
         Password:<input type="password" id="password" name="password" placeholder="Password" size="12">
-        {{.Data.Token}}
+        {{.Token}}
         <button type="submit" class="button">Add User</button>
         </form>
     
