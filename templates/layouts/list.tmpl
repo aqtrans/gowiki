@@ -1,4 +1,4 @@
-{{ define "title" }}<title>{{.page.SiteName}}|List</title>{{ end }}
+{{ define "title" }}<title>{{.Data.SiteName}}|List</title>{{ end }}
 {{ define "content" }}
 <main>
 <article>
@@ -17,9 +17,9 @@
         </tr>
     </thead>
     <tbody>
-    {{ $user := .page.UN| isLoggedIn }}
-    {{ $admin := .page.IsAdmin }}
-    {{range .PublicWikis}}
+    {{ $user := .Data.UN| isLoggedIn }}
+    {{ $admin := .Data.IsAdmin }}
+    {{range .Data.PublicWikis}}
         <tr>
         <td><a href="/{{.Filename}}">{{.Title}}</a></td>
         <td>{{.CreateTime | prettyDate}}</td>
@@ -30,7 +30,7 @@
         </tr>
     {{ end }}
     {{ if $user }}
-    {{range .Wikis}}
+    {{range .Data.Wikis}}
         <tr>
         <td><a href="/{{.Filename}}">{{.Title}}</a></td>
         <td>{{.CreateTime | prettyDate}}</td>
@@ -42,7 +42,7 @@
     {{ end }}
     {{ end }}
     {{ if $admin }}
-    {{range .AdminWikis}}
+    {{range .Data.AdminWikis}}
         <tr>
         <td><a href="/{{.Filename}}">{{.Title}}</a></td>
         <td>{{.CreateTime | prettyDate}}</td>

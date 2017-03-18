@@ -163,13 +163,19 @@ type configuration struct {
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
 type page struct {
-	SiteName  string
-	Favs      []string
-	UN        string
-	IsAdmin   bool
-	Token     template.HTML
-	FlashMsg  template.HTML
-	GitStatus template.HTML
+	SiteName   string
+	Favs       []string
+	UN         string
+	IsAdmin    bool
+	Token      template.HTML
+	FlashMsg   template.HTML
+	GitStatus  template.HTML
+	RenderTime string
+}
+
+type PageData struct {
+	Data         interface{}
+	ResponseTime string
 }
 
 type frontmatter struct {
@@ -1344,9 +1350,17 @@ func renderTemplate(w http.ResponseWriter, c context.Context, name string, data 
 		panic(fmt.Errorf("The template %s does not exist", name))
 	}
 
+	start := timeFromContext(c)
+	elapsed := time.Since(start).String()
+
+	pageData := &PageData{
+		Data:         data,
+		ResponseTime: elapsed,
+	}
+
 	// Create buffer to write to and check for errors
 	buf := bufpool.Get()
-	err := tmpl.ExecuteTemplate(buf, "base", data)
+	err := tmpl.ExecuteTemplate(buf, "base", pageData)
 	if err != nil {
 		log.Println("renderTemplate error:")
 		log.Println(err)
@@ -1356,26 +1370,28 @@ func renderTemplate(w http.ResponseWriter, c context.Context, name string, data 
 
 	// Set the header and write the buffer to w
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	/*
+		// Squeeze in our response time here
+		// Real hacky solution, but better than modifying the struct
+		start := timeFromContext(c)
+		elapsed := time.Since(start)
+		tmpl.Execute(buf, elapsed.String())
+		err = tmpl.ExecuteTemplate(buf, "footer", elapsed.String())
+		if err != nil {
+			log.Println("renderTemplate error:")
+			log.Println(err)
+			bufpool.Put(buf)
+			panic(err)
+		}
+		err = tmpl.ExecuteTemplate(buf, "bottom", data)
+		if err != nil {
+			log.Println("renderTemplate error:")
+			log.Println(err)
+			bufpool.Put(buf)
+			panic(err)
+		}
+	*/
 
-	// Squeeze in our response time here
-	// Real hacky solution, but better than modifying the struct
-	start := timeFromContext(c)
-	elapsed := time.Since(start)
-	tmpl.Execute(buf, elapsed.String())
-	err = tmpl.ExecuteTemplate(buf, "footer", elapsed.String())
-	if err != nil {
-		log.Println("renderTemplate error:")
-		log.Println(err)
-		bufpool.Put(buf)
-		panic(err)
-	}
-	err = tmpl.ExecuteTemplate(buf, "bottom", data)
-	if err != nil {
-		log.Println("renderTemplate error:")
-		log.Println(err)
-		bufpool.Put(buf)
-		panic(err)
-	}
 	buf.WriteTo(w)
 	bufpool.Put(buf)
 }

@@ -1,8 +1,8 @@
-{{ define "title" }}<title>{{.page.SiteName}}|{{ .Wiki.Title }}</title>{{ end }}
+{{ define "title" }}<title>{{.Data.SiteName}}|{{ .Data.Wiki.Title }}</title>{{ end }}
 {{ define "content" }}
-<main>
-  <article>
-    <header>{{.Wiki.Title}}</header>
+{{ with .Data }}
+  <header>
+    <h1>{{.Wiki.Title}}</h1>
     <div class="stats">
       <ul>
         <li><p>Filename</p>
@@ -21,7 +21,7 @@
         {{ end }}
       </ul>
     </div>
-  </article>
+  </header>
 
   <ul class="tabs">
     <li class="tabs-title is-active"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
@@ -38,5 +38,5 @@
           </ul>
         </footer>
   </article>
-</main>
+{{ end }}
 {{ end }}

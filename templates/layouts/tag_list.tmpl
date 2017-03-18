@@ -1,4 +1,4 @@
-{{ define "title" }}<title>{{.page.SiteName}}|Tag List</title>{{ end }}
+{{ define "title" }}<title>{{.Data.SiteName}}|Tag List</title>{{ end }}
 {{ define "content" }}
 <main>
   <article>
@@ -14,7 +14,7 @@
           </tr>
       </thead>
       <tbody>
-      {{range $index, $element := .TagKeys}}
+      {{range $index, $element := .Data.TagKeys}}
           <tr>
               <td>{{ $index }}</td>
               <td>{{ range $element }}<a href="/{{ . }}"> {{ . }} </a> {{ end }}</td> 
