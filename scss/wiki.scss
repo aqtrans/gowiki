@@ -264,6 +264,10 @@ input:checked ~ .switch-paddle::after  {
     }
 }
 
+code {
+    border: 0;
+}
+
 p {
     //font-weight: lighter;
     //font-family: 'Roboto Condensed', sans-serif;
