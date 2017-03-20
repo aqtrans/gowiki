@@ -175,11 +175,12 @@ type page struct {
 }
 
 type frontmatter struct {
-	Title    string   `yaml:"title"`
-	Tags     []string `yaml:"tags,omitempty"`
-	Favorite bool     `yaml:"favorite,omitempty"`
-	Public   bool     `yaml:"public,omitempty"`
-	Admin    bool     `yaml:"admin,omitempty"`
+	Title      string   `yaml:"title"`
+	Tags       []string `yaml:"tags,omitempty"`
+	Favorite   bool     `yaml:"favorite,omitempty"`
+	Permission string   `yaml:"permission,omitempty"`
+	Public     bool     `yaml:"public,omitempty"`
+	Admin      bool     `yaml:"admin,omitempty"`
 }
 
 type badFrontmatter struct {
@@ -1317,17 +1318,16 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 
 	if fmdata != nil {
 		err := yaml.Unmarshal(fmdata, &fm)
+		// Try and handle malformed YAML here
 		if err != nil {
-			//log.Println("marshalFrontmatter()/yaml.Unmarshal 1", err)
 			m := map[string]interface{}{}
 			err2 := yaml.Unmarshal(fmdata, &m)
 			if err2 != nil {
-				//log.Println("marshalFrontmatter()/yaml.Unmarshal 2", err)
 				return frontmatter{}
 			}
 
-			title, found := m["title"].(string)
-			if found {
+			title, titlefound := m["title"].(string)
+			if titlefound {
 				fm.Title = title
 			}
 			switch v := m["Tags"].(type) {
@@ -1338,17 +1338,33 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 			default:
 				fm.Tags = []string{}
 			}
-			favorite, found := m["favorite"].(bool)
-			if found {
+			favorite, favfound := m["favorite"].(bool)
+			if favfound {
 				fm.Favorite = favorite
 			}
-			public, found := m["public"].(bool)
-			if found {
-				fm.Public = public
+			public, pubfound := m["public"].(bool)
+			if pubfound && public {
+				fm.Permission = "public"
 			}
-			admin, found := m["admin"].(bool)
-			if found {
-				fm.Admin = admin
+			admin, adminfound := m["admin"].(bool)
+			if adminfound && admin {
+				fm.Permission = "admin"
+			}
+			permission, permfound := m["permission"].(string)
+			if permfound {
+				fm.Permission = permission
+			}
+		}
+		// Deal with old Public and Admin tags
+		if fm.Permission == "" {
+			if fm.Public {
+				fm.Permission = "public"
+			}
+			if !fm.Public {
+				fm.Permission = "private"
+			}
+			if fm.Admin {
+				fm.Permission = "admin"
 			}
 		}
 	}
@@ -1629,20 +1645,11 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	// This is the separate input that tagdog.js throws new tags into
 	tags := r.FormValue("tags_all")
 	favorite := r.FormValue("favorite")
-	public := r.FormValue("publicPage")
-	admin := r.FormValue("adminOnly")
+	permission := r.FormValue("permission")
 
 	favoritebool := false
 	if favorite == "on" {
 		favoritebool = true
-	}
-	publicbool := false
-	if public == "on" {
-		publicbool = true
-	}
-	adminbool := false
-	if admin == "on" {
-		adminbool = true
 	}
 
 	if title == "" {
@@ -1655,11 +1662,10 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fm := &frontmatter{
-		Title:    title,
-		Tags:     tagsA,
-		Favorite: favoritebool,
-		Public:   publicbool,
-		Admin:    adminbool,
+		Title:      title,
+		Tags:       tagsA,
+		Favorite:   favoritebool,
+		Permission: permission,
 	}
 
 	thewiki := &wiki{
@@ -2709,6 +2715,12 @@ func search(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	/*
+		fields, err := index.Fields()
+		check(err)
+		log.Println(fields)
+	*/
+
 	p := loadPage(r)
 
 	//query := bleve.NewMatchQuery(name)
@@ -2721,12 +2733,14 @@ func search(w http.ResponseWriter, r *http.Request) {
 
 	//username, _ := auth.GetUsername(r.Context())
 	//if username != "" {
-	if authState.IsLoggedIn(r.Context()) {
-		public = true
-	}
+	/*
+		if authState.IsLoggedIn(r.Context()) {
+			public = true
+		}
+	*/
 
 	mustNot := bleve.NewBoolFieldQuery(public)
-	mustNot.SetField("Public")
+	mustNot.SetField("public")
 
 	query := bleve.NewBooleanQuery()
 	query.AddMust(must)
@@ -2804,11 +2818,8 @@ func saveCache() {
 			if fm.Title == "" {
 				fm.Title = file
 			}
-			if fm.Public != true {
-				fm.Public = false
-			}
-			if fm.Admin != true {
-				fm.Admin = false
+			if fm.Permission == "" {
+				fm.Permission = "private"
 			}
 			if fm.Favorite != true {
 				fm.Favorite = false
@@ -2951,6 +2962,10 @@ func crawlWikiFromCache() {
 	}
 
 	for _, v := range cache.Cache {
+		isPublic := false
+		if v.Frontmatter.Permission == "public" {
+			isPublic = true
+		}
 		// Add to bleve index
 		data := struct {
 			Name     string   `json:"name"`
@@ -2961,7 +2976,7 @@ func crawlWikiFromCache() {
 			Modified string   `json:"mtime"`
 		}{
 			Name:     v.Title,
-			Public:   v.Frontmatter.Public,
+			Public:   isPublic,
 			Tags:     v.Frontmatter.Tags,
 			Content:  "",
 			Created:  strconv.FormatInt(v.CreateTime, 10),
@@ -3102,11 +3117,8 @@ func crawlWiki() {
 			if fm.Title == "" {
 				fm.Title = file
 			}
-			if fm.Public != true {
-				fm.Public = false
-			}
-			if fm.Admin != true {
-				fm.Admin = false
+			if fm.Permission == "" {
+				fm.Permission = "private"
 			}
 			if fm.Favorite != true {
 				fm.Favorite = false
@@ -3144,6 +3156,11 @@ func crawlWiki() {
 			mtime, err := gitGetMtime(file)
 			checkErr("crawlWiki()/gitGetMtime", err)
 
+			isPublic := false
+			if fm.Permission == "public" {
+				isPublic = true
+			}
+
 			// Add to bleve index
 			data := struct {
 				Name     string   `json:"name"`
@@ -3154,7 +3171,7 @@ func crawlWiki() {
 				Modified string   `json:"mtime"`
 			}{
 				Name:     file,
-				Public:   fm.Public,
+				Public:   isPublic,
 				Tags:     fm.Tags,
 				Content:  string(content),
 				Created:  strconv.FormatInt(ctime, 10),
@@ -3165,7 +3182,7 @@ func crawlWiki() {
 
 			// If pages are Admin or Public, add to a separate wikiPage slice
 			//   So we only check on rendering
-			if fm.Admin {
+			if fm.Permission == "admin" {
 				wp = &wiki{
 					Title:       pagetitle,
 					Filename:    file,
@@ -3174,7 +3191,7 @@ func crawlWiki() {
 					ModTime:     mtime,
 				}
 				adminwps = append(adminwps, wp)
-			} else if fm.Public {
+			} else if fm.Permission == "public" {
 				wp = &wiki{
 					Title:       pagetitle,
 					Filename:    file,
@@ -3255,12 +3272,12 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			fm := readFront(f)
 
 			// If this is a public page, just serve it
-			if fm.Public {
+			if fm.Permission == "public" {
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
 			// If this is an admin page, check if user is admin before serving
-			if fm.Admin && !isAdmin {
+			if fm.Permission == "admin" && !isAdmin {
 				log.Println(username + " attempting to access restricted URL.")
 				authState.SetFlash("Sorry, you are not allowed to see that.", w, r)
 				http.Redirect(w, r.WithContext(ctx), "/", http.StatusSeeOther)

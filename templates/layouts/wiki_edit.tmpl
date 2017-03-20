@@ -31,36 +31,27 @@
             </label>
             </input>
         {{ end }}
-        {{ if .Wiki.Frontmatter.Public }}
-            <div class="switch tiny">
-            Public Page:<input class="switch-input" id="publicPage" type="checkbox" name="publicPage" checked>
-            <label class="switch-paddle" for="publicPage">
-                <span class="show-for-sr">Public Page</span>
-            </label>
-            </div>
-        {{ else }}
-            <div class="switch tiny">
-            Public Page:<input class="switch-input" id="publicPage" type="checkbox" name="publicPage">
-            <label class="switch-paddle" for="publicPage">
-                <span class="show-for-sr">Public Page</span>
-            </label>
-            </div>
-        {{ end }}
-        {{ if .Wiki.Frontmatter.Admin }}
-            <div class="switch tiny">
-            Admin Only:<input class="switch-input" id="adminOnly" type="checkbox" name="adminOnly" checked>
-            <label class="switch-paddle" for="adminOnly">
-                <span class="show-for-sr">Admin Only</span>
-            </label>
-            </div>
-        {{ else }}
-            <div class="switch tiny">
-            Admin Only:<input class="switch-input" id="adminOnly" type="checkbox" name="adminOnly">
-            <label class="switch-paddle" for="adminOnly">
-                <span class="show-for-sr">Admin Only</span>
-            </label>
-            </div>
-        {{ end }}
+        <label>Permission:
+        <select id="permission" name="permission">
+            {{ if eq .Wiki.Frontmatter.Permission "admin" }}
+            <option value="admin" selected>Admin</option>
+            <option value="private">Private</option>
+            <option value="public">Public</option>
+            {{ else if eq .Wiki.Frontmatter.Permission "private" }}
+            <option value="admin">Admin</option>
+            <option value="private" selected>Private</option>
+            <option value="public">Public</option>
+            {{ else if eq .Wiki.Frontmatter.Permission "public" }}
+            <option value="admin">Admin</option>
+            <option value="private">Private</option>
+            <option value="public" selected>Public</option>
+            {{ else }}
+            <option value="admin">Admin</option>
+            <option value="private">Private</option>
+            <option value="public">Public</option>
+            {{ end }}
+        </select>
+        </label>
         <div class="tag-field">
             <label for="tags">Tags</label>
             <input type="text" id="tags" name="tags" placeholder="Separate tags with commas" value="{{ .Wiki.Frontmatter.Tags|jsTags }}" />
