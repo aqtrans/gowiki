@@ -2707,11 +2707,13 @@ func search(w http.ResponseWriter, r *http.Request) {
 	name := params["name"]
 
 	// If this is a POST request, and searchwiki form is not blank,
-	//  set name to its' value
+	//  redirect to /search/$(searchform)
 	if r.Method == "POST" {
 		r.ParseForm()
 		if r.PostFormValue("searchwiki") != "" {
-			name = r.PostFormValue("searchwiki")
+			http.Redirect(w, r, "/search/"+r.PostFormValue("searchwiki"), http.StatusSeeOther)
+			return
+			//name = r.PostFormValue("searchwiki")
 		}
 	}
 
