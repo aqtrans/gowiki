@@ -167,11 +167,16 @@ type configuration struct {
 type page struct {
 	SiteName  string
 	Favs      []string
-	UN        string
-	IsAdmin   bool
+	UserInfo  *userInfo
 	Token     template.HTML
 	FlashMsg  template.HTML
 	GitStatus template.HTML
+}
+
+type userInfo struct {
+	Username   string
+	IsAdmin    bool
+	IsLoggedIn bool
 }
 
 type frontmatter struct {
@@ -387,6 +392,7 @@ func init() {
 }
 
 func markdownRender(input []byte) string {
+	defer httputils.TimeTrack(time.Now(), "markdownRender")
 	renderer := &renderer{Html: blackfriday.HtmlRenderer(commonHTMLFlags, "", "").(*blackfriday.Html)}
 
 	unsanitized := blackfriday.MarkdownOptions(input, renderer, blackfriday.Options{
@@ -1007,6 +1013,61 @@ func gitHistory() ([]string, error) {
 	return s, nil
 }
 
+// File creation time, output to UNIX time
+// git log --diff-filter=A --follow --format=%at -1 -- [filename]
+// File modification time, output to UNIX time
+// git log -1 --format=%at -- [filename]
+func gitGetTimes(filename string) (ctime int64, mtime int64) {
+	defer httputils.TimeTrack(time.Now(), "gitGetTimes")
+
+	ctimeChan := make(chan int64)
+	//var ctime int64
+	go func() {
+		co, err := gitCommand("log", "--diff-filter=A", "--follow", "--format=%at", "-1", "--", filename).Output()
+		if err != nil {
+			log.Println(err)
+			ctimeChan <- 0
+			return
+		}
+		costring := strings.TrimSpace(string(co))
+		// If output is blank, no point in wasting CPU doing the rest
+		if costring == "" {
+			log.Println(filename + " is not checked into Git")
+			ctimeChan <- 0
+			return
+		}
+		ctime, err = strconv.ParseInt(costring, 10, 64)
+		checkErr("gitGetCtime()/ParseInt", err)
+		ctimeChan <- ctime
+	}()
+
+	mtimeChan := make(chan int64)
+	//var mtime int64
+	go func() {
+		mo, err := gitCommand("log", "--format=%at", "-1", "--", filename).Output()
+		if err != nil {
+			log.Println(err)
+			mtimeChan <- 0
+			return
+		}
+		mostring := strings.TrimSpace(string(mo))
+		// If output is blank, no point in wasting CPU doing the rest
+		if mostring == "" {
+			log.Println(filename + " is not checked into Git")
+			mtimeChan <- 0
+			return
+		}
+		mtime, err = strconv.ParseInt(mostring, 10, 64)
+		checkErr("gitGetMtime()/ParseInt", err)
+		mtimeChan <- mtime
+	}()
+
+	ctime = <-ctimeChan
+	mtime = <-mtimeChan
+
+	return ctime, mtime
+}
+
 func loadPage(r *http.Request) *page {
 	defer httputils.TimeTrack(time.Now(), "loadPage")
 	//timer.Step("loadpageFunc")
@@ -1047,10 +1108,13 @@ func loadPage(r *http.Request) *page {
 	*/
 
 	return &page{
-		SiteName:  "GoWiki",
-		Favs:      gofavs,
-		UN:        user,
-		IsAdmin:   isAdmin,
+		SiteName: "GoWiki",
+		Favs:     gofavs,
+		UserInfo: &userInfo{
+			Username:   user,
+			IsAdmin:    isAdmin,
+			IsLoggedIn: authState.IsLoggedIn(r.Context()),
+		},
 		Token:     token,
 		FlashMsg:  message,
 		GitStatus: gitHTML,
@@ -1797,11 +1861,14 @@ func loadWiki(name string) *wiki {
 		pagetitle = name
 	}
 
-	ctime, err := gitGetCtime(name)
-	checkErr("loadWiki()/gitGetCtime", err)
+	/*
+		ctime, err := gitGetCtime(name)
+		checkErr("loadWiki()/gitGetCtime", err)
 
-	mtime, err := gitGetMtime(name)
-	checkErr("loadWiki()/gitGetMtime", err)
+		mtime, err := gitGetMtime(name)
+		checkErr("loadWiki()/gitGetMtime", err)
+	*/
+	ctime, mtime := gitGetTimes(name)
 
 	return &wiki{
 		Title:       pagetitle,
@@ -3153,10 +3220,13 @@ func crawlWiki() {
 				}
 			}
 
-			ctime, err := gitGetCtime(file)
-			checkErr("crawlWiki()/gitGetCtime", err)
-			mtime, err := gitGetMtime(file)
-			checkErr("crawlWiki()/gitGetMtime", err)
+			/*
+				ctime, err := gitGetCtime(file)
+				checkErr("crawlWiki()/gitGetCtime", err)
+				mtime, err := gitGetMtime(file)
+				checkErr("crawlWiki()/gitGetMtime", err)
+			*/
+			ctime, mtime := gitGetTimes(file)
 
 			isPublic := false
 			if fm.Permission == "public" {
