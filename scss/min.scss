@@ -1,0 +1,94 @@
+$light-gray: #e6e6e6;
+$medium-gray: #cacaca;
+$dark-gray: #8a8a8a;
+$black: #0a0a0a;
+$white: #fefefe;
+$solarized: #073642;
+$almostblack: #202020;
+$body-font-family: 'Noto Sans', 'Open Sans', 'Roboto Condensed', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;
+
+@mixin card() {
+    background-color: $medium-gray;
+    //border-radius: 3px;
+    box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);    
+}
+
+body {
+    display: flex;
+    flex-flow: row;
+    > nav {
+        flex: 1 6 20%;
+        order: 1;
+        padding-right: 10px;
+        ul {
+            list-style-type: square;
+        }
+    }
+    > section {
+        flex: 3 1 80%;
+        order: 2;
+        > main {
+            display: flex;
+            flex-flow: column;
+            > header {
+                @include card();
+                display: flex;
+                flex-flow: row wrap;
+                justify-content: center;
+                padding-bottom: 20px;
+                h1 {
+                    flex: 1 5 30%;
+                    order: 3;
+                }
+                small {
+                    flex: 1 5 20%;
+                    order: 4;
+                }
+                
+                ul {
+                    flex: 1 5 50%;
+                    order: 5;
+                    display: inline-flex;
+                    flex-flow: row nowrap;                    
+                    margin: 0;
+                }
+                li {
+                    border-right: 1px solid $black;
+                    white-space: nowrap;
+                    list-style-type: none;
+                    p {
+                        margin-bottom: 5px;
+                    }
+                }
+                li:first-child {
+                    border-left: 1px solid $black;
+                }
+            }
+            > ul {
+                margin: 0;
+                padding: 0;
+                list-style-type: none;
+                li {
+                    padding: 5px;
+                    margin: 0 10px 0 0;
+                    float: left;
+                    background-color: $almostblack;
+                }
+                li.is-active {
+                    background-color: $medium-gray;
+                }
+            }
+            > article {
+                @include card();
+                flex: 1;
+                min-height: 50vh;
+            }
+        }
+    }
+}
+
+@media all and (max-width: 640px) {
+    body {
+        flex-direction: column;
+    }
+}
