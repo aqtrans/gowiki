@@ -71,17 +71,10 @@ import (
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
 	"jba.io/go/httputils"
+	gogit "srcd.works/go-git.v4"
 )
 
 type key int
-
-const timerKey key = 0
-const wikiNameKey key = 1
-const wikiExistsKey key = 2
-const wikiKey key = 3
-
-const yamlsep = "---"
-const yamlsep2 = "..."
 
 const (
 	commonHTMLFlags = 0 |
@@ -101,6 +94,13 @@ const (
 		blackfriday.EXTENSION_NO_EMPTY_LINE_BEFORE_BLOCK |
 		blackfriday.EXTENSION_FOOTNOTES |
 		blackfriday.EXTENSION_TITLEBLOCK
+
+	timerKey      key = 0
+	wikiNameKey   key = 1
+	wikiExistsKey key = 2
+	wikiKey       key = 3
+	yamlsep           = "---"
+	yamlsep2          = "..."
 
 	/*
 		commonHTMLFlags2 = 0 |
@@ -769,7 +769,7 @@ func gitIsCleanStartup() error {
 	u := gitCommand("ls-files", "--exclude-standard", "--others")
 	uo, err := u.Output()
 	if len(uo) != 0 {
-		return errors.New(string(uo))
+		return errors.New("Untracked files: " + string(uo))
 	}
 
 	// Fetch changes from remote
@@ -1138,7 +1138,7 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 	name := nameFromContext(r.Context())
 	wikiExists := wikiExistsFromContext(r.Context())
 	if !wikiExists {
-		log.Println("wikiExists false: No such file...creating one.")
+		httputils.Debugln("wikiExists false: No such file...creating one.")
 		//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
 		createWiki(w, r, name)
 		return
@@ -1166,7 +1166,6 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 // TODO: need to find a way to detect sha1s
 func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name string) {
 	var fm frontmatter
-	var pagetitle string
 	var pageContent string
 
 	//commit := vars["commit"]
@@ -1195,18 +1194,12 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 	fm, content := readWikiPage(reader)
 	checkErr("viewCommitHandler()/readWikiPage", err)
 
-	if content == nil {
-		content = []byte("")
-	}
-
 	// Render remaining content after frontmatter
 	md := markdownRender(content)
 	//md := commonmarkRender(content)
-	if fm.Title != "" {
-		pagetitle = fm.Title
-	} else {
-		pagetitle = name
-	}
+
+	pagetitle := setPageTitle(fm.Title, name)
+
 	diffstring := string(diff)
 
 	pageContent = md
@@ -1394,7 +1387,7 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 			if titlefound {
 				fm.Title = title
 			}
-			switch v := m["Tags"].(type) {
+			switch v := m["tags"].(type) {
 			case string:
 				fm.Tags = strings.Split(v, ",")
 			case []string:
@@ -1844,22 +1837,13 @@ func loadWiki(name string) *wiki {
 	defer httputils.TimeTrack(time.Now(), "loadWiki")
 
 	var fm frontmatter
-	var pagetitle string
 
 	// Check if file exists before doing anything else
 	fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
 
 	fm, content := readFileAndFront(fullfilename)
 
-	if content == nil {
-		content = []byte("")
-	}
-
-	if fm.Title != "" {
-		pagetitle = fm.Title
-	} else {
-		pagetitle = name
-	}
+	pagetitle := setPageTitle(fm.Title, name)
 
 	/*
 		ctime, err := gitGetCtime(name)
@@ -2765,6 +2749,16 @@ func getParams(c context.Context) map[string]string {
 	return httptreemux.ContextParams(c)
 }
 
+func setPageTitle(frontmatterTitle, filename string) string {
+	var name string
+	if frontmatterTitle != "" {
+		name = frontmatterTitle
+	} else {
+		name = filename
+	}
+	return name
+}
+
 func search(w http.ResponseWriter, r *http.Request) {
 	index, err := bleve.Open("./data/index.bleve")
 	check(err)
@@ -2843,10 +2837,17 @@ func search(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, r.Context(), "search_results.tmpl", s)
 }
 
-func saveCache() {
+func buildCache() {
 	fileList, err := gitLs()
 	check(err)
 	cache = new(wikiCache)
+	if cache.Tags == nil {
+		cache.Tags = make(map[string][]string)
+	}
+	if cache.Favs == nil {
+		cache.Favs = make(map[string]struct{})
+	}
+
 	for _, file := range fileList {
 
 		// If using Git, build the full path:
@@ -2867,23 +2868,18 @@ func saveCache() {
 			//fileURL := strings.TrimPrefix(file, withoutdotslash)
 
 			var wp *wiki
-			var pagetitle string
-
-			//log.Println(file)
 
 			// Read YAML frontmatter into fm
 			f, err := os.Open(fullname)
-			checkErr("crawlWiki()/Open", err)
+			check(err)
 
 			fm := readFront(f)
 			//fm, content := readWikiPage(f)
 			f.Close()
 			//checkErr("crawlWiki()/readFront", err)
 
-			pagetitle = filename
-			if fm.Title != "" {
-				pagetitle = fm.Title
-			}
+			pagetitle := setPageTitle(fm.Title, filename)
+
 			if fm.Title == "" {
 				fm.Title = file
 			}
@@ -2901,22 +2897,16 @@ func saveCache() {
 			// Replacing readFavs and readTags
 			if fm.Favorite {
 				//log.Println(file + " is a favorite.")
-				if favMap == nil {
-					favMap = make(map[string]struct{})
-				}
-				if _, ok := favMap[file]; !ok {
+				if _, ok := cache.Favs[file]; !ok {
 					httputils.Debugln("crawlWiki: " + file + " is not already a favorite.")
-					favMap[file] = struct{}{}
+					cache.Favs[file] = struct{}{}
 				}
 				//favbuf.WriteString(file + " ")
 			}
 			if fm.Tags != nil {
 				for _, tag := range fm.Tags {
-					if tagMap == nil {
-						tagMap = make(map[string][]string)
-					}
-					if _, ok := tagMap[tag]; !ok {
-						tagMap[tag] = append(tagMap[tag], file)
+					if _, ok := cache.Tags[tag]; !ok {
+						cache.Tags[tag] = append(cache.Tags[tag], file)
 					}
 				}
 			}
@@ -2937,6 +2927,8 @@ func saveCache() {
 		}
 	}
 
+	cache.SHA1 = headHash()
+
 	cacheFile, err := os.Create("./data/cache.gob")
 	check(err)
 	cacheEncoder := gob.NewEncoder(cacheFile)
@@ -2945,12 +2937,33 @@ func saveCache() {
 }
 
 func loadCache() {
+	cache = new(wikiCache)
 	cacheFile, err := os.Open("./data/cache.gob")
+	defer cacheFile.Close()
+	if err == nil {
+		log.Println("Loading cache from gob.")
+		cacheDecoder := gob.NewDecoder(cacheFile)
+		err = cacheDecoder.Decode(cache)
+		check(err)
+		// Check the cached sha1 versus HEAD sha1, rebuild if they differ
+		if cache.SHA1 != headHash() {
+			log.Println("Cache SHA1s do not match. Rebuilding cache.")
+			buildCache()
+		}
+	}
+	// If cache does not exist, build it
+	if os.IsNotExist(err) {
+		log.Println("Cache does not exist, building it.")
+		buildCache()
+	}
+}
+
+func headHash() string {
+	repo, err := gogit.PlainOpen(viper.GetString("WikiDir"))
 	check(err)
-	cacheDecoder := gob.NewDecoder(cacheFile)
-	err = cacheDecoder.Decode(cache)
+	head, err := repo.Head()
 	check(err)
-	cacheFile.Close()
+	return head.Hash().String()
 }
 
 func crawlWikiFromCache() {
@@ -3166,9 +3179,6 @@ func crawlWiki() {
 			//fileURL := strings.TrimPrefix(file, withoutdotslash)
 
 			var wp *wiki
-			var pagetitle string
-
-			//log.Println(file)
 
 			// Read YAML frontmatter into fm
 			f, err := os.Open(fullname)
@@ -3179,10 +3189,8 @@ func crawlWiki() {
 			f.Close()
 			//checkErr("crawlWiki()/readFront", err)
 
-			pagetitle = filename
-			if fm.Title != "" {
-				pagetitle = fm.Title
-			}
+			pagetitle := setPageTitle(fm.Title, filename)
+
 			if fm.Title == "" {
 				fm.Title = file
 			}
@@ -3300,9 +3308,11 @@ func refreshStuff() {
 	//go bleveIndex()
 
 	// Update list of wiki pages
-	crawlWiki()
+	//crawlWiki()
 	//saveCache()
 	//log.Println(cache.Cache)
+	loadCache()
+	crawlWikiFromCache()
 
 }
 
@@ -3429,6 +3439,7 @@ func main() {
 	// Check for unclean Git dir on startup
 	err = gitIsCleanStartup()
 	if err != nil {
+		log.Println("There was an issue with the git repo:")
 		log.Fatalln(err)
 	}
 
