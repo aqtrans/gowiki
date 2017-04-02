@@ -122,6 +122,7 @@ func TestWikiInit(t *testing.T) {
 
 // TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
 func TestNewWikiPage(t *testing.T) {
+	loadCache()
 	err := gitPull()
 	if err != nil {
 		t.Fatal(err)
