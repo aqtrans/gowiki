@@ -1283,14 +1283,6 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 func readFileAndFront(filename string) (frontmatter, []byte) {
 	//defer httputils.TimeTrack(time.Now(), "readFileAndFront")
 
-	/*
-		// Check if we were given a full path or not
-		if !strings.HasPrefix(filename, viper.GetString("WikiDir")) {
-			//log.Println("readFileAndFront given a non-full path.")
-			filename = filepath.Join(viper.GetString("WikiDir"), filename)
-		}
-	*/
-
 	f, err := os.Open(filename)
 	//checkErr("readFileAndFront()/Open", err)
 	if err != nil {
@@ -1674,7 +1666,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	wikiExists := wikiExistsFromContext(r.Context())
 	if !wikiExists {
-		log.Println("wikiExists false: No such file...creating one.")
+		httputils.Debugln("wikiExists false: No such file...creating one.")
 		//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
 		createWiki(w, r, name)
 		return
@@ -1775,7 +1767,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 	relErr := relativePathCheck(pagetitle)
 	if relErr != nil {
 		if relErr == errBaseNotDir {
-			log.Println("Cannot create subdir of a file.")
+			log.Println("ERROR: Cannot create subdir of a file:", pagetitle)
 			http.Error(w, "Cannot create subdir of a file.", 500)
 			return
 		}
