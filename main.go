@@ -68,10 +68,10 @@ import (
 	"encoding/gob"
 	"github.com/spf13/viper"
 	"github.com/thoas/stats"
+	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
 	"jba.io/go/httputils"
-	gogit "srcd.works/go-git.v4"
 )
 
 type key int
