@@ -11,8 +11,8 @@
 <fieldset class="fieldset">
   <legend>Favorite Pages</legend>
 <ul>
-{{range .page.Favs}}
-<li><a href="/{{.}}">{{.}}</a></li>
+{{range $key, $element := .page.Favs}}
+<li><a href="/{{ $key }}">{{ $key }}</a></li>
 {{end}}
 </ul>
 </fieldset>
