@@ -363,6 +363,9 @@ func init() {
 	if err != nil {
 		log.Fatalln("git must be installed")
 	}
+	if cache == nil {
+		cache = new(wikiCache)
+	}
 	/*
 		templatesDir := "./templates/"
 		layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
@@ -1106,9 +1109,14 @@ func loadPage(r *http.Request) *page {
 		}
 	*/
 
+	favs := cache.Favs
+	if cache.Favs == nil {
+		favs = make(map[string]struct{})
+	}
+
 	return &page{
 		SiteName: "GoWiki",
-		Favs:     cache.Favs,
+		Favs:     favs,
 		UserInfo: &userInfo{
 			Username:   user,
 			IsAdmin:    isAdmin,
@@ -1275,11 +1283,13 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 func readFileAndFront(filename string) (frontmatter, []byte) {
 	//defer httputils.TimeTrack(time.Now(), "readFileAndFront")
 
-	// Check if we were given a full path or not
-	if !strings.HasPrefix(filename, viper.GetString("WikiDir")) {
-		//log.Println("readFileAndFront given a non-full path.")
-		filename = filepath.Join(viper.GetString("WikiDir"), filename)
-	}
+	/*
+		// Check if we were given a full path or not
+		if !strings.HasPrefix(filename, viper.GetString("WikiDir")) {
+			//log.Println("readFileAndFront given a non-full path.")
+			filename = filepath.Join(viper.GetString("WikiDir"), filename)
+		}
+	*/
 
 	f, err := os.Open(filename)
 	//checkErr("readFileAndFront()/Open", err)
@@ -1843,7 +1853,7 @@ func loadWiki(name string) *wiki {
 
 	var fm frontmatter
 
-	fm, content := readFileAndFront(name)
+	fm, content := readFileAndFront(filepath.Join(viper.GetString("WikiDir"), name))
 
 	pagetitle := setPageTitle(fm.Title, name)
 
@@ -3080,7 +3090,7 @@ func crawlWikiFromCache() {
 		}
 		log.Println(k)
 		for _, wikipage := range v {
-			_, content := readFileAndFront(wikipage.Filename)
+			_, content := readFileAndFront(filepath.Join(viper.GetString("WikiDir"), wikipage.Filename))
 			// Add to bleve index
 			data := struct {
 				Name     string   `json:"name"`
