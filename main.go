@@ -7,7 +7,7 @@ package main
 //     - Used for YAML frontmatter parsing to/from wiki pages
 // - bpool-powered template rendering based on https://elithrar.github.io/article/approximating-html-template-inheritance/
 //     - Used to catch rendering errors, so there's no half-rendered pages
-// - Using a map[string]struct{} for favMap to easily check for uniqueness: http://stackoverflow.com/a/9251352
+// - Using a map[string]struct{} for cache.Favs to easily check for uniqueness: http://stackoverflow.com/a/9251352
 
 //TODO:
 // - wikidata should be periodically pushed to git@jba.io:conf/gowiki-data.git
@@ -133,9 +133,6 @@ var (
 	fDebug         = httputils.Debug
 	fInit          bool
 	gitPath        string
-	favMap         map[string]struct{}
-	tagMap         map[string][]string
-	wikiList       map[string][]*wiki
 	cache          *wikiCache
 	errNotInGit    = errors.New("given file not in Git repo")
 	errNoFile      = errors.New("no such file")
@@ -166,7 +163,7 @@ type configuration struct {
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
 type page struct {
 	SiteName  string
-	Favs      []string
+	Favs      map[string]struct{}
 	UserInfo  *userInfo
 	Token     template.HTML
 	FlashMsg  template.HTML
@@ -207,7 +204,7 @@ type wiki struct {
 
 type wikiCache struct {
 	SHA1  string
-	Cache []*wiki
+	Cache map[string][]*wiki
 	Tags  map[string][]string
 	Favs  map[string]struct{}
 }
@@ -1093,10 +1090,12 @@ func loadPage(r *http.Request) *page {
 		message = template.HTML("")
 	}
 
-	// Grab list of favs from channel
-	favs := make(chan []string)
-	go favsHandler(favs)
-	gofavs := <-favs
+	/*
+		// Grab list of favs from channel
+		favs := make(chan []string)
+		go favsHandler(favs)
+		gofavs := <-favs
+	*/
 
 	// Grab git status
 	gitStatusErr := gitIsClean()
@@ -1109,7 +1108,7 @@ func loadPage(r *http.Request) *page {
 
 	return &page{
 		SiteName: "GoWiki",
-		Favs:     gofavs,
+		Favs:     cache.Favs,
 		UserInfo: &userInfo{
 			Username:   user,
 			IsAdmin:    isAdmin,
@@ -1269,12 +1268,18 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := loadPage(r)
 
-	l := &listPage{p, wikiList["private"], wikiList["public"], wikiList["admin"]}
+	l := &listPage{p, cache.Cache["private"], cache.Cache["public"], cache.Cache["admin"]}
 	renderTemplate(w, r.Context(), "list.tmpl", l)
 }
 
 func readFileAndFront(filename string) (frontmatter, []byte) {
 	//defer httputils.TimeTrack(time.Now(), "readFileAndFront")
+
+	// Check if we were given a full path or not
+	if !strings.HasPrefix(filename, viper.GetString("WikiDir")) {
+		//log.Println("readFileAndFront given a non-full path.")
+		filename = filepath.Join(viper.GetString("WikiDir"), filename)
+	}
 
 	f, err := os.Open(filename)
 	//checkErr("readFileAndFront()/Open", err)
@@ -1821,7 +1826,7 @@ func favsHandler(favs chan []string) {
 
 	//favss := favbuf.String()
 	var sfavs []string
-	for fav := range favMap {
+	for fav := range cache.Favs {
 		sfavs = append(sfavs, fav)
 	}
 
@@ -1838,10 +1843,7 @@ func loadWiki(name string) *wiki {
 
 	var fm frontmatter
 
-	// Check if file exists before doing anything else
-	fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
-
-	fm, content := readFileAndFront(fullfilename)
+	fm, content := readFileAndFront(name)
 
 	pagetitle := setPageTitle(fm.Title, name)
 
@@ -2286,13 +2288,11 @@ func adminGitHandler(w http.ResponseWriter, r *http.Request) {
 func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "tagMapHandler")
 
-	a := &tagMap
-
 	p := loadPage(r)
 
 	tagpage := &tagMapPage{
 		page:    p,
-		TagKeys: *a,
+		TagKeys: cache.Tags,
 	}
 	renderTemplate(w, r.Context(), "tag_list.tmpl", tagpage)
 }
@@ -2794,13 +2794,9 @@ func search(w http.ResponseWriter, r *http.Request) {
 
 	public := false
 
-	//username, _ := auth.GetUsername(r.Context())
-	//if username != "" {
-	/*
-		if authState.IsLoggedIn(r.Context()) {
-			public = true
-		}
-	*/
+	if authState.IsLoggedIn(r.Context()) {
+		public = true
+	}
 
 	mustNot := bleve.NewBoolFieldQuery(public)
 	mustNot.SetField("public")
@@ -2814,11 +2810,9 @@ func search(w http.ResponseWriter, r *http.Request) {
 	searchRequest.Highlight = bleve.NewHighlight()
 
 	searchResult, _ := index.Search(searchRequest)
-	//log.Println(searchResult.String())
 
 	var results []*result
 
-	//var results map[string]string
 	for _, v := range searchResult.Hits {
 		for _, fragments := range v.Fragments {
 			for _, fragment := range fragments {
@@ -2841,12 +2835,19 @@ func buildCache() {
 	fileList, err := gitLs()
 	check(err)
 	cache = new(wikiCache)
+	if cache.Cache == nil {
+		cache.Cache = make(map[string][]*wiki)
+	}
 	if cache.Tags == nil {
 		cache.Tags = make(map[string][]string)
 	}
 	if cache.Favs == nil {
 		cache.Favs = make(map[string]struct{})
 	}
+
+	var wps []*wiki
+	var publicwps []*wiki
+	var adminwps []*wiki
 
 	for _, file := range fileList {
 
@@ -2855,9 +2856,7 @@ func buildCache() {
 
 		// check if the source dir exist
 		src, err := os.Stat(fullname)
-		if err != nil {
-			panic(err)
-		}
+		check(err)
 		// If not a directory, get frontmatter from file and add to list
 		if !src.IsDir() {
 
@@ -2916,16 +2915,42 @@ func buildCache() {
 			mtime, err := gitGetMtime(file)
 			checkErr("crawlWiki()/gitGetMtime", err)
 
-			wp = &wiki{
-				Title:       pagetitle,
-				Filename:    file,
-				Frontmatter: &fm,
-				CreateTime:  ctime,
-				ModTime:     mtime,
+			// If pages are Admin or Public, add to a separate wikiPage slice
+			//   So we only check on rendering
+			if fm.Permission == "admin" {
+				wp = &wiki{
+					Title:       pagetitle,
+					Filename:    file,
+					Frontmatter: &fm,
+					CreateTime:  ctime,
+					ModTime:     mtime,
+				}
+				adminwps = append(adminwps, wp)
+			} else if fm.Permission == "public" {
+				wp = &wiki{
+					Title:       pagetitle,
+					Filename:    file,
+					Frontmatter: &fm,
+					CreateTime:  ctime,
+					ModTime:     mtime,
+				}
+				publicwps = append(publicwps, wp)
+			} else {
+				wp = &wiki{
+					Title:       pagetitle,
+					Filename:    file,
+					Frontmatter: &fm,
+					CreateTime:  ctime,
+					ModTime:     mtime,
+				}
+				wps = append(wps, wp)
 			}
-			cache.Cache = append(cache.Cache, wp)
 		}
 	}
+
+	cache.Cache["public"] = publicwps
+	cache.Cache["admin"] = adminwps
+	cache.Cache["private"] = wps
 
 	cache.SHA1 = headHash()
 
@@ -2944,7 +2969,11 @@ func loadCache() {
 		log.Println("Loading cache from gob.")
 		cacheDecoder := gob.NewDecoder(cacheFile)
 		err = cacheDecoder.Decode(cache)
-		check(err)
+		//check(err)
+		if err != nil {
+			log.Println("Error loading cache. Rebuilding it.")
+			buildCache()
+		}
 		// Check the cached sha1 versus HEAD sha1, rebuild if they differ
 		if cache.SHA1 != headHash() {
 			log.Println("Cache SHA1s do not match. Rebuilding cache.")
@@ -3043,32 +3072,39 @@ func crawlWikiFromCache() {
 		}
 	}
 
-	for _, v := range cache.Cache {
+	for k, v := range cache.Cache {
 		isPublic := false
-		if v.Frontmatter.Permission == "public" {
+		// If this is cache.Cache["public"], it's a public page
+		if k == "public" {
 			isPublic = true
 		}
-		// Add to bleve index
-		data := struct {
-			Name     string   `json:"name"`
-			Public   bool     `json:"public"`
-			Tags     []string `json:"tags"`
-			Content  string   `json:"content"`
-			Created  string   `json:"ctime"`
-			Modified string   `json:"mtime"`
-		}{
-			Name:     v.Title,
-			Public:   isPublic,
-			Tags:     v.Frontmatter.Tags,
-			Content:  "",
-			Created:  strconv.FormatInt(v.CreateTime, 10),
-			Modified: strconv.FormatInt(v.ModTime, 10),
+		log.Println(k)
+		for _, wikipage := range v {
+			_, content := readFileAndFront(wikipage.Filename)
+			// Add to bleve index
+			data := struct {
+				Name     string   `json:"name"`
+				Public   bool     `json:"public"`
+				Tags     []string `json:"tags"`
+				Content  string   `json:"content"`
+				Created  string   `json:"ctime"`
+				Modified string   `json:"mtime"`
+			}{
+				Name:     wikipage.Title,
+				Public:   isPublic,
+				Tags:     wikipage.Frontmatter.Tags,
+				Content:  string(content),
+				Created:  strconv.FormatInt(wikipage.CreateTime, 10),
+				Modified: strconv.FormatInt(wikipage.ModTime, 10),
+			}
+			index.Index(wikipage.Filename, data)
 		}
-
-		index.Index(v.Filename, data)
 	}
+	err = index.Close()
+	check(err)
 }
 
+/*
 // crawlWiki builds a list of wiki pages, stored in memory
 //  saves time to reference this, rebuilding on saving
 func crawlWiki() {
@@ -3208,32 +3244,26 @@ func crawlWiki() {
 			// Replacing readFavs and readTags
 			if fm.Favorite {
 				//log.Println(file + " is a favorite.")
-				if favMap == nil {
-					favMap = make(map[string]struct{})
+				if cache.Favs == nil {
+					cache.Favs = make(map[string]struct{})
 				}
-				if _, ok := favMap[file]; !ok {
+				if _, ok := cache.Favs[file]; !ok {
 					httputils.Debugln("crawlWiki: " + file + " is not already a favorite.")
-					favMap[file] = struct{}{}
+					cache.Favs[file] = struct{}{}
 				}
 				//favbuf.WriteString(file + " ")
 			}
 			if fm.Tags != nil {
 				for _, tag := range fm.Tags {
-					if tagMap == nil {
-						tagMap = make(map[string][]string)
+					if cache.Tags == nil {
+						cache.Tags = make(map[string][]string)
 					}
-					if _, ok := tagMap[tag]; !ok {
-						tagMap[tag] = append(tagMap[tag], file)
+					if _, ok := cache.Tags[tag]; !ok {
+						cache.Tags[tag] = append(cache.Tags[tag], file)
 					}
 				}
 			}
 
-			/*
-				ctime, err := gitGetCtime(file)
-				checkErr("crawlWiki()/gitGetCtime", err)
-				mtime, err := gitGetMtime(file)
-				checkErr("crawlWiki()/gitGetMtime", err)
-			*/
 			ctime, mtime := gitGetTimes(file)
 
 			isPublic := false
@@ -3301,6 +3331,7 @@ func crawlWiki() {
 	wikiList["private"] = wps
 	index.Close()
 }
+*/
 
 // This should be all the stuff we need to be refreshed on startup and when pages are saved
 func refreshStuff() {
@@ -3349,10 +3380,9 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			// Read YAML frontmatter into fm
 			// If err, just return, as file should not contain frontmatter
 			f, err := os.Open(fullfilename)
-			checkErr("wikiMiddle()/Open", err)
-			defer f.Close()
+			check(err)
 			fm := readFront(f)
-
+			f.Close()
 			// If this is a public page, just serve it
 			if fm.Permission == "public" {
 				next.ServeHTTP(w, r.WithContext(ctx))
