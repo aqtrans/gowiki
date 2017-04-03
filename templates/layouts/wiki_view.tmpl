@@ -1,8 +1,5 @@
-{{ define "title" }}<title>{{.page.SiteName}}|{{ .Wiki.Title }}</title>{{ end }}
-{{ define "content" }}
-<main>
-  <article>
-    <header>{{.Wiki.Title}}</header>
+{{ define "title" }}{{ .Wiki.Title }}{{ end }}
+{{ define "header" }}
     <div class="stats">
       <ul>
         <li><p>Filename</p>
@@ -21,8 +18,8 @@
         {{ end }}
       </ul>
     </div>
-  </article>
-
+{{ end }}
+{{ define "content" }}
   <ul class="tabs">
     <li class="tabs-title is-active"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
     <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
@@ -38,5 +35,4 @@
           </ul>
         </footer>
   </article>
-</main>
 {{ end }}
