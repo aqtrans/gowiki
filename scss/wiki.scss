@@ -88,7 +88,7 @@ body {
         @include grid-column;
         @include breakpoint(medium) {
             //min-width: 200px;
-            @include grid-column(22%, 0);
+            @include grid-column(22%);
         }
 
         [type="text"] {
@@ -127,7 +127,7 @@ body {
     > section {
         @include grid-column;
         @include breakpoint(medium) {
-            @include grid-column(78%, 0);
+            @include grid-column(78%);
         }
         > main {
             article {
@@ -206,6 +206,7 @@ body {
                         border-left: 1px solid transparentize($body-font-color, 0.8);
                     }
                     .stat {
+                        font-size: 1.0rem;
                         font-weight: bold;
                     }
                     .stat span.warning.label {
