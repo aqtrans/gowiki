@@ -1940,36 +1940,55 @@ type Wiki struct {
 func loadWikiPage(r *http.Request, name string) *wikiPage {
 	defer httputils.TimeTrack(time.Now(), "loadWikiPage")
 
-	p := loadPage(r)
+	var thePage *page
+	thePageChan := make(chan *page)
+	var theWiki *wiki
+	theWikiChan := make(chan *wiki)
+	var theMarkdown string
+	theMarkdownChan := make(chan string)
+
+	go func() {
+		p := loadPage(r)
+		thePageChan <- p
+	}()
 
 	wikiExists := wikiExistsFromContext(r.Context())
 	if !wikiExists {
-		newwp := &wikiPage{
-			page: p,
-			Wiki: &wiki{
-				Title:    name,
-				Filename: name,
-				Frontmatter: &frontmatter{
-					Title: name,
-				},
-				CreateTime: 0,
-				ModTime:    0,
+		theWiki = &wiki{
+			Title:    name,
+			Filename: name,
+			Frontmatter: &frontmatter{
+				Title: name,
 			},
+			CreateTime: 0,
+			ModTime:    0,
 		}
-		return newwp
+	}
+	if wikiExists {
+		go func() {
+			wikip := loadWiki(name)
+			// Render remaining content after frontmatter
+			md := markdownRender(wikip.Content)
+			theWikiChan <- wikip
+			theMarkdownChan <- md
+		}()
 	}
 
-	wikip := loadWiki(name)
+	for i := 0; i < 3; i++ {
+		select {
+		case theWiki = <-theWikiChan:
+		case thePage = <-thePageChan:
+		case theMarkdown = <-theMarkdownChan:
+		}
+	}
 
-	// Render remaining content after frontmatter
-	md := markdownRender(wikip.Content)
 	//md := commonmarkRender(wikip.Content)
 	//markdownRender2(wikip.Content)
 
 	wp := &wikiPage{
-		page:     p,
-		Wiki:     wikip,
-		Rendered: md,
+		page:     thePage,
+		Wiki:     theWiki,
+		Rendered: theMarkdown,
 	}
 	return wp
 }
