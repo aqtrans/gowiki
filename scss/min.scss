@@ -8,14 +8,15 @@ $almostblack: #202020;
 $body-font-family: 'Noto Sans', 'Open Sans', 'Roboto Condensed', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;
 
 @mixin card() {
-    background-color: $medium-gray;
+    //background-color: $solarized;
     //border-radius: 3px;
-    box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);    
+    //box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);    
 }
 
 body {
     display: flex;
     flex-flow: row;
+    //background-color: $almostblack;
     > nav {
         flex: 1 6 20%;
         order: 1;
@@ -31,25 +32,26 @@ body {
             display: flex;
             flex-flow: column;
             > header {
-                @include card();
                 display: flex;
                 flex-flow: row wrap;
                 justify-content: center;
+                align-items: center;
                 padding-bottom: 20px;
+                
                 h1 {
-                    flex: 1 5 30%;
+                    flex: 1 5;
                     order: 3;
                 }
                 small {
-                    flex: 1 5 20%;
+                    flex: 1 5;
                     order: 4;
                 }
                 
                 ul {
-                    flex: 1 5 50%;
+                    flex: 1 5;
                     order: 5;
                     display: inline-flex;
-                    flex-flow: row nowrap;                    
+                    flex-flow: row nowrap;                  
                     margin: 0;
                 }
                 li {
