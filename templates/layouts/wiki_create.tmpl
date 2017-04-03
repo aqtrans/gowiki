@@ -1,10 +1,5 @@
-{{ define "title" }}<title>{{.page.SiteName}}|Create {{ .Wiki.Title }}?</title>{{ end }}
+{{ define "title" }}Create {{ .Wiki.Title }}?{{ end }}
 {{ define "content" }}
-<main>
-  <article>
-    <header>Create {{.Wiki.Title}}?</header>
-  </article>
-
   <ul class="tabs">
     <li class="tabs-title is-active"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>Create Page</a></li>
     <li class="tabs-title"><a href="#"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
@@ -17,5 +12,4 @@
         <footer>
         </footer>
   </article>
-</main>
 {{ end }}

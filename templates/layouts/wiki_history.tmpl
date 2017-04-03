@@ -1,10 +1,5 @@
-{{ define "title" }}<title>{{.page.SiteName}}|History of {{ .Wiki.Title }}</title>{{ end }}
-{{ define "content" }}
-<main>
-    <article>
-        <header>History of {{ .Wiki.Title }}</header>
-    </article>    
-
+{{ define "title" }}History of {{ .Wiki.Title }}{{ end }}
+{{ define "content" }} 
     <ul class="tabs">
     <li class="tabs-title"><a href="/{{.Wiki.Filename}}"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
     <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
@@ -30,5 +25,4 @@
             {{ end }}
         </table>
     </article>
-</main>
 {{ end }}
