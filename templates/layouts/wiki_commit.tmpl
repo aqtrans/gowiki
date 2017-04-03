@@ -1,9 +1,5 @@
-{{ define "title" }}<title>{{.page.SiteName}}|{{ .Wiki.Title }} ({{.Commit}})</title>{{ end }}
-{{ define "content" }}
-<link rel="stylesheet" href="/assets/css/diff2html.min.css">
-<main>
-  <article>
-    <header>{{.Wiki.Title}} ({{.Commit}})</header>
+{{ define "title" }}{{ .Wiki.Title }} ({{.Commit}}){{ end }}
+{{ define "header" }}
     <div class="stats">
       <ul>
         <li><p>Filename</p>
@@ -16,8 +12,9 @@
         <div class="stat">{{ range .Wiki.Frontmatter.Tags }}<span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i>{{ . }}</span>{{ end }}</div></li>
       </ul>
     </div>
-  </article>
-
+{{ end }}
+{{ define "content" }}
+<link rel="stylesheet" href="/assets/css/diff2html.min.css">
   <ul class="tabs">
     <li class="tabs-title is-active"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
     <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
@@ -50,5 +47,4 @@
       </ul>
     </footer>
   </article>
-</main>
 {{ end }}
