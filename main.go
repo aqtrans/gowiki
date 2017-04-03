@@ -186,11 +186,12 @@ type frontmatter struct {
 }
 
 type badFrontmatter struct {
-	Title    string `yaml:"title"`
-	Tags     string `yaml:"tags,omitempty"`
-	Favorite bool   `yaml:"favorite,omitempty"`
-	Public   bool   `yaml:"public,omitempty"`
-	Admin    bool   `yaml:"admin,omitempty"`
+	Title      string `yaml:"title"`
+	Tags       string `yaml:"tags,omitempty"`
+	Favorite   bool   `yaml:"favorite,omitempty"`
+	Permission string `yaml:"permission,omitempty"`
+	Public     bool   `yaml:"public,omitempty"`
+	Admin      bool   `yaml:"admin,omitempty"`
 }
 
 type wiki struct {
@@ -1286,95 +1287,150 @@ func readFileAndFront(filename string) (frontmatter, []byte) {
 	f, err := os.Open(filename)
 	//checkErr("readFileAndFront()/Open", err)
 	if err != nil {
+		httputils.Debugln("Error in readFileAndFront:", err)
 		f.Close()
 		return frontmatter{}, []byte("")
 	}
 
-	defer f.Close()
-	return readWikiPage(f)
+	fm, content := readWikiPage(f)
+	f.Close()
+	return fm, content
 }
 
 func readWikiPage(reader io.Reader) (frontmatter, []byte) {
 	//defer httputils.TimeTrack(time.Now(), "readWikiPage")
+	/*
+		s := bufio.NewScanner(reader)
 
-	s := bufio.NewScanner(reader)
+		topbuf := new(bytes.Buffer)
+		bottombuf := new(bytes.Buffer)
+		start := false
+		end := false
+		for s.Scan() {
 
+			if start && end {
+				bottombuf.Write(s.Bytes())
+				bottombuf.WriteString("\n")
+			}
+			if start && !end {
+				// Anything after the --- tag, add to the topbuffer
+				if s.Text() != yamlsep || s.Text() != yamlsep2 {
+					topbuf.Write(s.Bytes())
+					topbuf.WriteString("\n")
+				}
+				if s.Text() == yamlsep || s.Text() == yamlsep2 {
+					end = true
+				}
+			}
+
+			// Hopefully catch the first --- tag
+			if !start && !end {
+				if s.Text() == yamlsep {
+					start = true
+				} else {
+					start = true
+					end = true
+				}
+
+			}
+		}
+	*/
 	topbuf := new(bytes.Buffer)
 	bottombuf := new(bytes.Buffer)
-	start := false
-	end := false
-	for s.Scan() {
+	scanWikiPage(reader, topbuf, bottombuf)
 
-		if start && end {
-			bottombuf.Write(s.Bytes())
-			bottombuf.WriteString("\n")
-		}
-		if start && !end {
-			// Anything after the --- tag, add to the topbuffer
-			if s.Text() != yamlsep || s.Text() != yamlsep2 {
-				topbuf.Write(s.Bytes())
-				topbuf.WriteString("\n")
-			}
-			if s.Text() == yamlsep || s.Text() == yamlsep2 {
-				end = true
-			}
-		}
-
-		// Hopefully catch the first --- tag
-		if !start && !end {
-			if s.Text() == yamlsep {
-				start = true
-			} else {
-				start = true
-				end = true
-			}
-
-		}
-	}
-
-	fm := marshalFrontmatter(topbuf.Bytes())
-	return fm, bottombuf.Bytes()
+	return marshalFrontmatter(topbuf.Bytes()), bottombuf.Bytes()
 }
 
 func readFront(reader io.Reader) frontmatter {
 	//defer httputils.TimeTrack(time.Now(), "readFront")
+	/*
+		s := bufio.NewScanner(reader)
 
-	s := bufio.NewScanner(reader)
+		topbuf := new(bytes.Buffer)
+		start := false
+		end := false
+		for s.Scan() {
 
+			if start && end {
+				break
+			}
+			if start && !end {
+				// Anything after the --- tag, add to the topbuffer
+				if s.Text() != yamlsep || s.Text() != yamlsep2 {
+					topbuf.Write(s.Bytes())
+					topbuf.WriteString("\n")
+				}
+				// This should be the end separator
+				if s.Text() == yamlsep || s.Text() == yamlsep2 {
+					end = true
+					break
+				}
+			}
+
+			// Hopefully catch the first --- tag
+			if !start && !end {
+				if s.Text() == yamlsep {
+					start = true
+				} else {
+					start = true
+					end = true
+				}
+
+			}
+		}
+	*/
 	topbuf := new(bytes.Buffer)
+	scanWikiPage(reader, topbuf)
+
+	return marshalFrontmatter(topbuf.Bytes())
+
+}
+
+func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
+	grabPage := false
+	// If we are given two buffers, do something with the bottom data
+	if len(bufs) == 2 {
+		grabPage = true
+	}
+	scanner := bufio.NewScanner(reader)
 	start := false
 	end := false
-	for s.Scan() {
+	for scanner.Scan() {
 
 		if start && end {
-			break
+			if grabPage {
+				bufs[1].Write(scanner.Bytes())
+				bufs[1].WriteString("\n")
+			} else {
+				break
+			}
 		}
 		if start && !end {
 			// Anything after the --- tag, add to the topbuffer
-			if s.Text() != yamlsep || s.Text() != yamlsep2 {
-				topbuf.Write(s.Bytes())
-				topbuf.WriteString("\n")
+			if scanner.Text() != yamlsep || scanner.Text() != yamlsep2 {
+				bufs[0].Write(scanner.Bytes())
+				bufs[0].WriteString("\n")
 			}
-			// This should be the end separator
-			if s.Text() == yamlsep || s.Text() == yamlsep2 {
+			if scanner.Text() == yamlsep || scanner.Text() == yamlsep2 {
 				end = true
-				break
+				// If not given 2 buffers, end here.
+				if !grabPage {
+					break
+				}
 			}
 		}
 
 		// Hopefully catch the first --- tag
 		if !start && !end {
-			if s.Text() == yamlsep {
+			if scanner.Text() == yamlsep {
 				start = true
 			} else {
 				start = true
 				end = true
 			}
-
 		}
 	}
-	return marshalFrontmatter(topbuf.Bytes())
-
 }
 
 func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
