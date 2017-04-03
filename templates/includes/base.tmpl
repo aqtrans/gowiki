@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en" >
 <head>
-  {{ template "title" . }}
+  <title>{{ template "title" . }}|{{ .SiteName }}</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Gowiki">
@@ -19,5 +19,14 @@
   </nav>
   <section>
     {{ .page.FlashMsg }}
+    <main>
+      <article>
+        <header>{{ template "header_title" . }}</header>
+        {{ block "header" . }}{{ end }}
+      </article>
     {{ template "content" . }}
+    </main>
+{{ end }}
+{{ define "header_title" }}
+{{ template "title" . }}
 {{ end }}
