@@ -1,11 +1,6 @@
-{{ define "title" }}<title>{{.page.SiteName}}|Editing {{ .Wiki.Title }}</title>{{ end }}
+{{ define "title" }}Editing {{ .Wiki.Title }}{{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/tagdog.css">
-<main>
-    <article>
-        <header>Editing {{.Wiki.Title}}</header> 
-    </article>
-              
         <ul class="tabs">
         <li class="tabs-title"><a href="/{{.Wiki.Filename}}"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
         <li class="tabs-title is-active"><a href="#"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
@@ -64,7 +59,6 @@
         </div>
         </form>
     </article>
-</main>
 
 <div class="full reveal" id="previewModal" data-reveal>
     <h2>Preview:</h2>
