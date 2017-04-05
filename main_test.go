@@ -779,3 +779,15 @@ func BenchmarkWholeWiki(b *testing.B) {
 		handler.ServeHTTP(rr, rctx)
 	}
 }
+
+func BenchmarkGitCtime(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		gitGetCtime("index")
+	}
+}
+
+func BenchmarkGitMtime(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		gitGetMtime("index")
+	}
+}
