@@ -41,6 +41,7 @@ import (
 	"net/http"
 	"runtime/debug"
 	//_ "net/http/pprof"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -1121,7 +1122,7 @@ func loadPage(r *http.Request) *page {
 		UserInfo: &userInfo{
 			Username:   user,
 			IsAdmin:    isAdmin,
-			IsLoggedIn: authState.IsLoggedIn(r.Context()),
+			IsLoggedIn: auth.IsLoggedIn(r.Context()),
 		},
 		Token:     token,
 		FlashMsg:  message,
@@ -2377,7 +2378,7 @@ func tagMapHandler(w http.ResponseWriter, r *http.Request) {
 func createWiki(w http.ResponseWriter, r *http.Request, name string) {
 	//username, _ := auth.GetUsername(r.Context())
 	//if username != "" {
-	if authState.IsLoggedIn(r.Context()) {
+	if auth.IsLoggedIn(r.Context()) {
 		w.WriteHeader(404)
 		//title := "Create " + name + "?"
 		p := loadPage(r)
@@ -2871,7 +2872,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 
 	public := false
 
-	if authState.IsLoggedIn(r.Context()) {
+	if auth.IsLoggedIn(r.Context()) {
 		public = true
 	}
 
@@ -3435,7 +3436,7 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		params := getParams(r.Context())
 		name := params["name"]
 		username, isAdmin := auth.GetUsername(r.Context())
-		userLoggedIn := authState.IsLoggedIn(r.Context())
+		userLoggedIn := auth.IsLoggedIn(r.Context())
 		pageExists, relErr := checkName(&name)
 		fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
 		//relErr := relativePathCheck(name)
@@ -3506,6 +3507,182 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+//UserSignupPostHandler only handles POST requests, using forms named "username" and "password"
+// Signing up users as necessary, inside the AuthConf
+func UserSignupPostHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+	case "POST":
+		username := template.HTMLEscapeString(r.FormValue("username"))
+		password := template.HTMLEscapeString(r.FormValue("password"))
+		err := authState.NewUser(username, password)
+		if err != nil {
+			panic(err)
+		}
+
+		authState.SetSession("flash", "Successfully added '"+username+"' user.", w, r)
+		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
+
+	case "PUT":
+		// Update an existing record.
+	case "DELETE":
+		// Remove the record.
+	default:
+		// Give an error message.
+	}
+}
+
+//AdminUserPassChangePostHandler only handles POST requests, using forms named "username" and "password"
+// Signing up users as necessary, inside the AuthConf
+func AdminUserPassChangePostHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+	case "POST":
+		username := template.HTMLEscapeString(r.FormValue("username"))
+		password := template.HTMLEscapeString(r.FormValue("password"))
+		// Hash password now so if it fails we catch it before touching Bolt
+		//hash, err := passlib.Hash(password)
+		hash, err := auth.HashPassword([]byte(password))
+		if err != nil {
+			// couldn't hash password for some reason
+			log.Fatalln(err)
+			return
+		}
+
+		err = authState.UpdatePass(username, hash)
+		if err != nil {
+			panic(err)
+		}
+		authState.SetSession("flash", "Successfully changed '"+username+"' users password.", w, r)
+		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
+
+	case "PUT":
+		// Update an existing record.
+	case "DELETE":
+		// Remove the record.
+	default:
+		// Give an error message.
+	}
+}
+
+//AdminUserDeletePostHandler only handles POST requests, using forms named "username" and "password"
+// Signing up users as necessary, inside the AuthConf
+func AdminUserDeletePostHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+	case "POST":
+		username := template.HTMLEscapeString(r.FormValue("username"))
+
+		err := authState.DeleteUser(username)
+		if err != nil {
+			panic(err)
+		}
+		authState.SetSession("flash", "Successfully changed '"+username+"' users password.", w, r)
+		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
+
+	case "PUT":
+		// Update an existing record.
+	case "DELETE":
+		// Remove the record.
+	default:
+		// Give an error message.
+	}
+}
+
+//SignupPostHandler only handles POST requests, using forms named "username" and "password"
+// Signing up users as necessary, inside the AuthConf
+func SignupPostHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+	case "POST":
+		username := template.HTMLEscapeString(r.FormValue("username"))
+		password := template.HTMLEscapeString(r.FormValue("password"))
+		err := authState.NewUser(username, password)
+		if err != nil {
+			authState.SetSession("flash", "User registration failed.", w, r)
+			log.Println("Error registering user", err)
+			http.Redirect(w, r, "/signup", http.StatusSeeOther)
+			return
+		}
+		authState.SetSession("flash", "Successful user registration.", w, r)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+
+	case "PUT":
+		// Update an existing record.
+	case "DELETE":
+		// Remove the record.
+	default:
+		// Give an error message.
+	}
+}
+
+//LoginPostHandler only handles POST requests, verifying forms named "username" and "password"
+// Comparing values with LDAP or configured username/password combos
+func LoginPostHandler(w http.ResponseWriter, r *http.Request) {
+
+	switch r.Method {
+	case "GET":
+		// This should be handled in a separate function inside your app
+		/*
+			// Serve login page, replacing loginPageHandler
+			defer timeTrack(time.Now(), "loginPageHandler")
+			title := "login"
+			user := GetUsername(r)
+			//p, err := loadPage(title, r)
+			data := struct {
+				UN  string
+				Title string
+			}{
+				user,
+				title,
+			}
+			err := renderTemplate(w, "login.tmpl", data)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+		*/
+	case "POST":
+
+		// Handle login POST request
+		username := template.HTMLEscapeString(r.FormValue("username"))
+		password := template.HTMLEscapeString(r.FormValue("password"))
+		referer, _ := url.Parse(r.Referer())
+
+		// Check if we have a ?url= query string, from AuthMiddle
+		// Otherwise, just use the referrer
+		var r2 string
+		r2 = referer.Query().Get("url")
+		if r2 == "" {
+			r2 = r.Referer()
+			// if r.Referer is blank, just redirect to index
+			if r.Referer() == "" || referer.RequestURI() == "/login" {
+				r2 = "/"
+			}
+		}
+
+		// Login authentication
+		if authState.BoltAuth(username, password) {
+			authState.SetSession("user", username, w, r)
+			authState.SetSession("flash", "User '"+username+"' successfully logged in.", w, r)
+			http.Redirect(w, r, r2, http.StatusSeeOther)
+			return
+		}
+		authState.SetSession("flash", "User '"+username+"' failed to login. <br> Please check your credentials and try again.", w, r)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+
+	case "PUT":
+		// Update an existing record.
+	case "DELETE":
+		// Remove the record.
+	default:
+		// Give an error message.
+	}
+
 }
 
 func main() {
@@ -3598,15 +3775,15 @@ func main() {
 	admin.POST("/git/checkin", authState.AuthAdminMiddle(gitCheckinPostHandler))
 	admin.POST("/git/pull", authState.AuthAdminMiddle(gitPullPostHandler))
 	admin.GET("/users", authState.AuthAdminMiddle(adminUsersHandler))
-	admin.POST("/users", authState.AuthAdminMiddle(authState.UserSignupPostHandler))
+	admin.POST("/users", authState.AuthAdminMiddle(UserSignupPostHandler))
 	admin.POST("/user", authState.AuthAdminMiddle(adminUserPostHandler))
 	admin.GET("/user/:username", authState.AuthAdminMiddle(adminUserHandler))
 	admin.POST("/user/:username", authState.AuthAdminMiddle(adminUserHandler))
-	admin.POST("/user/password_change", authState.AuthAdminMiddle(authState.AdminUserPassChangePostHandler))
-	admin.POST("/user/delete", authState.AuthAdminMiddle(authState.AdminUserDeletePostHandler))
+	admin.POST("/user/password_change", authState.AuthAdminMiddle(AdminUserPassChangePostHandler))
+	admin.POST("/user/delete", authState.AuthAdminMiddle(AdminUserDeletePostHandler))
 
 	a := r.NewContextGroup("/auth")
-	a.POST("/login", authState.LoginPostHandler)
+	a.POST("/login", LoginPostHandler)
 	a.POST("/logout", authState.LogoutHandler)
 	a.GET("/logout", authState.LogoutHandler)
 	//a.POST("/signup", auth.SignupPostHandler)
