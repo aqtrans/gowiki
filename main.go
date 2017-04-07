@@ -321,7 +321,7 @@ type wikiRequestInfo struct {
 	pageExists bool
 }
 
-type wikiHandler struct {
+type Handler struct {
 	*wikiEnv
 	H func(*wikiEnv, http.ResponseWriter, *http.Request) error
 }
@@ -3475,8 +3475,8 @@ func markdownPreview(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(markdownRender([]byte(r.FormValue("md")))))
 }
 
-func wikiMiddle(next wikiHandler) wikiHandler {
-	return http.HandlerFunc(func(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func wikiMiddle(env *wikiEnv, next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		params := getParams(r.Context())
 		name := params["name"]
 		username, isAdmin := auth.GetUsername(r.Context())
@@ -3729,7 +3729,7 @@ func LoginPostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (h wikiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err := h.H(h.wikiEnv, w, r)
 	if err != nil {
 		log.Println("HTTP Error:", err)
@@ -3829,13 +3829,13 @@ func main() {
 
 	r.GET("/", indexHandler)
 
-	r.GET("/tags", wikiHandler{env, tagMapHandler})
+	r.GET("/tags", Handler{wikiCtx, tagMapHandler})
 	/*r.GET("/panic", func(w http.ResponseWriter, r *http.Request) {
 		panic("Unexpected error!")
 		//http.Error(w, panic("Unexpected error!"), http.StatusInternalServerError)
 	})*/
 
-	r.GET("/new", authState.AuthMiddle(newHandler))
+	r.GET("/new", wikiCtx.authState.AuthMiddle(newHandler))
 	//r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
 	r.GET("/login", loginPageHandler)
 	//r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
