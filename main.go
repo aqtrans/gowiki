@@ -8,6 +8,7 @@ package main
 // - bpool-powered template rendering based on https://elithrar.github.io/article/approximating-html-template-inheritance/
 //     - Used to catch rendering errors, so there's no half-rendered pages
 // - Using a map[string]struct{} for cache.Favs to easily check for uniqueness: http://stackoverflow.com/a/9251352
+// - go1.8+ http.Server.Shutdown() support: https://tylerchr.blog/golang-18-whats-coming/
 
 //TODO:
 // - wikidata should be periodically pushed to git@jba.io:conf/gowiki-data.git
@@ -44,6 +45,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path"
 	"path/filepath"
 	"sort"
@@ -3687,6 +3689,25 @@ func LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
+	// subscribe to SIGINT signals
+	stopChan := make(chan os.Signal)
+	signal.Notify(stopChan, os.Interrupt)
+	mux := http.NewServeMux()
+
+	/*
+		f, err := os.Create("trace.out")
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		err = trace.Start(f)
+		if err != nil {
+			panic(err)
+		}
+		defer trace.Stop()
+	*/
+
 	//viper.WatchConfig()
 
 	flag.Parse()
@@ -3810,13 +3831,34 @@ func main() {
 	//r.GET(`/new/*name`, auth.AuthMiddle(newHandler))
 	r.GET(`/*name`, wikiMiddle(viewHandler))
 
-	http.HandleFunc("/robots.txt", httputils.RobotsHandler)
-	http.HandleFunc("/favicon.ico", httputils.FaviconHandler)
-	http.HandleFunc("/favicon.png", httputils.FaviconHandler)
-	http.HandleFunc("/assets/", httputils.StaticHandler)
-	http.Handle("/", s.Then(r))
+	mux.HandleFunc("/robots.txt", httputils.RobotsHandler)
+	mux.HandleFunc("/favicon.ico", httputils.FaviconHandler)
+	mux.HandleFunc("/favicon.png", httputils.FaviconHandler)
+	mux.HandleFunc("/assets/", httputils.StaticHandler)
+	mux.Handle("/", s.Then(r))
 
 	log.Println("Listening on port " + viper.GetString("Port"))
-	checkErr("http.ListenAndServe", http.ListenAndServe("0.0.0.0:"+viper.GetString("Port"), nil))
+	//checkErr("http.ListenAndServe", http.ListenAndServe("0.0.0.0:"+viper.GetString("Port"), nil))
+
+	srv := &http.Server{
+		Addr:    "0.0.0.0:" + viper.GetString("Port"),
+		Handler: mux,
+	}
+
+	go func() {
+		// service connections
+		if err := srv.ListenAndServe(); err != nil {
+			log.Printf("listen: %s\n", err)
+		}
+	}()
+
+	<-stopChan // wait for SIGINT
+	log.Println("Shutting down server...")
+
+	// shut down gracefully, but wait no longer than 5 seconds before halting
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+	srv.Shutdown(ctx)
+
+	log.Println("Server gracefully stopped")
 
 }
