@@ -127,16 +127,16 @@ const (
 )
 
 var (
-	authState      *auth.AuthState
-	linkPattern    = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
-	bufpool        *bpool.BufferPool
-	templates      map[string]*template.Template
-	_24K           int64 = (1 << 20) * 24
-	fLocal         bool
-	fDebug         = httputils.Debug
-	fInit          bool
-	gitPath        string
-	cache          *wikiCache
+	//authState      *auth.AuthState
+	linkPattern = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
+	//bufpool        *bpool.BufferPool
+	//templates      map[string]*template.Template
+	_24K    int64 = (1 << 20) * 24
+	fLocal  bool
+	fDebug  = httputils.Debug
+	fInit   bool
+	gitPath string
+	//cache          *wikiCache
 	errNotInGit    = errors.New("given file not in Git repo")
 	errNoFile      = errors.New("no such file")
 	errNoDirIndex  = errors.New("no such directory index")
@@ -285,9 +285,45 @@ type commitLog struct {
 	Message  string
 }
 
-type jsonfresponse struct {
-	Href string `json:"href,omitempty"`
-	Name string `json:"name,omitempty"`
+// Error represents a handler error. It provides methods for a HTTP status
+// code and embeds the built-in error interface.
+type Error interface {
+	error
+	Status() int
+}
+
+// StatusError represents an error with an associated HTTP status code.
+type StatusError struct {
+	Code int
+	Err  error
+}
+
+// Allows StatusError to satisfy the error interface.
+func (se StatusError) Error() string {
+	return se.Err.Error()
+}
+
+// Returns our HTTP status code.
+func (se StatusError) Status() int {
+	return se.Code
+}
+
+type wikiEnv struct {
+	authState *auth.AuthState
+	cache     *wikiCache
+	templates map[string]*template.Template
+	userInfo  *userInfo
+	wikiInfo  *wikiRequestInfo
+}
+
+type wikiRequestInfo struct {
+	pageName   string
+	pageExists bool
+}
+
+type wikiHandler struct {
+	*wikiEnv
+	H func(*wikiEnv, http.ResponseWriter, *http.Request) error
 }
 
 type wHandler func(http.ResponseWriter, *http.Request, string)
@@ -357,19 +393,22 @@ func init() {
 	flag.BoolVar(&httputils.Debug, "d", false, "Enabled debug logging")
 	//Flag '-init' enables pulling of remote git repo into wikiDir
 	flag.BoolVar(&fInit, "init", false, "Enable auto-cloning of remote wikiDir")
-
-	bufpool = bpool.NewBufferPool(64)
-	if templates == nil {
-		templates = make(map[string]*template.Template)
-	}
+	/*
+		bufpool = bpool.NewBufferPool(64)
+		if templates == nil {
+			templates = make(map[string]*template.Template)
+		}
+	*/
 
 	gitPath, err = exec.LookPath("git")
 	if err != nil {
 		log.Fatalln("git must be installed")
 	}
-	if cache == nil {
-		cache = new(wikiCache)
-	}
+	/*
+		if cache == nil {
+			cache = new(wikiCache)
+		}
+	*/
 	/*
 		templatesDir := "./templates/"
 		layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
@@ -1072,7 +1111,7 @@ func gitGetTimes(filename string) (ctime int64, mtime int64) {
 	return ctime, mtime
 }
 
-func loadPage(r *http.Request) *page {
+func loadPage(env *wikiEnv, r *http.Request) *page {
 	defer httputils.TimeTrack(time.Now(), "loadPage")
 	//timer.Step("loadpageFunc")
 
@@ -1113,8 +1152,8 @@ func loadPage(r *http.Request) *page {
 		}
 	*/
 
-	favs := cache.Favs
-	if cache.Favs == nil {
+	favs := env.cache.Favs
+	if env.cache.Favs == nil {
 		favs = make(map[string]struct{})
 	}
 
@@ -1145,17 +1184,17 @@ func gitIsCleanURLs(err error, token template.HTML) template.HTML {
 	}
 }
 
-func historyHandler(w http.ResponseWriter, r *http.Request) {
+func historyHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	name := nameFromContext(r.Context())
 	wikiExists := wikiExistsFromContext(r.Context())
 	if !wikiExists {
 		httputils.Debugln("wikiExists false: No such file...creating one.")
 		//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
-		createWiki(w, r, name)
+		createWiki(env, w, r, name)
 		return
 	}
 
-	wikip := loadWikiPage(r, name)
+	wikip := loadWikiPage(env, r, name)
 
 	history, err := gitGetFileLog(name)
 	if err != nil {
@@ -1167,7 +1206,7 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 		name,
 		history,
 	}
-	renderTemplate(w, r.Context(), "wiki_history.tmpl", hp)
+	renderTemplate(env, w, r.Context(), "wiki_history.tmpl", hp)
 }
 
 // Need to get content of the file at specified commit
@@ -1175,13 +1214,13 @@ func historyHandler(w http.ResponseWriter, r *http.Request) {
 // As well as the date
 // > git log -1 --format=%at [commit sha1]
 // TODO: need to find a way to detect sha1s
-func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name string) {
+func viewCommitHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request, commit, name string) {
 	var fm frontmatter
 	var pageContent string
 
 	//commit := vars["commit"]
 
-	p := loadPage(r)
+	p := loadPage(env, r)
 
 	body, err := gitGetFileCommit(name, commit)
 	if err != nil {
@@ -1230,14 +1269,14 @@ func viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name stri
 		Diff:     diffstring,
 	}
 
-	renderTemplate(w, r.Context(), "wiki_commit.tmpl", cp)
+	renderTemplate(env, w, r.Context(), "wiki_commit.tmpl", cp)
 
 }
 
 // TODO: Fix this
-func recentHandler(w http.ResponseWriter, r *http.Request) {
+func recentHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 
-	p := loadPage(r)
+	p := loadPage(env, r)
 
 	gh, err := gitHistory()
 	checkErr("recentHandler()/gitHistory", err)
@@ -1272,16 +1311,16 @@ func recentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s := &recentsPage{p, recents}
-	renderTemplate(w, r.Context(), "recents.tmpl", s)
+	renderTemplate(env, w, r.Context(), "recents.tmpl", s)
 
 }
 
-func listHandler(w http.ResponseWriter, r *http.Request) {
+func listHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 
-	p := loadPage(r)
+	p := loadPage(env, r)
 
-	l := &listPage{p, cache.Cache["private"], cache.Cache["public"], cache.Cache["admin"]}
-	renderTemplate(w, r.Context(), "list.tmpl", l)
+	l := &listPage{p, env.cache.Cache["private"], env.cache.Cache["public"], env.cache.Cache["admin"]}
+	renderTemplate(env, w, r.Context(), "list.tmpl", l)
 }
 
 func readFileAndFront(filename string) (frontmatter, []byte) {
@@ -1494,14 +1533,15 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 	return fm
 }
 
-func renderTemplate(w http.ResponseWriter, c context.Context, name string, data interface{}) {
-	tmpl, ok := templates[name]
+func renderTemplate(env *wikiEnv, w http.ResponseWriter, c context.Context, name string, data interface{}) {
+	tmpl, ok := env.templates[name]
 	if !ok {
 		log.Println(fmt.Errorf("The template %s does not exist", name))
 		panic(fmt.Errorf("The template %s does not exist", name))
 	}
 
 	// Create buffer to write to and check for errors
+	bufpool := bpool.NewBufferPool(64)
 	buf := bufpool.Get()
 	err := tmpl.ExecuteTemplate(buf, "base", data)
 	if err != nil {
@@ -1701,7 +1741,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	//viewHandler(w, r, "index")
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request) {
+func viewHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "viewHandler")
 
 	name := nameFromContext(r.Context())
@@ -1727,7 +1767,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	if !wikiExists {
 		httputils.Debugln("wikiExists false: No such file...creating one.")
 		//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
-		createWiki(w, r, name)
+		createWiki(env, w, r, name)
 		return
 	}
 
@@ -1735,25 +1775,25 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("commit") != "" {
 		commit := r.URL.Query().Get("commit")
 		//utils.Debugln(r.URL.Query().Get("commit"))
-		viewCommitHandler(w, r, commit, name)
+		viewCommitHandler(env, w, r, commit, name)
 		return
 	}
 
 	// Get Wiki
-	p := loadWikiPage(r, name)
+	p := loadWikiPage(env, r, name)
 
-	renderTemplate(w, r.Context(), "wiki_view.tmpl", p)
+	renderTemplate(env, w, r.Context(), "wiki_view.tmpl", p)
 }
 
-func editHandler(w http.ResponseWriter, r *http.Request) {
+func editHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "editHandler")
 	name := nameFromContext(r.Context())
-	p := loadWikiPage(r, name)
-	renderTemplate(w, r.Context(), "wiki_edit.tmpl", p)
+	p := loadWikiPage(env, r, name)
+	renderTemplate(env, w, r.Context(), "wiki_edit.tmpl", p)
 	return
 }
 
-func saveHandler(w http.ResponseWriter, r *http.Request) {
+func saveHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "saveHandler")
 
 	name := nameFromContext(r.Context())
@@ -1813,7 +1853,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	go refreshStuff()
 
-	authState.SetFlash("Wiki page successfully saved.", w, r)
+	env.authState.SetFlash("Wiki page successfully saved.", w, r)
 	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
 	log.Println(name + " page saved!")
 }
@@ -1882,12 +1922,12 @@ func urlFromPath(path string) string {
 	return strings.TrimPrefix(path, url)
 }
 
-func favsHandler(favs chan []string) {
+func favsHandler(env *wikiEnv, favs chan []string) {
 	defer httputils.TimeTrack(time.Now(), "favsHandler")
 
 	//favss := favbuf.String()
 	var sfavs []string
-	for fav := range cache.Favs {
+	for fav := range env.cache.Favs {
 		sfavs = append(sfavs, fav)
 	}
 
@@ -1940,7 +1980,7 @@ type Wiki struct {
     Content      string
 }*/
 /////////////////////////////
-func loadWikiPage(r *http.Request, name string) *wikiPage {
+func loadWikiPage(env *wikiEnv, r *http.Request, name string) *wikiPage {
 	defer httputils.TimeTrack(time.Now(), "loadWikiPage")
 
 	var thePage *page
@@ -1951,7 +1991,7 @@ func loadWikiPage(r *http.Request, name string) *wikiPage {
 	theMarkdownChan := make(chan string)
 
 	go func() {
-		p := loadPage(r)
+		p := loadPage(env, r)
 		thePageChan <- p
 	}()
 
@@ -2080,39 +2120,39 @@ func (wiki *wiki) save() error {
 
 }
 
-func loginPageHandler(w http.ResponseWriter, r *http.Request) {
+func loginPageHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "loginPageHandler")
 
 	title := "login"
-	p := loadPage(r)
+	p := loadPage(env, r)
 
 	gp := &genPage{
 		p,
 		title,
 	}
-	renderTemplate(w, r.Context(), "login.tmpl", gp)
+	renderTemplate(env, w, r.Context(), "login.tmpl", gp)
 }
 
-func signupPageHandler(w http.ResponseWriter, r *http.Request) {
+func signupPageHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "signupPageHandler")
 
 	title := "signup"
-	p := loadPage(r)
+	p := loadPage(env, r)
 
 	gp := &genPage{
 		p,
 		title,
 	}
-	renderTemplate(w, r.Context(), "signup.tmpl", gp)
+	renderTemplate(env, w, r.Context(), "signup.tmpl", gp)
 }
 
-func adminUsersHandler(w http.ResponseWriter, r *http.Request) {
+func adminUsersHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminUsersHandler")
 
 	title := "admin-users"
-	p := loadPage(r)
+	p := loadPage(env, r)
 
-	userlist, err := authState.Userlist()
+	userlist, err := env.authState.Userlist()
 	if err != nil {
 		panic(err)
 	}
@@ -2130,17 +2170,17 @@ func adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 	}*/
-	renderTemplate(w, r.Context(), "admin_users.tmpl", data)
+	renderTemplate(env, w, r.Context(), "admin_users.tmpl", data)
 
 }
 
-func adminUserHandler(w http.ResponseWriter, r *http.Request) {
+func adminUserHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminUserHandler")
 
 	title := "admin-user"
-	p := loadPage(r)
+	p := loadPage(env, r)
 
-	userlist, err := authState.Userlist()
+	userlist, err := env.authState.Userlist()
 	if err != nil {
 		panic(err)
 	}
@@ -2164,7 +2204,7 @@ func adminUserHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 	}*/
-	renderTemplate(w, r.Context(), "admin_user.tmpl", data)
+	renderTemplate(env, w, r.Context(), "admin_user.tmpl", data)
 }
 
 // Function to take a <select><option> value and redirect to a URL based on it
@@ -2174,20 +2214,20 @@ func adminUserPostHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/admin/user/"+selectedUser, http.StatusSeeOther)
 }
 
-func adminMainHandler(w http.ResponseWriter, r *http.Request) {
+func adminMainHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminMainHandler")
 
 	title := "admin-main"
-	p := loadPage(r)
+	p := loadPage(env, r)
 
 	gp := &genPage{
 		p,
 		title,
 	}
-	renderTemplate(w, r.Context(), "admin_main.tmpl", gp)
+	renderTemplate(env, w, r.Context(), "admin_main.tmpl", gp)
 }
 
-func adminConfigHandler(w http.ResponseWriter, r *http.Request) {
+func adminConfigHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminConfigHandler")
 
 	var cfg configuration
@@ -2196,7 +2236,7 @@ func adminConfigHandler(w http.ResponseWriter, r *http.Request) {
 	checkErr("adminConfigHandler()/viper.Unmarshal", err)
 
 	title := "admin-config"
-	p := loadPage(r)
+	p := loadPage(env, r)
 
 	data := struct {
 		*page
@@ -2207,7 +2247,7 @@ func adminConfigHandler(w http.ResponseWriter, r *http.Request) {
 		title,
 		cfg,
 	}
-	renderTemplate(w, r.Context(), "admin_config.tmpl", data)
+	renderTemplate(env, w, r.Context(), "admin_config.tmpl", data)
 }
 
 func adminConfigPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -2251,11 +2291,11 @@ func adminConfigPostHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
+func gitCheckinHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "gitCheckinHandler")
 
 	title := "Git Checkin"
-	p := loadPage(r)
+	p := loadPage(env, r)
 
 	var s string
 
@@ -2279,7 +2319,7 @@ func gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 		s,
 		viper.GetString("GitRepo"),
 	}
-	renderTemplate(w, r.Context(), "git_checkin.tmpl", gp)
+	renderTemplate(env, w, r.Context(), "git_checkin.tmpl", gp)
 }
 
 func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -2335,11 +2375,11 @@ func gitPullPostHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func adminGitHandler(w http.ResponseWriter, r *http.Request) {
+func adminGitHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminGitHandler")
 
 	title := "Git Management"
-	p := loadPage(r)
+	p := loadPage(env, r)
 
 	//var owithnewlines []byte
 
@@ -2362,28 +2402,28 @@ func adminGitHandler(w http.ResponseWriter, r *http.Request) {
 		err.Error(),
 		viper.GetString("GitRepo"),
 	}
-	renderTemplate(w, r.Context(), "admin_git.tmpl", gp)
+	renderTemplate(env, w, r.Context(), "admin_git.tmpl", gp)
 }
 
-func tagMapHandler(w http.ResponseWriter, r *http.Request) {
+func tagMapHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "tagMapHandler")
 
-	p := loadPage(r)
+	p := loadPage(env, r)
 
 	tagpage := &tagMapPage{
 		page:    p,
-		TagKeys: cache.Tags,
+		TagKeys: env.cache.Tags,
 	}
-	renderTemplate(w, r.Context(), "tag_list.tmpl", tagpage)
+	renderTemplate(env, w, r.Context(), "tag_list.tmpl", tagpage)
 }
 
-func createWiki(w http.ResponseWriter, r *http.Request, name string) {
+func createWiki(env *wikiEnv, w http.ResponseWriter, r *http.Request, name string) {
 	//username, _ := auth.GetUsername(r.Context())
 	//if username != "" {
 	if auth.IsLoggedIn(r.Context()) {
 		w.WriteHeader(404)
 		//title := "Create " + name + "?"
-		p := loadPage(r)
+		p := loadPage(env, r)
 
 		/*gp := &genPage{
 			p,
@@ -2399,11 +2439,11 @@ func createWiki(w http.ResponseWriter, r *http.Request, name string) {
 				},
 			},
 		}
-		renderTemplate(w, r.Context(), "wiki_create.tmpl", wp)
+		renderTemplate(env, w, r.Context(), "wiki_create.tmpl", wp)
 		return
 	}
 
-	authState.SetFlash("Please login to view that page.", w, r)
+	env.authState.SetFlash("Please login to view that page.", w, r)
 	//h := viper.GetString("Domain")
 	http.Redirect(w, r, "/login"+"?url="+r.URL.String(), http.StatusSeeOther)
 	return
@@ -2571,7 +2611,7 @@ func timer(next http.Handler) http.Handler {
 	})
 }
 
-func riceInit() error {
+func riceInit(env *wikiEnv) error {
 	// Parent templates directory named 'templates'
 	templateBox, err := rice.FindBox("templates")
 	checkErrReturn("riceInit()/FindBox", err)
@@ -2607,7 +2647,7 @@ func riceInit() error {
 		//utils.Debugln(files)
 		lString, _ := templateBox.String("layouts/" + layout.Name())
 		fstring := templateIBuff.String() + lString
-		templates[layout.Name()] = template.Must(template.New(layout.Name()).Funcs(funcMap).Parse(fstring))
+		env.templates[layout.Name()] = template.Must(template.New(layout.Name()).Funcs(funcMap).Parse(fstring))
 	}
 	return nil
 }
@@ -2839,7 +2879,7 @@ func setPageTitle(frontmatterTitle, filename string) string {
 	return name
 }
 
-func search(w http.ResponseWriter, r *http.Request) {
+func search(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	index, err := bleve.Open("./data/index.bleve")
 	check(err)
 	defer index.Close()
@@ -2864,7 +2904,7 @@ func search(w http.ResponseWriter, r *http.Request) {
 		log.Println(fields)
 	*/
 
-	p := loadPage(r)
+	p := loadPage(env, r)
 
 	//query := bleve.NewMatchQuery(name)
 
@@ -2908,13 +2948,13 @@ func search(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s := &searchPage{p, results}
-	renderTemplate(w, r.Context(), "search_results.tmpl", s)
+	renderTemplate(env, w, r.Context(), "search_results.tmpl", s)
 }
 
-func buildCache() {
+func buildCache() *wikiCache {
 	fileList, err := gitLs()
 	check(err)
-	cache = new(wikiCache)
+	cache := new(wikiCache)
 	if cache.Cache == nil {
 		cache.Cache = make(map[string][]*wiki)
 	}
@@ -3039,10 +3079,11 @@ func buildCache() {
 	cacheEncoder := gob.NewEncoder(cacheFile)
 	cacheEncoder.Encode(cache)
 	cacheFile.Close()
+	return cache
 }
 
-func loadCache() {
-	cache = new(wikiCache)
+func loadCache() *wikiCache {
+	cache := new(wikiCache)
 	cacheFile, err := os.Open("./data/cache.gob")
 	defer cacheFile.Close()
 	if err == nil {
@@ -3052,19 +3093,20 @@ func loadCache() {
 		//check(err)
 		if err != nil {
 			log.Println("Error loading cache. Rebuilding it.")
-			buildCache()
+			cache = buildCache()
 		}
 		// Check the cached sha1 versus HEAD sha1, rebuild if they differ
 		if cache.SHA1 != headHash() {
 			log.Println("Cache SHA1s do not match. Rebuilding cache.")
-			buildCache()
+			cache = buildCache()
 		}
 	}
 	// If cache does not exist, build it
 	if os.IsNotExist(err) {
 		log.Println("Cache does not exist, building it.")
-		buildCache()
+		cache = buildCache()
 	}
+	return cache
 }
 
 func headHash() string {
@@ -3075,7 +3117,7 @@ func headHash() string {
 	return head.Hash().String()
 }
 
-func crawlWikiFromCache() {
+func crawlWikiFromCache(cache *wikiCache) {
 	index, err := bleve.Open("./data/index.bleve")
 	if err != nil {
 		// If there's some weird error, just nuke the bleve index and start over
@@ -3422,8 +3464,8 @@ func refreshStuff() {
 	//crawlWiki()
 	//saveCache()
 	//log.Println(cache.Cache)
-	loadCache()
-	crawlWikiFromCache()
+	cache := loadCache()
+	crawlWikiFromCache(cache)
 
 }
 
@@ -3433,8 +3475,8 @@ func markdownPreview(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(markdownRender([]byte(r.FormValue("md")))))
 }
 
-func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func wikiMiddle(next wikiHandler) wikiHandler {
+	return http.HandlerFunc(func(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 		params := getParams(r.Context())
 		name := params["name"]
 		username, isAdmin := auth.GetUsername(r.Context())
@@ -3471,7 +3513,7 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			// If this is an admin page, check if user is admin before serving
 			if fm.Permission == "admin" && !isAdmin {
 				log.Println(username + " attempting to access restricted URL.")
-				authState.SetFlash("Sorry, you are not allowed to see that.", w, r)
+				env.authState.SetFlash("Sorry, you are not allowed to see that.", w, r)
 				http.Redirect(w, r.WithContext(ctx), "/", http.StatusSeeOther)
 				return
 			}
@@ -3502,7 +3544,7 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			if strings.HasPrefix(rurl, "login?url=/login") {
 				panic("AuthMiddle is in an endless redirect loop")
 			}
-			authState.SetFlash("Please login to view that page.", w, r)
+			env.authState.SetFlash("Please login to view that page.", w, r)
 			http.Redirect(w, r.WithContext(ctx), "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
 			return
 		}
@@ -3513,18 +3555,18 @@ func wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 
 //UserSignupPostHandler only handles POST requests, using forms named "username" and "password"
 // Signing up users as necessary, inside the AuthConf
-func UserSignupPostHandler(w http.ResponseWriter, r *http.Request) {
+func UserSignupPostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 	case "POST":
 		username := template.HTMLEscapeString(r.FormValue("username"))
 		password := template.HTMLEscapeString(r.FormValue("password"))
-		err := authState.NewUser(username, password)
+		err := env.authState.NewUser(username, password)
 		if err != nil {
 			panic(err)
 		}
 
-		authState.SetSession("flash", "Successfully added '"+username+"' user.", w, r)
+		env.authState.SetSession("flash", "Successfully added '"+username+"' user.", w, r)
 		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 
 	case "PUT":
@@ -3538,7 +3580,7 @@ func UserSignupPostHandler(w http.ResponseWriter, r *http.Request) {
 
 //AdminUserPassChangePostHandler only handles POST requests, using forms named "username" and "password"
 // Signing up users as necessary, inside the AuthConf
-func AdminUserPassChangePostHandler(w http.ResponseWriter, r *http.Request) {
+func AdminUserPassChangePostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 	case "POST":
@@ -3553,11 +3595,11 @@ func AdminUserPassChangePostHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = authState.UpdatePass(username, hash)
+		err = env.authState.UpdatePass(username, hash)
 		if err != nil {
 			panic(err)
 		}
-		authState.SetSession("flash", "Successfully changed '"+username+"' users password.", w, r)
+		env.authState.SetSession("flash", "Successfully changed '"+username+"' users password.", w, r)
 		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 
 	case "PUT":
@@ -3571,17 +3613,17 @@ func AdminUserPassChangePostHandler(w http.ResponseWriter, r *http.Request) {
 
 //AdminUserDeletePostHandler only handles POST requests, using forms named "username" and "password"
 // Signing up users as necessary, inside the AuthConf
-func AdminUserDeletePostHandler(w http.ResponseWriter, r *http.Request) {
+func AdminUserDeletePostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 	case "POST":
 		username := template.HTMLEscapeString(r.FormValue("username"))
 
-		err := authState.DeleteUser(username)
+		err := env.authState.DeleteUser(username)
 		if err != nil {
 			panic(err)
 		}
-		authState.SetSession("flash", "Successfully changed '"+username+"' users password.", w, r)
+		env.authState.SetSession("flash", "Successfully changed '"+username+"' users password.", w, r)
 		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 
 	case "PUT":
@@ -3595,20 +3637,20 @@ func AdminUserDeletePostHandler(w http.ResponseWriter, r *http.Request) {
 
 //SignupPostHandler only handles POST requests, using forms named "username" and "password"
 // Signing up users as necessary, inside the AuthConf
-func SignupPostHandler(w http.ResponseWriter, r *http.Request) {
+func SignupPostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 	case "POST":
 		username := template.HTMLEscapeString(r.FormValue("username"))
 		password := template.HTMLEscapeString(r.FormValue("password"))
-		err := authState.NewUser(username, password)
+		err := env.authState.NewUser(username, password)
 		if err != nil {
-			authState.SetSession("flash", "User registration failed.", w, r)
+			env.authState.SetSession("flash", "User registration failed.", w, r)
 			log.Println("Error registering user", err)
 			http.Redirect(w, r, "/signup", http.StatusSeeOther)
 			return
 		}
-		authState.SetSession("flash", "Successful user registration.", w, r)
+		env.authState.SetSession("flash", "Successful user registration.", w, r)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 
@@ -3623,7 +3665,7 @@ func SignupPostHandler(w http.ResponseWriter, r *http.Request) {
 
 //LoginPostHandler only handles POST requests, verifying forms named "username" and "password"
 // Comparing values with LDAP or configured username/password combos
-func LoginPostHandler(w http.ResponseWriter, r *http.Request) {
+func LoginPostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
@@ -3667,13 +3709,13 @@ func LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Login authentication
-		if authState.BoltAuth(username, password) {
-			authState.SetSession("user", username, w, r)
-			authState.SetSession("flash", "User '"+username+"' successfully logged in.", w, r)
+		if env.authState.BoltAuth(username, password) {
+			env.authState.SetSession("user", username, w, r)
+			env.authState.SetSession("flash", "User '"+username+"' successfully logged in.", w, r)
 			http.Redirect(w, r, r2, http.StatusSeeOther)
 			return
 		}
-		authState.SetSession("flash", "User '"+username+"' failed to login. <br> Please check your credentials and try again.", w, r)
+		env.authState.SetSession("flash", "User '"+username+"' failed to login. <br> Please check your credentials and try again.", w, r)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 
@@ -3685,6 +3727,14 @@ func LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 		// Give an error message.
 	}
 
+}
+
+func (h wikiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	err := h.H(h.wikiEnv, w, r)
+	if err != nil {
+		log.Println("HTTP Error:", err)
+		errorHandler(w, r, err)
+	}
 }
 
 func main() {
@@ -3715,9 +3765,19 @@ func main() {
 	httputils.AssetsBox = rice.MustFindBox("assets")
 
 	// Bring up authState
-	var err error
-	authState, err = auth.NewAuthState("./data/auth.db", viper.GetString("AdminUser"))
+	//var err error
+	anAuthState, err := auth.NewAuthState("./data/auth.db", viper.GetString("AdminUser"))
 	check(err)
+
+	theCache := loadCache()
+
+	wikiCtx := &wikiEnv{
+		authState: anAuthState,
+		cache:     theCache,
+		templates: make(map[string]*template.Template),
+	}
+
+	crawlWikiFromCache(theCache)
 
 	// Set a static auth.HashKey and BlockKey to keep sessions after restarts:
 	/*
@@ -3732,7 +3792,7 @@ func main() {
 		defer auth.Authdb.Close()
 	*/
 
-	err = riceInit()
+	err = riceInit(wikiCtx)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -3754,7 +3814,7 @@ func main() {
 	}
 
 	// HTTP stuff from here on out
-	s := alice.New(timer, httputils.Logger, authState.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
+	s := alice.New(timer, httputils.Logger, wikiCtx.authState.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
 	//w := s.Append(wikiMiddle)
 
 	//h := httptreemux.New()
@@ -3769,7 +3829,7 @@ func main() {
 
 	r.GET("/", indexHandler)
 
-	r.GET("/tags", tagMapHandler)
+	r.GET("/tags", wikiHandler{env, tagMapHandler})
 	/*r.GET("/panic", func(w http.ResponseWriter, r *http.Request) {
 		panic("Unexpected error!")
 		//http.Error(w, panic("Unexpected error!"), http.StatusInternalServerError)
