@@ -35,6 +35,7 @@ install-go:
     - export PATH=$PATH:$GOROOT/bin
     - export PATH=$PATH:$GOPATH/bin
     - mv $CI_PROJECT_DIR/* $GOPATH/src/wiki/
+    - mv $CI_PROJECT_DIR/.git $GOPATH/src/wiki/
     - go version
     - echo $PATH
     - go env
