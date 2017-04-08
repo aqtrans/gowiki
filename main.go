@@ -148,6 +148,10 @@ var (
 	errGitDiverged = errors.New("Wiki git repo has diverged; Need to intervene manually.")
 )
 
+type Box struct {
+	*rice.Box
+}
+
 type renderer struct {
 	*blackfriday.Html
 }
@@ -3692,6 +3696,58 @@ func (env *wikiEnv) LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// This serves a file of the requested name from the "assets" rice box
+func (a *Box) ServeRiceAsset(w http.ResponseWriter, r *http.Request, file string) {
+	f, err := a.Box.HTTPBox().Open(file)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	content := io.ReadSeeker(f)
+	http.ServeContent(w, r, file, time.Now(), content)
+	return
+}
+
+// Taken from http://reinbach.com/golang-webapps-1.html
+func (a *Box) StaticHandler(w http.ResponseWriter, r *http.Request) {
+	staticFile := r.URL.Path[len("/assets/"):]
+
+	defer httputils.TimeTrack(time.Now(), "StaticHandler "+staticFile)
+
+	//log.Println(staticFile)
+	if len(staticFile) != 0 {
+		a.ServeRiceAsset(w, r, staticFile)
+		return
+	}
+	http.NotFound(w, r)
+	return
+}
+
+func (a *Box) FaviconHandler(w http.ResponseWriter, r *http.Request) {
+	//log.Println(r.URL.Path)
+	if r.URL.Path == "/favicon.ico" {
+		a.ServeRiceAsset(w, r, "/favicon.ico")
+		return
+	} else if r.URL.Path == "/favicon.png" {
+		a.ServeRiceAsset(w, r, "/favicon.png")
+		return
+	} else {
+		http.NotFound(w, r)
+		return
+	}
+
+}
+
+func (a *Box) RobotsHandler(w http.ResponseWriter, r *http.Request) {
+	//log.Println(r.URL.Path)
+	if r.URL.Path == "/robots.txt" {
+		a.ServeRiceAsset(w, r, "/robots.txt")
+		return
+	}
+	http.NotFound(w, r)
+	return
+}
+
 func main() {
 
 	// subscribe to SIGINT signals
@@ -3719,7 +3775,11 @@ func main() {
 
 	//httputils.AssetsBox = rice.MustFindBox("assets")
 
-	assetBox := httputils.OpenAssetBox("assets")
+	assetBox := &Box{
+		rice.MustFindBox("assets"),
+	}
+
+	//assetBox := httputils.OpenAssetBox("assets")
 
 	// Bring up authState
 	//var err error
