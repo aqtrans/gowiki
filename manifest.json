@@ -6,9 +6,6 @@
         "github.com/GeertJohan/go.rice": {
             "branch": "master"
         },
-        "github.com/aqtrans/ctx-csrf": {
-            "branch": "master"
-        },
         "github.com/blevesearch/bleve": {
             "branch": "master"
         },
@@ -34,7 +31,7 @@
             "branch": "master"
         },
         "gopkg.in/yaml.v2": {
-            "branch": "master"
+            "branch": "v2"
         },
         "jba.io/go/auth": {
             "branch": "master"

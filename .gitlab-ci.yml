@@ -48,7 +48,9 @@ build-my-project:
     - export PATH=$GOROOT/bin:$PATH 
     - export PATH=$GOPATH/bin:$PATH  
     - cd $GOPATH/src/wiki
-    - go get -d  
+    - go get -u github.com/golang/dep/...
+    - dep ensure
+    - go get -d
     - go get github.com/GeertJohan/go.rice/rice
     - rice embed-go
     - go build
@@ -61,6 +63,8 @@ test-my-project:
     - export PATH=$GOROOT/bin:$PATH 
     - export PATH=$GOPATH/bin:$PATH
     - cd $GOPATH/src/wiki
+    - go get -u github.com/golang/dep/...
+    - dep ensure    
     - go get github.com/boltdb/bolt
     - go test -v
 
@@ -75,6 +79,8 @@ deploy-it:
     - export PATH=$GOPATH/bin:$PATH  
     - cd $GOPATH/src/wiki
     - mkdir deploy
+    - go get -u github.com/golang/dep/...
+    - dep ensure    
     - go get -d
     - go get github.com/GeertJohan/go.rice/rice
     - npm install
