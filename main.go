@@ -67,6 +67,7 @@ import (
 	"github.com/dimfeld/httptreemux"
 	"github.com/getsentry/raven-go"
 	"github.com/gorilla/csrf"
+	//"github.com/pelletier/go-toml"
 	//"github.com/microcosm-cc/bluemonday"
 	"encoding/gob"
 	"github.com/spf13/viper"
@@ -3716,7 +3717,9 @@ func main() {
 
 	flag.Parse()
 
-	httputils.AssetsBox = rice.MustFindBox("assets")
+	//httputils.AssetsBox = rice.MustFindBox("assets")
+
+	assetBox := httputils.OpenAssetBox("assets")
 
 	// Bring up authState
 	//var err error
@@ -3845,10 +3848,10 @@ func main() {
 	//r.GET(`/new/*name`, auth.AuthMiddle(newHandler))
 	r.GET(`/*name`, env.wikiMiddle(env.viewHandler))
 
-	mux.HandleFunc("/robots.txt", httputils.RobotsHandler)
-	mux.HandleFunc("/favicon.ico", httputils.FaviconHandler)
-	mux.HandleFunc("/favicon.png", httputils.FaviconHandler)
-	mux.HandleFunc("/assets/", httputils.StaticHandler)
+	mux.HandleFunc("/robots.txt", assetBox.RobotsHandler)
+	mux.HandleFunc("/favicon.ico", assetBox.FaviconHandler)
+	mux.HandleFunc("/favicon.png", assetBox.FaviconHandler)
+	mux.HandleFunc("/assets/", assetBox.StaticHandler)
 	mux.Handle("/", s.Then(r))
 
 	log.Println("Listening on port " + viper.GetString("Port"))
