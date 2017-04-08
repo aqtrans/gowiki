@@ -7,3 +7,4 @@ wiki
 data/**
 rice-box.go
 npm-debug.log
+vendor/**
