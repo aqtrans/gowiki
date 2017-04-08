@@ -34,7 +34,7 @@ install-go:
     - export GOPATH=$HOME/gopath
     - export PATH=$PATH:$GOROOT/bin
     - export PATH=$PATH:$GOPATH/bin
-    - ln -s $CI_PROJECT_DIR $GOPATH/src/wiki
+    - mv $CI_PROJECT_DIR/* $GOPATH/src/wiki/
     - go version
     - echo $PATH
     - go env
@@ -46,7 +46,8 @@ build-my-project:
     - export GOROOT=$HOME/golang/go
     - export GOPATH=$HOME/gopath
     - export PATH=$GOROOT/bin:$PATH 
-    - export PATH=$GOPATH/bin:$PATH  
+    - export PATH=$GOPATH/bin:$PATH
+    - mv $CI_PROJECT_DIR/* $GOPATH/src/wiki/
     - cd $GOPATH/src/wiki
     - go get -u github.com/golang/dep/...
     - dep ensure
@@ -62,6 +63,7 @@ test-my-project:
     - export GOPATH=$HOME/gopath
     - export PATH=$GOROOT/bin:$PATH 
     - export PATH=$GOPATH/bin:$PATH
+    - mv $CI_PROJECT_DIR/* $GOPATH/src/wiki/
     - cd $GOPATH/src/wiki
     - go get -u github.com/golang/dep/...
     - dep ensure    
@@ -76,7 +78,8 @@ deploy-it:
     - export GOROOT=$HOME/golang/go
     - export GOPATH=$HOME/gopath
     - export PATH=$GOROOT/bin:$PATH 
-    - export PATH=$GOPATH/bin:$PATH  
+    - export PATH=$GOPATH/bin:$PATH
+    - mv $CI_PROJECT_DIR/* $GOPATH/src/wiki/
     - cd $GOPATH/src/wiki
     - mkdir deploy
     - go get -u github.com/golang/dep/...
