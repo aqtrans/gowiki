@@ -51,7 +51,7 @@ build-my-project:
     - export PATH=$GOPATH/bin:$PATH
     - cd $GOPATH/src/wiki
     - dep ensure
-    - go get -d
+    - go get -d -u
     - go get github.com/GeertJohan/go.rice/rice
     - rice embed-go
     - go build
@@ -79,7 +79,7 @@ deploy-it:
     - cd $GOPATH/src/wiki
     - mkdir deploy
     - dep ensure    
-    - go get -d
+    - go get -d -u
     - go get github.com/GeertJohan/go.rice/rice
     - npm install
     - npm install bower
