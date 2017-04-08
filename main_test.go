@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/boltdb/bolt"
+	//"github.com/boltdb/bolt"
 	"github.com/dimfeld/httptreemux"
 	"github.com/spf13/viper"
 	"jba.io/go/auth"
@@ -59,11 +59,8 @@ type AuthDB struct {
 
 // MustOpenDB returns a new, open DB at a temporary location.
 func mustOpenDB() *AuthDB {
-	tmpdb, err := bolt.Open(tempfile(), 0666, nil)
-	if err != nil {
-		panic(err)
-	}
-	return &AuthDB{&auth.DB{tmpdb}}
+	tmpdb := auth.MustOpenAuthDB(tempfile())
+	return &AuthDB{tmpdb}
 }
 
 func (tmpdb *AuthDB) Close() error {

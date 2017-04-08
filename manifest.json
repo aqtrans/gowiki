@@ -32,12 +32,6 @@
         },
         "gopkg.in/yaml.v2": {
             "branch": "v2"
-        },
-        "jba.io/go/auth": {
-            "branch": "master"
-        },
-        "jba.io/go/httputils": {
-            "branch": "master"
         }
     }
 }
