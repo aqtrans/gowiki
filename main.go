@@ -128,10 +128,9 @@ const (
 
 var (
 	//authState      *auth.AuthState
-	linkPattern = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
+	//linkPattern = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
 	//bufpool        *bpool.BufferPool
 	//templates      map[string]*template.Template
-	_24K    int64 = (1 << 20) * 24
 	fLocal  bool
 	fDebug  = httputils.Debug
 	fInit   bool
@@ -285,48 +284,11 @@ type commitLog struct {
 	Message  string
 }
 
-// Error represents a handler error. It provides methods for a HTTP status
-// code and embeds the built-in error interface.
-type Error interface {
-	error
-	Status() int
-}
-
-// StatusError represents an error with an associated HTTP status code.
-type StatusError struct {
-	Code int
-	Err  error
-}
-
-// Allows StatusError to satisfy the error interface.
-func (se StatusError) Error() string {
-	return se.Err.Error()
-}
-
-// Returns our HTTP status code.
-func (se StatusError) Status() int {
-	return se.Code
-}
-
 type wikiEnv struct {
 	authState *auth.AuthState
 	cache     *wikiCache
 	templates map[string]*template.Template
-	userInfo  *userInfo
-	wikiInfo  *wikiRequestInfo
 }
-
-type wikiRequestInfo struct {
-	pageName   string
-	pageExists bool
-}
-
-type Handler struct {
-	*wikiEnv
-	H func(*wikiEnv, http.ResponseWriter, *http.Request) error
-}
-
-type wHandler func(http.ResponseWriter, *http.Request, string)
 
 // Sorting functions
 type wikiByDate []*wiki
@@ -459,6 +421,7 @@ func (r *renderer) ListItem(out *bytes.Buffer, text []byte, flags int) {
 }
 
 func (r *renderer) NormalText(out *bytes.Buffer, text []byte) {
+	linkPattern := regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
 
 	switch {
 	case linkPattern.Match(text):
@@ -1184,13 +1147,13 @@ func gitIsCleanURLs(err error, token template.HTML) template.HTML {
 	}
 }
 
-func historyHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
 	name := nameFromContext(r.Context())
 	wikiExists := wikiExistsFromContext(r.Context())
 	if !wikiExists {
 		httputils.Debugln("wikiExists false: No such file...creating one.")
 		//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
-		createWiki(env, w, r, name)
+		env.createWiki(w, r, name)
 		return
 	}
 
@@ -1214,7 +1177,7 @@ func historyHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 // As well as the date
 // > git log -1 --format=%at [commit sha1]
 // TODO: need to find a way to detect sha1s
-func viewCommitHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request, commit, name string) {
+func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name string) {
 	var fm frontmatter
 	var pageContent string
 
@@ -1274,7 +1237,7 @@ func viewCommitHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request, com
 }
 
 // TODO: Fix this
-func recentHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := loadPage(env, r)
 
@@ -1315,7 +1278,7 @@ func recentHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 
 }
 
-func listHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := loadPage(env, r)
 
@@ -1741,7 +1704,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	//viewHandler(w, r, "index")
 }
 
-func viewHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "viewHandler")
 
 	name := nameFromContext(r.Context())
@@ -1767,7 +1730,7 @@ func viewHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	if !wikiExists {
 		httputils.Debugln("wikiExists false: No such file...creating one.")
 		//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
-		createWiki(env, w, r, name)
+		env.createWiki(w, r, name)
 		return
 	}
 
@@ -1775,7 +1738,7 @@ func viewHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("commit") != "" {
 		commit := r.URL.Query().Get("commit")
 		//utils.Debugln(r.URL.Query().Get("commit"))
-		viewCommitHandler(env, w, r, commit, name)
+		env.viewCommitHandler(w, r, commit, name)
 		return
 	}
 
@@ -1785,7 +1748,7 @@ func viewHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	renderTemplate(env, w, r.Context(), "wiki_view.tmpl", p)
 }
 
-func editHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) editHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "editHandler")
 	name := nameFromContext(r.Context())
 	p := loadWikiPage(env, r, name)
@@ -1793,7 +1756,7 @@ func editHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func saveHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "saveHandler")
 
 	name := nameFromContext(r.Context())
@@ -1851,7 +1814,7 @@ func saveHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	go refreshStuff()
+	go env.refreshStuff()
 
 	env.authState.SetFlash("Wiki page successfully saved.", w, r)
 	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
@@ -2120,7 +2083,7 @@ func (wiki *wiki) save() error {
 
 }
 
-func loginPageHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "loginPageHandler")
 
 	title := "login"
@@ -2133,7 +2096,7 @@ func loginPageHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	renderTemplate(env, w, r.Context(), "login.tmpl", gp)
 }
 
-func signupPageHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) signupPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "signupPageHandler")
 
 	title := "signup"
@@ -2146,7 +2109,7 @@ func signupPageHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	renderTemplate(env, w, r.Context(), "signup.tmpl", gp)
 }
 
-func adminUsersHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminUsersHandler")
 
 	title := "admin-users"
@@ -2174,7 +2137,7 @@ func adminUsersHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 
 }
 
-func adminUserHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminUserHandler")
 
 	title := "admin-user"
@@ -2214,7 +2177,7 @@ func adminUserPostHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/admin/user/"+selectedUser, http.StatusSeeOther)
 }
 
-func adminMainHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) adminMainHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminMainHandler")
 
 	title := "admin-main"
@@ -2227,7 +2190,7 @@ func adminMainHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	renderTemplate(env, w, r.Context(), "admin_main.tmpl", gp)
 }
 
-func adminConfigHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) adminConfigHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminConfigHandler")
 
 	var cfg configuration
@@ -2291,7 +2254,7 @@ func adminConfigPostHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func gitCheckinHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "gitCheckinHandler")
 
 	title := "Git Checkin"
@@ -2375,7 +2338,7 @@ func gitPullPostHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func adminGitHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) adminGitHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminGitHandler")
 
 	title := "Git Management"
@@ -2405,7 +2368,7 @@ func adminGitHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	renderTemplate(env, w, r.Context(), "admin_git.tmpl", gp)
 }
 
-func tagMapHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "tagMapHandler")
 
 	p := loadPage(env, r)
@@ -2417,7 +2380,7 @@ func tagMapHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 	renderTemplate(env, w, r.Context(), "tag_list.tmpl", tagpage)
 }
 
-func createWiki(env *wikiEnv, w http.ResponseWriter, r *http.Request, name string) {
+func (env *wikiEnv) createWiki(w http.ResponseWriter, r *http.Request, name string) {
 	//username, _ := auth.GetUsername(r.Context())
 	//if username != "" {
 	if auth.IsLoggedIn(r.Context()) {
@@ -2879,7 +2842,7 @@ func setPageTitle(frontmatterTitle, filename string) string {
 	return name
 }
 
-func search(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 	index, err := bleve.Open("./data/index.bleve")
 	check(err)
 	defer index.Close()
@@ -3456,7 +3419,7 @@ func crawlWiki() {
 */
 
 // This should be all the stuff we need to be refreshed on startup and when pages are saved
-func refreshStuff() {
+func (e *wikiEnv) refreshStuff() {
 	// Update search index
 	//go bleveIndex()
 
@@ -3464,9 +3427,8 @@ func refreshStuff() {
 	//crawlWiki()
 	//saveCache()
 	//log.Println(cache.Cache)
-	cache := loadCache()
-	crawlWikiFromCache(cache)
-
+	e.cache = loadCache()
+	crawlWikiFromCache(e.cache)
 }
 
 func markdownPreview(w http.ResponseWriter, r *http.Request) {
@@ -3475,7 +3437,7 @@ func markdownPreview(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(markdownRender([]byte(r.FormValue("md")))))
 }
 
-func wikiMiddle(env *wikiEnv, next http.HandlerFunc) http.HandlerFunc {
+func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		params := getParams(r.Context())
 		name := params["name"]
@@ -3555,7 +3517,7 @@ func wikiMiddle(env *wikiEnv, next http.HandlerFunc) http.HandlerFunc {
 
 //UserSignupPostHandler only handles POST requests, using forms named "username" and "password"
 // Signing up users as necessary, inside the AuthConf
-func UserSignupPostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) UserSignupPostHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 	case "POST":
@@ -3580,7 +3542,7 @@ func UserSignupPostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request)
 
 //AdminUserPassChangePostHandler only handles POST requests, using forms named "username" and "password"
 // Signing up users as necessary, inside the AuthConf
-func AdminUserPassChangePostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) AdminUserPassChangePostHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 	case "POST":
@@ -3613,7 +3575,7 @@ func AdminUserPassChangePostHandler(env *wikiEnv, w http.ResponseWriter, r *http
 
 //AdminUserDeletePostHandler only handles POST requests, using forms named "username" and "password"
 // Signing up users as necessary, inside the AuthConf
-func AdminUserDeletePostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) AdminUserDeletePostHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 	case "POST":
@@ -3637,7 +3599,7 @@ func AdminUserDeletePostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Req
 
 //SignupPostHandler only handles POST requests, using forms named "username" and "password"
 // Signing up users as necessary, inside the AuthConf
-func SignupPostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) SignupPostHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 	case "POST":
@@ -3665,7 +3627,7 @@ func SignupPostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 
 //LoginPostHandler only handles POST requests, verifying forms named "username" and "password"
 // Comparing values with LDAP or configured username/password combos
-func LoginPostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
@@ -3729,14 +3691,6 @@ func LoginPostHandler(env *wikiEnv, w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	err := h.H(h.wikiEnv, w, r)
-	if err != nil {
-		log.Println("HTTP Error:", err)
-		errorHandler(w, r, err)
-	}
-}
-
 func main() {
 
 	// subscribe to SIGINT signals
@@ -3771,7 +3725,7 @@ func main() {
 
 	theCache := loadCache()
 
-	wikiCtx := &wikiEnv{
+	env := &wikiEnv{
 		authState: anAuthState,
 		cache:     theCache,
 		templates: make(map[string]*template.Template),
@@ -3792,14 +3746,14 @@ func main() {
 		defer auth.Authdb.Close()
 	*/
 
-	err = riceInit(wikiCtx)
+	err = riceInit(env)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	initWikiDir()
 
-	refreshStuff()
+	//refreshStuff()
 
 	// Check for unclean Git dir on startup
 	err = gitIsCleanStartup()
@@ -3814,7 +3768,7 @@ func main() {
 	}
 
 	// HTTP stuff from here on out
-	s := alice.New(timer, httputils.Logger, wikiCtx.authState.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
+	s := alice.New(timer, httputils.Logger, env.authState.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
 	//w := s.Append(wikiMiddle)
 
 	//h := httptreemux.New()
@@ -3829,50 +3783,50 @@ func main() {
 
 	r.GET("/", indexHandler)
 
-	r.GET("/tags", Handler{wikiCtx, tagMapHandler})
+	r.GET("/tags", env.tagMapHandler)
 	/*r.GET("/panic", func(w http.ResponseWriter, r *http.Request) {
 		panic("Unexpected error!")
 		//http.Error(w, panic("Unexpected error!"), http.StatusInternalServerError)
 	})*/
 
-	r.GET("/new", wikiCtx.authState.AuthMiddle(newHandler))
+	r.GET("/new", env.authState.AuthMiddle(newHandler))
 	//r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
-	r.GET("/login", loginPageHandler)
+	r.GET("/login", env.loginPageHandler)
 	//r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
-	r.GET("/logout", authState.LogoutHandler)
+	r.GET("/logout", env.authState.LogoutHandler)
 	//r.GET("/signup", signupPageHandler)
-	r.GET("/list", listHandler)
-	r.GET("/search/*name", search)
-	r.POST("/search", search)
-	r.GET("/recent", authState.AuthMiddle(recentHandler))
+	r.GET("/list", env.listHandler)
+	r.GET("/search/*name", env.search)
+	r.POST("/search", env.search)
+	r.GET("/recent", env.authState.AuthMiddle(env.recentHandler))
 	r.GET("/health", healthCheckHandler)
 
 	admin := r.NewContextGroup("/admin")
-	admin.GET("/", authState.AuthAdminMiddle(adminMainHandler))
-	admin.GET("/config", authState.AuthAdminMiddle(adminConfigHandler))
-	admin.POST("/config", authState.AuthAdminMiddle(adminConfigPostHandler))
-	admin.GET("/git", authState.AuthAdminMiddle(adminGitHandler))
-	admin.POST("/git/push", authState.AuthAdminMiddle(gitPushPostHandler))
-	admin.POST("/git/checkin", authState.AuthAdminMiddle(gitCheckinPostHandler))
-	admin.POST("/git/pull", authState.AuthAdminMiddle(gitPullPostHandler))
-	admin.GET("/users", authState.AuthAdminMiddle(adminUsersHandler))
-	admin.POST("/users", authState.AuthAdminMiddle(UserSignupPostHandler))
-	admin.POST("/user", authState.AuthAdminMiddle(adminUserPostHandler))
-	admin.GET("/user/:username", authState.AuthAdminMiddle(adminUserHandler))
-	admin.POST("/user/:username", authState.AuthAdminMiddle(adminUserHandler))
-	admin.POST("/user/password_change", authState.AuthAdminMiddle(AdminUserPassChangePostHandler))
-	admin.POST("/user/delete", authState.AuthAdminMiddle(AdminUserDeletePostHandler))
+	admin.GET("/", env.authState.AuthAdminMiddle(env.adminMainHandler))
+	admin.GET("/config", env.authState.AuthAdminMiddle(env.adminConfigHandler))
+	admin.POST("/config", env.authState.AuthAdminMiddle(adminConfigPostHandler))
+	admin.GET("/git", env.authState.AuthAdminMiddle(env.adminGitHandler))
+	admin.POST("/git/push", env.authState.AuthAdminMiddle(gitPushPostHandler))
+	admin.POST("/git/checkin", env.authState.AuthAdminMiddle(gitCheckinPostHandler))
+	admin.POST("/git/pull", env.authState.AuthAdminMiddle(gitPullPostHandler))
+	admin.GET("/users", env.authState.AuthAdminMiddle(env.adminUsersHandler))
+	admin.POST("/users", env.authState.AuthAdminMiddle(env.UserSignupPostHandler))
+	admin.POST("/user", env.authState.AuthAdminMiddle(adminUserPostHandler))
+	admin.GET("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
+	admin.POST("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
+	admin.POST("/user/password_change", env.authState.AuthAdminMiddle(env.AdminUserPassChangePostHandler))
+	admin.POST("/user/delete", env.authState.AuthAdminMiddle(env.AdminUserDeletePostHandler))
 
 	a := r.NewContextGroup("/auth")
-	a.POST("/login", LoginPostHandler)
-	a.POST("/logout", authState.LogoutHandler)
-	a.GET("/logout", authState.LogoutHandler)
+	a.POST("/login", env.LoginPostHandler)
+	a.POST("/logout", env.authState.LogoutHandler)
+	a.GET("/logout", env.authState.LogoutHandler)
 	//a.POST("/signup", auth.SignupPostHandler)
 
 	//r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
 
-	r.POST("/gitadd", authState.AuthMiddle(gitCheckinPostHandler))
-	r.GET("/gitadd", authState.AuthMiddle(gitCheckinHandler))
+	r.POST("/gitadd", env.authState.AuthMiddle(gitCheckinPostHandler))
+	r.GET("/gitadd", env.authState.AuthMiddle(env.gitCheckinHandler))
 
 	r.GET("/md_render", markdownPreview)
 
@@ -3885,11 +3839,11 @@ func main() {
 
 	r.GET("/uploads/*", treeMuxWrapper(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads")))))
 
-	r.GET(`/edit/*name`, authState.AuthMiddle(wikiMiddle(editHandler)))
-	r.POST(`/save/*name`, authState.AuthMiddle(wikiMiddle(saveHandler)))
-	r.GET(`/history/*name`, authState.AuthMiddle(wikiMiddle(historyHandler)))
+	r.GET(`/edit/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.editHandler)))
+	r.POST(`/save/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.saveHandler)))
+	r.GET(`/history/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.historyHandler)))
 	//r.GET(`/new/*name`, auth.AuthMiddle(newHandler))
-	r.GET(`/*name`, wikiMiddle(viewHandler))
+	r.GET(`/*name`, env.wikiMiddle(env.viewHandler))
 
 	mux.HandleFunc("/robots.txt", httputils.RobotsHandler)
 	mux.HandleFunc("/favicon.ico", httputils.FaviconHandler)
