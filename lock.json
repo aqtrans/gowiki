@@ -1,5 +1,5 @@
 {
-    "memo": "8d18f50874ebd59f151e087897337eaa7198f97dfd626922668507e55645a1ee",
+    "memo": "6da2daacc581d2473cc92a7d71eb5e04d730b8e5e9b4d75b1f3e488e635f1dfd",
     "projects": [
         {
             "name": "github.com/BurntSushi/toml",
@@ -438,7 +438,7 @@
         {
             "name": "jba.io/go/auth",
             "branch": "master",
-            "revision": "9f5c1eac980996c50dccd84dff00983e5ce4cf01",
+            "revision": "c1ffafa12d6b625f981e13787cc81ed4e1c84f3e",
             "packages": [
                 "."
             ]
