@@ -47,6 +47,7 @@ build-my-project:
     - export GOPATH=$HOME/gopath
     - export PATH=$GOROOT/bin:$PATH 
     - export PATH=$GOPATH/bin:$PATH
+    - mkdir -p $GOPATH/src/wiki/
     - mv $CI_PROJECT_DIR/* $GOPATH/src/wiki/
     - cd $GOPATH/src/wiki
     - go get -u github.com/golang/dep/...
@@ -63,6 +64,7 @@ test-my-project:
     - export GOPATH=$HOME/gopath
     - export PATH=$GOROOT/bin:$PATH 
     - export PATH=$GOPATH/bin:$PATH
+    - mkdir -p $GOPATH/src/wiki/
     - mv $CI_PROJECT_DIR/* $GOPATH/src/wiki/
     - cd $GOPATH/src/wiki
     - go get -u github.com/golang/dep/...
@@ -79,6 +81,7 @@ deploy-it:
     - export GOPATH=$HOME/gopath
     - export PATH=$GOROOT/bin:$PATH 
     - export PATH=$GOPATH/bin:$PATH
+    - mkdir -p $GOPATH/src/wiki/
     - mv $CI_PROJECT_DIR/* $GOPATH/src/wiki/
     - cd $GOPATH/src/wiki
     - mkdir deploy
