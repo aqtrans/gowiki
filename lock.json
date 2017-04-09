@@ -1,5 +1,5 @@
 {
-    "memo": "6da2daacc581d2473cc92a7d71eb5e04d730b8e5e9b4d75b1f3e488e635f1dfd",
+    "memo": "74ad274514cd5ba998bbc7acea49f764aa2a73285cb168ad80b18556cd13696e",
     "projects": [
         {
             "name": "github.com/BurntSushi/toml",
@@ -16,60 +16,6 @@
             "packages": [
                 ".",
                 "embedded"
-            ]
-        },
-        {
-            "name": "github.com/blevesearch/bleve",
-            "branch": "master",
-            "revision": "0b1034dcbe067789a206f3267f41c6a1f9760b56",
-            "packages": [
-                ".",
-                "analysis",
-                "analysis/analyzer/standard",
-                "analysis/datetime/flexible",
-                "analysis/datetime/optional",
-                "analysis/lang/en",
-                "analysis/token/lowercase",
-                "analysis/token/porter",
-                "analysis/token/stop",
-                "analysis/tokenizer/unicode",
-                "document",
-                "geo",
-                "index",
-                "index/store",
-                "index/store/boltdb",
-                "index/store/gtreap",
-                "index/upsidedown",
-                "mapping",
-                "numeric",
-                "registry",
-                "search",
-                "search/collector",
-                "search/facet",
-                "search/highlight",
-                "search/highlight/format/html",
-                "search/highlight/fragmenter/simple",
-                "search/highlight/highlighter/html",
-                "search/highlight/highlighter/simple",
-                "search/query",
-                "search/scorer",
-                "search/searcher"
-            ]
-        },
-        {
-            "name": "github.com/blevesearch/go-porterstemmer",
-            "version": "v1.0.1",
-            "revision": "b4dd94e38f29620fe0f97ae4b0f6994b0d5d75f0",
-            "packages": [
-                "."
-            ]
-        },
-        {
-            "name": "github.com/blevesearch/segment",
-            "branch": "master",
-            "revision": "762005e7a34fd909a84586299f1dd457371d36ee",
-            "packages": [
-                "."
             ]
         },
         {
@@ -118,14 +64,6 @@
             "revision": "b68337dbf03e7fbb53d9fd9b63fd09b28e8f13f7",
             "packages": [
                 "."
-            ]
-        },
-        {
-            "name": "github.com/golang/protobuf",
-            "branch": "master",
-            "revision": "2bba0603135d7d7f5cb73b2125beeda19c09f4ef",
-            "packages": [
-                "proto"
             ]
         },
         {
@@ -309,14 +247,6 @@
             ]
         },
         {
-            "name": "github.com/steveyen/gtreap",
-            "branch": "master",
-            "revision": "0abe01ef9be25c4aedc174758ec2d917314d6d70",
-            "packages": [
-                "."
-            ]
-        },
-        {
             "name": "github.com/thoas/stats",
             "branch": "master",
             "revision": "152b5d051953fdb6e45f14b6826962aadc032324",
@@ -336,14 +266,6 @@
                 "ed25519/internal/edwards25519",
                 "ssh",
                 "ssh/agent"
-            ]
-        },
-        {
-            "name": "golang.org/x/net",
-            "branch": "master",
-            "revision": "d1e1b351919c6738fdeb9893d5c998b161464f0c",
-            "packages": [
-                "context"
             ]
         },
         {
