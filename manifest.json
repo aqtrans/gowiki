@@ -6,9 +6,6 @@
         "github.com/GeertJohan/go.rice": {
             "branch": "master"
         },
-        "github.com/blevesearch/bleve": {
-            "branch": "master"
-        },
         "github.com/dimfeld/httptreemux": {
             "version": "^3.8.0"
         },
