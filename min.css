@@ -1,29 +1,70 @@
-header {
+body > header {
   grid-area: header;
 }
-header > ul {
+body > header > ul {
     display: flex;
+    list-style-type: none;
     justify-content: space-between;
+    background-color: black;
+    color: white;
+    padding: 0 10px;
 }
-main {
+body > main {
   grid-area: content;
+  background-color: black;
+  color: white;
+  padding: 0 10px;
 }
-nav {
+body > nav {
   grid-area: nav;
 }
-footer {
+body > footer {
   grid-area: footer;
+  text-align: center;
+  font-size: 80%;
+}
+
+body > main > footer {
+  text-align: right;
+  color: #8a8a8a;
+}
+
+body > main > footer > ul {
+    list-style-type: none;
+}
+
+.stat {
+  color: #8a8a8a;
+}
+
+body > header > ul > li > p {
+  font-size: 120%;
+  margin: 0;
+}
+
+.tabs {
+  grid-area: tabs;
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  align-self: end;
+}
+
+.tabs li {
+  padding: 5px;
+  margin: 0 10px 0 0;
+  float: left;  
+  background-color: black;
 }
 
 body {
   display: grid;
-  grid-gap: 20px;
+  grid-column-gap: 20px;
   grid-template-areas: 
     "header"
     "nav"
+    "tabs"
     "content"
-    "sidebar"
-    "ad"
     "footer";
 }
 
@@ -32,16 +73,17 @@ body {
     grid-template-columns: 1fr 4fr;
     grid-template-areas: 
       "nav    header"
+      "nav    tabs"
       "nav    content"
-      "nav    content"
-      "footer footer";
+      "nav    footer";
   }
-  nav ul {
+  body > nav ul {
     display: flex;
     justify-content: space-between;
     flex-direction: column;
   }
-  header ul {
+  body > header ul {
+    display: flex;
     flex-direction: row;
   }
 }
