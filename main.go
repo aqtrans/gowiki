@@ -415,9 +415,9 @@ func markdownRender(input []byte) string {
 func (r *renderer) ListItem(out *bytes.Buffer, text []byte, flags int) {
 	switch {
 	case bytes.HasPrefix(text, []byte("[ ] ")):
-		text = append([]byte(`<input type="checkbox" id="uncheckedSwitch" disabled=""><label for="uncheckedSwitch"></label>`), text[3:]...)
+		text = append([]byte(`<input type="checkbox" disabled="">`), text[3:]...)
 	case bytes.HasPrefix(text, []byte("[x] ")) || bytes.HasPrefix(text, []byte("[X] ")):
-		text = append([]byte(`<input type="checkbox" id="checkedSwitch" checked="" disabled=""><label for="checkedSwitch"></label>`), text[3:]...)
+		text = append([]byte(`<input type="checkbox" checked="" disabled="">`), text[3:]...)
 	}
 	r.Html.ListItem(out, text, flags)
 }
