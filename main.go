@@ -31,7 +31,8 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
+	"context"
+	"encoding/gob"
 	"errors"
 	"flag"
 	"fmt"
@@ -40,21 +41,20 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/http/pprof"
 	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
 	"path"
 	"path/filepath"
+	"regexp"
+	"runtime"
 	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
-
-	"context"
-	"regexp"
-	"runtime"
 
 	"github.com/BurntSushi/toml"
 	"github.com/GeertJohan/go.rice"
@@ -66,9 +66,8 @@ import (
 	"github.com/russross/blackfriday"
 	//"github.com/pelletier/go-toml"
 	//"github.com/microcosm-cc/bluemonday"
-	"encoding/gob"
 	"github.com/spf13/viper"
-	"github.com/thoas/stats"
+	//"github.com/thoas/stats"
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
@@ -2853,8 +2852,8 @@ func headHash() string {
 }
 
 // This should be all the stuff we need to be refreshed on startup and when pages are saved
-func (e *wikiEnv) refreshStuff() {
-	e.cache = loadCache()
+func (env *wikiEnv) refreshStuff() {
+	env.cache = loadCache()
 }
 
 func markdownPreview(w http.ResponseWriter, r *http.Request) {
@@ -3238,30 +3237,19 @@ func main() {
 
 	// HTTP stuff from here on out
 	s := alice.New(timer, httputils.Logger, env.authState.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
-	//w := s.Append(wikiMiddle)
 
 	//h := httptreemux.New()
-	r := httptreemux.NewContextMux()
 	//h.PanicHandler = httptreemux.ShowErrorsPanicHandler
+	r := httptreemux.NewContextMux()
+
 	r.PanicHandler = errorHandler
-	//r.PanicHandler = errorHandler
-
-	statsdata := stats.New()
-
-	//r := h.UsingContext()
 
 	r.GET("/", indexHandler)
 
 	r.GET("/tags", env.tagMapHandler)
-	/*r.GET("/panic", func(w http.ResponseWriter, r *http.Request) {
-		panic("Unexpected error!")
-		//http.Error(w, panic("Unexpected error!"), http.StatusInternalServerError)
-	})*/
 
 	r.GET("/new", env.authState.AuthMiddle(newHandler))
-	//r.HandleFunc("/login", auth.LoginPostHandler).Methods("POST")
 	r.GET("/login", env.loginPageHandler)
-	//r.HandleFunc("/logout", auth.LogoutHandler).Methods("POST")
 	r.GET("/logout", env.authState.LogoutHandler)
 	//r.GET("/signup", signupPageHandler)
 	r.GET("/list", env.listHandler)
@@ -3292,19 +3280,10 @@ func main() {
 	a.GET("/logout", env.authState.LogoutHandler)
 	//a.POST("/signup", auth.SignupPostHandler)
 
-	//r.HandleFunc("/signup", auth.SignupPostHandler).Methods("POST")
-
 	r.POST("/gitadd", env.authState.AuthMiddle(gitCheckinPostHandler))
 	r.GET("/gitadd", env.authState.AuthMiddle(env.gitCheckinHandler))
 
 	r.GET("/md_render", markdownPreview)
-
-	r.GET("/stats", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		stats := statsdata.Data()
-		b, _ := json.Marshal(stats)
-		w.Write(b)
-	})
 
 	r.GET("/uploads/*", treeMuxWrapper(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads")))))
 
@@ -3314,14 +3293,20 @@ func main() {
 	//r.GET(`/new/*name`, auth.AuthMiddle(newHandler))
 	r.GET(`/*name`, env.wikiMiddle(env.viewHandler))
 
+	mux.Handle("/debug/pprof/", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Index)))
+	mux.Handle("/debug/pprof/cmdline", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Cmdline)))
+	mux.Handle("/debug/pprof/profile", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Profile)))
+	mux.Handle("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
+	mux.Handle("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
+
 	mux.HandleFunc("/robots.txt", assetBox.RobotsHandler)
 	mux.HandleFunc("/favicon.ico", assetBox.FaviconHandler)
 	mux.HandleFunc("/favicon.png", assetBox.FaviconHandler)
 	mux.HandleFunc("/assets/", assetBox.StaticHandler)
+
 	mux.Handle("/", s.Then(r))
 
 	log.Println("Listening on port " + viper.GetString("Port"))
-	//checkErr("http.ListenAndServe", http.ListenAndServe("0.0.0.0:"+viper.GetString("Port"), nil))
 
 	srv := &http.Server{
 		Addr:    "0.0.0.0:" + viper.GetString("Port"),
