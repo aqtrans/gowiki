@@ -8,3 +8,4 @@ data/**
 rice-box.go
 npm-debug.log
 vendor/**
+tests/gowiki-testdata/**
