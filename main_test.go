@@ -38,6 +38,12 @@ func init() {
 	viper.Set("GitRepo", "git@jba.io:conf/gowiki-data.git")
 }
 
+func checkT(err error, t *testing.T) {
+	if err != nil {
+		t.Errorf("ERROR: %v", err)
+	}
+}
+
 // tempfile returns a temporary file path.
 func tempfile() string {
 	f, err := ioutil.TempFile("", "bolt-")
@@ -98,28 +104,20 @@ func testEnv(t *testing.T, authState *auth.AuthState) *wikiEnv {
 func TestAuthInit(t *testing.T) {
 	authDB := mustOpenDB()
 	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	defer authDB.Close()
 	_, err = authState.Userlist()
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 }
 
 func TestRiceInit(t *testing.T) {
 	authDB := mustOpenDB()
 	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	defer authDB.Close()
 	e := testEnv(t, authState)
 	err = riceInit(e)
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 }
 
 func TestWikiInit(t *testing.T) {
@@ -136,33 +134,23 @@ func TestWikiInit(t *testing.T) {
 // TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
 func TestNewWikiPage(t *testing.T) {
 	err := gitPull()
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	authDB := mustOpenDB()
 	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	defer authDB.Close()
 
 	e := testEnv(t, authState)
 	err = riceInit(e)
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	defer authDB.Close()
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
 	randPage, err := httputils.RandKey(8)
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	req, err := http.NewRequest("GET", "/"+randPage, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 
 	handler := http.HandlerFunc(e.wikiMiddle(e.viewHandler))
 
@@ -210,9 +198,7 @@ func TestHealthCheckHandler(t *testing.T) {
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("GET", "/health", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	rr := httptest.NewRecorder()
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
@@ -239,32 +225,24 @@ func TestHealthCheckHandler(t *testing.T) {
 
 func TestNewHandler(t *testing.T) {
 	err := gitPull()
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 
 	authDB := mustOpenDB()
 	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	defer authDB.Close()
 
 	e := testEnv(t, authState)
 
 	err = riceInit(e)
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkT(err, t)
 
 	// Create a request to pass to our handler.
 	form := url.Values{}
 	form.Add("newwiki", "afefwdwdef/dwwafefe/fegegrgr")
 	reader = strings.NewReader(form.Encode())
 	req, err := http.NewRequest("POST", "/new", reader)
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
@@ -306,30 +284,22 @@ func TestNewHandler(t *testing.T) {
 // TestIndex tests if viewing the index page, as a logged in user, properly returns a 200
 func TestIndexPage(t *testing.T) {
 	err := gitPull()
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 
 	authDB := mustOpenDB()
 	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	defer authDB.Close()
 
 	e := testEnv(t, authState)
 
 	err = riceInit(e)
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkT(err, t)
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 
 	handler := http.HandlerFunc(indexHandler)
 
@@ -371,30 +341,22 @@ func TestIndexPage(t *testing.T) {
 // TestIndexHistoryPage tests if viewing the history of the index page, as a logged in user, properly returns a 200
 func TestIndexHistoryPage(t *testing.T) {
 	err := gitPull()
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 
 	authDB := mustOpenDB()
 	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	defer authDB.Close()
 
 	e := testEnv(t, authState)
 
 	err = riceInit(e)
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkT(err, t)
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("GET", "/history/index", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 
 	handler := http.HandlerFunc(e.wikiMiddle(e.historyHandler))
 
@@ -436,28 +398,20 @@ func TestIndexHistoryPage(t *testing.T) {
 // TestIndexEditPage tests if trying to edit the index page, as a logged in user, properly returns a 200
 func TestIndexEditPage(t *testing.T) {
 	err := gitPull()
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 
 	authDB := mustOpenDB()
 	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	defer authDB.Close()
 
 	e := testEnv(t, authState)
 	err = riceInit(e)
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("GET", "/edit/index", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 
 	handler := http.HandlerFunc(e.authState.AuthMiddle(e.wikiMiddle(e.editHandler)))
 
@@ -499,9 +453,7 @@ func TestIndexEditPage(t *testing.T) {
 // TestDirBaseHandler tests if trying to create a file 'inside' a file fails
 func TestDirBaseHandler(t *testing.T) {
 	err := gitPull()
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	//setup()
 	// Create a request to pass to our handler.
 	form := url.Values{}
@@ -509,15 +461,11 @@ func TestDirBaseHandler(t *testing.T) {
 	//log.Println(form)
 	reader = strings.NewReader(form.Encode())
 	req, err := http.NewRequest("POST", "/new", reader)
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 
 	authDB := mustOpenDB()
 	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
-	if err != nil {
-		t.Fatal(err)
-	}
+	checkT(err, t)
 	defer authDB.Close()
 
 	testEnv(t, authState)
@@ -566,15 +514,11 @@ func TestMarkdownRender(t *testing.T) {
 	// Read raw Markdown
 	rawmdf := "./tests/test.md"
 	rawmd, err := ioutil.ReadFile(rawmdf)
-	if err != nil {
-		t.Error("Unable to access test.md")
-	}
+	checkT(err, t)
 	// Read what rendered Markdown HTML should look like
 	rendermdf := "./tests/test.html"
 	rendermd, err := ioutil.ReadFile(rendermdf)
-	if err != nil {
-		t.Error("Unable to access test.html")
-	}
+	checkT(err, t)
 	// []byte to string
 	rendermds := string(rendermd)
 
@@ -593,15 +537,11 @@ func TestMarkdownRender2(t *testing.T) {
 	// Read raw Markdown
 	rawmdf := "./tests/test2.md"
 	rawmd, err := ioutil.ReadFile(rawmdf)
-	if err != nil {
-		t.Error("Unable to access test2.md")
-	}
+	checkT(err, t)
 	// Read what rendered Markdown HTML should look like
 	rendermdf := "./tests/test2.html"
 	rendermd, err := ioutil.ReadFile(rendermdf)
-	if err != nil {
-		t.Error("Unable to access test2.html")
-	}
+	checkT(err, t)
 	// []byte to string
 	rendermds := string(rendermd)
 
@@ -617,16 +557,12 @@ func TestMarkdownRender2(t *testing.T) {
 func TestMarkdownRender3(t *testing.T) {
 	rawmdf := "./tests/test3.md"
 	rawmd, err := ioutil.ReadFile(rawmdf)
-	if err != nil {
-		t.Error("Unable to access test3.md")
-	}
+	checkT(err, t)
 
 	// Read what rendered Markdown HTML should look like
 	rendermdf := "./tests/test3.html"
 	rendermd, err := ioutil.ReadFile(rendermdf)
-	if err != nil {
-		t.Error("Unable to access test3.html")
-	}
+	checkT(err, t)
 	// []byte to string
 	rendermds := string(rendermd)
 
@@ -647,9 +583,7 @@ func TestMarkdownRender4(t *testing.T) {
 	// Read what rendered Markdown HTML should look like
 	rendermdf := "./tests/test4.html"
 	rendermd, err := ioutil.ReadFile(rendermdf)
-	if err != nil {
-		t.Error("Unable to access test4.html")
-	}
+	checkT(err, t)
 	// []byte to string
 	rendermds := string(rendermd)
 
@@ -664,9 +598,7 @@ func TestMarkdownRender4(t *testing.T) {
 
 func TestYamlRender(t *testing.T) {
 	f, err := os.Open("./tests/yamltest")
-	if err != nil {
-		t.Error(err)
-	}
+	checkT(err, t)
 	defer f.Close()
 	fm := readFront(f)
 
@@ -710,9 +642,7 @@ func TestYamlRender(t *testing.T) {
 
 func TestYamlRender2(t *testing.T) {
 	f, err := os.Open("./tests/yamltest2")
-	if err != nil {
-		t.Error(err)
-	}
+	checkT(err, t)
 	defer f.Close()
 	fm := readFront(f)
 	/*
