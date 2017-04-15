@@ -1,0 +1,52 @@
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/BurntSushi/toml"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/GeertJohan/go.rice"
+
+[[dependencies]]
+  name = "github.com/dimfeld/httptreemux"
+  version = "^3.8.0"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/getsentry/raven-go"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/gorilla/csrf"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/justinas/alice"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/oxtoacart/bpool"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/russross/blackfriday"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/spf13/viper"
+
+[[dependencies]]
+  branch = "v4"
+  name = "gopkg.in/src-d/go-git.v4"
+
+[[dependencies]]
+  branch = "v2"
+  name = "gopkg.in/yaml.v2"
+
+[[dependencies]]
+  branch = "master"
+  name = "jba.io/go/auth"
+
+[[dependencies]]
+  branch = "master"
+  name = "jba.io/go/httputils"
