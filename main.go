@@ -2885,7 +2885,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		//pageExists := doesPageExist(fullfilename)
 		ctx := newWikiExistsContext(nameCtx, pageExists)
 
-		// if feErr is nil, file should exist, so read its frontmatter
+		// if pageExists, read its frontmatter
 		if pageExists {
 			// Read YAML frontmatter into fm
 			// If err, just return, as file should not contain frontmatter
@@ -2893,17 +2893,53 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			check(err)
 			fm := readFront(f)
 			f.Close()
-			// If this is a public page, just serve it
-			if fm.Permission == "public" {
+			/*
+				// If this is a public page, just serve it
+				if fm.Permission == "public" {
+					next.ServeHTTP(w, r.WithContext(ctx))
+					return
+				}
+				// If this is an admin page, check if user is admin before serving
+				if fm.Permission == "admin" && !isAdmin {
+					log.Println(username + " attempting to access restricted URL.")
+					env.authState.SetFlash("Sorry, you are not allowed to see that.", w, r)
+					http.Redirect(w, r.WithContext(ctx), "/", http.StatusSeeOther)
+					return
+				}
+			*/
+			switch fm.Permission {
+			case "admin":
+				if userLoggedIn && isAdmin {
+					next.ServeHTTP(w, r.WithContext(ctx))
+					return
+				}
+				if !isAdmin {
+					log.Println(username + " attempting to access restricted URL.")
+					env.authState.SetFlash("Sorry, you are not allowed to see that.", w, r)
+					http.Redirect(w, r.WithContext(ctx), "/index", http.StatusSeeOther)
+					return
+				}
+			case "public":
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
-			}
-			// If this is an admin page, check if user is admin before serving
-			if fm.Permission == "admin" && !isAdmin {
-				log.Println(username + " attempting to access restricted URL.")
-				env.authState.SetFlash("Sorry, you are not allowed to see that.", w, r)
-				http.Redirect(w, r.WithContext(ctx), "/", http.StatusSeeOther)
-				return
+			case "private":
+				if !userLoggedIn {
+					rurl := r.URL.String()
+					httputils.Debugln("wikiMiddle mitigating: " + r.Host + rurl)
+					//w.Write([]byte("OMG"))
+
+					// Detect if we're in an endless loop, if so, just panic
+					if strings.HasPrefix(rurl, "login?url=/login") {
+						panic("AuthMiddle is in an endless redirect loop")
+					}
+					env.authState.SetFlash("Please login to view that page.", w, r)
+					http.Redirect(w, r.WithContext(ctx), "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+					return
+				}
+				if userLoggedIn {
+					next.ServeHTTP(w, r.WithContext(ctx))
+					return
+				}
 			}
 		}
 
@@ -2937,7 +2973,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		next.ServeHTTP(w, r.WithContext(ctx))
+		//next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
