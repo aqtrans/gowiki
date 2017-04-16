@@ -139,11 +139,12 @@ var (
 	errBaseNotDir  = errors.New("cannot create subdirectory of a file")
 	errGitDirty    = errors.New("directory is dirty")
 	errBadPath     = errors.New("given path is invalid")
-	errGitAhead    = errors.New("Wiki git repo is ahead; Need to push.")
-	errGitBehind   = errors.New("Wiki git repo is behind; Need to pull.")
-	errGitDiverged = errors.New("Wiki git repo has diverged; Need to intervene manually.")
+	errGitAhead    = errors.New("wiki git repo is ahead; Need to push")
+	errGitBehind   = errors.New("wiki git repo is behind; Need to pull")
+	errGitDiverged = errors.New("wiki git repo has diverged; Need to intervene manually")
 )
 
+// Box is a wrapped rice.Box for testing purposes
 type Box struct {
 	*rice.Box
 }
@@ -1149,7 +1150,7 @@ func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
 		name,
 		history,
 	}
-	renderTemplate(env, w, r.Context(), "wiki_history.tmpl", hp)
+	renderTemplate(r.Context(), env, w, "wiki_history.tmpl", hp)
 }
 
 // Need to get content of the file at specified commit
@@ -1212,7 +1213,7 @@ func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, co
 		Diff:     diffstring,
 	}
 
-	renderTemplate(env, w, r.Context(), "wiki_commit.tmpl", cp)
+	renderTemplate(r.Context(), env, w, "wiki_commit.tmpl", cp)
 
 }
 
@@ -1254,7 +1255,7 @@ func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s := &recentsPage{p, recents}
-	renderTemplate(env, w, r.Context(), "recents.tmpl", s)
+	renderTemplate(r.Context(), env, w, "recents.tmpl", s)
 
 }
 
@@ -1263,7 +1264,7 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 	p := loadPage(env, r)
 
 	l := &listPage{p, env.cache.Cache["private"], env.cache.Cache["public"], env.cache.Cache["admin"]}
-	renderTemplate(env, w, r.Context(), "list.tmpl", l)
+	renderTemplate(r.Context(), env, w, "list.tmpl", l)
 }
 
 func readFileAndFront(filename string) (frontmatter, []byte) {
@@ -1476,7 +1477,7 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 	return fm
 }
 
-func renderTemplate(env *wikiEnv, w http.ResponseWriter, c context.Context, name string, data interface{}) {
+func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name string, data interface{}) {
 	tmpl, ok := env.templates[name]
 	if !ok {
 		log.Println(fmt.Errorf("The template %s does not exist", name))
@@ -1725,14 +1726,14 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	// Get Wiki
 	p := loadWikiPage(env, r, name)
 
-	renderTemplate(env, w, r.Context(), "wiki_view.tmpl", p)
+	renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
 }
 
 func (env *wikiEnv) editHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "editHandler")
 	name := nameFromContext(r.Context())
 	p := loadWikiPage(env, r, name)
-	renderTemplate(env, w, r.Context(), "wiki_edit.tmpl", p)
+	renderTemplate(r.Context(), env, w, "wiki_edit.tmpl", p)
 	return
 }
 
@@ -2073,7 +2074,7 @@ func (env *wikiEnv) loginPageHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 	}
-	renderTemplate(env, w, r.Context(), "login.tmpl", gp)
+	renderTemplate(r.Context(), env, w, "login.tmpl", gp)
 }
 
 func (env *wikiEnv) signupPageHandler(w http.ResponseWriter, r *http.Request) {
@@ -2086,7 +2087,7 @@ func (env *wikiEnv) signupPageHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 	}
-	renderTemplate(env, w, r.Context(), "signup.tmpl", gp)
+	renderTemplate(r.Context(), env, w, "signup.tmpl", gp)
 }
 
 func (env *wikiEnv) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
@@ -2113,7 +2114,7 @@ func (env *wikiEnv) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 	}*/
-	renderTemplate(env, w, r.Context(), "admin_users.tmpl", data)
+	renderTemplate(r.Context(), env, w, "admin_users.tmpl", data)
 
 }
 
@@ -2147,7 +2148,7 @@ func (env *wikiEnv) adminUserHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 	}*/
-	renderTemplate(env, w, r.Context(), "admin_user.tmpl", data)
+	renderTemplate(r.Context(), env, w, "admin_user.tmpl", data)
 }
 
 // Function to take a <select><option> value and redirect to a URL based on it
@@ -2167,7 +2168,7 @@ func (env *wikiEnv) adminMainHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 	}
-	renderTemplate(env, w, r.Context(), "admin_main.tmpl", gp)
+	renderTemplate(r.Context(), env, w, "admin_main.tmpl", gp)
 }
 
 func (env *wikiEnv) adminConfigHandler(w http.ResponseWriter, r *http.Request) {
@@ -2190,7 +2191,7 @@ func (env *wikiEnv) adminConfigHandler(w http.ResponseWriter, r *http.Request) {
 		title,
 		cfg,
 	}
-	renderTemplate(env, w, r.Context(), "admin_config.tmpl", data)
+	renderTemplate(r.Context(), env, w, "admin_config.tmpl", data)
 }
 
 func adminConfigPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -2262,7 +2263,7 @@ func (env *wikiEnv) gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 		s,
 		viper.GetString("GitRepo"),
 	}
-	renderTemplate(env, w, r.Context(), "git_checkin.tmpl", gp)
+	renderTemplate(r.Context(), env, w, "git_checkin.tmpl", gp)
 }
 
 func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -2345,7 +2346,7 @@ func (env *wikiEnv) adminGitHandler(w http.ResponseWriter, r *http.Request) {
 		err.Error(),
 		viper.GetString("GitRepo"),
 	}
-	renderTemplate(env, w, r.Context(), "admin_git.tmpl", gp)
+	renderTemplate(r.Context(), env, w, "admin_git.tmpl", gp)
 }
 
 func (env *wikiEnv) tagMapHandler(w http.ResponseWriter, r *http.Request) {
@@ -2357,7 +2358,7 @@ func (env *wikiEnv) tagMapHandler(w http.ResponseWriter, r *http.Request) {
 		page:    p,
 		TagKeys: env.cache.Tags,
 	}
-	renderTemplate(env, w, r.Context(), "tag_list.tmpl", tagpage)
+	renderTemplate(r.Context(), env, w, "tag_list.tmpl", tagpage)
 }
 
 func (env *wikiEnv) createWiki(w http.ResponseWriter, r *http.Request, name string) {
@@ -2382,7 +2383,7 @@ func (env *wikiEnv) createWiki(w http.ResponseWriter, r *http.Request, name stri
 				},
 			},
 		}
-		renderTemplate(env, w, r.Context(), "wiki_create.tmpl", wp)
+		renderTemplate(r.Context(), env, w, "wiki_create.tmpl", wp)
 		return
 	}
 
@@ -2610,7 +2611,7 @@ func initWikiDir() {
 			log.Println("-init flag is given. Cloning " + viper.GetString("GitRepo") + "into " + wikidir + "...")
 			gitClone(viper.GetString("GitRepo"))
 		} else {
-			repoNotExistErr := errors.New("Clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo.")
+			repoNotExistErr := errors.New("clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo")
 			//log.Fatalln("Clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo.")
 			panic(repoNotExistErr)
 		}
@@ -2682,7 +2683,7 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 	results := gitSearch(`'`+name+`'`, strings.TrimSpace(fileList))
 
 	s := &searchPage{p, results}
-	renderTemplate(env, w, r.Context(), "search_results.tmpl", s)
+	renderTemplate(r.Context(), env, w, "search_results.tmpl", s)
 }
 
 func buildCache() *wikiCache {
@@ -3116,8 +3117,8 @@ func (env *wikiEnv) LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// This serves a file of the requested name from the "assets" rice box
-func (a *Box) ServeRiceAsset(w http.ResponseWriter, r *http.Request, file string) {
+// serveRiceAsset serves a file of the requested name from the "assets" rice box
+func (a *Box) serveRiceAsset(w http.ResponseWriter, r *http.Request, file string) {
 	f, err := a.Box.HTTPBox().Open(file)
 	if err != nil {
 		http.NotFound(w, r)
@@ -3129,27 +3130,27 @@ func (a *Box) ServeRiceAsset(w http.ResponseWriter, r *http.Request, file string
 }
 
 // Taken from http://reinbach.com/golang-webapps-1.html
-func (a *Box) StaticHandler(w http.ResponseWriter, r *http.Request) {
+func (a *Box) staticHandler(w http.ResponseWriter, r *http.Request) {
 	staticFile := r.URL.Path[len("/assets/"):]
 
 	defer httputils.TimeTrack(time.Now(), "StaticHandler "+staticFile)
 
 	//log.Println(staticFile)
 	if len(staticFile) != 0 {
-		a.ServeRiceAsset(w, r, staticFile)
+		a.serveRiceAsset(w, r, staticFile)
 		return
 	}
 	http.NotFound(w, r)
 	return
 }
 
-func (a *Box) FaviconHandler(w http.ResponseWriter, r *http.Request) {
+func (a *Box) faviconHandler(w http.ResponseWriter, r *http.Request) {
 	//log.Println(r.URL.Path)
 	if r.URL.Path == "/favicon.ico" {
-		a.ServeRiceAsset(w, r, "/favicon.ico")
+		a.serveRiceAsset(w, r, "/favicon.ico")
 		return
 	} else if r.URL.Path == "/favicon.png" {
-		a.ServeRiceAsset(w, r, "/favicon.png")
+		a.serveRiceAsset(w, r, "/favicon.png")
 		return
 	} else {
 		http.NotFound(w, r)
@@ -3158,10 +3159,10 @@ func (a *Box) FaviconHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (a *Box) RobotsHandler(w http.ResponseWriter, r *http.Request) {
+func (a *Box) robotsHandler(w http.ResponseWriter, r *http.Request) {
 	//log.Println(r.URL.Path)
 	if r.URL.Path == "/robots.txt" {
-		a.ServeRiceAsset(w, r, "/robots.txt")
+		a.serveRiceAsset(w, r, "/robots.txt")
 		return
 	}
 	http.NotFound(w, r)
@@ -3299,10 +3300,10 @@ func main() {
 	mux.Handle("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
 	mux.Handle("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
 
-	mux.HandleFunc("/robots.txt", assetBox.RobotsHandler)
-	mux.HandleFunc("/favicon.ico", assetBox.FaviconHandler)
-	mux.HandleFunc("/favicon.png", assetBox.FaviconHandler)
-	mux.HandleFunc("/assets/", assetBox.StaticHandler)
+	mux.HandleFunc("/robots.txt", assetBox.robotsHandler)
+	mux.HandleFunc("/favicon.ico", assetBox.faviconHandler)
+	mux.HandleFunc("/favicon.png", assetBox.faviconHandler)
+	mux.HandleFunc("/assets/", assetBox.staticHandler)
 
 	mux.Handle("/", s.Then(r))
 
