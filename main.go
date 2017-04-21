@@ -3212,6 +3212,8 @@ func main() {
 	signal.Notify(stopChan, os.Interrupt)
 	mux := http.NewServeMux()
 
+	initWikiDir()
+
 	/*
 		f, err := os.Create("trace.out")
 		if err != nil {
@@ -3266,8 +3268,6 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	initWikiDir()
 
 	//refreshStuff()
 
