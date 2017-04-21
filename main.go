@@ -3250,8 +3250,10 @@ func main() {
 			log.Fatalln(err)
 		}
 	}
-	if !dataDir.IsDir() {
-		log.Fatalln("./data/ is not a directory. This is where wiki data is stored.")
+	if os.IsExist(err) {
+		if !dataDir.IsDir() {
+			log.Fatalln("./data/ is not a directory. This is where wiki data is stored.")
+		}
 	}
 
 	initWikiDir()
