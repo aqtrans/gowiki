@@ -3238,6 +3238,17 @@ func main() {
 
 	//assetBox := httputils.OpenAssetBox("assets")
 
+	dataDir, err := os.Stat("./data/")
+	if os.IsNotExist(err) {
+		err = os.Mkdir("data", 0655)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
+	if !dataDir.IsDir() {
+		log.Fatalln("./data/ is not a directory. This is where wiki data is stored.")
+	}
+
 	// Bring up authState
 	//var err error
 	anAuthState, err := auth.NewAuthState("./data/auth.db", viper.GetString("AdminUser"))
@@ -3343,10 +3354,15 @@ func main() {
 
 	mux.Handle("/", s.Then(r))
 
-	log.Println("Listening on port " + viper.GetString("Port"))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = viper.GetString("Port")
+	}
+
+	log.Println("Listening on port " + port)
 
 	srv := &http.Server{
-		Addr:    "0.0.0.0:" + viper.GetString("Port"),
+		Addr:    "0.0.0.0:" + port,
 		Handler: mux,
 	}
 
