@@ -3245,7 +3245,7 @@ func main() {
 
 	dataDir, err := os.Stat("./data/")
 	if os.IsNotExist(err) {
-		err = os.Mkdir("data", 0655)
+		err = os.Mkdir("data", 0755)
 		if err != nil {
 			log.Fatalln(err)
 		}
