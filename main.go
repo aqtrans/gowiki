@@ -320,6 +320,10 @@ func init() {
 	viper.SetDefault("GitRepo", "git@example.com:user/wikidata.git")
 	viper.SetDefault("AdminUser", "admin")
 	viper.SetDefault("PushOnSave", false)
+	viper.SetDefault("InitWikiRepo", false)
+
+	viper.SetEnvPrefix("gowiki")
+	viper.AutomaticEnv()
 
 	viper.SetConfigName("conf")
 	viper.AddConfigPath("./data/")
@@ -2607,7 +2611,7 @@ func initWikiDir() {
 	_, err = os.Stat(wikidir + ".git")
 	if err != nil {
 		log.Println(wikidir + " is not a git repo!")
-		if fInit {
+		if viper.GetBool("InitWikiRepo") {
 			log.Println("-init flag is given. Cloning " + viper.GetString("GitRepo") + "into " + wikidir + "...")
 			gitClone(viper.GetString("GitRepo"))
 		} else {
