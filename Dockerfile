@@ -19,6 +19,6 @@ EXPOSE 3000
 
 # Set the entry point of the container to the bee command that runs the
 # application and watches for changes
-CMD ["./wiki", "-d", "-init"]
+CMD ["./wiki", "-d"]
 
 
