@@ -2613,7 +2613,8 @@ func initWikiDir() {
 		log.Println(wikidir + " is not a git repo!")
 		if viper.GetBool("InitWikiRepo") {
 			log.Println("-init flag is given. Cloning " + viper.GetString("GitRepo") + " into " + wikidir + "...")
-			gitClone(viper.GetString("GitRepo"))
+			err = gitClone(viper.GetString("GitRepo"))
+			check(err)
 		} else {
 			repoNotExistErr := errors.New("clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo")
 			//log.Fatalln("Clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo.")
