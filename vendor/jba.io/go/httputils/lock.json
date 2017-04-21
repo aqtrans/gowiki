@@ -1,0 +1,30 @@
+{
+    "memo": "6a3e4f71c36eb611190adb7a2c3d42f0d23d60ad6646820bb420947133ddc1c5",
+    "projects": [
+        {
+            "name": "github.com/GeertJohan/go.rice",
+            "branch": "master",
+            "revision": "4bbccbfa39e784796e483270451217d3369ecfbe",
+            "packages": [
+                ".",
+                "embedded"
+            ]
+        },
+        {
+            "name": "github.com/daaku/go.zipexe",
+            "branch": "master",
+            "revision": "a5fe2436ffcb3236e175e5149162b41cd28bd27d",
+            "packages": [
+                "."
+            ]
+        },
+        {
+            "name": "github.com/kardianos/osext",
+            "branch": "master",
+            "revision": "9d302b58e975387d0b4d9be876622c86cefe64be",
+            "packages": [
+                "."
+            ]
+        }
+    ]
+}
