@@ -2612,7 +2612,7 @@ func initWikiDir() {
 	if err != nil {
 		log.Println(wikidir + " is not a git repo!")
 		if viper.GetBool("InitWikiRepo") {
-			log.Println("-init flag is given. Cloning " + viper.GetString("GitRepo") + "into " + wikidir + "...")
+			log.Println("-init flag is given. Cloning " + viper.GetString("GitRepo") + " into " + wikidir + "...")
 			gitClone(viper.GetString("GitRepo"))
 		} else {
 			repoNotExistErr := errors.New("clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo")
@@ -3216,8 +3216,6 @@ func main() {
 	signal.Notify(stopChan, os.Interrupt)
 	mux := http.NewServeMux()
 
-	initWikiDir()
-
 	/*
 		f, err := os.Create("trace.out")
 		if err != nil {
@@ -3254,6 +3252,8 @@ func main() {
 	if !dataDir.IsDir() {
 		log.Fatalln("./data/ is not a directory. This is where wiki data is stored.")
 	}
+
+	initWikiDir()
 
 	// Bring up authState
 	//var err error
