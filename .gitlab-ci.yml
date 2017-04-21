@@ -31,21 +31,22 @@ install-go:
     - echo $GOPATH
     - go env
     - which go
-    - go get -u github.com/golang/dep/...
-    - go get github.com/GeertJohan/go.rice/rice
+
 
 build-my-project:
   stage: build
   script:
+    - go get -u github.com/golang/dep/...
+    - go get github.com/GeertJohan/go.rice/rice  
     - dep ensure
     - go get -d
-    - go get github.com/GeertJohan/go.rice/rice
     - rice embed-go
     - go build
 
 test-my-project:
   stage: test
   script:
+    - go get -u github.com/golang/dep/... 
     - dep ensure    
     - go test -v
     - go test -race 
