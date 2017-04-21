@@ -11,7 +11,7 @@ RUN go get github.com/GeertJohan/go.rice/rice && go get github.com/boltdb/bolt &
 
 COPY . /go/src/wiki/
 RUN go get -d
-RUN dep ensure
+#RUN dep ensure
 RUN go build -o ./wiki
 
 # Expose the application on port 3000
