@@ -3362,9 +3362,6 @@ func main() {
 	mux.Handle("/", s.Then(r))
 
 	port := os.Getenv("PORT")
-	if port == "" {
-		port = viper.GetString("Port")
-	}
 
 	log.Println("Listening on port " + port)
 
