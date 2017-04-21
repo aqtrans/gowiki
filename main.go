@@ -313,7 +313,7 @@ func init() {
 	raven.SetDSN("https://5ab2f68b0f524799b1d0b324350cc2ae:e01dbad12f8e4fd0bce97681a772a072@app.getsentry.com/94753")
 
 	// Viper config.
-	//viper.SetDefault("Port", "3000")
+	viper.SetDefault("Port", "3000")
 	viper.SetDefault("Email", "unused@the.moment")
 	viper.SetDefault("WikiDir", "./data/wikidata/")
 	viper.SetDefault("Domain", "wiki.example.com")
@@ -3361,12 +3361,10 @@ func main() {
 
 	mux.Handle("/", s.Then(r))
 
-	port := os.Getenv("PORT")
-
-	log.Println("Listening on port " + port)
+	log.Println("Listening on port " + viper.GetString("Port"))
 
 	srv := &http.Server{
-		Addr:    "0.0.0.0:" + port,
+		Addr:    "0.0.0.0:" + viper.GetString("Port"),
 		Handler: mux,
 	}
 
