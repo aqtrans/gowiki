@@ -88,7 +88,9 @@ deploy_staging:
   stage: deploy
   script:
     # Push to the Dokku server
+    - cd /builds/go/wiki
     - git remote add deploy dokku@192.168.1.146:gowiki
+    - git branch
     - git push deploy dokku
   environment:
     name: staging
