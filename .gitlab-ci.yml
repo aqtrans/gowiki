@@ -74,9 +74,6 @@ build-my-project:
   artifacts:
     paths:
       - wiki
-      - vendor/
-      - node_modules/
-      - bower_components/
 
 test-my-project:
   stage: test
