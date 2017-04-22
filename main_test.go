@@ -34,7 +34,7 @@ var (
 )
 
 func init() {
-	//viper.Set("WikiDir", "./tests/gowiki-testdata")
+	viper.Set("WikiDir", "./tests/gowiki-testdata")
 	viper.Set("Domain", "wiki.example.com")
 	viper.Set("GitRepo", "git@jba.io:conf/gowiki-data.git")
 }
@@ -47,7 +47,7 @@ func checkT(err error, t *testing.T) {
 
 // Execute `git clone [repo]` in the current workingDirectory
 func gitCloneTest() error {
-	o, err := gitCommand("clone", "git@jba.io:conf/gowiki-data.git", "./tests/gowiki-testdata").CombinedOutput()
+	o, err := gitCommand("clone", "git@jba.io:conf/gowiki-data.git", ".").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error during `git clone`: %s\n%s", err.Error(), string(o))
 	}
