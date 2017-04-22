@@ -1,17 +1,10 @@
 image: golang:latest
-# See docs/examples here:
-# http://doc.gitlab.com/ce/ci/quick_start/README.html
-# http://doc.gitlab.com/ce/ci/yaml/README.html
 
-# GitLab CI template for Go tests. Note this installs
-# a new working copy of Go (1.5.2 in this case) 
-# in a non-standard path such that sudo/root is not 
-# needed for the install stage.
-
-# note that this particular install-environment stage
-# is overly verbose in order to debug anything tricky
-# or weird in your environment - feel free to trim it 
-# down as needed
+cache:
+  untracked: true
+  key: "$CI_BUILD_REF_NAME"
+  paths:
+    - vendor/
 
 before_script:
   - ln -s /builds /go/src/jba.io
@@ -76,6 +69,7 @@ build-my-project:
       - wiki
       - assets/css/wiki.css
       - assets/css/wiki.css.map
+      - vendor/
 
 test-my-project:
   stage: test
