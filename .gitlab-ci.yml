@@ -56,10 +56,9 @@ install-go:
 build-my-project:
   stage: build
   script:
-    - go get -u github.com/golang/dep/...
+    - go get -u github.com/kardianos/govendor
     - go get github.com/GeertJohan/go.rice/rice  
-    - dep ensure
-    - go get -d
+    - govendor sync
     - rice embed-go
     - go build -o ./wiki
     - curl -sL https://deb.nodesource.com/setup_7.x | bash -
@@ -78,8 +77,9 @@ build-my-project:
 test-my-project:
   stage: test
   script:
-    - go get -u github.com/golang/dep/... 
-    - dep ensure
+    - go get -u github.com/kardianos/govendor
+    - govendor sync
+    - go get -d
     - go test -v
     - go test -race
 
