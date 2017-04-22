@@ -74,6 +74,8 @@ build-my-project:
   artifacts:
     paths:
       - wiki
+      - assets/css/wiki.css
+      - assets/css/wiki.css.map
 
 test-my-project:
   stage: test
@@ -83,6 +85,8 @@ test-my-project:
     - go get -d
     - go test -v
     - go test -race
+  cache:
+    key: test
 
 deploy_staging:
   stage: deploy
@@ -90,6 +94,9 @@ deploy_staging:
     # Push to the Dokku server
     - cd /builds/go/wiki
     - git checkout dokku
+    - git add assets/css/wiki.css
+    - git add assets/css/wiki.css.map
+    - git commit -m "empty"
     - git remote add deploy dokku@192.168.1.146:gowiki
     - git branch
     - git push deploy dokku
