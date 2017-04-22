@@ -1,4 +1,4 @@
-memo = "4d1569f0ac7325058e1e842cff6463d37f0fa130a73a9ffa0cccc124e887a216"
+memo = "e509a9bcab5d6637a46177f5244fea6aec0f944c5ea77e9c433f6a4b07f096d6"
 
 [[projects]]
   name = "github.com/BurntSushi/toml"
@@ -10,7 +10,7 @@ memo = "4d1569f0ac7325058e1e842cff6463d37f0fa130a73a9ffa0cccc124e887a216"
   branch = "master"
   name = "github.com/GeertJohan/go.rice"
   packages = [".","embedded"]
-  revision = "fbe422beac33c4443570d39dccb4b0c4c914d6ca"
+  revision = "c02ca9a983da5807ddf7d796784928f5be4afd09"
 
 [[projects]]
   name = "github.com/boltdb/bolt"
