@@ -93,8 +93,8 @@ deploy_staging:
   environment:
     name: staging
     url: http://gowiki.dokku.es.gy
-  only:
-  - master
+#  only:
+#  - master
 
 deploy_prod:
   stage: deploy
@@ -109,6 +109,6 @@ deploy_prod:
     name: production
     url: https://wiki.jba.io
   when: manual
-  only:
-  - master
+#  only:
+#  - master
 
