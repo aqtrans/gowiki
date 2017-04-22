@@ -85,14 +85,13 @@ test-my-project:
     - go get -d
     - go test -v
     - go test -race
-  cache:
-    key: test
 
 deploy_staging:
   stage: deploy
   script:
     # Push to the Dokku server
     - cd /builds/go/wiki
+    - rm -rf tests/gowiki-testdata
     - git checkout dokku
     - git config user.email "frink@es.gy"
     - git config user.name "frink.es.gy Gitlab CI"
