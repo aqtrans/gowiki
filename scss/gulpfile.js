@@ -8,7 +8,7 @@ var sassPaths = [
 ];
 
 gulp.task('sass', function() {
-  return gulp.src('scss/wiki.scss')
+  return gulp.src('wiki.scss')
     .pipe(sourcemaps.init())
     .pipe($.sass({
       includePaths: sassPaths,
@@ -19,9 +19,9 @@ gulp.task('sass', function() {
       browsers: ['last 2 versions', 'ie >= 9']
     }))
     .pipe(sourcemaps.write('./'))
-    .pipe(gulp.dest('assets/css/'));
+    .pipe(gulp.dest('../assets/css/'));
 });
 
 gulp.task('default', ['sass'], function() {
-  gulp.watch(['scss/**/*.scss'], ['sass']);
+  gulp.watch(['*.scss'], ['sass']);
 });
