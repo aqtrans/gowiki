@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -45,9 +46,15 @@ func checkT(err error, t *testing.T) {
 	}
 }
 
+func testGitCommand(args ...string) *exec.Cmd {
+	c := exec.Command(gitPath, args...)
+	//c.Dir = viper.GetString("WikiDir")
+	return c
+}
+
 // Execute `git clone [repo]` in the current workingDirectory
 func gitCloneTest() error {
-	o, err := gitCommand("clone", "git@jba.io:conf/gowiki-data.git", ".").CombinedOutput()
+	o, err := testGitCommand("clone", "git@jba.io:conf/gowiki-data.git", "./tests/gowiki-testdata/").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error during `git clone`: %s\n%s", err.Error(), string(o))
 	}
