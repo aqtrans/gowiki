@@ -80,7 +80,6 @@ test-my-project:
   script:
     - go get -u github.com/golang/dep/... 
     - dep ensure
-    - git clone git@jba.io:aqtrans/gowiki-testdata.git ./tests/gowiki-testdata/
     - go test -v
     - go test -race
 
