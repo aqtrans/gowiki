@@ -10,4 +10,4 @@ npm-debug.log
 tests/gowiki-testdata/**
 scss/bower_components/**
 scss/node_modules/**
-
+vendor/*/
