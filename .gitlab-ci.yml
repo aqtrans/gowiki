@@ -85,6 +85,7 @@ test-my-project:
     - go get -d
     - go test -v
     - go test -race
+    - rm -rf tests/gowiki-testdata
 
 deploy_staging:
   stage: deploy
@@ -97,6 +98,7 @@ deploy_staging:
     - git config user.name "frink.es.gy Gitlab CI"
     - git add assets/css/wiki.css
     - git add assets/css/wiki.css.map
+    - git rm -f tests/gowiki-testdata
     - git commit -m "empty"
     - git remote add deploy dokku@192.168.1.146:gowiki
     - git branch
