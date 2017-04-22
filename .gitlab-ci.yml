@@ -89,7 +89,7 @@ deploy_staging:
   script:
     # Push to the Dokku server
     - git remote add deploy dokku@192.168.1.146:gowiki
-    - git push deploy master
+    - git push deploy dokku
   environment:
     name: staging
     url: http://gowiki.dokku.es.gy
