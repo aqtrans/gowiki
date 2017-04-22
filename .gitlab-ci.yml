@@ -63,11 +63,13 @@ build-my-project:
     - rice embed-go
     - go build -o ./wiki
     - apt-get update -y && apt-get install npm -y
+    - cd scss/
     - npm install
     - npm install bower
     - node_modules/.bin/bower install
     - npm build
     - node_modules/.bin/gulp sass
+    - cd ../
   artifacts:
     paths:
       - wiki
