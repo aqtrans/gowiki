@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -42,6 +43,15 @@ func checkT(err error, t *testing.T) {
 	if err != nil {
 		t.Errorf("ERROR: %v", err)
 	}
+}
+
+// Execute `git clone [repo]` in the current workingDirectory
+func gitCloneTest() error {
+	o, err := gitCommand("clone", "git@jba.io:conf/gowiki-data.git", "./tests/gowiki-testdata").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error during `git clone`: %s\n%s", err.Error(), string(o))
+	}
+	return nil
 }
 
 // tempfile returns a temporary file path.
@@ -133,7 +143,7 @@ func TestWikiInit(t *testing.T) {
 
 // TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
 func TestNewWikiPage(t *testing.T) {
-	err := gitPull()
+	err := gitCloneTest()
 	checkT(err, t)
 	authDB := mustOpenDB()
 	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
