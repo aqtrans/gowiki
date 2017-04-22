@@ -96,7 +96,7 @@ deploy_staging:
     - git checkout dokku
     - git config user.email "frink@es.gy"
     - git config user.name "frink.es.gy Gitlab CI"
-    - git add wiki
+    - git add -f wiki
     - git add -f vendor/
     - git add assets/css/wiki.css
     - git add assets/css/wiki.css.map
