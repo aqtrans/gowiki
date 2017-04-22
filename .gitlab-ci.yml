@@ -94,6 +94,8 @@ deploy_staging:
     # Push to the Dokku server
     - cd /builds/go/wiki
     - git checkout dokku
+    - git config user.email "frink@es.gy"
+    - git config user.name "frink.es.gy Gitlab CI"
     - git add assets/css/wiki.css
     - git add assets/css/wiki.css.map
     - git commit -m "empty"
