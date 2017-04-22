@@ -1,4 +1,4 @@
-memo = "a66ae63b21bd3b589edf313f1edc6dd899cd845e2130233f03bc70e76987f4ac"
+memo = "4d1569f0ac7325058e1e842cff6463d37f0fa130a73a9ffa0cccc124e887a216"
 
 [[projects]]
   name = "github.com/BurntSushi/toml"
@@ -173,12 +173,6 @@ memo = "a66ae63b21bd3b589edf313f1edc6dd899cd845e2130233f03bc70e76987f4ac"
   packages = [".","scanner","token","types"]
   revision = "f187355171c936ac84a82793659ebb4936bc1c23"
   version = "v1.3.0"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/thoas/stats"
-  packages = ["."]
-  revision = "152b5d051953fdb6e45f14b6826962aadc032324"
 
 [[projects]]
   branch = "master"
