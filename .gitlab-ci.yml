@@ -1,3 +1,4 @@
+image: golang:latest
 # See docs/examples here:
 # http://doc.gitlab.com/ce/ci/quick_start/README.html
 # http://doc.gitlab.com/ce/ci/yaml/README.html
@@ -12,6 +13,31 @@
 # or weird in your environment - feel free to trim it 
 # down as needed
 
+before_script:
+  - ln -s /builds /go/src/jba.io
+  - cd /go/src/jba.io/go/wiki
+  # Install ssh-agent if not already installed, it is required by Docker.
+  # (change apt-get to yum if you use a CentOS-based image)
+  - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+
+  # Run ssh-agent (inside the build environment)
+  - eval $(ssh-agent -s)
+
+  # Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
+  - ssh-add <(echo "$SSH_PRIVATE_KEY")
+
+  # For Docker builds disable host key checking. Be aware that by adding that
+  # you are suspectible to man-in-the-middle attacks.
+  # WARNING: Use this only with the Docker executor, if you use it with shell
+  # you will overwrite your user's SSH config.
+  # - mkdir -p ~/.ssh
+  # - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  # In order to properly check the server's host key, assuming you created the
+  # SSH_SERVER_HOSTKEYS variable previously, uncomment the following two lines
+  # instead.
+  - mkdir -p ~/.ssh
+  - '[[ -f /.dockerenv ]] && echo "$SSH_SERVER_HOSTKEYS" > ~/.ssh/known_hosts'
+
 stages:
   - install-environment
   - build
@@ -21,73 +47,67 @@ stages:
 install-go:
   stage: install-environment
   script:
-    - export CURRENT_BUILD_PATH=$(pwd)
-    - echo $PATH
-    - echo $CURRENT_BUILD_PATH
-    - rm -rf $HOME/gopath
-    - rm -rf $HOME/golang    
-    - mkdir -p $HOME/gopath/src/wiki
-    - mkdir -p $HOME/golang
-    - curl https://storage.googleapis.com/golang/go1.8.linux-amd64.tar.gz 2>/dev/null > go1.8.linux-amd64.tar.gz
-    - tar -C $HOME/golang -xzf go1.8.linux-amd64.tar.gz
-    - export GOROOT=$HOME/golang/go
-    - export GOPATH=$HOME/gopath
-    - export PATH=$PATH:$GOROOT/bin
-    - export PATH=$PATH:$GOPATH/bin
-    - mv $CI_PROJECT_DIR/* $GOPATH/src/wiki/
     - go version
     - echo $PATH
+    - echo $GOPATH
     - go env
     - which go
-    - go get -u github.com/golang/dep/...
-    - go get github.com/GeertJohan/go.rice/rice
 
 build-my-project:
   stage: build
   script:
-    - export GOROOT=$HOME/golang/go
-    - export GOPATH=$HOME/gopath
-    - export PATH=$GOROOT/bin:$PATH 
-    - export PATH=$GOPATH/bin:$PATH
-    - cd $GOPATH/src/wiki
+    - go get -u github.com/golang/dep/...
+    - go get github.com/GeertJohan/go.rice/rice  
     - dep ensure
     - go get -d
-    - go get github.com/GeertJohan/go.rice/rice
     - rice embed-go
-    - go build
-
-test-my-project:
-  stage: test
-  script:
-    - export GOROOT=$HOME/golang/go
-    - export GOPATH=$HOME/gopath
-    - export PATH=$GOROOT/bin:$PATH 
-    - export PATH=$GOPATH/bin:$PATH
-    - cd $GOPATH/src/wiki
-    - dep ensure    
-    - go test -v
-
-deploy-it:
-  stage: deploy
-  only: 
-    - master@go/wiki
-  script:
-    - export GOROOT=$HOME/golang/go
-    - export GOPATH=$HOME/gopath
-    - export PATH=$GOROOT/bin:$PATH 
-    - export PATH=$GOPATH/bin:$PATH
-    - cd $GOPATH/src/wiki
-    - mkdir deploy
-    - dep ensure    
-    - go get -d
-    - go get github.com/GeertJohan/go.rice/rice
+    - go build -o ./wiki
+    - apt-get update -y && apt-get install npm -y
     - npm install
     - npm install bower
     - node_modules/.bin/bower install
     - npm build
     - node_modules/.bin/gulp sass
+  artifacts:
+    paths:
+      - wiki
+      - vendor/
+      - node_modules/
+      - bower_components/
+
+test-my-project:
+  stage: test
+  script:
+    - go get -u github.com/golang/dep/... 
+    - dep ensure    
+    - go test -v
+    - go test -race
+
+deploy_staging:
+  stage: deploy
+  script:
+    # Push to the Dokku server
+    - git remote add deploy dokku@192.168.1.146:gowiki
+    - git push deploy master
+  environment:
+    name: staging
+    url: http://gowiki.dokku.es.gy
+  only:
+  - master
+
+deploy_prod:
+  stage: deploy
+  script:
+    - go get github.com/GeertJohan/go.rice/rice   
     - rice embed-go
-    - go build -o ./deploy/wiki
+    - go build -o ./wiki
     - cp -r README.md deploy/
     - rsync -av --delete --exclude data/ --exclude http.log deploy/ golang@localhost:/home/golang/wiki/
-    - ssh golang@localhost sudo systemctl restart golang-wiki
+    - ssh golang@localhost sudo systemctl restart golang-wiki    
+  environment:
+    name: production
+    url: https://wiki.jba.io
+  when: manual
+  only:
+  - master
+
