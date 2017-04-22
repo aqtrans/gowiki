@@ -96,10 +96,12 @@ deploy_staging:
     - git checkout dokku
     - git config user.email "frink@es.gy"
     - git config user.name "frink.es.gy Gitlab CI"
+    - git add wiki
+    - git add -f vendor/
     - git add assets/css/wiki.css
     - git add assets/css/wiki.css.map
     - git rm -f tests/gowiki-testdata
-    - git commit -m "empty"
+    - git commit -m "Gitlab to Dokku dummy commit"
     - git remote add deploy dokku@192.168.1.146:gowiki
     - git branch
     - git push deploy dokku
