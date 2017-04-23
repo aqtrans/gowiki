@@ -81,7 +81,7 @@ deploy_staging:
     - rm -rf tests/gowiki-testdata
     - git checkout $CI_COMMIT_REF_NAME
     - git status
-    - git remote add lisa-dokku ssh://dokku@lisa.es.gy:42424/~/gowiki
+    - git remote add lisa-dokku ssh://dokku@192.168.1.100:42424/~/gowiki
     - git branch
     - git push lisa-dokku $CI_COMMIT_REF_NAME:master
   environment:
