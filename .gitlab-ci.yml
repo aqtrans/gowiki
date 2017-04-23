@@ -52,20 +52,12 @@ build-my-project:
     - go get -u github.com/kardianos/govendor
     - go get github.com/GeertJohan/go.rice/rice  
     - govendor sync
-    - govendor fetch jba.io/go/httputils
-    - govendor fetch jba.io/go/auth
     - go get -d
     - rice embed-go
     - go build -o ./wiki
     #- curl -sL https://deb.nodesource.com/setup_7.x | bash -
     #- apt-get update -y && apt-get install -y nodejs
-    - cd scss/
-    - npm install
-    - npm install bower
-    - node_modules/.bin/bower --allow-root install
-    - npm build
-    - node_modules/.bin/gulp sass
-    - cd ../
+    - ./build_css.sh
   artifacts:
     paths:
       - wiki
@@ -93,13 +85,7 @@ deploy_staging:
     - git config user.email "frink@es.gy"
     - git config user.name "frink.es.gy Gitlab CI"
     - git status
-    - git add -f wiki
-    - git add -f vendor/
-    - git add assets/css/wiki.css
-    - git add assets/css/wiki.css.map
-    - git rm -f tests/gowiki-testdata
-    - git commit -m "Gitlab to Dokku dummy commit"
-    - git remote add deploy dokku@192.168.1.146:gowiki
+    - git remote add deploy dokku@lisa.es.gy:gowiki
     - git branch
     - git push deploy dokku
   environment:
