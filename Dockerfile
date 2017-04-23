@@ -15,7 +15,7 @@ RUN go get -d
 RUN go build -o ./wiki
 
 # Expose the application on port 3000
-EXPOSE 3000
+#EXPOSE 3000
 
 # Set the entry point of the container to the bee command that runs the
 # application and watches for changes
