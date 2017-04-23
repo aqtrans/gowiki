@@ -49,6 +49,7 @@ install-go:
 build-my-project:
   stage: build
   script:
+    - /bin/sh ./build_css.sh  
     - go get -u github.com/kardianos/govendor
     - go get github.com/GeertJohan/go.rice/rice  
     - govendor sync
@@ -57,7 +58,7 @@ build-my-project:
     - go build -o ./wiki
     #- curl -sL https://deb.nodesource.com/setup_7.x | bash -
     #- apt-get update -y && apt-get install -y nodejs
-    - /bin/sh ./build_css.sh
+
   artifacts:
     paths:
       - wiki
@@ -68,9 +69,6 @@ build-my-project:
 test-my-project:
   stage: test
   script:
-    - go get -u github.com/kardianos/govendor
-    - govendor sync
-    - go get -d
     - go test -v
     - go test -race
     - rm -rf tests/gowiki-testdata
@@ -81,32 +79,32 @@ deploy_staging:
     # Push to the Dokku server
     - cd /builds/go/wiki
     - rm -rf tests/gowiki-testdata
-    - git checkout dokku
-    - git config user.email "frink@es.gy"
-    - git config user.name "frink.es.gy Gitlab CI"
+    - git checkout $CI_COMMIT_REF_NAME
     - git status
-    - git remote add deploy dokku@lisa.es.gy:gowiki
+    - git remote add lisa-dokku dokku@lisa.es.gy:gowiki
     - git branch
-    - git push deploy dokku
+    - git push lisa-dokku $CI_COMMIT_REF_NAME:master
   environment:
     name: staging
-    url: http://gowiki.dokku.es.gy
+    url: https://gowiki.lisa.es.gy
 #  only:
 #  - master
 
 deploy_prod:
   stage: deploy
   script:
-    - go get github.com/GeertJohan/go.rice/rice   
-    - rice embed-go
-    - go build -o ./wiki
-    - cp -r README.md deploy/
-    - rsync -av --delete --exclude data/ --exclude http.log deploy/ golang@localhost:/home/golang/wiki/
-    - ssh golang@localhost sudo systemctl restart golang-wiki    
+    # Push to the Dokku server
+    - cd /builds/go/wiki
+    - rm -rf tests/gowiki-testdata
+    - git checkout master
+    - git status
+    - git remote add frink-dokku dokku@frink.es.gy:gowiki
+    - git branch
+    - git push frink-dokku master 
   environment:
     name: production
     url: https://wiki.jba.io
   when: manual
-#  only:
-#  - master
+  only:
+  - master
 
