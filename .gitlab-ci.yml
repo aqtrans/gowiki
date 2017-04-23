@@ -52,8 +52,8 @@ build-my-project:
     - go get -u github.com/kardianos/govendor
     - go get github.com/GeertJohan/go.rice/rice  
     - govendor sync
-    - govendor add jba.io/go/httputils
-    - govendor add jba.io/go/auth
+    - govendor fetch jba.io/go/httputils
+    - govendor fetch jba.io/go/auth
     - go get -d
     - rice embed-go
     - go build -o ./wiki
@@ -92,6 +92,7 @@ deploy_staging:
     - git checkout dokku
     - git config user.email "frink@es.gy"
     - git config user.name "frink.es.gy Gitlab CI"
+    - git status
     - git add -f wiki
     - git add -f vendor/
     - git add assets/css/wiki.css
