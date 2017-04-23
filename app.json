@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "dokku": {
+      "predeploy": "mv -v /go/src/wiki/data/auth.db /go/src/wiki/data/auth.db.bak",
+      "postdeploy": "mv -v /go/src/wiki/data/auth.db.bak /go/src/wiki/data/auth.db"
+    }
+  }
+}
