@@ -31,6 +31,10 @@ before_script:
   - mkdir -p ~/.ssh
   - '[[ -f /.dockerenv ]] && echo "$SSH_SERVER_HOSTKEYS" > ~/.ssh/known_hosts'
 
+before_script:
+  - ln -s /builds /go/src/jba.io
+  - cd /go/src/jba.io/go/wiki
+
 stages:
   - install-environment
   - build
