@@ -10,11 +10,11 @@ WORKDIR /go/src/wiki
 RUN go get github.com/GeertJohan/go.rice/rice && go get github.com/kardianos/govendor
 
 ADD . /go/src/wiki/
+RUN /bin/sh ./build_css.sh
 RUN govendor sync
 RUN go get -d
 RUN rice embed-go
 RUN go build -o ./wiki
-RUN /bin/sh ./build_css.sh
 
 # Expose the application on port 3000
 #EXPOSE 3000
