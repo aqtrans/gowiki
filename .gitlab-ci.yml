@@ -88,9 +88,10 @@ deploy_staging:
     name: staging
     url: https://gowiki.lisa.es.gy
   only:
-    - branches
+    - branches@go/wiki
   except:
-    - master
+    - master@go/wiki
+  when: manual
 
 deploy_prod:
   stage: deploy
@@ -108,6 +109,4 @@ deploy_prod:
     url: https://wiki.jba.io
   #when: manual
   only:
-    - master
-  except:
-    - branches
+    - master@go/wiki
