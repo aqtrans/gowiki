@@ -3276,8 +3276,6 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	//refreshStuff()
-
 	// Check for unclean Git dir on startup
 	err = gitIsCleanStartup()
 	if err != nil {
