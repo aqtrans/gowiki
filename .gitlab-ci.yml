@@ -52,6 +52,8 @@ build-my-project:
     - go get -u github.com/kardianos/govendor
     - go get github.com/GeertJohan/go.rice/rice  
     - govendor sync
+    - govendor add jba.io/go/httputils
+    - govendor add jba.io/go/auth
     - go get -d
     - rice embed-go
     - go build -o ./wiki
