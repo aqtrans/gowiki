@@ -14,7 +14,7 @@ RUN govendor sync
 RUN go get -d
 RUN rice embed-go
 RUN go build -o ./wiki
-RUN ./build_css.sh
+RUN /bin/sh ./build_css.sh
 
 # Expose the application on port 3000
 #EXPOSE 3000
