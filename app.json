@@ -1,8 +1,8 @@
 {
   "scripts": {
     "dokku": {
-      "predeploy": "[ -f /go/src/wiki/data/auth.db ] && mv -v /go/src/wiki/data/auth.db /go/src/wiki/data/auth.db.bak",
-      "postdeploy": "[ -f /go/src/wiki/data/auth.db.bak ] && mv -v /go/src/wiki/data/auth.db.bak /go/src/wiki/data/auth.db"
+      "predeploy": "[ -f /go/src/wiki/data/auth.db ] && cp -v /go/src/wiki/data/auth.db /go/src/wiki/data/auth.db.bak",
+      "postdeploy": "[ -f /go/src/wiki/data/auth.db.bak ] && cp -v /go/src/wiki/data/auth.db.bak /go/src/wiki/data/auth.db"
     }
   }
 }
