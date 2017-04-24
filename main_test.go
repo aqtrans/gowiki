@@ -80,28 +80,6 @@ func tempfile() string {
 	return f.Name()
 }
 
-type AuthDB struct {
-	*auth.DB
-}
-
-// MustOpenDB returns a new, open DB at a temporary location.
-func mustOpenDB() *AuthDB {
-	tmpdb := auth.MustOpenAuthDB(tempfile())
-	return &AuthDB{tmpdb}
-}
-
-func (tmpdb *AuthDB) Close() error {
-	//log.Println(tmpdb.Path())
-	defer os.Remove(tmpdb.Path())
-	return tmpdb.DB.Close()
-}
-
-func (tmpdb *AuthDB) MustClose() {
-	if err := tmpdb.Close(); err != nil {
-		panic(err)
-	}
-}
-
 /*
 func newState() *auth.AuthState {
 	authDB := mustOpenDB()
@@ -123,19 +101,19 @@ func testEnv(t *testing.T, authState *auth.AuthState) *wikiEnv {
 }
 
 func TestAuthInit(t *testing.T) {
-	authDB := mustOpenDB()
-	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
 	checkT(err, t)
-	defer authDB.Close()
 	_, err = authState.Userlist()
 	checkT(err, t)
 }
 
 func TestRiceInit(t *testing.T) {
-	authDB := mustOpenDB()
-	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
 	checkT(err, t)
-	defer authDB.Close()
 	e := testEnv(t, authState)
 	err = riceInit(e)
 	checkT(err, t)
@@ -156,15 +134,14 @@ func TestWikiInit(t *testing.T) {
 func TestNewWikiPage(t *testing.T) {
 	err := gitCloneTest()
 	checkT(err, t)
-	authDB := mustOpenDB()
-	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
 	checkT(err, t)
-	defer authDB.Close()
 
 	e := testEnv(t, authState)
 	err = riceInit(e)
 	checkT(err, t)
-	defer authDB.Close()
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -248,10 +225,10 @@ func TestNewHandler(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	authDB := mustOpenDB()
-	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
 	checkT(err, t)
-	defer authDB.Close()
 
 	e := testEnv(t, authState)
 
@@ -307,10 +284,10 @@ func TestIndexPage(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	authDB := mustOpenDB()
-	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
 	checkT(err, t)
-	defer authDB.Close()
 
 	e := testEnv(t, authState)
 
@@ -364,10 +341,10 @@ func TestIndexHistoryPage(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	authDB := mustOpenDB()
-	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
 	checkT(err, t)
-	defer authDB.Close()
 
 	e := testEnv(t, authState)
 
@@ -421,10 +398,10 @@ func TestIndexEditPage(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	authDB := mustOpenDB()
-	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
 	checkT(err, t)
-	defer authDB.Close()
 
 	e := testEnv(t, authState)
 	err = riceInit(e)
@@ -484,10 +461,10 @@ func TestDirBaseHandler(t *testing.T) {
 	req, err := http.NewRequest("POST", "/new", reader)
 	checkT(err, t)
 
-	authDB := mustOpenDB()
-	authState, err := auth.NewAuthStateWithDB(authDB.DB, tempfile(), "admin")
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
 	checkT(err, t)
-	defer authDB.Close()
 
 	testEnv(t, authState)
 
