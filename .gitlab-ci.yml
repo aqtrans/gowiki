@@ -69,6 +69,7 @@ build-my-project:
 test-my-project:
   stage: test
   script:
+    - go get -d  
     - go test -v
     - go test -race
     - rm -rf tests/gowiki-testdata
