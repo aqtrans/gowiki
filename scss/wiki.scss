@@ -179,12 +179,13 @@ body {
                 input[type=checkbox]:checked + label:before { content: "\f046"; } /* checked icon */
                 input[type=checkbox]:checked + label:before { letter-spacing: 5px; } /* allow space for check mark */
             }
-            article:first-child {
+            header {
+                @include card();
                 display: flex;
                 flex-flow: row nowrap;
 
                 margin-bottom: 1em;
-                > header {
+                > h1 {
                     flex-grow: 1;
                     font-size: 2.6rem;
                 }
@@ -195,6 +196,7 @@ body {
                 div.stats {
                     flex-shrink: 1;
                     font-family: $header-font-family;
+                    font-weight: lighter;
 
                     ul {
                         margin: 0;
