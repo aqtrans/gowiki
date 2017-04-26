@@ -13,14 +13,22 @@ $body-font-family: 'Noto Sans', 'Open Sans', 'Roboto Condensed', 'Helvetica Neue
     //box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);    
 }
 
+html, body {
+  width: 100%;
+  height: 100%;
+}
+
 body {
     display: flex;
     flex-flow: row;
+    margin: 0 auto;
     //background-color: $almostblack;
     > nav {
         flex: 1 6 20%;
         order: 1;
         padding-right: 10px;
+        height: 100%;
+        background-color: $dark-gray;
         ul {
             list-style-type: square;
         }
@@ -28,6 +36,8 @@ body {
     > section {
         flex: 3 1 80%;
         order: 2;
+        height: 100%;
+        //padding: 0 10px;
         > main {
             display: flex;
             flex-flow: column;
@@ -39,17 +49,16 @@ body {
                 padding-bottom: 20px;
                 
                 h1 {
+                    padding-left: 0.5rem;
                     flex: 1 5;
                     order: 3;
                 }
-                small {
+                div.stats {
                     flex: 1 5;
-                    order: 4;
+                    order: 5;
                 }
                 
                 ul {
-                    flex: 1 5;
-                    order: 5;
                     display: inline-flex;
                     flex-flow: row nowrap;                  
                     margin: 0;
@@ -72,7 +81,7 @@ body {
                 list-style-type: none;
                 li {
                     padding: 5px;
-                    margin: 0 10px 0 0;
+                    margin: 0 10px;
                     float: left;
                     background-color: $almostblack;
                 }
@@ -81,6 +90,8 @@ body {
                 }
             }
             > article {
+                padding: 0.5rem;
+                border-top: 1px solid $black;
                 @include card();
                 flex: 1;
                 min-height: 50vh;
