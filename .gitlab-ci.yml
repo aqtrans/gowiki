@@ -51,13 +51,9 @@ build-my-project:
   script:
     - /bin/sh ./build_css.sh  
     - go get -u github.com/kardianos/govendor
-    - go get github.com/GeertJohan/go.rice/rice  
     - govendor sync
     - go get -d
-    - rice embed-go
     - go build -o ./wiki
-    #- curl -sL https://deb.nodesource.com/setup_7.x | bash -
-    #- apt-get update -y && apt-get install -y nodejs
 
   artifacts:
     paths:
