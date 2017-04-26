@@ -42,7 +42,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/pprof"
-	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -57,7 +56,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/GeertJohan/go.rice"
+	//"github.com/GeertJohan/go.rice"
 	"github.com/dimfeld/httptreemux"
 	"github.com/getsentry/raven-go"
 	"github.com/gorilla/csrf"
@@ -128,9 +127,6 @@ var (
 	//linkPattern = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
 	//bufpool        *bpool.BufferPool
 	//templates      map[string]*template.Template
-	fLocal  bool
-	fDebug  = httputils.Debug
-	fInit   bool
 	gitPath string
 	//cache          *wikiCache
 	errNotInGit    = errors.New("given file not in Git repo")
@@ -143,11 +139,6 @@ var (
 	errGitBehind   = errors.New("wiki git repo is behind; Need to pull")
 	errGitDiverged = errors.New("wiki git repo has diverged; Need to intervene manually")
 )
-
-// Box is a wrapped rice.Box for testing purposes
-type Box struct {
-	*rice.Box
-}
 
 type renderer struct {
 	*blackfriday.Html
@@ -321,6 +312,8 @@ func init() {
 	viper.SetDefault("AdminUser", "admin")
 	viper.SetDefault("PushOnSave", false)
 	viper.SetDefault("InitWikiRepo", false)
+	viper.SetDefault("Dev", false)
+	viper.SetDefault("Debug", false)
 
 	viper.SetEnvPrefix("gowiki")
 	viper.AutomaticEnv()
@@ -332,6 +325,11 @@ func init() {
 		//panic(fmt.Errorf("Fatal error config file: %s \n", err))
 		fmt.Println("No configuration file loaded - using defaults")
 	}
+
+	if viper.GetBool("Debug") {
+		httputils.Debug = true
+	}
+
 	//viper.SetConfigType("toml")
 
 	/*
@@ -355,12 +353,6 @@ func init() {
 	//viper.Unmarshal(&cfg)
 	//viper.UnmarshalKey("AuthConf", &auth.Authcfg)
 
-	//Flag '-l' enables go.dev and *.dev domain resolution
-	flag.BoolVar(&fLocal, "l", false, "Turn on localhost resolving for Handlers")
-	//Flag '-d' enabled debug logging
-	flag.BoolVar(&httputils.Debug, "d", false, "Enabled debug logging")
-	//Flag '-init' enables pulling of remote git repo into wikiDir
-	flag.BoolVar(&fInit, "init", false, "Enable auto-cloning of remote wikiDir")
 	/*
 		bufpool = bpool.NewBufferPool(64)
 		if templates == nil {
@@ -2559,43 +2551,24 @@ func timer(next http.Handler) http.Handler {
 	})
 }
 
-func riceInit(env *wikiEnv) error {
-	// Parent templates directory named 'templates'
-	templateBox, err := rice.FindBox("templates")
-	checkErrReturn("riceInit()/FindBox", err)
-
-	// Child directory 'templates/includes' containing the base templates
-	includes, err := templateBox.Open("includes")
-	checkErrReturn("riceInit()/Open.includes", err)
-	includeDir, err := includes.Readdir(-1)
-	checkErrReturn("riceInit()/includes.Readdir", err)
-
-	// Child directory 'templates/layouts' containing individual page layouts
-	layouts, err := templateBox.Open("layouts")
-	checkErrReturn("riceInit()/Open.layouts", err)
-	layoutsDir, err := layouts.Readdir(-1)
-	checkErrReturn("riceInit()/layouts.Readdir", err)
-
-	var boxT []string
-	var templateIBuff bytes.Buffer
-	for _, v := range includeDir {
-		boxT = append(boxT, "includes/"+v.Name())
-		iString, _ := templateBox.String("includes/" + v.Name())
-		templateIBuff.WriteString(iString)
+func tmplInit(env *wikiEnv) error {
+	templatesDir := "./templates/"
+	layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
+	if err != nil {
+		panic(err)
+	}
+	includes, err := filepath.Glob(templatesDir + "includes/*.tmpl")
+	if err != nil {
+		panic(err)
 	}
 
 	funcMap := template.FuncMap{"prettyDate": httputils.PrettyDate, "safeHTML": httputils.SafeHTML, "imgClass": httputils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
 
-	// Here we are prefacing every layout with what should be every includes/ .tmpl file
-	// Ex: includes/sidebar.tmpl includes/bottom.tmpl includes/base.tmpl layouts/list.tmpl
-	// **THIS IS VERY IMPORTANT TO ALLOW MY BASE TEMPLATE TO WORK**
-	for _, layout := range layoutsDir {
-		boxT = append(boxT, "layouts/"+layout.Name())
+	for _, layout := range layouts {
+		files := append(includes, layout)
 		//DEBUG TEMPLATE LOADING
-		//utils.Debugln(files)
-		lString, _ := templateBox.String("layouts/" + layout.Name())
-		fstring := templateIBuff.String() + lString
-		env.templates[layout.Name()] = template.Must(template.New(layout.Name()).Funcs(funcMap).Parse(fstring))
+		//httputils.Debugln(files)
+		env.templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFiles(files...))
 	}
 	return nil
 }
@@ -2982,234 +2955,6 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
-//UserSignupPostHandler only handles POST requests, using forms named "username" and "password"
-// Signing up users as necessary, inside the AuthConf
-func (env *wikiEnv) UserSignupPostHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-	case "POST":
-		username := template.HTMLEscapeString(r.FormValue("username"))
-		password := template.HTMLEscapeString(r.FormValue("password"))
-		err := env.authState.NewUser(username, password)
-		if err != nil {
-			panic(err)
-		}
-
-		env.authState.SetSession("flash", "Successfully added '"+username+"' user.", w, r)
-		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
-
-	case "PUT":
-		// Update an existing record.
-	case "DELETE":
-		// Remove the record.
-	default:
-		// Give an error message.
-	}
-}
-
-//AdminUserPassChangePostHandler only handles POST requests, using forms named "username" and "password"
-// Signing up users as necessary, inside the AuthConf
-func (env *wikiEnv) AdminUserPassChangePostHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-	case "POST":
-		username := template.HTMLEscapeString(r.FormValue("username"))
-		password := template.HTMLEscapeString(r.FormValue("password"))
-		// Hash password now so if it fails we catch it before touching Bolt
-		//hash, err := passlib.Hash(password)
-		hash, err := auth.HashPassword([]byte(password))
-		if err != nil {
-			// couldn't hash password for some reason
-			log.Fatalln(err)
-			return
-		}
-
-		err = env.authState.UpdatePass(username, hash)
-		if err != nil {
-			panic(err)
-		}
-		env.authState.SetSession("flash", "Successfully changed '"+username+"' users password.", w, r)
-		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
-
-	case "PUT":
-		// Update an existing record.
-	case "DELETE":
-		// Remove the record.
-	default:
-		// Give an error message.
-	}
-}
-
-//AdminUserDeletePostHandler only handles POST requests, using forms named "username" and "password"
-// Signing up users as necessary, inside the AuthConf
-func (env *wikiEnv) AdminUserDeletePostHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-	case "POST":
-		username := template.HTMLEscapeString(r.FormValue("username"))
-
-		err := env.authState.DeleteUser(username)
-		if err != nil {
-			panic(err)
-		}
-		env.authState.SetSession("flash", "Successfully changed '"+username+"' users password.", w, r)
-		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
-
-	case "PUT":
-		// Update an existing record.
-	case "DELETE":
-		// Remove the record.
-	default:
-		// Give an error message.
-	}
-}
-
-//SignupPostHandler only handles POST requests, using forms named "username" and "password"
-// Signing up users as necessary, inside the AuthConf
-func (env *wikiEnv) SignupPostHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "GET":
-	case "POST":
-		username := template.HTMLEscapeString(r.FormValue("username"))
-		password := template.HTMLEscapeString(r.FormValue("password"))
-		err := env.authState.NewUser(username, password)
-		if err != nil {
-			env.authState.SetSession("flash", "User registration failed.", w, r)
-			log.Println("Error registering user", err)
-			http.Redirect(w, r, "/signup", http.StatusSeeOther)
-			return
-		}
-		env.authState.SetSession("flash", "Successful user registration.", w, r)
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-
-	case "PUT":
-		// Update an existing record.
-	case "DELETE":
-		// Remove the record.
-	default:
-		// Give an error message.
-	}
-}
-
-//LoginPostHandler only handles POST requests, verifying forms named "username" and "password"
-// Comparing values with LDAP or configured username/password combos
-func (env *wikiEnv) LoginPostHandler(w http.ResponseWriter, r *http.Request) {
-
-	switch r.Method {
-	case "GET":
-		// This should be handled in a separate function inside your app
-		/*
-			// Serve login page, replacing loginPageHandler
-			defer timeTrack(time.Now(), "loginPageHandler")
-			title := "login"
-			user := GetUsername(r)
-			//p, err := loadPage(title, r)
-			data := struct {
-				UN  string
-				Title string
-			}{
-				user,
-				title,
-			}
-			err := renderTemplate(w, "login.tmpl", data)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-		*/
-	case "POST":
-
-		// Handle login POST request
-		username := template.HTMLEscapeString(r.FormValue("username"))
-		password := template.HTMLEscapeString(r.FormValue("password"))
-		referer, _ := url.Parse(r.Referer())
-
-		// Check if we have a ?url= query string, from AuthMiddle
-		// Otherwise, just use the referrer
-		var r2 string
-		r2 = referer.Query().Get("url")
-		if r2 == "" {
-			r2 = r.Referer()
-			// if r.Referer is blank, just redirect to index
-			if r.Referer() == "" || referer.RequestURI() == "/login" {
-				r2 = "/"
-			}
-		}
-
-		// Login authentication
-		if env.authState.BoltAuth(username, password) {
-			env.authState.SetSession("user", username, w, r)
-			env.authState.SetSession("flash", "User '"+username+"' successfully logged in.", w, r)
-			http.Redirect(w, r, r2, http.StatusSeeOther)
-			return
-		}
-		env.authState.SetSession("flash", "User '"+username+"' failed to login. <br> Please check your credentials and try again.", w, r)
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-		return
-
-	case "PUT":
-		// Update an existing record.
-	case "DELETE":
-		// Remove the record.
-	default:
-		// Give an error message.
-	}
-
-}
-
-// serveRiceAsset serves a file of the requested name from the "assets" rice box
-func (a *Box) serveRiceAsset(w http.ResponseWriter, r *http.Request, file string) {
-	f, err := a.Box.HTTPBox().Open(file)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-	content := io.ReadSeeker(f)
-	http.ServeContent(w, r, file, time.Now(), content)
-	return
-}
-
-// Taken from http://reinbach.com/golang-webapps-1.html
-func (a *Box) staticHandler(w http.ResponseWriter, r *http.Request) {
-	staticFile := r.URL.Path[len("/assets/"):]
-
-	defer httputils.TimeTrack(time.Now(), "StaticHandler "+staticFile)
-
-	//log.Println(staticFile)
-	if len(staticFile) != 0 {
-		a.serveRiceAsset(w, r, staticFile)
-		return
-	}
-	http.NotFound(w, r)
-	return
-}
-
-func (a *Box) faviconHandler(w http.ResponseWriter, r *http.Request) {
-	//log.Println(r.URL.Path)
-	if r.URL.Path == "/favicon.ico" {
-		a.serveRiceAsset(w, r, "/favicon.ico")
-		return
-	} else if r.URL.Path == "/favicon.png" {
-		a.serveRiceAsset(w, r, "/favicon.png")
-		return
-	} else {
-		http.NotFound(w, r)
-		return
-	}
-
-}
-
-func (a *Box) robotsHandler(w http.ResponseWriter, r *http.Request) {
-	//log.Println(r.URL.Path)
-	if r.URL.Path == "/robots.txt" {
-		a.serveRiceAsset(w, r, "/robots.txt")
-		return
-	}
-	http.NotFound(w, r)
-	return
-}
-
 func main() {
 
 	// subscribe to SIGINT signals
@@ -3231,17 +2976,7 @@ func main() {
 		defer trace.Stop()
 	*/
 
-	//viper.WatchConfig()
-
 	flag.Parse()
-
-	//httputils.AssetsBox = rice.MustFindBox("assets")
-
-	assetBox := &Box{
-		rice.MustFindBox("assets"),
-	}
-
-	//assetBox := httputils.OpenAssetBox("assets")
 
 	dataDir, err := os.Stat("./data/")
 	if os.IsNotExist(err) {
@@ -3271,7 +3006,7 @@ func main() {
 		templates: make(map[string]*template.Template),
 	}
 
-	err = riceInit(env)
+	err = tmplInit(env)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -3284,7 +3019,7 @@ func main() {
 	}
 
 	csrfSecure := true
-	if fLocal {
+	if viper.GetBool("Dev") {
 		csrfSecure = false
 	}
 
@@ -3320,15 +3055,15 @@ func main() {
 	admin.POST("/git/checkin", env.authState.AuthAdminMiddle(gitCheckinPostHandler))
 	admin.POST("/git/pull", env.authState.AuthAdminMiddle(gitPullPostHandler))
 	admin.GET("/users", env.authState.AuthAdminMiddle(env.adminUsersHandler))
-	admin.POST("/users", env.authState.AuthAdminMiddle(env.UserSignupPostHandler))
+	admin.POST("/users", env.authState.AuthAdminMiddle(env.authState.UserSignupPostHandler))
 	admin.POST("/user", env.authState.AuthAdminMiddle(adminUserPostHandler))
 	admin.GET("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
 	admin.POST("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
-	admin.POST("/user/password_change", env.authState.AuthAdminMiddle(env.AdminUserPassChangePostHandler))
-	admin.POST("/user/delete", env.authState.AuthAdminMiddle(env.AdminUserDeletePostHandler))
+	admin.POST("/user/password_change", env.authState.AuthAdminMiddle(env.authState.AdminUserPassChangePostHandler))
+	admin.POST("/user/delete", env.authState.AuthAdminMiddle(env.authState.AdminUserDeletePostHandler))
 
 	a := r.NewContextGroup("/auth")
-	a.POST("/login", env.LoginPostHandler)
+	a.POST("/login", env.authState.LoginPostHandler)
 	a.POST("/logout", env.authState.LogoutHandler)
 	a.GET("/logout", env.authState.LogoutHandler)
 	//a.POST("/signup", auth.SignupPostHandler)
@@ -3352,10 +3087,10 @@ func main() {
 	mux.Handle("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
 	mux.Handle("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
 
-	mux.HandleFunc("/robots.txt", assetBox.robotsHandler)
-	mux.HandleFunc("/favicon.ico", assetBox.faviconHandler)
-	mux.HandleFunc("/favicon.png", assetBox.faviconHandler)
-	mux.HandleFunc("/assets/", assetBox.staticHandler)
+	mux.HandleFunc("/robots.txt", httputils.Robots)
+	mux.HandleFunc("/favicon.ico", httputils.FaviconICO)
+	mux.HandleFunc("/favicon.png", httputils.FaviconPNG)
+	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
 
 	mux.Handle("/", s.Then(r))
 
