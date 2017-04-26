@@ -109,13 +109,13 @@ func TestAuthInit(t *testing.T) {
 	checkT(err, t)
 }
 
-func TestRiceInit(t *testing.T) {
+func TestTmplInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
 	authState, err := auth.NewAuthState(tmpdb, "admin")
 	checkT(err, t)
 	e := testEnv(t, authState)
-	err = riceInit(e)
+	err = tmplInit(e)
 	checkT(err, t)
 }
 
@@ -140,7 +140,7 @@ func TestNewWikiPage(t *testing.T) {
 	checkT(err, t)
 
 	e := testEnv(t, authState)
-	err = riceInit(e)
+	err = tmplInit(e)
 	checkT(err, t)
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
@@ -232,7 +232,7 @@ func TestNewHandler(t *testing.T) {
 
 	e := testEnv(t, authState)
 
-	err = riceInit(e)
+	err = tmplInit(e)
 	checkT(err, t)
 
 	// Create a request to pass to our handler.
@@ -291,7 +291,7 @@ func TestIndexPage(t *testing.T) {
 
 	e := testEnv(t, authState)
 
-	err = riceInit(e)
+	err = tmplInit(e)
 	checkT(err, t)
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
@@ -348,7 +348,7 @@ func TestIndexHistoryPage(t *testing.T) {
 
 	e := testEnv(t, authState)
 
-	err = riceInit(e)
+	err = tmplInit(e)
 	checkT(err, t)
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
@@ -404,7 +404,7 @@ func TestIndexEditPage(t *testing.T) {
 	checkT(err, t)
 
 	e := testEnv(t, authState)
-	err = riceInit(e)
+	err = tmplInit(e)
 	checkT(err, t)
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
