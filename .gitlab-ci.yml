@@ -88,10 +88,6 @@ deploy_staging:
   environment:
     name: staging
     url: https://gowiki.lisa.es.gy
-  only:
-    - branches@go/wiki
-  except:
-    - master@go/wiki
   when: manual
 
 deploy_prod:
