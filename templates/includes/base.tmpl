@@ -20,10 +20,10 @@
   <section>
     {{ .page.FlashMsg }}
     <main>
-      <article>
-        <header>{{ template "header_title" . }}</header>
+      <header>
+        <h1>{{ template "header_title" . }}</h1>
         {{ block "header" . }}{{ end }}
-      </article>
+      </header>
     {{ template "content" . }}
     </main>
 {{ end }}
