@@ -92,7 +92,7 @@ func newState() *auth.AuthState {
 }
 */
 
-func testEnv(t *testing.T, authState *auth.AuthState) *wikiEnv {
+func testEnv(t *testing.T, authState *auth.State) *wikiEnv {
 	return &wikiEnv{
 		authState: authState,
 		cache:     new(wikiCache),
