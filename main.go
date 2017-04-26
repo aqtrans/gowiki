@@ -278,7 +278,7 @@ type commitLog struct {
 }
 
 type wikiEnv struct {
-	authState *auth.AuthState
+	authState *auth.State
 	cache     *wikiCache
 	templates map[string]*template.Template
 }
@@ -437,10 +437,11 @@ func (r *renderer) NormalText(out *bytes.Buffer, text []byte) {
 
 func check(err error) {
 	if err != nil {
-		pc, _, line, ok := runtime.Caller(1)
+		pc, fn, line, ok := runtime.Caller(1)
 		details := runtime.FuncForPC(pc)
 		if ok && details != nil {
-			log.Fatalln(line, " Func: ", details.Name(), " Err: ", err)
+			//log.Fatalln(line, " Func: ", details.Name(), " Err: ", err)
+			log.Printf("[error] in %s[%s:%d] %v", details.Name(), fn, line, err)
 		}
 	}
 }
