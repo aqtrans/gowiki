@@ -34,11 +34,9 @@ import (
 	"context"
 	"encoding/gob"
 	"errors"
-	"flag"
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/pprof"
@@ -55,18 +53,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
-	//"github.com/GeertJohan/go.rice"
 	"github.com/dimfeld/httptreemux"
 	"github.com/getsentry/raven-go"
 	"github.com/gorilla/csrf"
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
-	//"github.com/pelletier/go-toml"
 	//"github.com/microcosm-cc/bluemonday"
 	"github.com/spf13/viper"
-	//"github.com/thoas/stats"
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
@@ -142,17 +136,6 @@ var (
 
 type renderer struct {
 	*blackfriday.Html
-}
-
-type configuration struct {
-	Domain     string
-	Port       string
-	Email      string
-	WikiDir    string
-	GitRepo    string
-	AdminUser  string
-	AdminPass  string
-	PushOnSave bool
 }
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
@@ -296,11 +279,7 @@ func (a wikiByModDate) Len() int           { return len(a) }
 func (a wikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a wikiByModDate) Less(i, j int) bool { return a[i].ModTime < a[j].ModTime }
 
-var conf configuration
-
 func init() {
-	//toml.DecodeFile("./data/conf.toml", &conf);
-
 	raven.SetDSN("https://5ab2f68b0f524799b1d0b324350cc2ae:e01dbad12f8e4fd0bce97681a772a072@app.getsentry.com/94753")
 
 	// Viper config.
@@ -535,22 +514,6 @@ func errorHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
 	tpl := template.Must(template.New("ErrorPage").Parse(panicPageTpl))
 	tpl.Execute(w, data)
 
-}
-
-func (conf *configuration) save() bool {
-	buf := new(bytes.Buffer)
-	err := toml.NewEncoder(buf).Encode(conf)
-	if err != nil {
-		checkErr("conf.save()/toml.Encode", err)
-		return false
-	}
-
-	err = ioutil.WriteFile("./data/conf.toml", buf.Bytes(), 0644)
-	if err != nil {
-		checkErr("conf.save()/WriteFile", err)
-		return false
-	}
-	return true
 }
 
 func timeNewContext(c context.Context, t time.Time) context.Context {
@@ -2171,10 +2134,8 @@ func (env *wikiEnv) adminMainHandler(w http.ResponseWriter, r *http.Request) {
 func (env *wikiEnv) adminConfigHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminConfigHandler")
 
-	var cfg configuration
 	// To save config to toml:
-	err := viper.Unmarshal(&cfg)
-	checkErr("adminConfigHandler()/viper.Unmarshal", err)
+	viperMap := viper.AllSettings()
 
 	title := "admin-config"
 	p := loadPage(env, r)
@@ -2182,54 +2143,13 @@ func (env *wikiEnv) adminConfigHandler(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		*page
 		Title  string
-		Config configuration
+		Config map[string]interface{}
 	}{
 		p,
 		title,
-		cfg,
+		viperMap,
 	}
 	renderTemplate(r.Context(), env, w, "admin_config.tmpl", data)
-}
-
-func adminConfigPostHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	log.Println(r.PostForm)
-	domain := r.FormValue("domain")
-	port := r.FormValue("port")
-	email := r.FormValue("email")
-	wikidir := r.FormValue("wikidir")
-	gitrepo := r.FormValue("gitrepo")
-	adminuser := r.FormValue("adminuser")
-	rawPushonsave := r.FormValue("pushonsave")
-	pushonsave := false
-	if rawPushonsave == "on" {
-		pushonsave = true
-	}
-
-	cfg := &configuration{
-		Domain:     domain,
-		Port:       port,
-		Email:      email,
-		WikiDir:    wikidir,
-		GitRepo:    gitrepo,
-		AdminUser:  adminuser,
-		PushOnSave: pushonsave,
-	}
-
-	viper.Set("Domain", domain)
-	viper.Set("Port", port)
-	viper.Set("Email", email)
-	viper.Set("WikiDir", wikidir)
-	viper.Set("GitRepo", gitrepo)
-	viper.Set("AdminUser", adminuser)
-	viper.Set("PushOnSave", pushonsave)
-
-	bo := cfg.save()
-	if !bo {
-		log.Println(bo)
-	}
-	http.Redirect(w, r, "/admin/config", http.StatusSeeOther)
-	return
 }
 
 func (env *wikiEnv) gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
@@ -2977,8 +2897,6 @@ func main() {
 		defer trace.Stop()
 	*/
 
-	flag.Parse()
-
 	dataDir, err := os.Stat("./data/")
 	if os.IsNotExist(err) {
 		err = os.Mkdir("data", 0755)
@@ -3050,7 +2968,7 @@ func main() {
 	admin := r.NewContextGroup("/admin")
 	admin.GET("/", env.authState.AuthAdminMiddle(env.adminMainHandler))
 	admin.GET("/config", env.authState.AuthAdminMiddle(env.adminConfigHandler))
-	admin.POST("/config", env.authState.AuthAdminMiddle(adminConfigPostHandler))
+	//admin.POST("/config", env.authState.AuthAdminMiddle(adminConfigPostHandler))
 	admin.GET("/git", env.authState.AuthAdminMiddle(env.adminGitHandler))
 	admin.POST("/git/push", env.authState.AuthAdminMiddle(gitPushPostHandler))
 	admin.POST("/git/checkin", env.authState.AuthAdminMiddle(gitCheckinPostHandler))
