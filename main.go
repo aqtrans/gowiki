@@ -1694,7 +1694,6 @@ func (env *wikiEnv) editHandler(w http.ResponseWriter, r *http.Request) {
 	name := nameFromContext(r.Context())
 	p := loadWikiPage(env, r, name)
 	renderTemplate(r.Context(), env, w, "wiki_edit.tmpl", p)
-	return
 }
 
 func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
@@ -1901,15 +1900,19 @@ func loadWikiPage(env *wikiEnv, r *http.Request, name string) *wikiPage {
 
 	wikiExists := wikiExistsFromContext(r.Context())
 	if !wikiExists {
-		theWiki = &wiki{
-			Title:    name,
-			Filename: name,
-			Frontmatter: &frontmatter{
-				Title: name,
-			},
-			CreateTime: 0,
-			ModTime:    0,
-		}
+		go func() {
+			theWiki = &wiki{
+				Title:    name,
+				Filename: name,
+				Frontmatter: &frontmatter{
+					Title: name,
+				},
+				CreateTime: 0,
+				ModTime:    0,
+			}
+			theWikiChan <- theWiki
+			theMarkdownChan <- theMarkdown
+		}()
 	}
 	if wikiExists {
 		go func() {
