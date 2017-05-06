@@ -984,7 +984,7 @@ func gitGetTimes(filename string) (ctime int64, mtime int64) {
 // git grep --break 'searchTerm'
 func gitSearch(searchTerm, fileSpec string) []*result {
 	var results []*result
-	cmd := exec.Command("/bin/sh", "-c", gitPath+" grep omg -- "+fileSpec)
+	cmd := exec.Command("/bin/sh", "-c", gitPath+" grep "+searchTerm+"-- "+fileSpec)
 	//o := gitCommand("grep", "omg -- 'index'")
 	cmd.Dir = viper.GetString("WikiDir")
 	o, err := cmd.CombinedOutput()
