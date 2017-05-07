@@ -584,7 +584,7 @@ func jsTags(tagS []string) string {
 func gitCommand(args ...string) *exec.Cmd {
 	c := exec.Command(gitPath, args...)
 	c.Env = os.Environ()
-	c.Env = append(c.Env, "GIT_COMMITTER_NAME='Golang Wiki'", "GIT_COMMITTER_EMAIL='golangwiki@jba.io'")
+	c.Env = append(c.Env, `GIT_COMMITTER_NAME="Golang Wiki"`, `GIT_COMMITTER_EMAIL="golangwiki@jba.io"`)
 	c.Dir = viper.GetString("WikiDir")
 	return c
 }
