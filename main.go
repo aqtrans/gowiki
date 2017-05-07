@@ -733,7 +733,7 @@ func gitAddFilepath(filepath string) error {
 
 // Execute `git commit -m {msg}` in workingDirectory
 func gitCommitWithMessage(msg string) error {
-	o, err := gitCommand("commit", "-m", msg).CombinedOutput()
+	o, err := gitCommand("commit", "--author", "'Golang Wiki <golangwiki@jba.io>'", "-m", msg).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error during `git commit`: %s\n%s", err.Error(), string(o))
 	}
@@ -743,7 +743,7 @@ func gitCommitWithMessage(msg string) error {
 
 // Execute `git commit -m "commit from GoWiki"` in workingDirectory
 func gitCommitEmpty() error {
-	o, err := gitCommand("commit", "-m", "commit from GoWiki").CombinedOutput()
+	o, err := gitCommand("commit", "--author", "'Golang Wiki <golangwiki@jba.io>'", "-m", "commit from GoWiki").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error during `git commit`: %s\n%s", err.Error(), string(o))
 	}
