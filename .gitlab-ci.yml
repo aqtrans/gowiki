@@ -64,10 +64,12 @@ build-my-project:
 
 test-my-project:
   stage: test
+  coverage: '/coverage: \d+\.\d+/'
   script:
     - go get -d  
     - go test -v
     - go test -race
+    - go test -cover
     - rm -rf tests/gowiki-testdata
 
 deploy_staging:
