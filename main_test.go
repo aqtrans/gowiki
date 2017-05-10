@@ -38,6 +38,7 @@ func init() {
 	viper.Set("WikiDir", "./tests/gowiki-testdata/")
 	viper.Set("Domain", "wiki.example.com")
 	viper.Set("GitRepo", "git@jba.io:aqtrans/gowiki-testdata.git")
+	viper.Set("CacheLocation", "./tests/cache.gob")
 }
 
 func checkT(err error, t *testing.T) {
@@ -120,14 +121,17 @@ func TestTmplInit(t *testing.T) {
 }
 
 func TestWikiInit(t *testing.T) {
-	_, err := os.Stat(viper.GetString("WikiDir"))
-	if err != nil {
-		os.Mkdir(viper.GetString("WikiDir"), 0755)
-	}
-	_, err = os.Stat(viper.GetString("WikiDir") + ".git")
-	if err != nil {
-		gitClone(viper.GetString("GitRepo"))
-	}
+	/*
+		_, err := os.Stat(viper.GetString("WikiDir"))
+		if err != nil {
+			os.Mkdir(viper.GetString("WikiDir"), 0755)
+		}
+		_, err = os.Stat(viper.GetString("WikiDir") + ".git")
+		if err != nil {
+			gitClone(viper.GetString("GitRepo"))
+		}
+	*/
+	initWikiDir()
 }
 
 // TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
@@ -506,6 +510,204 @@ func TestDirBaseHandler(t *testing.T) {
 			}
 	*/
 
+}
+
+func TestRecentsPage(t *testing.T) {
+	err := gitPull()
+	checkT(err, t)
+
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
+	checkT(err, t)
+
+	e := testEnv(t, authState)
+
+	err = tmplInit(e)
+	checkT(err, t)
+
+	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+	// pass 'nil' as the third parameter.
+	req, err := http.NewRequest("GET", "/recents", nil)
+	checkT(err, t)
+
+	handler := http.HandlerFunc(e.recentHandler)
+
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
+		Username: "admin",
+		IsAdmin:  true,
+	})
+	rctx := req.WithContext(ctx)
+
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	handler.ServeHTTP(rr, rctx)
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusSeeOther)
+	}
+}
+
+func TestPrivatePageNotLoggedIn(t *testing.T) {
+	err := gitPull()
+	checkT(err, t)
+
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
+	checkT(err, t)
+
+	e := testEnv(t, authState)
+
+	err = tmplInit(e)
+	checkT(err, t)
+
+	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+	// pass 'nil' as the third parameter.
+	req, err := http.NewRequest("GET", "/sites.page", nil)
+	checkT(err, t)
+
+	handler := http.HandlerFunc(e.wikiMiddle(e.viewHandler))
+
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, wikiNameKey, "sites.page")
+	ctx = context.WithValue(ctx, wikiExistsKey, true)
+	rctx := req.WithContext(ctx)
+
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	handler.ServeHTTP(rr, rctx)
+	//t.Log(rr.Body.String())
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusSeeOther {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusSeeOther)
+	}
+
+	expected := `/login?url=/sites.page`
+	if rr.Header().Get("Location") != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			rr.Header().Get("Location"), expected)
+	}
+}
+
+func TestPrivatePageLoggedIn(t *testing.T) {
+	err := gitPull()
+	checkT(err, t)
+
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
+	checkT(err, t)
+
+	e := testEnv(t, authState)
+
+	err = tmplInit(e)
+	checkT(err, t)
+
+	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+	// pass 'nil' as the third parameter.
+	req, err := http.NewRequest("GET", "/sites.page", nil)
+	checkT(err, t)
+
+	handler := http.HandlerFunc(e.wikiMiddle(e.viewHandler))
+
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
+		Username: "admin",
+		IsAdmin:  true,
+	})
+	ctx = context.WithValue(ctx, wikiNameKey, "sites.page")
+	ctx = context.WithValue(ctx, wikiExistsKey, true)
+	params := make(map[string]string)
+	params["name"] = "sites.page"
+	ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
+	rctx := req.WithContext(ctx)
+
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	handler.ServeHTTP(rr, rctx)
+	//t.Log(rr.Body.String())
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+}
+
+func TestSearchPage(t *testing.T) {
+	err := gitPull()
+	checkT(err, t)
+
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
+	checkT(err, t)
+
+	e := testEnv(t, authState)
+
+	err = tmplInit(e)
+	checkT(err, t)
+
+	e.cache = buildCache()
+	if e.cache == nil {
+		t.Error("cache is empty")
+	}
+
+	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+	// pass 'nil' as the third parameter.
+	req, err := http.NewRequest("GET", "/search/omg", nil)
+	checkT(err, t)
+
+	handler := http.HandlerFunc(e.search)
+
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
+		Username: "admin",
+		IsAdmin:  true,
+	})
+	params := make(map[string]string)
+	params["name"] = "omg"
+	ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
+	rctx := req.WithContext(ctx)
+
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	handler.ServeHTTP(rr, rctx)
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusSeeOther)
+	}
+}
+
+func TestCache(t *testing.T) {
+	cache := buildCache()
+	if cache == nil {
+		t.Error("cache is empty")
+	}
+	cache2 := loadCache()
+	if cache2 == nil {
+		t.Error("cache2 is empty")
+	}
+	err := os.Remove("./tests/cache.gob")
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestMarkdownRender(t *testing.T) {
