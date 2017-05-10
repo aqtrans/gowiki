@@ -293,6 +293,7 @@ func init() {
 	viper.SetDefault("InitWikiRepo", false)
 	viper.SetDefault("Dev", false)
 	viper.SetDefault("Debug", false)
+	viper.SetDefault("CacheLocation", "./data/cache.gob")
 
 	viper.SetEnvPrefix("gowiki")
 	viper.AutomaticEnv()
@@ -536,7 +537,8 @@ func newNameContext(c context.Context, t string) context.Context {
 func nameFromContext(c context.Context) string {
 	t, ok := c.Value(wikiNameKey).(string)
 	if !ok {
-		log.Fatalln("No wikiName in context.")
+		log.Println("No wikiName in context.")
+		return ""
 	}
 	return t
 }
@@ -548,7 +550,8 @@ func newWikiExistsContext(c context.Context, t bool) context.Context {
 func wikiExistsFromContext(c context.Context) bool {
 	t, ok := c.Value(wikiExistsKey).(bool)
 	if !ok {
-		log.Fatalln("No wiki in context.")
+		log.Println("No wikiExists in context.")
+		return false
 	}
 	return t
 }
@@ -986,12 +989,13 @@ func gitGetTimes(filename string) (ctime int64, mtime int64) {
 // git grep --break 'searchTerm'
 func gitSearch(searchTerm, fileSpec string) []*result {
 	var results []*result
-	cmd := exec.Command("/bin/sh", "-c", gitPath+" grep "+searchTerm+"-- "+fileSpec)
+	cmd := exec.Command("/bin/sh", "-c", gitPath+" grep "+searchTerm+" -- "+fileSpec)
 	//o := gitCommand("grep", "omg -- 'index'")
 	cmd.Dir = viper.GetString("WikiDir")
 	o, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Println("ERROR gitSearch:", err)
+		log.Println(string(o))
 		return nil
 	}
 
@@ -2584,6 +2588,8 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 		fileList = fileList + " " + `"` + v.Filename + `"`
 	}
 
+	//log.Println(fileList)
+
 	results := gitSearch(`'`+name+`'`, strings.TrimSpace(fileList))
 
 	s := &searchPage{p, results}
@@ -2713,7 +2719,7 @@ func buildCache() *wikiCache {
 
 	cache.SHA1 = headHash()
 
-	cacheFile, err := os.Create("./data/cache.gob")
+	cacheFile, err := os.Create(viper.GetString("CacheLocation"))
 	check(err)
 	cacheEncoder := gob.NewEncoder(cacheFile)
 	cacheEncoder.Encode(cache)
@@ -2837,7 +2843,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 						panic("AuthMiddle is in an endless redirect loop")
 					}
 					env.authState.SetFlash("Please login to view that page.", w, r)
-					http.Redirect(w, r.WithContext(ctx), "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+					http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
 					return
 				}
 				if userLoggedIn {
@@ -2873,7 +2879,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 				panic("AuthMiddle is in an endless redirect loop")
 			}
 			env.authState.SetFlash("Please login to view that page.", w, r)
-			http.Redirect(w, r.WithContext(ctx), "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+			http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
 			return
 		}
 
