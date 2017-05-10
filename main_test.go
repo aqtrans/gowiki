@@ -121,16 +121,14 @@ func TestTmplInit(t *testing.T) {
 }
 
 func TestWikiInit(t *testing.T) {
-	/*
-		_, err := os.Stat(viper.GetString("WikiDir"))
-		if err != nil {
-			os.Mkdir(viper.GetString("WikiDir"), 0755)
-		}
-		_, err = os.Stat(viper.GetString("WikiDir") + ".git")
-		if err != nil {
-			gitClone(viper.GetString("GitRepo"))
-		}
-	*/
+	_, err := os.Stat(viper.GetString("WikiDir"))
+	if err != nil {
+		os.Mkdir(viper.GetString("WikiDir"), 0755)
+	}
+	_, err = os.Stat(viper.GetString("WikiDir") + ".git")
+	if err != nil {
+		gitClone(viper.GetString("GitRepo"))
+	}
 	initWikiDir()
 }
 
