@@ -4,50 +4,22 @@
     <table>
     <thead>
         <tr>
-        <th>Link</th>
+        <th>Filename</th>        
         <th>Created</th>
         <th>Modified</th>
-        <th>Admin</th>
-        <th>Public</th>
-        <th>Filename</th>
+        <th>Permission</th>
         </tr>
     </thead>
     <tbody>
     {{ $user := .page.UserInfo.IsLoggedIn }}
     {{ $admin := .page.UserInfo.IsAdmin }}
-    {{range .PublicWikis}}
-        <tr>
-        <td><a href="/{{.Filename}}">{{.Title}}</a></td>
-        <td>{{.CreateTime | prettyDate}}</td>
-        <td>{{.ModTime | prettyDate}}</td>    
-        <td>{{.Frontmatter.Admin}}</td>
-        <td>{{.Frontmatter.Public}}</td>
-        <td>{{.Filename}}</td>             
-        </tr>
-    {{ end }}
-    {{ if $user }}
     {{range .Wikis}}
         <tr>
-        <td><a href="/{{.Filename}}">{{.Title}}</a></td>
+        <td><a href="/{{.Filename}}">{{.Type | typeIcon }} {{.Filename}}</a></td>
         <td>{{.CreateTime | prettyDate}}</td>
         <td>{{.ModTime | prettyDate}}</td>    
-        <td>{{.Frontmatter.Admin}}</td>
-        <td>{{.Frontmatter.Public}}</td>
-        <td>{{.Filename}}</td>             
+        <td>{{.Permission}}</td>            
         </tr>
-    {{ end }}
-    {{ end }}
-    {{ if $admin }}
-    {{range .AdminWikis}}
-        <tr>
-        <td><a href="/{{.Filename}}">{{.Title}}</a></td>
-        <td>{{.CreateTime | prettyDate}}</td>
-        <td>{{.ModTime | prettyDate}}</td>    
-        <td>{{.Frontmatter.Admin}}</td>
-        <td>{{.Frontmatter.Public}}</td>
-        <td>{{.Filename}}</td>             
-        </tr>
-    {{ end }}
     {{ end }}    
     </tbody>
     </table>    
