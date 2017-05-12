@@ -183,7 +183,7 @@ type wiki struct {
 
 type wikiCache struct {
 	SHA1  string
-	Cache map[string][]*wiki
+	Cache []*gitDirList
 	Tags  map[string][]string
 	Favs  map[string]struct{}
 }
@@ -201,11 +201,10 @@ type commitPage struct {
 	Rendered string
 	Diff     string
 }
+
 type listPage struct {
 	*page
-	Wikis       []*wiki
-	PublicWikis []*wiki
-	AdminWikis  []*wiki
+	Wikis []*gitDirList
 }
 
 type genPage struct {
@@ -258,6 +257,14 @@ type commitLog struct {
 	Commit   string
 	Date     int64
 	Message  string
+}
+
+type gitDirList struct {
+	Type       string
+	Filename   string
+	CreateTime int64
+	ModTime    int64
+	Permission string
 }
 
 type wikiEnv struct {
@@ -889,7 +896,7 @@ func gitGetFileCommitMtime(commit string) (int64, error) {
 	return mtime, nil
 }
 
-// git ls-files [filename]
+// git ls-files
 func gitLs() ([]string, error) {
 	o, err := gitCommand("ls-files", "-z").Output()
 	if err != nil {
@@ -899,6 +906,53 @@ func gitLs() ([]string, error) {
 	// split each commit onto it's own line
 	lssplit := strings.Split(string(nul), "\n")
 	return lssplit, nil
+}
+
+// git ls-tree -r -t HEAD
+func gitLsTree() ([]*gitDirList, error) {
+	o, err := gitCommand("ls-tree", "-r", "-t", "-z", "HEAD").Output()
+	if err != nil {
+		return nil, fmt.Errorf("error during `git ls-files`: %s\n%s", err.Error(), string(o))
+	}
+	nul := bytes.Replace(o, []byte("\x00"), []byte("\n"), -1)
+	// split each commit onto it's own line
+	ostring := strings.TrimSpace(string(nul))
+	lssplit := strings.Split(ostring, "\n")
+	var dirList []*gitDirList
+	for _, v := range lssplit {
+		var vs = strings.SplitN(v, " ", 3)
+		var vs2 = strings.FieldsFunc(vs[2], func(c rune) bool { return c == '\t' })
+		log.Println(len(vs))
+		log.Println(vs2[1])
+		theGitDirListing := &gitDirList{
+			Type:     vs[1],
+			Filename: vs2[1],
+		}
+		dirList = append(dirList, theGitDirListing)
+	}
+	return dirList, nil
+}
+
+// git ls-tree HEAD:[dirname]
+func gitLsTreeDir(dir string) ([]*gitDirList, error) {
+	o, err := gitCommand("ls-tree", "-z", "HEAD:"+dir).Output()
+	if err != nil {
+		return nil, fmt.Errorf("error during `git ls-files`: %s\n%s", err.Error(), string(o))
+	}
+	nul := bytes.Replace(o, []byte("\x00"), []byte("\n"), -1)
+	// split each commit onto it's own line
+	ostring := strings.TrimSpace(string(nul))
+	lssplit := strings.Split(ostring, "\n")
+	var dirList []*gitDirList
+	for _, v := range lssplit {
+		var vs = strings.Fields(v)
+		theGitDirListing := &gitDirList{
+			Type:     vs[1],
+			Filename: vs[3],
+		}
+		dirList = append(dirList, theGitDirListing)
+	}
+	return dirList, nil
 }
 
 // git log --name-only --pretty=format:"%at %H" -z HEAD
@@ -1229,7 +1283,31 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := loadPage(env, r)
 
-	l := &listPage{p, env.cache.Cache["private"], env.cache.Cache["public"], env.cache.Cache["admin"]}
+	var list []*gitDirList
+
+	userLoggedIn := auth.IsLoggedIn(r.Context())
+	_, isAdmin := auth.GetUsername(r.Context())
+
+	for _, v := range env.cache.Cache {
+		if v.Permission == "public" {
+			//log.Println("pubic", v.Filename)
+			list = append(list, v)
+		}
+		if userLoggedIn {
+			if v.Permission == "private" {
+				//log.Println("priv", v.Filename)
+				list = append(list, v)
+			}
+		}
+		if isAdmin {
+			if v.Permission == "admin" {
+				//log.Println("admin", v.Filename)
+				list = append(list, v)
+			}
+		}
+	}
+
+	l := &listPage{p, list}
 	renderTemplate(r.Context(), env, w, "list.tmpl", l)
 }
 
@@ -1689,10 +1767,28 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	getFileType(name)
+
 	// Get Wiki
 	p := loadWikiPage(env, r, name)
 
 	renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
+}
+
+func getFileType(filename string) string {
+	file, err := os.Open(filepath.Join(viper.GetString("WikiDir"), filename))
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer file.Close()
+	buff := make([]byte, 512)
+	_, err = file.Read(buff)
+	if err != nil {
+		fmt.Println(err)
+	}
+	filetype := http.DetectContentType(buff)
+	log.Println(filetype)
+	return filetype
 }
 
 func (env *wikiEnv) editHandler(w http.ResponseWriter, r *http.Request) {
@@ -2481,6 +2577,17 @@ func timer(next http.Handler) http.Handler {
 	})
 }
 
+func typeIcon(gitType string) template.HTML {
+	var html template.HTML
+	if gitType == "blob" {
+		html = template.HTML(`<i class="fa fa-file-text-o" aria-hidden="true"></i>`)
+	}
+	if gitType == "tree" {
+		html = template.HTML(`<i class="fa fa-folder-o" aria-hidden="true"></i>`)
+	}
+	return html
+}
+
 func tmplInit(env *wikiEnv) error {
 	templatesDir := "./templates/"
 	layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
@@ -2492,7 +2599,7 @@ func tmplInit(env *wikiEnv) error {
 		panic(err)
 	}
 
-	funcMap := template.FuncMap{"prettyDate": httputils.PrettyDate, "safeHTML": httputils.SafeHTML, "imgClass": httputils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
+	funcMap := template.FuncMap{"typeIcon": typeIcon, "prettyDate": httputils.PrettyDate, "safeHTML": httputils.SafeHTML, "imgClass": httputils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
 
 	for _, layout := range layouts {
 		files := append(includes, layout)
@@ -2570,22 +2677,23 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 
 	var fileList string
 
-	if userLoggedIn {
-		for _, v := range env.cache.Cache["private"] {
-			//log.Println("priv", v.Filename)
-			fileList = fileList + " " + `"` + v.Filename + `"`
+	for _, v := range env.cache.Cache {
+		if userLoggedIn {
+			if v.Permission == "private" {
+				//log.Println("priv", v.Filename)
+				fileList = fileList + " " + `"` + v.Filename + `"`
+			}
 		}
 		if isAdmin {
-			for _, v := range env.cache.Cache["admin"] {
+			if v.Permission == "private" {
 				//log.Println("admin", v.Filename)
 				fileList = fileList + " " + `"` + v.Filename + `"`
 			}
 		}
-	}
-
-	for _, v := range env.cache.Cache["public"] {
-		//log.Println("pubic", v.Filename)
-		fileList = fileList + " " + `"` + v.Filename + `"`
+		if v.Permission == "public" {
+			//log.Println("pubic", v.Filename)
+			fileList = fileList + " " + `"` + v.Filename + `"`
+		}
 	}
 
 	//log.Println(fileList)
@@ -2597,12 +2705,7 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 }
 
 func buildCache() *wikiCache {
-	fileList, err := gitLs()
-	check(err)
 	cache := new(wikiCache)
-	if cache.Cache == nil {
-		cache.Cache = make(map[string][]*wiki)
-	}
 	if cache.Tags == nil {
 		cache.Tags = make(map[string][]string)
 	}
@@ -2610,28 +2713,37 @@ func buildCache() *wikiCache {
 		cache.Favs = make(map[string]struct{})
 	}
 
-	var wps []*wiki
-	var publicwps []*wiki
-	var adminwps []*wiki
+	var wps []*gitDirList
 
+	fileList, err := gitLsTree()
+	check(err)
 	for _, file := range fileList {
 
 		// If using Git, build the full path:
-		fullname := filepath.Join(viper.GetString("WikiDir"), file)
+		fullname := filepath.Join(viper.GetString("WikiDir"), file.Filename)
 
-		// check if the source dir exist
-		src, err := os.Stat(fullname)
-		check(err)
+		// If this is a directory, add it to the list for listing
+		//   but just assume it is private
+		if file.Type == "tree" {
+			var wp *gitDirList
+			wp = &gitDirList{
+				Type:       "tree",
+				Filename:   file.Filename,
+				CreateTime: 0,
+				ModTime:    0,
+				Permission: "private",
+			}
+			wps = append(wps, wp)
+		}
+
 		// If not a directory, get frontmatter from file and add to list
-		if !src.IsDir() {
-
-			_, filename := filepath.Split(file)
+		if file.Type == "blob" {
 
 			// If this is an absolute path, including the cfg.WikiDir, trim it
 			//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
 			//fileURL := strings.TrimPrefix(file, withoutdotslash)
 
-			var wp *wiki
+			var wp *gitDirList
 
 			// Read YAML frontmatter into fm
 			f, err := os.Open(fullname)
@@ -2642,10 +2754,8 @@ func buildCache() *wikiCache {
 			f.Close()
 			//checkErr("crawlWiki()/readFront", err)
 
-			pagetitle := setPageTitle(fm.Title, filename)
-
 			if fm.Title == "" {
-				fm.Title = file
+				fm.Title = file.Filename
 			}
 			if fm.Permission == "" {
 				fm.Permission = "private"
@@ -2661,61 +2771,37 @@ func buildCache() *wikiCache {
 			// Replacing readFavs and readTags
 			if fm.Favorite {
 				//log.Println(file + " is a favorite.")
-				if _, ok := cache.Favs[file]; !ok {
-					httputils.Debugln("crawlWiki: " + file + " is not already a favorite.")
-					cache.Favs[file] = struct{}{}
+				if _, ok := cache.Favs[file.Filename]; !ok {
+					httputils.Debugln("crawlWiki: " + file.Filename + " is not already a favorite.")
+					cache.Favs[file.Filename] = struct{}{}
 				}
 				//favbuf.WriteString(file + " ")
 			}
 			if fm.Tags != nil {
 				for _, tag := range fm.Tags {
 					if _, ok := cache.Tags[tag]; !ok {
-						cache.Tags[tag] = append(cache.Tags[tag], file)
+						cache.Tags[tag] = append(cache.Tags[tag], file.Filename)
 					}
 				}
 			}
 
-			ctime, err := gitGetCtime(file)
+			ctime, err := gitGetCtime(file.Filename)
 			checkErr("crawlWiki()/gitGetCtime", err)
-			mtime, err := gitGetMtime(file)
+			mtime, err := gitGetMtime(file.Filename)
 			checkErr("crawlWiki()/gitGetMtime", err)
 
-			// If pages are Admin or Public, add to a separate wikiPage slice
-			//   So we only check on rendering
-			if fm.Permission == "admin" {
-				wp = &wiki{
-					Title:       pagetitle,
-					Filename:    file,
-					Frontmatter: &fm,
-					CreateTime:  ctime,
-					ModTime:     mtime,
-				}
-				adminwps = append(adminwps, wp)
-			} else if fm.Permission == "public" {
-				wp = &wiki{
-					Title:       pagetitle,
-					Filename:    file,
-					Frontmatter: &fm,
-					CreateTime:  ctime,
-					ModTime:     mtime,
-				}
-				publicwps = append(publicwps, wp)
-			} else {
-				wp = &wiki{
-					Title:       pagetitle,
-					Filename:    file,
-					Frontmatter: &fm,
-					CreateTime:  ctime,
-					ModTime:     mtime,
-				}
-				wps = append(wps, wp)
+			wp = &gitDirList{
+				Type:       "blob",
+				Filename:   file.Filename,
+				CreateTime: ctime,
+				ModTime:    mtime,
+				Permission: fm.Permission,
 			}
+			wps = append(wps, wp)
 		}
 	}
 
-	cache.Cache["public"] = publicwps
-	cache.Cache["admin"] = adminwps
-	cache.Cache["private"] = wps
+	cache.Cache = wps
 
 	cache.SHA1 = headHash()
 
