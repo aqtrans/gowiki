@@ -1767,15 +1767,37 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	getFileType(name)
+	fileType := getFileType(name)
+	if fileType == "wiki" {
+		log.Println("Yay proper wiki page!")
+		// Get Wiki
+		p := loadWikiPage(env, r, name)
+		renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
+	} else {
+		http.ServeFile(w, r, filepath.Join(viper.GetString("WikiDir"), name))
+		/*
+			var html template.HTML
+			if strings.Contains(fileType, "image") {
+				html = template.HTML(`<img src="/` + name + `">`)
+			}
+			p := loadPage(env, r)
+			data := struct {
+				*page
+				Title   string
+				TheHTML template.HTML
+			}{
+				p,
+				name,
+				html,
+			}
+			renderTemplate(r.Context(), env, w, "file_view.tmpl", data)
+		*/
+	}
 
-	// Get Wiki
-	p := loadWikiPage(env, r, name)
-
-	renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
 }
 
 func getFileType(filename string) string {
+	var realFileType string
 	file, err := os.Open(filepath.Join(viper.GetString("WikiDir"), filename))
 	if err != nil {
 		fmt.Println(err)
@@ -1787,8 +1809,18 @@ func getFileType(filename string) string {
 		fmt.Println(err)
 	}
 	filetype := http.DetectContentType(buff)
-	log.Println(filetype)
-	return filetype
+	//log.Println(filetype)
+	if filetype == "application/octet-stream" {
+		// Definitely wiki page...but others probably
+		if string(buff[:3]) == "---" {
+			realFileType = "wiki"
+		}
+	} else if filetype == "text/plain; charset=utf-8" {
+		realFileType = "wiki"
+	} else {
+		realFileType = filetype
+	}
+	return realFileType
 }
 
 func (env *wikiEnv) editHandler(w http.ResponseWriter, r *http.Request) {
