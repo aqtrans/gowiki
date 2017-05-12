@@ -1659,6 +1659,7 @@ func checkName(name *string) (bool, error) {
 	fullfilename := filepath.Join(viper.GetString("WikiDir"), *name)
 
 	exists := doesPageExist(fullfilename)
+	//log.Println(exists, "line 1662", fullfilename)
 
 	// If original filename does not exist, normalize the filename, and check if it exists
 	if !exists {
@@ -1668,6 +1669,7 @@ func checkName(name *string) (bool, error) {
 		*name = dashes.ReplaceAllString(*name, "-")
 		fullnewfilename := filepath.Join(viper.GetString("WikiDir"), *name)
 		exists = doesPageExist(fullnewfilename)
+		//log.Println(exists, "line 1672", fullnewfilename)
 	}
 	//log.Println("checkName() name, exists, relErr:", *name, exists, relErr)
 	return exists, relErr
@@ -1734,19 +1736,27 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	name := nameFromContext(r.Context())
 
-	// Quick check to see if there is a directory here
-	//  If so, do some quick checking on that supposed directory
-	dir, _ := filepath.Split(name)
-	if dir != "" {
-		// Check if this is a directory without /index
-		if strings.HasSuffix(name, "/") {
-			log.Println("This might be a directory, trying to parse the index")
-			dirIndexFilename := filepath.Join(viper.GetString("WikiDir"), name, "index")
-			dirIndexPageExists := doesPageExist(dirIndexFilename)
-			if !dirIndexPageExists {
-				log.Println("No such dir index...creating one.")
-				http.Redirect(w, r, "/"+name+"/index", http.StatusTemporaryRedirect)
+	nameStat, err := os.Stat(filepath.Join(viper.GetString("WikiDir"), name))
+	if err != nil {
+		log.Println(err)
+	}
+	if err == nil {
+		if nameStat.IsDir() {
+			// Check if name/index exists, and if it does, serve it
+			_, err := os.Stat(filepath.Join(viper.GetString("WikiDir"), name, "index"))
+			if err == nil {
+				/*
+					name = filepath.Join(name, "index")
+					ctx := newWikiExistsContext(r.Context(), true)
+					p := loadWikiPage(env, r.WithContext(ctx), name)
+					renderTemplate(ctx, env, w, "wiki_view.tmpl", p)
+				*/
+				http.Redirect(w, r, filepath.Join(name, "index"), http.StatusFound)
 				return
+			}
+			if os.IsNotExist(err) {
+				// TODO: List directory
+				log.Println("TODO: List directory")
 			}
 		}
 	}
@@ -1773,8 +1783,10 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 		// Get Wiki
 		p := loadWikiPage(env, r, name)
 		renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
+		return
 	} else {
 		http.ServeFile(w, r, filepath.Join(viper.GetString("WikiDir"), name))
+		return
 		/*
 			var html template.HTML
 			if strings.Contains(fileType, "image") {
@@ -3027,16 +3039,17 @@ func main() {
 	*/
 
 	dataDir, err := os.Stat("./data/")
-	if os.IsNotExist(err) {
-		err = os.Mkdir("data", 0755)
-		if err != nil {
-			log.Fatalln(err)
+	if err != nil {
+		if os.IsNotExist(err) {
+			err = os.Mkdir("data", 0755)
+			if err != nil {
+				log.Fatalln(err)
+			}
 		}
 	}
-	if os.IsExist(err) {
-		if !dataDir.IsDir() {
-			log.Fatalln("./data/ is not a directory. This is where wiki data is stored.")
-		}
+
+	if !dataDir.IsDir() {
+		log.Fatalln("./data/ is not a directory. This is where wiki data is stored.")
 	}
 
 	initWikiDir()
