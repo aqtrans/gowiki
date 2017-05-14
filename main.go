@@ -1643,10 +1643,12 @@ func checkName(name *string) (bool, error) {
 	*name = strings.Trim(*name, " ")
 	//log.Println(name)
 
-	// Directory without specified index
-	if strings.HasSuffix(*name, "/") {
-		*name = filepath.Join(*name, "index")
-	}
+	/*
+		// Directory without specified index
+		if strings.HasSuffix(*name, "/") {
+			*name = filepath.Join(*name, "index")
+		}
+	*/
 
 	// Check that no one is trying to escape out of wikiDir, etc
 	// Very important to check it here, before trying to check if it exists
@@ -1659,9 +1661,39 @@ func checkName(name *string) (bool, error) {
 	fullfilename := filepath.Join(viper.GetString("WikiDir"), *name)
 
 	exists := doesPageExist(fullfilename)
-	//log.Println(exists, "line 1662", fullfilename)
 
-	// If original filename does not exist, normalize the filename, and check if it exists
+	// If name doesn't exist, and there is no file extension given, try .page and then .md
+	if !exists {
+		possbileExts := []string{".md", ".page"}
+		for _, ext := range possbileExts {
+			log.Println("Attempting to search for " + ext + " files...")
+			if !exists && (filepath.Ext(*name) == "") {
+				if doesPageExist(fullfilename + ext) {
+					*name = *name + ext
+					log.Println(*name + " found!")
+					exists = true
+					break
+				}
+			}
+		}
+	}
+	/*
+		if !exists && (filepath.Ext(*name) == "") {
+
+			if doesPageExist(fullfilename + ".md") {
+				*name = *name + ".md"
+				log.Println(*name + " found!")
+				exists = true
+			}
+			if doesPageExist(fullfilename + ".page") {
+				*name = *name + ".page"
+				log.Println(*name + " found!")
+				exists = true
+			}
+		}
+	*/
+
+	// If original filename does not exist, normalize the filename, and check if that exists
 	if !exists {
 		// Normalize the name if the original name doesn't exist
 		*name = strings.ToLower(*name)
@@ -1669,10 +1701,8 @@ func checkName(name *string) (bool, error) {
 		*name = dashes.ReplaceAllString(*name, "-")
 		fullnewfilename := filepath.Join(viper.GetString("WikiDir"), *name)
 		exists = doesPageExist(fullnewfilename)
-		//log.Println(exists, "line 1672", fullnewfilename)
 	}
-	//log.Println("checkName() name, exists, relErr:", *name, exists, relErr)
-	return exists, relErr
+	return exists, nil
 
 }
 
