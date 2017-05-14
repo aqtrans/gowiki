@@ -2779,6 +2779,7 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 }
 
 func buildCache() *wikiCache {
+	defer httputils.TimeTrack(time.Now(), "buildCache")
 	cache := new(wikiCache)
 	if cache.Tags == nil {
 		cache.Tags = make(map[string][]string)
