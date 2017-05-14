@@ -551,6 +551,52 @@ func TestRecentsPage(t *testing.T) {
 	}
 }
 
+func TestListPage(t *testing.T) {
+	err := gitPull()
+	checkT(err, t)
+
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
+	checkT(err, t)
+
+	e := testEnv(t, authState)
+	e.cache = buildCache()
+	err = os.Remove("./tests/cache.gob")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = tmplInit(e)
+	checkT(err, t)
+
+	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+	// pass 'nil' as the third parameter.
+	req, err := http.NewRequest("GET", "/list", nil)
+	checkT(err, t)
+
+	handler := http.HandlerFunc(e.listHandler)
+
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
+		Username: "admin",
+		IsAdmin:  true,
+	})
+	rctx := req.WithContext(ctx)
+
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	handler.ServeHTTP(rr, rctx)
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusSeeOther)
+	}
+}
+
 func TestPrivatePageNotLoggedIn(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
