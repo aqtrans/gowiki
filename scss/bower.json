@@ -19,9 +19,5 @@
     "test",
     "tests"
   ],
-  "private": true,
-  "resolutions": {
-    "foundation-sites": "^6.3.0",
-    "what-input": "~4.0.3"
-  }
+  "private": true
 }
