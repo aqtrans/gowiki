@@ -2938,7 +2938,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		params := getParams(r.Context())
 		name := params["name"]
-		username, isAdmin := auth.GetUsername(r.Context())
+		_, isAdmin := auth.GetUsername(r.Context())
 		userLoggedIn := auth.IsLoggedIn(r.Context())
 		pageExists, relErr := checkName(&name)
 		fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
@@ -2985,9 +2985,16 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 					return
 				}
 				if !isAdmin {
-					log.Println(username + " attempting to access restricted URL.")
-					env.authState.SetFlash("Sorry, you are not allowed to see that.", w, r)
-					http.Redirect(w, r.WithContext(ctx), "/index", http.StatusSeeOther)
+					rurl := r.URL.String()
+					httputils.Debugln("wikiMiddle mitigating: " + r.Host + rurl)
+					//w.Write([]byte("OMG"))
+
+					// Detect if we're in an endless loop, if so, just panic
+					if strings.HasPrefix(rurl, "login?url=/login") {
+						panic("AuthMiddle is in an endless redirect loop")
+					}
+					env.authState.SetFlash("Please login to see that.", w, r)
+					http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
 					return
 				}
 			case "public":
@@ -3003,7 +3010,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 					if strings.HasPrefix(rurl, "login?url=/login") {
 						panic("AuthMiddle is in an endless redirect loop")
 					}
-					env.authState.SetFlash("Please login to view that page.", w, r)
+					env.authState.SetFlash("Please login to see that.", w, r)
 					http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
 					return
 				}
