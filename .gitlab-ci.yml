@@ -20,6 +20,8 @@ test-my-project:
   stage: test
   coverage: '/coverage: \d+\.\d+/'
   script:
+    - git clone git@jba.io:aqtrans/gowiki-testdata.git 
+    - pwd
     - docker pull $IMAGE_TAG
     - docker run $IMAGE_TAG go get -d  
     - docker run $IMAGE_TAG go test -v
