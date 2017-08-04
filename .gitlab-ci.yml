@@ -48,7 +48,7 @@ deploy_prod:
     - docker pull $IMAGE_TAG
     - docker tag $IMAGE_TAG $PROD_TAG
     - docker push $PROD_TAG
-    - docker service update --image $PROD_TAG gowiki
+    - docker service update --with-registry-auth --image $PROD_TAG gowiki
   environment:
     name: production
     url: https://wiki.jba.io
