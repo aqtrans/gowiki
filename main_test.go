@@ -37,7 +37,7 @@ var (
 func init() {
 	viper.Set("WikiDir", "./tests/gowiki-testdata/")
 	viper.Set("Domain", "wiki.example.com")
-	viper.Set("GitRepo", "git@jba.io:aqtrans/gowiki-testdata.git")
+	//viper.Set("GitRepo", "git@jba.io:aqtrans/gowiki-testdata.git")
 	viper.Set("CacheLocation", "./tests/cache.gob")
 	viper.Set("InitWikiRepo", true)
 }
