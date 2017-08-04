@@ -60,7 +60,7 @@ func gitCloneTest() error {
 	if err != nil {
 		return err
 	}
-	o, err := testGitCommand("clone", "git@jba.io:aqtrans/gowiki-testdata.git", "./tests/gowiki-testdata/").CombinedOutput()
+	o, err := testGitCommand("clone", viper.GetString("GitRepo"), "./tests/gowiki-testdata/").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error during `git clone`: %s\n%s", err.Error(), string(o))
 	}
