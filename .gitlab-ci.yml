@@ -20,12 +20,15 @@ test-my-project:
   stage: test
   coverage: '/coverage: \d+\.\d+/'
   script:
-    - git clone git@jba.io:aqtrans/gowiki-testdata.git 
+    #- git clone git@jba.io:aqtrans/gowiki-testdata.git 
     - docker pull $IMAGE_TAG
     - docker run $IMAGE_TAG go get -d  
-    - docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG go test -v
-    - docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG go test -race
-    - docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG go test -cover
+    - docker run $IMAGE_TAG go test -v
+    - docker run $IMAGE_TAG go test -race
+    - docker run $IMAGE_TAG go test -cover
+    #- docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG go test -v
+    #- docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG go test -race
+    #- docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG go test -cover
 
 deploy_staging:
   stage: deploy
