@@ -39,6 +39,7 @@ func init() {
 	viper.Set("Domain", "wiki.example.com")
 	viper.Set("GitRepo", "git@jba.io:aqtrans/gowiki-testdata.git")
 	viper.Set("CacheLocation", "./tests/cache.gob")
+	viper.Set("InitWikiRepo", true)
 }
 
 func checkT(err error, t *testing.T) {
@@ -127,7 +128,10 @@ func TestWikiInit(t *testing.T) {
 	}
 	_, err = os.Stat(viper.GetString("WikiDir") + ".git")
 	if err != nil {
-		gitClone(viper.GetString("GitRepo"))
+		err = gitClone(viper.GetString("GitRepo"))
+		if err != nil {
+			log.Println(err)
+		}
 	}
 	initWikiDir()
 }
