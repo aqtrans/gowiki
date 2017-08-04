@@ -1,4 +1,5 @@
-FROM aqtrans/golang-npm:latest
+FROM golang:latest
+#FROM aqtrans/golang-npm:latest
 
 RUN mkdir -p /go/src/wiki
 WORKDIR /go/src/wiki
@@ -7,6 +8,8 @@ WORKDIR /go/src/wiki
 ## Running: docker run -it --rm --name gowiki-instance -p 3000:3000 -w /go/src/wiki gowiki
 
 ADD . /go/src/wiki/
+RUN curl -sL https://deb.nodesource.com/setup_6.x | bash - && apt-get update && apt-get -y install nodejs
+RUN npm install -g bower gulp
 RUN /bin/sh ./build_css.sh
 RUN go get github.com/kardianos/govendor && govendor sync
 RUN go get -d
