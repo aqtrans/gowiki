@@ -1,88 +1,35 @@
-image: aqtrans/golang-npm:latest
-
-cache:
-  untracked: true
-  key: "$CI_BUILD_REF_NAME"
-  paths:
-    - vendor/
+variables:
+  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
+  PROD_TAG: $CI_REGISTRY_IMAGE:latest
 
 before_script:
-  - ln -s /builds /go/src/jba.io
-  - cd /go/src/jba.io/go/wiki
-  # Install ssh-agent if not already installed, it is required by Docker.
-  # (change apt-get to yum if you use a CentOS-based image)
-  - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
-
-  # Run ssh-agent (inside the build environment)
-  - eval $(ssh-agent -s)
-
-  # Add the SSH key stored in SSH_PRIVATE_KEY variable to the agent store
-  - ssh-add <(echo "$SSH_PRIVATE_KEY")
-
-  # For Docker builds disable host key checking. Be aware that by adding that
-  # you are suspectible to man-in-the-middle attacks.
-  # WARNING: Use this only with the Docker executor, if you use it with shell
-  # you will overwrite your user's SSH config.
-  # - mkdir -p ~/.ssh
-  # - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
-  # In order to properly check the server's host key, assuming you created the
-  # SSH_SERVER_HOSTKEYS variable previously, uncomment the following two lines
-  # instead.
-  - mkdir -p ~/.ssh
-  - '[[ -f /.dockerenv ]] && echo "$SSH_SERVER_HOSTKEYS" > ~/.ssh/known_hosts'
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
 
 stages:
-  - install-environment
   - build
   - test
-  - deploy  
+  - deploy
 
-install-go:
-  stage: install-environment
-  script:
-    - go version
-    - echo $PATH
-    - echo $GOPATH
-    - go env
-    - which go
-
-build-my-project:
+build-image:
   stage: build
   script:
-    - /bin/sh ./build_css.sh  
-    - go get -u github.com/kardianos/govendor
-    - govendor sync
-    - go get -d
-    - go build -o ./wiki
-
-  artifacts:
-    paths:
-      - wiki
-      - assets/css/wiki.css
-      - assets/css/wiki.css.map
-      - vendor/
+    - docker build --pull -t $IMAGE_TAG .
 
 test-my-project:
   stage: test
   coverage: '/coverage: \d+\.\d+/'
   script:
-    - go get -d  
-    - go test -v
-    - go test -race
-    - go test -cover
-    - rm -rf tests/gowiki-testdata
+    - docker pull $IMAGE_TAG
+    - docker run $IMAGE_TAG go get -d  
+    - docker run $IMAGE_TAG go get -v
+    - docker run $IMAGE_TAG go get -race
+    - docker run $IMAGE_TAG go get -cover
 
 deploy_staging:
   stage: deploy
   script:
-    # Push to the Dokku server
-    - cd /builds/go/wiki
-    - rm -rf tests/gowiki-testdata
-    - git checkout $CI_COMMIT_REF_NAME
-    - git status
-    - git remote add lisa-dokku ssh://dokku@192.168.1.100:42424/gowiki
-    - git branch
-    - git push lisa-dokku $CI_COMMIT_REF_NAME:master
+    - docker pull $IMAGE_TAG
+    - docker push $IMAGE_TAG
   environment:
     name: staging
     url: https://gowiki.lisa.es.gy
@@ -91,17 +38,11 @@ deploy_staging:
 deploy_prod:
   stage: deploy
   script:
-    # Push to the Dokku server
-    - cd /builds/go/wiki
-    - rm -rf tests/gowiki-testdata
-    - git checkout master
-    - git status
-    - git remote add frink-dokku dokku@frink.es.gy:gowiki
-    - git branch
-    - git push frink-dokku master 
+    - docker pull $IMAGE_TAG
+    - docker tag $IMAGE_TAG $PROD_TAG
+    - docker push $PROD_TAG
   environment:
     name: production
     url: https://wiki.jba.io
-  #when: manual
   only:
     - master@go/wiki
