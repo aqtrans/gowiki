@@ -22,9 +22,9 @@ test-my-project:
   script:
     - docker pull $IMAGE_TAG
     - docker run $IMAGE_TAG go get -d  
-    - docker run $IMAGE_TAG go get -v
-    - docker run $IMAGE_TAG go get -race
-    - docker run $IMAGE_TAG go get -cover
+    - docker run $IMAGE_TAG go test -v
+    - docker run $IMAGE_TAG go test -race
+    - docker run $IMAGE_TAG go test -cover
 
 deploy_staging:
   stage: deploy
