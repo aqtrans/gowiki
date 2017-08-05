@@ -23,11 +23,13 @@ if [[ -z "$DIR" ]]; then
     exit 1
 fi
 
+# Remove previous backup of app
+ssh $SSHLOGIN rm -rf $DIR.old
 # Backup old app
-ssh $SSHLOGIN mv $DIR{,.old}
+ssh $SSHLOGIN mv -v $DIR{,.old}
 # rsync to fresh folder
 rsync -av --exclude data/ --exclude vendor/ --exclude http.log ./ $SSHLOGIN:$DIR
 # Copy data/ from old to new
-ssh $SSHLOGIN cp -rp $DIR.old/data $DIR/
+ssh $SSHLOGIN cp -rpv $DIR.old/data $DIR/
 # Restart 
 ssh $SSHLOGIN sudo systemctl restart $SERVICENAME
