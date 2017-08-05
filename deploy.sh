@@ -24,12 +24,14 @@ if [[ -z "$DIR" ]]; then
 fi
 
 # Remove previous backup of app
-ssh $SSHLOGIN rm -rf $DIR.old
+ssh $SSHLOGIN rm -rfv $DIR.old
+# Stop app, to release DB locks 
+ssh $SSHLOGIN sudo systemctl stop $SERVICENAME
 # Backup old app
 ssh $SSHLOGIN mv -v $DIR{,.old}
 # rsync to fresh folder
 rsync -av --exclude data/ --exclude vendor/ --exclude http.log ./ $SSHLOGIN:$DIR
 # Copy data/ from old to new
 ssh $SSHLOGIN cp -rpv $DIR.old/data $DIR/
-# Restart 
-ssh $SSHLOGIN sudo systemctl restart $SERVICENAME
+# Restart app
+ssh $SSHLOGIN sudo systemctl start $SERVICENAME
