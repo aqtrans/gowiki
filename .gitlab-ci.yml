@@ -74,7 +74,7 @@ deploy_prod:
   script:
     - mkdir -p deploy
     - cp -r README.md wiki templates assets deploy/
-    - apt get update -y && apt-get install -y rsync
+    - apt-get update -y && apt-get install -y rsync
     - rsync -av --delete --exclude data/ --exclude http.log deploy/ golang@localhost:/home/golang/wiki/
     - ssh golang@localhost sudo systemctl restart golang-wiki    
   environment:
