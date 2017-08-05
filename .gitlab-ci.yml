@@ -75,8 +75,8 @@ deploy_prod:
     - mkdir -p deploy
     - cp -r README.md wiki templates assets deploy/
     - apt-get update -y && apt-get install -y rsync
-    - rsync -av --delete --exclude data/ --exclude http.log deploy/ golang@localhost:/home/golang/wiki/
-    - ssh golang@localhost sudo systemctl restart golang-wiki    
+    - rsync -av --delete --exclude data/ --exclude http.log deploy/ golang@frink.es.gy:/home/golang/wiki/
+    - ssh golang@frink.es.gy systemctl --user restart golang-wiki    
   environment:
     name: production
     url: https://wiki.jba.io
