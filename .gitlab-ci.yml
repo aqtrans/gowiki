@@ -1,6 +1,7 @@
 variables:
   IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   PROD_TAG: $CI_REGISTRY_IMAGE:latest
+  TESTDATA_REPO1: $TESTDATA_REPO
 
 before_script:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
@@ -23,9 +24,9 @@ test-my-project:
     - docker pull $IMAGE_TAG  
     #- git clone git@jba.io:aqtrans/gowiki-testdata.git 
     - docker run $IMAGE_TAG go get -d  
-    - docker run -e "GOWIKI_GITREPO=$TESTDATA_REPO" $IMAGE_TAG go test -v
-    - docker run -e "GOWIKI_GITREPO=$TESTDATA_REPO" $IMAGE_TAG go test -race
-    - docker run -e "GOWIKI_GITREPO=$TESTDATA_REPO" $IMAGE_TAG go test -cover
+    - docker run -e "GOWIKI_GITREPO=$TESTDATA_REPO1" $IMAGE_TAG go test -v
+    - docker run -e "GOWIKI_GITREPO=$TESTDATA_REPO1" $IMAGE_TAG go test -race
+    - docker run -e "GOWIKI_GITREPO=$TESTDATA_REPO1" $IMAGE_TAG go test -cover
     #- docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG ls -la /go/src/wiki/tests/gowiki-testdata
     #- docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG ls -la /go/src/wiki/tests    
     #- docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG go test -v
