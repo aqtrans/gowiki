@@ -61,25 +61,28 @@ test-my-project:
 deploy_staging:
   stage: deploy
   script:
-    # Push to the Dokku server
-    - git remote add deploy dokku@192.168.1.146:gowiki
-    - git push deploy master
+    - apt-get update -y && apt-get install -y rsync
+    - /bin/sh ./deploy.sh golang@leela.es.gy golang@$CI_PROJECT_NAME $CI_PROJECT_NAME
   environment:
     name: staging
-    url: http://gowiki.dokku.es.gy
+    url: http://wiki.leela.es.gy
   when: manual
 
 deploy_prod:
   stage: deploy
   script:
-    - mkdir -p deploy
-    - cp -r README.md wiki templates assets deploy/
     - apt-get update -y && apt-get install -y rsync
-    - rsync -av --delete --exclude data/ --exclude http.log deploy/ golang@frink.es.gy:/home/golang/wiki/
-    - ssh golang@frink.es.gy sudo systemctl restart golang-wiki
+    - /bin/sh ./deploy.sh golang@frink.es.gy golang@$CI_PROJECT_NAME $CI_PROJECT_NAME
+    # Backup old app
+    #- ssh golang@frink.es.gy mv /home/golang/wiki/ /home/golang/wiki.old/
+    # rsync to fresh folder
+    #- rsync -av --delete --exclude data/ --exclude vendor/ --exclude http.log ./ golang@frink.es.gy:/home/golang/wiki/
+    # Copy data/ from old to new
+    #- ssh golang@frink.es.gy cp -rp /home/golang/wiki.old/data /home/golang/wiki/
+    # Restart 
+    #- ssh golang@frink.es.gy sudo systemctl restart golang@wiki
   environment:
     name: production
     url: https://wiki.jba.io
   only:
     - master
-
