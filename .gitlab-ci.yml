@@ -72,7 +72,8 @@ deploy_staging:
 deploy_prod:
   stage: deploy
   script:
-    - cp -r README.md wiki assets deploy/
+    - mkdir -p deploy
+    - cp -r README.md wiki templates assets deploy/
     - rsync -av --delete --exclude data/ --exclude http.log deploy/ golang@localhost:/home/golang/wiki/
     - ssh golang@localhost sudo systemctl restart golang-wiki    
   environment:
