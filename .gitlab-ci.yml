@@ -1,7 +1,6 @@
 image: golang:latest
 
 cache:
-  untracked: true
   key: "$CI_BUILD_REF_NAME"
   paths:
     - vendor/
@@ -41,6 +40,9 @@ build-my-project:
     - govendor sync
     - go get -d
     - go build -o ./wiki
+  cache:
+    paths:
+      - bower_components/
   artifacts:
     paths:
       - wiki
