@@ -1,57 +1,83 @@
-variables:
-  IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  PROD_TAG: $CI_REGISTRY_IMAGE:latest
-  TESTDATA_REPO1: $TESTDATA_REPO
+image: golang:latest
+
+cache:
+  untracked: true
+  key: "$CI_BUILD_REF_NAME"
+  paths:
+    - vendor/
 
 before_script:
-  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  - ln -s /builds /go/src/jba.io
+  - cd /go/src/jba.io/go/wiki
+  - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+  - eval $(ssh-agent -s)
+  - ssh-add <(echo "$SSH_PRIVATE_KEY")
+  - mkdir -p ~/.ssh
+  - '[[ -f /.dockerenv ]] && echo "$SSH_SERVER_HOSTKEYS" > ~/.ssh/known_hosts'
 
 stages:
+  - install-environment
   - build
   - test
-  - deploy
+  - deploy  
 
-build-image:
+install-go:
+  stage: install-environment
+  script:
+    - go version
+    - echo $PATH
+    - echo $GOPATH
+    - go env
+    - which go
+
+build-my-project:
   stage: build
   script:
-    - docker build --pull -t $IMAGE_TAG .
-    - docker push $IMAGE_TAG
+    - curl -sL https://deb.nodesource.com/setup_7.x | bash -
+    - apt-get update -y && apt-get install -y nodejs
+    - npm install -g bower gulp    
+    - /bin/sh ./build_css.sh
+    - go get -u github.com/kardianos/govendor
+    - govendor sync
+    - go get -d
+    - go build -o ./wiki
+  artifacts:
+    paths:
+      - wiki
+      - assets/css/wiki.css
+      - assets/css/wiki.css.map
+      - vendor/
 
 test-my-project:
   stage: test
   coverage: '/coverage: \d+\.\d+/'
   script:
-    - docker pull $IMAGE_TAG  
-    #- git clone git@jba.io:aqtrans/gowiki-testdata.git 
-    - docker run $IMAGE_TAG go get -d  
-    - docker run -e "GOWIKI_GITREPO=$TESTDATA_REPO1" $IMAGE_TAG go test -v
-    - docker run -e "GOWIKI_GITREPO=$TESTDATA_REPO1" $IMAGE_TAG go test -race
-    - docker run -e "GOWIKI_GITREPO=$TESTDATA_REPO1" $IMAGE_TAG go test -cover
-    #- docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG ls -la /go/src/wiki/tests/gowiki-testdata
-    #- docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG ls -la /go/src/wiki/tests    
-    #- docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG go test -v
-    #- docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG go test -race
-    #- docker run -v $CI_PROJECT_DIR/gowiki-testdata:/go/src/wiki/tests/gowiki-testdata $IMAGE_TAG go test -cover
+    - go get -d  
+    - go test -v
+    - go test -race
+    - go test -cover
+    - rm -rf tests/gowiki-testdata
 
 deploy_staging:
   stage: deploy
   script:
-    - docker pull $IMAGE_TAG
-    - docker push $IMAGE_TAG
+    # Push to the Dokku server
+    - git remote add deploy dokku@192.168.1.146:gowiki
+    - git push deploy master
   environment:
     name: staging
-    url: https://gowiki.lisa.es.gy
+    url: http://gowiki.dokku.es.gy
   when: manual
 
 deploy_prod:
   stage: deploy
   script:
-    - docker pull $IMAGE_TAG
-    - docker tag $IMAGE_TAG $PROD_TAG
-    - docker push $PROD_TAG
-    - docker service update --with-registry-auth --image $PROD_TAG gowiki
+    - cp -r README.md wiki assets deploy/
+    - rsync -av --delete --exclude data/ --exclude http.log deploy/ golang@localhost:/home/golang/wiki/
+    - ssh golang@localhost sudo systemctl restart golang-wiki    
   environment:
     name: production
     url: https://wiki.jba.io
   only:
-    - master@go/wiki
+    - master
+
