@@ -33,7 +33,7 @@ install-go:
 build-my-project:
   stage: build
   script:
-    - curl -sL https://deb.nodesource.com/setup_7.x | bash -
+    - curl -sL https://deb.nodesource.com/setup_6.x | bash -
     - apt-get update -y && apt-get install -y nodejs
     - npm install -g bower gulp    
     - /bin/sh ./build_css.sh
@@ -74,6 +74,7 @@ deploy_prod:
   script:
     - mkdir -p deploy
     - cp -r README.md wiki templates assets deploy/
+    - apt get update -y && apt-get install -y rsync
     - rsync -av --delete --exclude data/ --exclude http.log deploy/ golang@localhost:/home/golang/wiki/
     - ssh golang@localhost sudo systemctl restart golang-wiki    
   environment:
