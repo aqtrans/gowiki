@@ -64,7 +64,7 @@ deploy_staging:
   stage: deploy
   script:
     - apt-get update -y && apt-get install -y rsync
-    - /bin/sh ./deploy.sh golang@leela.es.gy golang@$CI_PROJECT_NAME $CI_PROJECT_NAME
+    - /bin/bash ./deploy.sh golang@leela.es.gy golang@$CI_PROJECT_NAME $CI_PROJECT_NAME
   environment:
     name: staging
     url: http://wiki.leela.es.gy
