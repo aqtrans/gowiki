@@ -159,7 +159,8 @@ body {
                 pre {
                     padding: 0.5rem;
                 }
-                input[type=checkbox] { display:none; } /* to hide the checkbox itself */
+                /*
+                input[type=checkbox] { display:none; }
                 input[type=checkbox] + label:before {
                     font-family: FontAwesome;
                     display: inline-block;
@@ -173,11 +174,12 @@ body {
                     cursor: default;
                 }
 
-                input[type=checkbox] + label:before { content: "\f096"; } /* unchecked icon */
-                input[type=checkbox] + label:before { letter-spacing: 10px; } /* space between checkbox and label */
+                input[type=checkbox] + label:before { content: "\f096"; }
+                input[type=checkbox] + label:before { letter-spacing: 10px; }
 
-                input[type=checkbox]:checked + label:before { content: "\f046"; } /* checked icon */
-                input[type=checkbox]:checked + label:before { letter-spacing: 5px; } /* allow space for check mark */
+                input[type=checkbox]:checked + label:before { content: "\f046"; }
+                input[type=checkbox]:checked + label:before { letter-spacing: 5px; }
+                */
             }
             header {
                 @include card();
