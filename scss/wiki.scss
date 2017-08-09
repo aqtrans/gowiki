@@ -1,400 +1,170 @@
-@charset 'utf-8';
-
-@import 'settings';
-@import 'foundation';
-@import 'motion-ui';
-
-@include foundation-global-styles;
-//@include foundation-grid;
-@include foundation-flex-grid;
-@include foundation-typography;
-@include foundation-button;
-@include foundation-forms;
-// @include foundation-range-input;
-@include foundation-accordion;
-//@include foundation-accordion-menu;
-//@include foundation-badge;
-@include foundation-breadcrumbs;
-@include foundation-button-group;
-@include foundation-callout;
-@include foundation-close-button;
-@include foundation-menu;
-@include foundation-menu-icon;
-//@include foundation-drilldown-menu;
-@include foundation-dropdown;
-//@include foundation-dropdown-menu;
-//@include foundation-flex-video;
-@include foundation-label;
-//@include foundation-media-object;
-//@include foundation-off-canvas;
-//@include foundation-orbit;
-//@include foundation-pagination;
-//@include foundation-progress-bar;
-// @include foundation-progress-element;
-// @include foundation-meter-element;
-//@include foundation-slider;
-//@include foundation-sticky;
-@include foundation-reveal;
-@include foundation-switch;
-@include foundation-table;
-@include foundation-tabs;
-@include foundation-thumbnail;
-//@include foundation-title-bar;
-//@include foundation-tooltip;
-//@include foundation-top-bar;
-@include foundation-visibility-classes;
-//@include foundation-float-classes;
-@include foundation-flex-classes;
-
-@include motion-ui-transitions;
-@include motion-ui-animations;
-
-//@import url('https://fonts.googleapis.com/css?family=Khand|Open+Sans|Roboto+Condensed:300italic,400italic,700italic,400,700,300|Roboto:400,100,100italic,300,300italic,400italic,500,500italic,700,700italic');
-//@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
-//@import url('https://use.fontawesome.com/107df40317.css');
+$light-gray: #e6e6e6;
+$medium-gray: #cacaca;
+$dark-gray: #8a8a8a;
+$black: #0a0a0a;
+$white: #fefefe;
+$solarized: #073642;
+$almostblack: #202020;
+$body-font-family: 'Noto Sans', 'Open Sans', 'Roboto Condensed', 'Helvetica Neue', Helvetica, Roboto, Arial, sans-serif;
 
 @mixin card() {
-    background-color: $almostblack;
+    //background-color: $solarized;
     //border-radius: 3px;
-    box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);    
+    //box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);    
 }
 
-/*
-@media (min-width: 38em) {
-  html {
-    font-size: 100%;
-  }
+html, body {
+  width: 100%;
+  height: 100%;
 }
 
-@media (min-width: 48em) {
-  html {
-    font-size: 110%;
-  }
-}
-@media (min-width: 68em) {
-  html {
-    font-size: 120%;
-  }
-}
-*/
-
-.usernav {
-    margin-top: 1em;
+#wikieditor {
+    height: 500px;
+    max-width: 100%;
+    width: 100%;
 }
 
 body {
-    @include grid-row;
+    display: flex;
+    flex-flow: row;
+    margin: 0 auto;
     > nav {
-        @include grid-column;
-        @include breakpoint(medium) {
-            //min-width: 200px;
-            @include grid-column(22%);
-        }
-
-        [type="text"] {
-            width: 0;
-        }
-        form {
-            margin-top: 0.5em;
-        }
-
-
-        > h5 {
-            font-weight: lighter;
-        }
-        > header {
-            font-size: 3rem;
-        }
+        flex: 1 6 20%;
+        order: 1;
+        padding-right: 10px;
+        height: 100%;
         ul {
-            @include menu-base;
-            @include menu-expand;
-            @include menu-direction(vertical);
-            li a:hover {
-                background-color: lighten($body-background, 10%);
-            }
+            list-style-type: square;
         }
-        fieldset.fieldset {
-            margin: 0;
-            padding: 0;
-        }
-        .usernav > fieldset {
-            border: 0;
-            legend {
-                background-color: unset;
-            }
-        } 
     }
     > section {
-        @include grid-column;
-        @include breakpoint(medium) {
-            @include grid-column(78%);
-        }
+        flex: 3 1 80%;
+        order: 2;
+        height: 100%;
+        //padding: 0 10px;
         > main {
-            article {
-                @include card();
-                padding: 0.5em;
-
-                footer {
-                    text-align: right;
-                    ul {
-                        list-style: none;
-                    }
-                }
-
-                ul {
-                    list-style-type: disc;
-
-                    li header {
-                        font-size: 2rem;
-                    }
-                }
-                pre,code {
-                    white-space: pre-wrap;
-                    background: darken($solarized, 10%);
-                    color: $white;
-                }
-                code {
-                    padding: 0;
-                }
-                pre {
-                    padding: 0.5rem;
-                }
-                /*
-                input[type=checkbox] { display:none; }
-                input[type=checkbox] + label:before {
-                    font-family: FontAwesome;
-                    display: inline-block;
-                }
-
-                input[type=checkbox] + label {
-                    margin-left: 0;
-                    margin-right: 0;
-                }
-                input[type=checkbox] + label[for] {
-                    cursor: default;
-                }
-
-                input[type=checkbox] + label:before { content: "\f096"; }
-                input[type=checkbox] + label:before { letter-spacing: 10px; }
-
-                input[type=checkbox]:checked + label:before { content: "\f046"; }
-                input[type=checkbox]:checked + label:before { letter-spacing: 5px; }
-                */
-            }
-            header {
-                @include card();
+            display: flex;
+            flex-flow: column;
+            > header {
                 display: flex;
-                flex-flow: row nowrap;
-
-                margin-bottom: 1em;
-                > h1 {
-                    flex-grow: 1;
-                    font-size: 2.6rem;
-                }
-                #stats-dropdown {
-                    width: auto;
-                    background-color: $almostblack;
+                flex-flow: row wrap;
+                justify-content: center;
+                align-items: center;
+                padding-bottom: 20px;
+                
+                h1 {
+                    padding-left: 0.5rem;
+                    flex: 1 5;
+                    order: 3;
                 }
                 div.stats {
-                    flex-shrink: 1;
-                    font-family: $header-font-family;
-                    font-weight: lighter;
-
-                    ul {
-                        margin: 0;
+                    flex: 1 5;
+                    order: 5;
+                }
+                
+                ul {
+                    display: inline-flex;
+                    flex-flow: row nowrap;                  
+                    margin: 0;
+                }
+                li {
+                    border-right: 1px solid $black;
+                    white-space: nowrap;
+                    list-style-type: none;
+                    p {
+                        margin-bottom: 5px;
                     }
-                    li {
-                        display: inline-block;
-                        border-right: 1px solid transparentize($body-font-color, 0.8);
-                        padding: 0.2em;
-                        height: 3.8em;
-                        p {
-                            margin-bottom: 1rem;
-                        }
-                        white-space: nowrap;
-                    }
-                    li:first-child {
-                        border-left: 1px solid transparentize($body-font-color, 0.8);
-                    }
-                    .stat {
-                        font-size: 1.0rem;
-                        font-weight: bold;
-                    }
-                    .stat span.warning.label {
-                        margin-right: 0.2em;
-                        margin-left: 0.2em;
-                    }
-                }                
+                }
+                li:first-child {
+                    border-left: 1px solid $black;
+                }
+            }
+            > ul {
+                margin: 0;
+                padding: 0;
+                list-style-type: none;
+                li {
+                    padding: 5px;
+                    margin: 0 10px;
+                    float: left;
+                    background-color: $almostblack;
+                }
+                li.is-active {
+                    background-color: $medium-gray;
+                }
+            }
+            > article {
+                padding: 0.5rem;
+                border-top: 1px solid $black;
+                @include card();
+                flex: 1;
+                min-height: 50vh;
             }
         }
     }
 }
-header {
-    //font-family: 'Khand', sans-serif;
-    font-weight: bold;
-    //font-size: 3rem;
-    font-family: $header-font-family;
-    text-decoration: none;
-    //border-bottom: $card-border;
-    //padding-left: 0.2em;
-    & a, a:hover, a:visited {
-        color: $white;
-        text-decoration: none;
+
+@media all and (max-width: 640px) {
+    body {
+        flex-direction: column;
     }
 }
 
-
-.switch-paddle {
-    width: 3rem;
-    height: 1.5rem;
-    font-size: .625rem;
+ /* The switch - the box around the slider */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
 }
 
-.switch-paddle::after {
-    width: 1rem;
-    height: 1rem;
+/* Hide default HTML checkbox */
+.switch input {display:none;}
+
+/* The slider */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
 }
 
-input:checked ~ .switch-paddle::after  {
-    left: 1.75rem;
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
 }
 
-#uncheckedSwitch,#checkedSwitch {
-    display: none;
+input:checked + .slider {
+  background-color: #2196F3;
 }
 
-
-#gallery img {
-    max-width: 400px;
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
 }
 
-.accordion-title {
-    font-size: 1rem;
-    &:hover, &:focus, &{
-        background-color: $white;
-        color: $black;
-    }
+input:checked + .slider:before {
+  -webkit-transform: translateX(26px);
+  -ms-transform: translateX(26px);
+  transform: translateX(26px);
 }
 
-code {
-    border: 0;
+/* Rounded sliders */
+.slider.round {
+  border-radius: 34px;
 }
 
-p {
-    //font-weight: lighter;
-    //font-family: 'Roboto Condensed', sans-serif;
-    margin-bottom: 0;
-}
-
-footer {
-    text-align: center;
-    color: transparentize($body-font-color, 0.6);
-    font-weight: lighter;
-    font-size: 70%;
-    > ul {
-        list-style: none;
-        margin: 0;
-    }
-}
-
-i.fa:after {
-    content: "\00a0";
-}
-
-p.date {
-    color: transparentize($body-font-color, 0.6);
-    font-size: 0.8rem;
-    margin-bottom: 0.5em;
-    > span + span:before {
-        content: "|\00a0";
-        //padding: 0 1em;
-    }
-}
-
-ul.tabs {
-    border: 0;
-    background-color: unset;
-    white-space: nowrap;
-    > li {
-        background-color: $black;
-        margin-right: 0.5em;
-        width: 100%;
-        @include breakpoint(640px) {
-            width: auto;
-        }
-    }
-    > li.is-active {
-        background-color: $almostblack;
-        a {
-            color: $white;
-        }
-        &:hover {
-            background-color: $almostblack;
-        }
-    }
-}
-
-.accordion-title {
-    font-size: 1rem;
-    &:hover, &:focus, &{
-        background-color: $white;
-        color: $black;
-    }
-}
-
-div.input-wrapper {
-    box-sizing: border-box;
-    display: flex;
-    flex-flow: row nowrap;
-
-    /* Example styling ------------------- */
-    //padding: 0 20px;
-    //margin-top: 10px;
-    height: 2.2em;
-        
-    & > input, & > button {
-      box-sizing: border-box;
-      height: 100%;
-      border: 1px solid #999;
-    }
-
-    & > input {
-      flex: 1 1 auto;
-      border-right: 0;
-      border-radius: 0;
-    }
-
-    & > button {
-      flex-shrink: 0;
-      margin: 0;
-      border-radius: 0;
-    }
-}
-
-#diff pre {
-    background-color: $solarized;
-    code {
-        background-color: $solarized;
-    }
-}
-
-main > article > nav {
-    > ul {
-        margin: 1.5rem;
-    }
-    border: 1px solid transparentize($body-font-color, 0.8);
-    display: table;
-    background-color: $white;
-}
-
-div.usernav {
-    background-color: darken($body-background, 10%);
-}
-
-.tabs-title > a:hover {
-    background-color: $almostblack;
-}
-
-textarea#wikieditor {
-  height: 500px;
-}
+.slider.round:before {
+  border-radius: 50%;
+} 

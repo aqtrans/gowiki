@@ -1,7 +1,7 @@
 {
-  "name": "foundation-sites-template",
+  "name": "min scss",
   "version": "1.0.0",
-  "description": "Basic template for a new Foundation for Sites project.",
+  "description": "My minimal CSS.",
   "main": "gulpfile.js",
   "devDependencies": {
     "gulp": "^3.9.0",
