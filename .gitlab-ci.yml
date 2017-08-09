@@ -1,4 +1,4 @@
-image: golang:latest
+image: aqtrans/golang-npm:latest
 
 cache:
   key: "$CI_BUILD_REF_NAME"
@@ -32,9 +32,9 @@ install-go:
 build-my-project:
   stage: build
   script:
-    - curl -sL https://deb.nodesource.com/setup_6.x | bash -
-    - apt-get update -y && apt-get install -y nodejs
-    - npm install -g bower gulp    
+    #- curl -sL https://deb.nodesource.com/setup_6.x | bash -
+    #- apt-get update -y && apt-get install -y nodejs
+    #- npm install -g bower gulp    
     - /bin/sh ./build_css.sh
     - go get -u github.com/kardianos/govendor
     - govendor sync
