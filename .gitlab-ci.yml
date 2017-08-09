@@ -75,7 +75,7 @@ deploy_staging:
     # Copy data/ from old to new
     - ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME.old; then cp -rpv $CI_PROJECT_NAME.old/data $CI_PROJECT_NAME.new/; fi'"
     # Flip flop instances; current -> old, new -> current
-    - ssh $DEPLOY_HOST "mv -fTv $CI_PROJECT_NAME{,.old} && mv -v $CI_PROJECT_NAME{.new,}" 
+    - ssh $DEPLOY_HOST "mv -fTv $CI_PROJECT_NAME $CI_PROJECT_NAME.old && mv -v $CI_PROJECT_NAME.new $CI_PROJECT_NAME" 
     # Restart app
     - ssh $DEPLOY_HOST sudo systemctl start golang@$CI_PROJECT_NAME
   environment:
