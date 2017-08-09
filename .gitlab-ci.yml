@@ -69,13 +69,15 @@ deploy_staging:
     - echo $CI_PROJECT_NAME
     - apt-get update -y && apt-get install -y rsync
     # rsync to fresh folder
-    - rsync -av --exclude data/ --exclude vendor/ --exclude http.log ./ $DEPLOY_HOST:$CI_PROJECT_NAME.new
+    - rsync -av --exclude data/ --exclude vendor/ --exclude http.log ./ $DEPLOY_HOST:$CI_PROJECT_NAME.$CI_COMMIT_SHA
     # Stop app, to release DB locks 
     - ssh $DEPLOY_HOST sudo systemctl stop golang@$CI_PROJECT_NAME    
     # Copy data/ from current to new
-    - ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME; then cp -rpv $CI_PROJECT_NAME/data $CI_PROJECT_NAME.new/; fi'"
-    # Flip flop instances; current -> old, new -> current
-    - ssh $DEPLOY_HOST "mv -fTv $CI_PROJECT_NAME $CI_PROJECT_NAME.old && mv -v $CI_PROJECT_NAME.new $CI_PROJECT_NAME" 
+    - ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME; then cp -rpv $CI_PROJECT_NAME/data $CI_PROJECT_NAME.$CI_COMMIT_SHA/; fi'"
+    # If current symlink exists, remove it
+    - ssh $DEPLOY_HOST /bin/bash -c "'if test -L $CI_PROJECT_NAME; then rm $CI_PROJECT_NAME; fi'"
+    # Create symlink from $CI_PROJECT_NAME.$CI_COMMIT_SHA to $CI_PROJECT_NAME
+    - ssh $DEPLOY_HOST ln -sv $CI_PROJECT_NAME.$CI_COMMIT_SHA $CI_PROJECT_NAME
     # Restart app
     - ssh $DEPLOY_HOST sudo systemctl start golang@$CI_PROJECT_NAME
   environment:
