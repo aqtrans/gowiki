@@ -87,7 +87,8 @@ body {
                     padding: 5px;
                     margin: 0 10px;
                     float: left;
-                    background-color: $almostblack;
+                    border: 1px solid black;
+                    border-width: 1px 1px 0 1px;
                 }
                 li.is-active {
                     background-color: $medium-gray;
