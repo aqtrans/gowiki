@@ -69,17 +69,17 @@ deploy_staging:
     - echo $CI_PROJECT_NAME
     - apt-get update -y && apt-get install -y rsync
     # Remove previous backup of app
-    - ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME.old; then rm -rfv $CI_PROJECT_NAME.old; fi'"
+    - ssh $DEPLOY_HOST -p 42424 /bin/bash -c "'if test -d $CI_PROJECT_NAME.old; then rm -rfv $CI_PROJECT_NAME.old; fi'"
     # Stop app, to release DB locks 
-    - ssh $DEPLOY_HOST sudo systemctl stop golang@$CI_PROJECT_NAME
+    - ssh $DEPLOY_HOST -p 42424 sudo systemctl stop golang@$CI_PROJECT_NAME
     # Backup old app
-    - ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME; then mv -v $CI_PROJECT_NAME{,.old}; fi'"
+    - ssh $DEPLOY_HOST -p 42424 /bin/bash -c "'if test -d $CI_PROJECT_NAME; then mv -v $CI_PROJECT_NAME{,.old}; fi'"
     # rsync to fresh folder
-    - rsync -av --exclude data/ --exclude vendor/ --exclude http.log ./ $DEPLOY_HOST:$CI_PROJECT_NAME
+    - rsync -av -e "ssh -p 42424" --exclude data/ --exclude vendor/ --exclude http.log ./ $DEPLOY_HOST:$CI_PROJECT_NAME
     # Copy data/ from old to new
-    - ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME.old; then cp -rp $CI_PROJECT_NAME.old/data $CI_PROJECT_NAME/; fi'"
+    - ssh $DEPLOY_HOST -p 42424 /bin/bash -c "'if test -d $CI_PROJECT_NAME.old; then cp -rp $CI_PROJECT_NAME.old/data $CI_PROJECT_NAME/; fi'"
     # Restart app
-    - ssh $DEPLOY_HOST sudo systemctl start golang@$CI_PROJECT_NAME
+    - ssh $DEPLOY_HOST -p 42424 sudo systemctl start golang@$CI_PROJECT_NAME
   environment:
     name: staging
     url: http://wiki.leela.es.gy
