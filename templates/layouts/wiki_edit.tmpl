@@ -12,19 +12,13 @@
         <form action="/save/{{.Wiki.Filename}}" method="POST" id="savewiki">
         Title:<input type="text" name="title" value="{{.Wiki.Frontmatter.Title}}">
         {{ if .Wiki.Frontmatter.Favorite }}
-            <div class="switch tiny">
-            Favorite:<input class="switch-input" id="favorite" type="checkbox" name="favorite" checked>
-            <label class="switch-paddle" for="favorite">
-                <span class="show-for-sr">Favorite</span>
-            </label>
+            <div>
+            Favorite:<input type="checkbox" checked></input>
             </div>
         {{ else }}
-            <div class="switch tiny">
-            Favorite:<input class="switch-input" id="favorite" type="checkbox" name="favorite">
-            <label class="switch-paddle" for="favorite">
-                <span class="show-for-sr">Favorite</span>
-            </label>
-            </input>
+            <div>
+            Favorite:<input type="checkbox"></input>
+            </div>
         {{ end }}
         <label>Permission:
         <select id="permission" name="permission">
@@ -71,10 +65,7 @@
 {{ end }}
 {{ define "extra_scripts" }}
 <script src="/assets/js/commonmark.js"></script>
-<script src="/assets/js/tagdog.min.js"></script>
 <script type="text/javascript" charset="utf-8">
-
-$(document).foundation();
 
 (function() {
     "use strict";
