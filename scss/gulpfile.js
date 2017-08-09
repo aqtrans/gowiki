@@ -8,7 +8,7 @@ var sassPaths = [
 ];
 
 gulp.task('sass', function() {
-  return gulp.src('wiki.scss')
+  return gulp.src('min.scss')
     .pipe(sourcemaps.init())
     .pipe($.sass({
       includePaths: sassPaths,
