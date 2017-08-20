@@ -3133,7 +3133,7 @@ func main() {
 
 	r.GET("/", indexHandler)
 
-	r.GET("/tags", env.tagMapHandler)
+	r.GET("/tags", env.authState.AuthMiddle(env.tagMapHandler))
 
 	r.GET("/new", env.authState.AuthMiddle(newHandler))
 	r.GET("/login", env.loginPageHandler)
