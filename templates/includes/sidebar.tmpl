@@ -4,18 +4,22 @@
 <ul>
     <li><a href="/">Home</a></li>
     <li><a href="/list">List</a></li>
-    <li><a href="/recent">Recent Activity</a></li>
-    <li><a href="/tags">Tags</a></li>
+    {{ if .UserInfo.Username }}
+      <li><a href="/recent">Recent Activity</a></li>
+      <li><a href="/tags">Tags</a></li>
+    {{ end }}
 </ul>
 </fieldset>
-<fieldset class="fieldset">
-  <legend>Favorite Pages</legend>
-<ul>
-{{range $key, $element := .page.Favs}}
-<li><a href="/{{ $key }}">{{ $key }}</a></li>
+{{ if .UserInfo.Username }}
+  <fieldset class="fieldset">
+    <legend>Favorite Pages</legend>
+  <ul>
+  {{range $key, $element := .page.Favs}}
+  <li><a href="/{{ $key }}">{{ $key }}</a></li>
+  {{end}}
+  </ul>
+  </fieldset>
 {{end}}
-</ul>
-</fieldset>
 
 <form method="GET" action="/new" id="newwiki">
   <div class="input-wrapper">
