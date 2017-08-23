@@ -14,18 +14,17 @@
 </head>
 <body>
   <nav>
-    <header><a href="/">Wiki</a></header>
+    <h1><a href="/">Wiki</a></h1>
       {{ template "sidebar" . }}
   </nav>
-  <section>
+  <div class="flash">
     {{ .page.FlashMsg }}
-    <main>
-      <header>
-        <h1>{{ template "header_title" . }}</h1>
-        {{ block "header" . }}{{ end }}
-      </header>
-    {{ template "content" . }}
-    </main>
+  </div>
+  <header>
+    <h1>{{ template "header_title" . }}</h1>
+    {{ block "header" . }}{{ end }}
+  </header>
+  {{ template "content" . }}
 {{ end }}
 {{ define "header_title" }}
 {{ template "title" . }}
