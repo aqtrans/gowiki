@@ -4,26 +4,30 @@
 @import 'foundation';
 @import 'motion-ui';
 
+
 @include foundation-global-styles;
+/*
 //@include foundation-grid;
-@include foundation-flex-grid;
+//@include foundation-flex-grid;
+@include foundation-xy-grid-classes;
 @include foundation-typography;
 @include foundation-button;
 @include foundation-forms;
 // @include foundation-range-input;
-@include foundation-accordion;
+//@include foundation-accordion;
 //@include foundation-accordion-menu;
 //@include foundation-badge;
-@include foundation-breadcrumbs;
+//@include foundation-breadcrumbs;
 @include foundation-button-group;
 @include foundation-callout;
+@include foundation-card;
 @include foundation-close-button;
 @include foundation-menu;
 @include foundation-menu-icon;
 //@include foundation-drilldown-menu;
-@include foundation-dropdown;
+//@include foundation-dropdown;
 //@include foundation-dropdown-menu;
-//@include foundation-flex-video;
+//@include foundation-responsive-embed;
 @include foundation-label;
 //@include foundation-media-object;
 //@include foundation-off-canvas;
@@ -34,8 +38,8 @@
 // @include foundation-meter-element;
 //@include foundation-slider;
 //@include foundation-sticky;
-@include foundation-reveal;
-@include foundation-switch;
+//@include foundation-reveal;
+//@include foundation-switch;
 @include foundation-table;
 @include foundation-tabs;
 @include foundation-thumbnail;
@@ -46,8 +50,11 @@
 //@include foundation-float-classes;
 @include foundation-flex-classes;
 
+// @include foundation-prototype-classes;
+
 @include motion-ui-transitions;
 @include motion-ui-animations;
+*/
 
 //@import url('https://fonts.googleapis.com/css?family=Khand|Open+Sans|Roboto+Condensed:300italic,400italic,700italic,400,700,300|Roboto:400,100,100italic,300,300italic,400italic,500,500italic,700,700italic');
 //@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
