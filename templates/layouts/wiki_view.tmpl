@@ -1,23 +1,21 @@
 {{ define "title" }}{{ .Wiki.Title }}{{ end }}
 {{ define "header" }}
-    <div class="stats">
-      <ul>
-        <li><p>Filename</p>
-        <div class="stat">{{ .Wiki.Filename }}</div></li>
-        <li><p>Permission</p>
-        <div class="stat">{{ .Wiki.Frontmatter.Permission }}</div></li>
-        <li><p>Favorite</p>
-        <div class="stat">{{ .Wiki.Frontmatter.Favorite }}</div></li>
-        <li><p>Tags</p>
-        <div class="stat">
-        {{ if .Wiki.Frontmatter.Tags }}
-        {{ range .Wiki.Frontmatter.Tags }}<span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i>{{ . }}</span>{{ end }}
-        </div></li>
-        {{ else }}
-        <span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i></span>
-        {{ end }}
-      </ul>
-    </div>
+    <ul>
+      <li><p>Filename</p>
+      <div class="stat">{{ .Wiki.Filename }}</div></li>
+      <li><p>Permission</p>
+      <div class="stat">{{ .Wiki.Frontmatter.Permission }}</div></li>
+      <li><p>Favorite</p>
+      <div class="stat">{{ .Wiki.Frontmatter.Favorite }}</div></li>
+      <li><p>Tags</p>
+      <div class="stat">
+      {{ if .Wiki.Frontmatter.Tags }}
+      {{ range .Wiki.Frontmatter.Tags }}<span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i>{{ . }}</span>{{ end }}
+      </div></li>
+      {{ else }}
+      <span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i></span>
+      {{ end }}
+    </ul>
 {{ end }}
 {{ define "content" }}
   <ul class="tabs">
@@ -26,7 +24,7 @@
     <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
   </ul>
 
-  <article>
+  <main>
       {{.Rendered | safeHTML}}
         <footer>
           <ul>
@@ -34,5 +32,5 @@
             <li>Last Modified: {{ .Wiki.ModTime | prettyDate }}</li>
           </ul>
         </footer>
-  </article>
+  </main>
 {{ end }}
