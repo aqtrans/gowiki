@@ -1,0 +1,27 @@
+{
+  "name": "wiki",
+  "version": "1.0.0",
+  "description": "wiki Foundation-based css",
+  "main": "gulpfile.js",
+  "repository": "git@jba.io:go/wiki.git",
+  "author": "Jordan Anderson <me@jba.io>",
+  "license": "MIT",
+  "dependencies": {
+    "foundation-sites": "~6.4.0",
+    "jquery": ">=3.2.1",
+    "motion-ui": "~1.2.3",
+    "what-input": "^4.1.3"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-autoprefixer": "^3.1.0",
+    "gulp-load-plugins": "^1.1.0",
+    "gulp-sass": "^2.3.2",
+    "gulp-sourcemaps": "^1.5.2"
+  }, 
+  "scripts": {
+    "start": "gulp",
+    "build": "gulp sass"
+  },
+  "private": true
+}
