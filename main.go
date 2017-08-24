@@ -1089,10 +1089,10 @@ func loadPage(env *wikiEnv, r *http.Request) *page {
 	if msg != "" {
 		message = template.HTML(`
 			<div class="notification anim" id="notification">
-			<p>` + msg + `</p>
+			<p>` + msg + `
 			<button class="close-button" aria-label="Dismiss alert" type="button">
-				<span aria-hidden="true">&times;</span>
-			</button>
+			<span aria-hidden="true">&times;</span>
+			</button></p>
 			</div>
 		`)
 		log.Println("Message! " + msg)
