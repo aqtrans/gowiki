@@ -20,39 +20,21 @@
   </ul>
 
 <main>
-<ul class="preview-tabs" role="tablist">
-    <li>
-        <input type="radio" name="tabs" id="tab1" checked />
-        <label for="tab1" 
-               role="tab" 
-               aria-selected="true" 
-               aria-controls="panel1" 
-               tabindex="0">Content</label>
-        <div id="tab-content1" 
-             class="tab-content" 
-             role="tabpanel" 
-             aria-labelledby="content" 
-             aria-hidden="false">
-             {{.Rendered | safeHTML}}
-        </div>
-    </li>
-  
-    <li>
-        <input type="radio" name="tabs" id="tab2" />
-        <label for="tab2"
-               role="tab" 
-               aria-selected="false" 
-               aria-controls="panel2" 
-               tabindex="0">Diff</label>
-        <div id="tab-content2" 
-             class="tab-content"
-             role="tabpanel" 
-             aria-labelledby="diff" 
-             aria-hidden="true">
-            <pre><code>{{.Diff}}</code></pre>
-        </div>
-    </li>
-</ul>
+
+<div class="preview-tabs two">
+  <input id='tab-1' type='radio' name='tabgroupB' checked />
+  <label class="pseudo button toggle" for="tab-1">Content</label>
+  <input id='tab-2' type='radio' name='tabgroupB'>
+  <label class="pseudo button toggle" for="tab-2">Diff</label>
+  <div class="row">
+    <div>
+      {{.Rendered | safeHTML}}
+    </div>
+    <div>
+      <pre><code>{{.Diff}}</code></pre>
+    </div>
+  </div>
+</div>
 
     <footer>
       <ul>
