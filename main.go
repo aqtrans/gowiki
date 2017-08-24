@@ -398,9 +398,9 @@ func markdownRender(input []byte) string {
 func (r *renderer) ListItem(out *bytes.Buffer, text []byte, flags int) {
 	switch {
 	case bytes.HasPrefix(text, []byte("[ ] ")):
-		text = append([]byte(`<input type="checkbox" disabled="">`), text[3:]...)
+		text = append([]byte(`<i class="fa fa-square" aria-hidden="true"></i>`), text[3:]...)
 	case bytes.HasPrefix(text, []byte("[x] ")) || bytes.HasPrefix(text, []byte("[X] ")):
-		text = append([]byte(`<input type="checkbox" checked="" disabled="">`), text[3:]...)
+		text = append([]byte(`<i class="fa fa-check-square" aria-hidden="true"></i>`), text[3:]...)
 	}
 	r.Html.ListItem(out, text, flags)
 }
@@ -1088,14 +1088,14 @@ func loadPage(env *wikiEnv, r *http.Request) *page {
 	var message template.HTML
 	if msg != "" {
 		message = template.HTML(`
-			<div class="alert callout" data-closable>
-			<h5>Alert!</h5>
+			<div class="notification anim" id="notification">
 			<p>` + msg + `</p>
-			<button class="close-button" aria-label="Dismiss alert" type="button" data-close>
+			<button class="close-button" aria-label="Dismiss alert" type="button">
 				<span aria-hidden="true">&times;</span>
 			</button>
-			</div>			
-        `)
+			</div>
+		`)
+		log.Println("Message! " + msg)
 	} else {
 		message = template.HTML("")
 	}
