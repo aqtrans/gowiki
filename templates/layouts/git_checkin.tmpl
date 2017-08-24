@@ -1,6 +1,6 @@
 {{ define "title" }}Check In Files?{{ end }}
 {{ define "content" }}
-<article>  
+<main>  
     <p>The following files were found to be modified outside of the wiki:</p>
     {{.GitFiles | safeHTML}}
     <hr>
@@ -9,5 +9,5 @@
     {{.Token}}
     <button type="submit" class="button">Yes</button>
   </form>
-</article>
+</main>
 {{ end }}
