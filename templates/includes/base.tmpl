@@ -17,9 +17,7 @@
     <h1><a href="/">Wiki</a></h1>
       {{ template "sidebar" . }}
   </nav>
-  <div class="flash">
     {{ .page.FlashMsg }}
-  </div>
   <header>
     <h1>{{ template "header_title" . }}</h1>
     {{ block "header" . }}{{ end }}
