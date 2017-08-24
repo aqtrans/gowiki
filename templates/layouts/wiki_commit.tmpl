@@ -1,6 +1,5 @@
 {{ define "title" }}{{ .Wiki.Title }} ({{.Commit}}){{ end }}
 {{ define "header" }}
-    <div class="stats">
       <ul>
         <li><p>Filename</p>
         <div class="stat">{{ .Wiki.Filename }}</div></li>
@@ -11,7 +10,6 @@
         <li><p>Tags</p>
         <div class="stat">{{ range .Wiki.Frontmatter.Tags }}<span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i>{{ . }}</span>{{ end }}</div></li>
       </ul>
-    </div>
 {{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/diff2html.min.css">
@@ -19,32 +17,48 @@
     <li class="tabs-title is-active"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
     <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
     <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
-  </ul>  
+  </ul>
 
-  <article class="accordion" data-accordion>
-      <ul class="breadcrumbs">
-        <li><a href="/{{.Wiki.Filename}}">{{.Wiki.Title}}</a></li>
-        <li>
-          <span class="show-for-sr">Current: </span> commit:{{.Commit}}
-        </li>
-      </ul>
-      <div id="content" class="accordion-item is-active" data-accordion-item>
-        <a href="#" class="accordion-title">Content</a>
-        <div class="accordion-content" data-tab-content>
-          {{.Rendered | safeHTML}}
+<main>
+<ul class="preview-tabs" role="tablist">
+    <li>
+        <input type="radio" name="tabs" id="tab1" checked />
+        <label for="tab1" 
+               role="tab" 
+               aria-selected="true" 
+               aria-controls="panel1" 
+               tabindex="0">Content</label>
+        <div id="tab-content1" 
+             class="tab-content" 
+             role="tabpanel" 
+             aria-labelledby="content" 
+             aria-hidden="false">
+             {{.Rendered | safeHTML}}
         </div>
-      </div>
-      <div id="diff" class="accordion-item" data-accordion-item>
-        <a href="#" class="accordion-title">Diff</a>
-        <div class="accordion-content" data-tab-content>
-          <pre><code>{{.Diff}}</code></pre>
+    </li>
+  
+    <li>
+        <input type="radio" name="tabs" id="tab2" />
+        <label for="tab2"
+               role="tab" 
+               aria-selected="false" 
+               aria-controls="panel2" 
+               tabindex="0">Diff</label>
+        <div id="tab-content2" 
+             class="tab-content"
+             role="tabpanel" 
+             aria-labelledby="diff" 
+             aria-hidden="true">
+            <pre><code>{{.Diff}}</code></pre>
         </div>
-      </div>
+    </li>
+</ul>
+
     <footer>
       <ul>
         <li>Created: {{ .Wiki.CreateTime | prettyDate }}</li>
         <li>Last Modified: {{ .Wiki.ModTime | prettyDate }}</li>
       </ul>
     </footer>
-  </article>
+  </main>
 {{ end }}
