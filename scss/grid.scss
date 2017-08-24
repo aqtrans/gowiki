@@ -27,7 +27,7 @@ body > header {
         background-color: $almostblack;
         color: white;
         padding: 0 10px;
-        margin-bottom: 0;
+        margin-bottom: 5px;
     }
 }
 
@@ -64,6 +64,7 @@ body > header > ul > li > p {
 
 .tabs {
     grid-area: tabs;
+    //margin: 5px 0 0 0;
     margin: 0;
     padding: 0;
     list-style-type: none;
