@@ -1,18 +1,17 @@
 {{ define "title" }}Admin Config Panel{{ end }}
 {{ define "content" }}
-
   <ul class="tabs">
     <li class="tabs-title"><a href="/admin/"><i class="fa fa-lock" aria-hidden="true"></i> Main</a></li>
     <li class="tabs-title"><a href="/admin/users"><i class="fa fa-users" aria-hidden="true"></i> Manage Users</a></li>
     <li class="tabs-title"><a href="/admin/git"><i class="fa fa-git" aria-hidden="true"></i> Manage Git</a></li>
     <li class="tabs-title is-active"><a href="#"><i class="fa fa-wrench" aria-hidden="true"></i> Manage Config</a></li>
   </ul>
-  <article>
+  <main>
         <h2>Current config:</h2>
         <ul>
         {{range $key, $element := .Config}}
         <li>{{ $key }}: {{$element}}</li>
         {{end}}
         </ul>
-  </article>
+  </main>
 {{ end }}
