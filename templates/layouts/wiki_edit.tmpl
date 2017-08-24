@@ -8,7 +8,7 @@
         </ul>
     
 
-    <article>
+    <main>
         <form action="/save/{{.Wiki.Filename}}" method="POST" id="savewiki">
         Title:<input type="text" name="title" value="{{.Wiki.Frontmatter.Title}}">
         {{ if .Wiki.Frontmatter.Favorite }}
@@ -58,7 +58,7 @@
             <button type="submit" class="success button">Submit</button>
         </div>
         </form>
-    </article>
+    </main>
 
 <div class="full reveal" id="previewModal" data-reveal>
     <h2>Preview:</h2>
