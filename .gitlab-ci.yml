@@ -71,7 +71,7 @@ deploy_staging:
     # rsync to fresh folder
     - rsync -av --exclude data/ --exclude vendor/ --exclude http.log ./ $DEPLOY_HOST:$CI_PROJECT_NAME.$CI_COMMIT_SHA
     # Stop app, to release DB locks 
-    - ssh $DEPLOY_HOST sudo systemctl stop golang@$CI_PROJECT_NAME    
+    - ssh $DEPLOY_HOST systemctl --user stop golang@$CI_PROJECT_NAME    
     # Copy data/ from current to new
     - ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME; then cp -rpv $CI_PROJECT_NAME/data $CI_PROJECT_NAME.$CI_COMMIT_SHA/; fi'"
     # If current symlink exists, remove it
@@ -79,10 +79,10 @@ deploy_staging:
     # Create symlink from $CI_PROJECT_NAME.$CI_COMMIT_SHA to $CI_PROJECT_NAME
     - ssh $DEPLOY_HOST ln -sv $CI_PROJECT_NAME.$CI_COMMIT_SHA $CI_PROJECT_NAME
     # Restart app
-    - ssh $DEPLOY_HOST sudo systemctl start golang@$CI_PROJECT_NAME
+    - ssh $DEPLOY_HOST systemctl --user start golang@$CI_PROJECT_NAME
   environment:
     name: staging
-    url: http://wiki.leela.es.gy
+    url: http://wiki.rick.es.gy
   when: manual
 
 deploy_prod:
@@ -96,7 +96,7 @@ deploy_prod:
     # rsync to fresh folder
     - rsync -av --exclude data/ --exclude vendor/ --exclude http.log ./ $DEPLOY_HOST:$CI_PROJECT_NAME.$CI_COMMIT_SHA
     # Stop app, to release DB locks 
-    - ssh $DEPLOY_HOST sudo systemctl stop golang@$CI_PROJECT_NAME    
+    - ssh $DEPLOY_HOST systemctl --user stop golang@$CI_PROJECT_NAME    
     # Copy data/ from current to new
     - ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME; then cp -rpv $CI_PROJECT_NAME/data $CI_PROJECT_NAME.$CI_COMMIT_SHA/; fi'"
     # If current symlink exists, remove it
@@ -104,7 +104,7 @@ deploy_prod:
     # Create symlink from $CI_PROJECT_NAME.$CI_COMMIT_SHA to $CI_PROJECT_NAME
     - ssh $DEPLOY_HOST ln -sv $CI_PROJECT_NAME.$CI_COMMIT_SHA $CI_PROJECT_NAME
     # Restart app
-    - ssh $DEPLOY_HOST sudo systemctl start golang@$CI_PROJECT_NAME
+    - ssh $DEPLOY_HOST systemctl --user start golang@$CI_PROJECT_NAME
   environment:
     name: production
     url: https://wiki.jba.io
