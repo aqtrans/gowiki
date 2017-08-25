@@ -310,7 +310,7 @@ func init() {
 	err := viper.ReadInConfig() // Find and read the config file
 	if err != nil {             // Handle errors reading the config file
 		//panic(fmt.Errorf("Fatal error config file: %s \n", err))
-		fmt.Println("No configuration file loaded - using defaults")
+		log.Println("No configuration file loaded - using defaults")
 	}
 
 	if viper.GetBool("Debug") {
@@ -410,9 +410,7 @@ func (r *renderer) NormalText(out *bytes.Buffer, text []byte) {
 
 	switch {
 	case linkPattern.Match(text):
-		//log.Println("text " + string(text))
 		domain := "//" + viper.GetString("Domain")
-		//log.Println(string(linkPattern.ReplaceAll(text, []byte(domain+"/$1"))))
 		link := linkPattern.ReplaceAll(text, []byte(domain+"/$1"))
 		title := linkPattern.ReplaceAll(text, []byte("/$1"))
 		r.Html.Link(out, link, []byte(""), title)
@@ -544,7 +542,7 @@ func newNameContext(c context.Context, t string) context.Context {
 func nameFromContext(c context.Context) string {
 	t, ok := c.Value(wikiNameKey).(string)
 	if !ok {
-		log.Println("No wikiName in context.")
+		httputils.Debugln("No wikiName in context.")
 		return ""
 	}
 	return t
@@ -557,7 +555,7 @@ func newWikiExistsContext(c context.Context, t bool) context.Context {
 func wikiExistsFromContext(c context.Context) bool {
 	t, ok := c.Value(wikiExistsKey).(bool)
 	if !ok {
-		log.Println("No wikiExists in context.")
+		httputils.Debugln("No wikiExists in context.")
 		return false
 	}
 	return t
@@ -705,14 +703,14 @@ func gitIsCleanStartup() error {
 	}
 
 	if bytes.Contains(o, gitBehind) {
-		log.Println("gitIsCleanStartup: Pulling git repo...")
+		httputils.Debugln("gitIsCleanStartup: Pulling git repo...")
 		return gitPull()
 		//return errors.New(string(o))
 		//return ErrGitBehind
 	}
 
 	if bytes.Contains(o, gitAhead) {
-		log.Println("gitIsCleanStartup: Pushing git repo...")
+		httputils.Debugln("gitIsCleanStartup: Pushing git repo...")
 		return gitPush()
 		//return errors.New(string(o))
 		//return ErrGitAhead
@@ -922,8 +920,6 @@ func gitLsTree() ([]*gitDirList, error) {
 	for _, v := range lssplit {
 		var vs = strings.SplitN(v, " ", 3)
 		var vs2 = strings.FieldsFunc(vs[2], func(c rune) bool { return c == '\t' })
-		log.Println(len(vs))
-		log.Println(vs2[1])
 		theGitDirListing := &gitDirList{
 			Type:     vs[1],
 			Filename: vs2[1],
@@ -1095,7 +1091,6 @@ func loadPage(env *wikiEnv, r *http.Request) *page {
 			</button></p>
 			</div>
 		`)
-		log.Println("Message! " + msg)
 	} else {
 		message = template.HTML("")
 	}
@@ -1666,11 +1661,10 @@ func checkName(name *string) (bool, error) {
 	if !exists {
 		possbileExts := []string{".md", ".page"}
 		for _, ext := range possbileExts {
-			log.Println("Attempting to search for " + ext + " files...")
 			if !exists && (filepath.Ext(*name) == "") {
 				if doesPageExist(fullfilename + ext) {
 					*name = *name + ext
-					log.Println(*name + " found!")
+					httputils.Debugln(*name + " found!")
 					exists = true
 					break
 				}
@@ -1809,7 +1803,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	fileType := getFileType(name)
 	if fileType == "wiki" {
-		log.Println("Yay proper wiki page!")
+		httputils.Debugln("Yay proper wiki page!")
 		// Get Wiki
 		p := loadWikiPage(env, r, name)
 		renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
@@ -1842,13 +1836,13 @@ func getFileType(filename string) string {
 	var realFileType string
 	file, err := os.Open(filepath.Join(viper.GetString("WikiDir"), filename))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	defer file.Close()
 	buff := make([]byte, 512)
 	_, err = file.Read(buff)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	filetype := http.DetectContentType(buff)
 	//log.Println(filetype)
@@ -2945,7 +2939,6 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		//relErr := relativePathCheck(name)
 		if relErr != nil {
 			if relErr == errBaseNotDir {
-				log.Println("Cannot create subdir of a file.")
 				http.Error(w, "Cannot create subdir of a file.", 500)
 				return
 			}
@@ -2964,20 +2957,6 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			check(err)
 			fm := readFront(f)
 			f.Close()
-			/*
-				// If this is a public page, just serve it
-				if fm.Permission == "public" {
-					next.ServeHTTP(w, r.WithContext(ctx))
-					return
-				}
-				// If this is an admin page, check if user is admin before serving
-				if fm.Permission == "admin" && !isAdmin {
-					log.Println(username + " attempting to access restricted URL.")
-					env.authState.SetFlash("Sorry, you are not allowed to see that.", w, r)
-					http.Redirect(w, r.WithContext(ctx), "/", http.StatusSeeOther)
-					return
-				}
-			*/
 			switch fm.Permission {
 			case "admin":
 				if userLoggedIn && isAdmin {
@@ -2987,7 +2966,6 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 				if !isAdmin {
 					rurl := r.URL.String()
 					httputils.Debugln("wikiMiddle mitigating: " + r.Host + rurl)
-					//w.Write([]byte("OMG"))
 
 					// Detect if we're in an endless loop, if so, just panic
 					if strings.HasPrefix(rurl, "login?url=/login") {
@@ -3004,7 +2982,6 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 				if !userLoggedIn {
 					rurl := r.URL.String()
 					httputils.Debugln("wikiMiddle mitigating: " + r.Host + rurl)
-					//w.Write([]byte("OMG"))
 
 					// Detect if we're in an endless loop, if so, just panic
 					if strings.HasPrefix(rurl, "login?url=/login") {
@@ -3022,16 +2999,6 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if userLoggedIn {
-			/* Don't auto-redirect on unclean git repo
-			   Instead use GitStatus in page{} struct
-				err := gitIsClean()
-				if err != nil {
-					log.Println(err)
-					auth.SetFlash(err.Error(), w, r)
-					http.Redirect(w, r.WithContext(ctx), "/admin/git", http.StatusSeeOther)
-					return
-				}
-			*/
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
@@ -3040,7 +3007,6 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		if !userLoggedIn {
 			rurl := r.URL.String()
 			httputils.Debugln("wikiMiddle mitigating: " + r.Host + rurl)
-			//w.Write([]byte("OMG"))
 
 			// Detect if we're in an endless loop, if so, just panic
 			if strings.HasPrefix(rurl, "login?url=/login") {
@@ -3113,8 +3079,7 @@ func main() {
 	// Check for unclean Git dir on startup
 	err = gitIsCleanStartup()
 	if err != nil {
-		log.Println("There was an issue with the git repo:")
-		log.Fatalln(err)
+		log.Fatalln("There was an issue with the git repo:", err)
 	}
 
 	csrfSecure := true
