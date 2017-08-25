@@ -2,6 +2,17 @@ $black: #0a0a0a;
 $white: #fefefe;
 $solarized: #073642;
 $almostblack: #202020;
+$linkcolor: #1779ba;
+
+a {
+    color: $linkcolor;
+    &:visited {
+        color: darken($linkcolor, 25);
+    }
+    &:hover {
+        color: lighten($linkcolor, 25);
+    }
+}
 
 body {
     font-size: 1.0em;
@@ -43,6 +54,13 @@ body > main {
             list-style-type: none;
         }
     }
+    > nav {
+        float: right;
+        background-color: darken($almostblack, 15);
+        ul {
+            margin: 0 1rem;
+        }
+    }
 }
 body > nav {
     grid-area: nav;
@@ -72,18 +90,21 @@ body > header > ul > li > p {
     display: flex;
     flex-direction: column;
     li {
-        padding: 5px;
-        margin: 0;
-        float: left;  
-        background-color: $black;
-        &.is-active {
-            background-color: $almostblack;
+        padding-top: 5px;
+        &.is-active { 
             a {
+                background-color: $almostblack;
                 color: $white;
             }
-          }
-        &:hover {
-            background-color: $almostblack;
+        }
+        a {
+            padding: 5px;
+            margin: 0;
+            //float: left;  
+            background-color: darken($almostblack, 5);
+            &:hover {
+                background-color: $almostblack;
+            }            
         }
     }
 }
