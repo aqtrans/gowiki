@@ -36,6 +36,8 @@ build-my-project:
     #- apt-get update -y && apt-get install -y nodejs
     #- npm install -g bower gulp    
     #- /bin/sh ./build_css.sh
+    - apt-get update -y && apt-get install -y ruby-sass
+    - sass -t compressed scss/grid.scss assets/css/wiki.css
     - go get -u github.com/kardianos/govendor
     - govendor sync
     - go get -d
@@ -46,8 +48,8 @@ build-my-project:
   artifacts:
     paths:
       - wiki
-      #- assets/css/wiki.css
-      #- assets/css/wiki.css.map
+      - assets/css/wiki.css
+      - assets/css/wiki.css.map
       - vendor/
 
 test-my-project:
