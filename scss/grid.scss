@@ -179,6 +179,11 @@ table {
     display: inline-block;
 }
 
+textarea#wikieditor {
+    min-height: 20rem;
+    width: 100%;
+}
+
 /*
 $tabs-base-color: $almostblack;
 
