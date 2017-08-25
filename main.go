@@ -3021,6 +3021,20 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 	})
 }
 
+func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "setFavoriteHandler")
+	name := nameFromContext(r.Context())
+	p := loadWikiPage(env, r, name)
+	p.Wiki.Frontmatter.Favorite = true
+	err := p.Wiki.save()
+	if err != nil {
+		log.Println(err)
+	}
+	env.authState.SetFlash(name+" has been favorited.", w, r)
+	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
+	log.Println(name + " page favorited!")
+}
+
 func main() {
 
 	// subscribe to SIGINT signals
@@ -3138,6 +3152,8 @@ func main() {
 	r.GET("/md_render", markdownPreview)
 
 	r.GET("/uploads/*", treeMuxWrapper(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads")))))
+
+	r.GET(`/fav/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.setFavoriteHandler)))
 
 	r.GET(`/edit/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.editHandler)))
 	r.POST(`/save/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.saveHandler)))
