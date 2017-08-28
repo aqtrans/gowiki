@@ -863,13 +863,17 @@ func TestYamlRender(t *testing.T) {
 	if fm.Title != "YAML Test" {
 		t.Error("FM Title does not equal YAML Test." + "\n Output: " + fm.Title)
 	}
-	if fm.Admin {
-		t.Log(fm.Admin)
-		t.Error("FM Admin is not false.")
+	if fm.Permission == "admin" {
+		t.Log(fm.Permission)
+		t.Error("FM Permission set to admin.")
 	}
-	if !fm.Public {
-		t.Log(fm.Public)
-		t.Error("FM Public is not true.")
+	if fm.Permission == "private" {
+		t.Log(fm.Permission)
+		t.Error("FM Permission set to private.")
+	}
+	if fm.Permission == "public" {
+		t.Log(fm.Permission)
+		t.Error("FM Permission set to public.")
 	}
 	if fm.Favorite {
 		t.Log(fm.Favorite)
@@ -906,13 +910,17 @@ func TestYamlRender2(t *testing.T) {
 	if fm.Title != "YAML Test" {
 		t.Error("FM Title does not equal YAML Test." + "\n Output: " + fm.Title)
 	}
-	if fm.Admin {
-		t.Log(fm.Admin)
-		t.Error("FM Admin is not false.")
+	if fm.Permission == "admin" {
+		t.Log(fm.Permission)
+		t.Error("FM Permission set to admin.")
 	}
-	if !fm.Public {
-		t.Log(fm.Public)
-		t.Error("FM Public is not true.")
+	if fm.Permission == "private" {
+		t.Log(fm.Permission)
+		t.Error("FM Permission set to private.")
+	}
+	if fm.Permission == "public" {
+		t.Log(fm.Permission)
+		t.Error("FM Permission set to public.")
 	}
 	if fm.Favorite {
 		t.Log(fm.Favorite)
