@@ -159,10 +159,11 @@ type frontmatter struct {
 	Tags       []string `yaml:"tags,omitempty"`
 	Favorite   bool     `yaml:"favorite,omitempty"`
 	Permission string   `yaml:"permission,omitempty"`
-	Public     bool     `yaml:"public,omitempty"`
-	Admin      bool     `yaml:"admin,omitempty"`
+	//Public     bool     `yaml:"public,omitempty"`
+	//Admin      bool     `yaml:"admin,omitempty"`
 }
 
+/*
 type badFrontmatter struct {
 	Title      string `yaml:"title"`
 	Tags       string `yaml:"tags,omitempty"`
@@ -171,6 +172,7 @@ type badFrontmatter struct {
 	Public     bool   `yaml:"public,omitempty"`
 	Admin      bool   `yaml:"admin,omitempty"`
 }
+*/
 
 type wiki struct {
 	Title       string
@@ -1501,17 +1503,22 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 			}
 		}
 		// Deal with old Public and Admin tags
-		if fm.Permission == "" {
-			if fm.Public {
-				fm.Permission = "public"
+		/*
+			if fm.Permission == "" {
+				if fm.Public {
+					log.Println("FIXME; fm.Public being assigned")
+					fm.Permission = "public"
+				}
+				if !fm.Public {
+					log.Println("FIXME; fm.Public being assigned")
+					fm.Permission = "private"
+				}
+				if fm.Admin {
+					log.Println("FIXME; fm.Admin being assigned")
+					fm.Permission = "admin"
+				}
 			}
-			if !fm.Public {
-				fm.Permission = "private"
-			}
-			if fm.Admin {
-				fm.Permission = "admin"
-			}
-		}
+		*/
 	}
 	return fm
 }
