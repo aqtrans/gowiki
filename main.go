@@ -2886,9 +2886,7 @@ func buildCache() *wikiCache {
 			}
 			if fm.Tags != nil {
 				for _, tag := range fm.Tags {
-					if _, ok := cache.Tags[tag]; !ok {
-						cache.Tags[tag] = append(cache.Tags[tag], file.Filename)
-					}
+					cache.Tags[tag] = append(cache.Tags[tag], file.Filename)
 				}
 			}
 
