@@ -4,6 +4,9 @@ $solarized: #073642;
 $almostblack: #202020;
 $linkcolor: #1779ba;
 
+/* Font Awesome 4.7.0 */
+@import "font-awesome/font-awesome";
+
 a {
     color: $linkcolor;
     &:visited {
