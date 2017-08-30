@@ -51,6 +51,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dimfeld/httptreemux"
@@ -273,6 +274,7 @@ type wikiEnv struct {
 	authState *auth.State
 	cache     *wikiCache
 	templates map[string]*template.Template
+	mutex     *sync.Mutex
 }
 
 // Sorting functions
@@ -431,23 +433,6 @@ func check(err error) {
 			log.Printf("[error] in %s[%s:%d] %v", details.Name(), fn, line, err)
 		}
 	}
-}
-
-func checkErr(name string, err error) {
-	if err != nil {
-		log.Println("Function: " + name)
-		log.Println(err)
-		panic(err)
-	}
-}
-
-func checkErrReturn(name string, err error) error {
-	if err != nil {
-		log.Println("Function: " + name)
-		log.Println(err)
-		return err
-	}
-	return nil
 }
 
 func appendIfMissing(slice []string, s string) []string {
@@ -797,9 +782,9 @@ func gitGetCtime(filename string) (int64, error) {
 		return 0, errNotInGit
 	}
 	ctime, err := strconv.ParseInt(ostring, 10, 64)
-	checkErr("gitGetCtime()/ParseInt", err)
+	check(err)
 
-	return ctime, nil
+	return ctime, err
 }
 
 // File modification time, output to UNIX time
@@ -818,9 +803,9 @@ func gitGetMtime(filename string) (int64, error) {
 		return 0, nil
 	}
 	mtime, err := strconv.ParseInt(ostring, 10, 64)
-	checkErr("gitGetMtime()/ParseInt", err)
+	check(err)
 
-	return mtime, nil
+	return mtime, err
 }
 
 // File history
@@ -891,9 +876,9 @@ func gitGetFileCommitMtime(commit string) (int64, error) {
 	}
 	ostring := strings.TrimSpace(string(o))
 	mtime, err := strconv.ParseInt(ostring, 10, 64)
-	checkErr("gitGetFileCommitMtime()/ParseInt", err)
+	check(err)
 
-	return mtime, nil
+	return mtime, err
 }
 
 // git ls-files
@@ -1000,7 +985,11 @@ func gitGetTimes(filename string) (ctime int64, mtime int64) {
 			return
 		}
 		ctime, err = strconv.ParseInt(costring, 10, 64)
-		checkErr("gitGetCtime()/ParseInt", err)
+		check(err)
+		if err != nil {
+			ctimeChan <- 0
+			return
+		}
 		ctimeChan <- ctime
 	}()
 
@@ -1021,7 +1010,11 @@ func gitGetTimes(filename string) (ctime int64, mtime int64) {
 			return
 		}
 		mtime, err = strconv.ParseInt(mostring, 10, 64)
-		checkErr("gitGetMtime()/ParseInt", err)
+		check(err)
+		if err != nil {
+			mtimeChan <- 0
+			return
+		}
 		mtimeChan <- mtime
 	}()
 
@@ -1203,7 +1196,10 @@ func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, co
 	// Read YAML frontmatter into fm
 	reader := bytes.NewReader(body)
 	fm, content := readWikiPage(reader)
-	checkErr("viewCommitHandler()/readWikiPage", err)
+	check(err)
+	if err != nil {
+		panic(err)
+	}
 
 	// Render remaining content after frontmatter
 	md := markdownRender(content)
@@ -1240,7 +1236,7 @@ func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 	p := loadPage(env, r)
 
 	gh, err := gitHistory()
-	checkErr("recentHandler()/gitHistory", err)
+	check(err)
 
 	/*
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -1918,7 +1914,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 		Content:     []byte(content),
 	}
 
-	err := thewiki.save()
+	err := thewiki.save(env.mutex)
 	if err != nil {
 		panic(err)
 	}
@@ -2120,7 +2116,8 @@ func loadWikiPage(env *wikiEnv, r *http.Request, name string) *wikiPage {
 	return wp
 }
 
-func (wiki *wiki) save() error {
+func (wiki *wiki) save(mutex *sync.Mutex) error {
+	mutex.Lock()
 	defer httputils.TimeTrack(time.Now(), "wiki.save()")
 
 	dir, filename := filepath.Split(wiki.Filename)
@@ -2133,7 +2130,10 @@ func (wiki *wiki) save() error {
 		dirpath := filepath.Join(viper.GetString("WikiDir"), dir)
 		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
 			err := os.MkdirAll(dirpath, 0755)
-			checkErrReturn("save()/MkdirAll", err)
+			if err != nil {
+				mutex.Unlock()
+				return err
+			}
 		}
 	}
 	/*
@@ -2145,31 +2145,55 @@ func (wiki *wiki) save() error {
 	var f *os.File
 	var err error
 	f, err = os.OpenFile(fullfilename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
-	checkErrReturn("save()/OpenFile", err)
+	if err != nil {
+		mutex.Unlock()
+		return err
+	}
 
 	//buffer := new(bytes.Buffer)
 	wb := bufio.NewWriter(f)
 
 	_, err = wb.WriteString("---\n")
-	checkErrReturn("save()/WriteString1", err)
+	if err != nil {
+		mutex.Unlock()
+		return err
+	}
 
 	yamlBuffer, err := yaml.Marshal(wiki.Frontmatter)
-	checkErrReturn("save()/yaml.Marshal", err)
+	if err != nil {
+		mutex.Unlock()
+		return err
+	}
 
 	_, err = wb.Write(yamlBuffer)
-	checkErrReturn("save()/Write yamlBuffer", err)
+	if err != nil {
+		mutex.Unlock()
+		return err
+	}
 
 	_, err = wb.WriteString("---\n")
-	checkErrReturn("save()/WriteString2", err)
+	if err != nil {
+		mutex.Unlock()
+		return err
+	}
 
 	_, err = wb.Write(wiki.Content)
-	checkErrReturn("save()/wb.Write wiki.Content", err)
+	if err != nil {
+		mutex.Unlock()
+		return err
+	}
 
 	err = wb.Flush()
-	checkErrReturn("save()/wb.Flush", err)
+	if err != nil {
+		mutex.Unlock()
+		return err
+	}
 
 	err = f.Close()
-	checkErrReturn("save()/f.Close", err)
+	if err != nil {
+		mutex.Unlock()
+		return err
+	}
 
 	// Test equality of the original file, plus the buffer we just built
 	//log.Println(bytes.Equal(originalFile, buffer.Bytes()))
@@ -2193,14 +2217,21 @@ func (wiki *wiki) save() error {
 	gitfilename := dir + filename
 
 	err = gitAddFilepath(gitfilename)
-	checkErrReturn("save()/gitAddFilepath", err)
+	if err != nil {
+		mutex.Unlock()
+		return err
+	}
 
 	// FIXME: add a message box to edit page, check for it here
 	err = gitCommitEmpty()
-	checkErrReturn("save()/gitCommitEmpty", err)
+	if err != nil {
+		mutex.Unlock()
+		return err
+	}
 
 	log.Println(fullfilename + " has been saved.")
-	return nil
+	mutex.Unlock()
+	return err
 
 }
 
@@ -2862,9 +2893,9 @@ func buildCache() *wikiCache {
 			}
 
 			ctime, err := gitGetCtime(file.Filename)
-			checkErr("crawlWiki()/gitGetCtime", err)
+			check(err)
 			mtime, err := gitGetMtime(file.Filename)
-			checkErr("crawlWiki()/gitGetMtime", err)
+			check(err)
 
 			wp = &gitDirList{
 				Type:       "blob",
@@ -3033,7 +3064,7 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 	name := nameFromContext(r.Context())
 	p := loadWikiPage(env, r, name)
 	p.Wiki.Frontmatter.Favorite = true
-	err := p.Wiki.save()
+	err := p.Wiki.save(env.mutex)
 	if err != nil {
 		log.Println(err)
 	}
@@ -3090,6 +3121,7 @@ func main() {
 		authState: anAuthState,
 		cache:     theCache,
 		templates: make(map[string]*template.Template),
+		mutex:     &sync.Mutex{},
 	}
 
 	err = tmplInit(env)
