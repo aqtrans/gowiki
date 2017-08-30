@@ -207,6 +207,11 @@ textarea#wikieditor {
     width: 100%;
 }
 
+span.label {
+    padding: 0 5px;
+    background-color: lighten($almostblack, 15);
+}
+
 // Tab definition
 .preview-tabs {
     

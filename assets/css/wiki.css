@@ -2478,6 +2478,10 @@ textarea#wikieditor {
   min-height: 20rem;
   width: 100%; }
 
+span.label {
+  padding: 0 5px;
+  background-color: #464646; }
+
 .preview-tabs {
   position: relative;
   overflow: hidden; }
