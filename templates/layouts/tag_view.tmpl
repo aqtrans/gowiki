@@ -1,0 +1,19 @@
+{{ define "title" }}Tag: {{ .TagName }} {{ end }}
+{{ define "content" }}
+  <main>
+      <table>
+      <thead>
+          <tr>
+          <th>Pages</th>
+          </tr>
+      </thead>
+      <tbody>
+      {{range .Results}}
+          <tr>
+              <td><a href="/{{ . }}">[{{ . }}]</a></td>
+          </tr>
+      {{ end }}
+      </tbody>
+      </table>
+  </main>
+{{ end }}
