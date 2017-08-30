@@ -10,7 +10,7 @@ $linkcolor: #1779ba;
 a {
     color: $linkcolor;
     &:visited {
-        color: darken($linkcolor, 25);
+        color: complement($linkcolor);
     }
     &:hover {
         color: lighten($linkcolor, 25);
