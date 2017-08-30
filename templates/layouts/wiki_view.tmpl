@@ -10,10 +10,12 @@
       <li><p>Tags</p>
       <div class="stat">
       {{ if .Wiki.Frontmatter.Tags }}
-      {{ range .Wiki.Frontmatter.Tags }}<span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i>{{ . }}</span>{{ end }}
+      {{ range .Wiki.Frontmatter.Tags }}
+        <span class="label"><i class="fa fa-tag" aria-hidden="true"></i>{{ . }}</span>
+      {{ end }}
       </div></li>
       {{ else }}
-      <span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i></span>
+      <span class="label"><i class="fa fa-tag" aria-hidden="true"></i></span>
       {{ end }}
     </ul>
 
