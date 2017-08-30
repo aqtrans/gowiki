@@ -76,8 +76,8 @@ deploy_staging:
     - ssh $DEPLOY_HOST systemctl --user stop golang@$CI_PROJECT_NAME    
     # Copy data/ from current to new
     - ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME; then cp -rpv $CI_PROJECT_NAME/data $CI_PROJECT_NAME.$CI_COMMIT_SHA/; fi'"
-    # If current symlink exists, remove it
-    - ssh $DEPLOY_HOST /bin/bash -c "'if test -L $CI_PROJECT_NAME; then rm $CI_PROJECT_NAME; fi'"
+    # If current symlink exists, remove it, else fail here
+    - ssh $DEPLOY_HOST /bin/bash -c "'if test -L $CI_PROJECT_NAME; then rm $CI_PROJECT_NAME; else echo ERROR $CI_PROJECT_NAME is not a symlink && exit 1; fi'"
     # Create symlink from $CI_PROJECT_NAME.$CI_COMMIT_SHA to $CI_PROJECT_NAME
     - ssh $DEPLOY_HOST ln -sv $CI_PROJECT_NAME.$CI_COMMIT_SHA $CI_PROJECT_NAME
     # Restart app
@@ -101,8 +101,8 @@ deploy_prod:
     - ssh $DEPLOY_HOST systemctl --user stop golang@$CI_PROJECT_NAME    
     # Copy data/ from current to new
     - ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME; then cp -rpv $CI_PROJECT_NAME/data $CI_PROJECT_NAME.$CI_COMMIT_SHA/; fi'"
-    # If current symlink exists, remove it
-    - ssh $DEPLOY_HOST /bin/bash -c "'if test -L $CI_PROJECT_NAME; then rm $CI_PROJECT_NAME; fi'"
+    # If current symlink exists, remove it, else fail here
+    - ssh $DEPLOY_HOST /bin/bash -c "'if test -L $CI_PROJECT_NAME; then rm $CI_PROJECT_NAME; else echo ERROR $CI_PROJECT_NAME is not a symlink && exit 1; fi'"
     # Create symlink from $CI_PROJECT_NAME.$CI_COMMIT_SHA to $CI_PROJECT_NAME
     - ssh $DEPLOY_HOST ln -sv $CI_PROJECT_NAME.$CI_COMMIT_SHA $CI_PROJECT_NAME
     # Restart app
