@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"testing"
 
 	//"github.com/boltdb/bolt"
@@ -99,6 +100,7 @@ func testEnv(t *testing.T, authState *auth.State) *wikiEnv {
 		authState: authState,
 		cache:     new(wikiCache),
 		templates: make(map[string]*template.Template),
+		mutex:     &sync.Mutex{},
 	}
 }
 
@@ -999,5 +1001,50 @@ func BenchmarkGitCtime(b *testing.B) {
 func BenchmarkGitMtime(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		gitGetMtime("index")
+	}
+}
+
+func TestMultipleWrites(t *testing.T) {
+
+	var mutex = &sync.Mutex{}
+
+	for w := 0; w < 500; w++ {
+		go func() {
+			for {
+
+				name := "index"
+				randContent, err := httputils.RandKey(32)
+				checkT(err, t)
+				content := randContent
+
+				// Check for and install required YAML frontmatter
+				title := "index"
+				// This is the separate input that tagdog.js throws new tags into
+				tags := []string{"yeah"}
+				permission := "public"
+
+				favoritebool := false
+
+				fm := &frontmatter{
+					Title:      title,
+					Tags:       tags,
+					Favorite:   favoritebool,
+					Permission: permission,
+				}
+
+				thewiki := &wiki{
+					Title:       title,
+					Filename:    name,
+					Frontmatter: fm,
+					Content:     []byte(content),
+				}
+
+				err = thewiki.save(mutex)
+				if err != nil {
+					checkT(err, t)
+				}
+
+			}
+		}()
 	}
 }
