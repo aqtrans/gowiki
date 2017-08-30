@@ -12,7 +12,7 @@
       {{range $index, $element := .TagKeys}}
           <tr>
               <td>{{ $index }}</td>
-              <td>{{ range $element }}<a href="/{{ . }}"> {{ . }} </a> {{ end }}</td> 
+              <td>{{ range $element }}<a href="/{{ . }}">[{{ . }}]</a>&nbsp;{{ end }}</td> 
           </tr>
       {{ end }}
       </tbody>
