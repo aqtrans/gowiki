@@ -234,6 +234,12 @@ type tagMapPage struct {
 	TagKeys map[string][]string
 }
 
+type tagPage struct {
+	*page
+	TagName string
+	Results []string
+}
+
 type searchPage struct {
 	*page
 	Results []*result
@@ -2489,6 +2495,22 @@ func (env *wikiEnv) tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(r.Context(), env, w, "tag_list.tmpl", tagpage)
 }
 
+func (env *wikiEnv) tagHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "tagHandler")
+
+	params := getParams(r.Context())
+	name := params["name"]
+
+	p := loadPage(env, r)
+
+	tagpage := &tagPage{
+		page:    p,
+		TagName: name,
+		Results: env.cache.Tags[name],
+	}
+	renderTemplate(r.Context(), env, w, "tag_view.tmpl", tagpage)
+}
+
 func (env *wikiEnv) createWiki(w http.ResponseWriter, r *http.Request, name string) {
 	//username, _ := auth.GetUsername(r.Context())
 	//if username != "" {
@@ -3150,6 +3172,7 @@ func main() {
 	r.GET("/", indexHandler)
 
 	r.GET("/tags", env.authState.AuthMiddle(env.tagMapHandler))
+	r.GET("/tag/*name", env.authState.AuthMiddle(env.tagHandler))
 
 	r.GET("/new", env.authState.AuthMiddle(newHandler))
 	r.GET("/login", env.loginPageHandler)
