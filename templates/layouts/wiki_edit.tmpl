@@ -6,26 +6,23 @@
         <li class="tabs-title is-active"><a href="#"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
         <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
         </ul>
-    
 
     <main>
         <form action="/save/{{.Wiki.Filename}}" method="POST" id="savewiki">
-        Title:<input type="text" name="title" value="{{.Wiki.Frontmatter.Title}}">
+        Title:<input type="text" name="title" value="{{.Wiki.Frontmatter.Title}}"><br>
         {{ if .Wiki.Frontmatter.Favorite }}
-            <div class="switch tiny">
-            Favorite:<input class="switch-input" id="favorite" type="checkbox" name="favorite" checked>
-            <label class="switch-paddle" for="favorite">
-                <span class="show-for-sr">Favorite</span>
+            Favorite:<input id="favorite" type="checkbox" name="favorite" checked>
+            <label for="favorite">
+                <span>Favorite</span>
             </label>
-            </div>
         {{ else }}
-            <div class="switch tiny">
             Favorite:<input class="switch-input" id="favorite" type="checkbox" name="favorite">
-            <label class="switch-paddle" for="favorite">
-                <span class="show-for-sr">Favorite</span>
+            <label for="favorite">
+                <span>Favorite</span>
             </label>
             </input>
         {{ end }}
+        <br>
         <label>Permission:
         <select id="permission" name="permission">
             {{ if eq .Wiki.Frontmatter.Permission "admin" }}
@@ -47,12 +44,13 @@
             {{ end }}
         </select>
         </label>
+        <br>
         <div class="tag-field">
             <label for="tags">Tags</label>
             <input type="text" id="tags" name="tags" placeholder="Separate tags with commas" value="{{ .Wiki.Frontmatter.Tags|jsTags }}" />
         </div>
         {{.Token}}
-        <textarea name="editor" id="wikieditor"></textarea>
+        <textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea>
         <div class="button-group">
             <a data-open="previewModal" id="preview" class="button">Preview</a>
             <button type="submit" class="success button">Submit</button>
@@ -60,21 +58,19 @@
         </form>
     </main>
 
-<div class="full reveal" id="previewModal" data-reveal>
+<!--<div class="full reveal" id="previewModal" data-reveal>
     <h2>Preview:</h2>
     <article class="content" id="preview_content"></article>
     <button class="close-button" data-close aria-label="Close modal" type="button">
         <span aria-hidden="true">&times;</span>
     </button>
-</div>    
+</div>-->
 
 {{ end }}
 {{ define "extra_scripts" }}
 <script src="/assets/js/commonmark.js"></script>
 <script src="/assets/js/tagdog.min.js"></script>
 <script type="text/javascript" charset="utf-8">
-
-$(document).foundation();
 
 (function() {
     "use strict";
@@ -88,9 +84,8 @@ var commonmark = window.commonmark;
 var writer = new commonmark.HtmlRenderer();
 var reader = new commonmark.Parser();
 var textarea = document.getElementById("editor");
-var initial_text = {{printf "%s" .Wiki.Content}};
-
-document.getElementsByName("editor")[0].value = initial_text;
+//var initial_text = {{printf "%s" .Wiki.Content}};
+//document.getElementsByName("editor")[0].value = initial_text;
 
 
 document.getElementById("preview").onclick = function() {
