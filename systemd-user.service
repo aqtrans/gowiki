@@ -1,0 +1,13 @@
+[Unit]
+Description=Golang %i daemon
+After=systemd-user-sessions.service network-online.target nginx.service
+Requires=network-online.target
+
+[Service]
+WorkingDirectory=%h/%i
+ExecStart=/bin/bash -c '%h/%i/%i'
+User=golang
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
