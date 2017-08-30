@@ -42,9 +42,6 @@ build-my-project:
     - govendor sync
     - go get -d
     - go build -o ./wiki
-  cache:
-    paths:
-      - bower_components/
   artifacts:
     paths:
       - wiki
@@ -97,16 +94,16 @@ deploy_prod:
     - apt-get update -y && apt-get install -y rsync
     # rsync to fresh folder
     - rsync -av --exclude data/ --exclude vendor/ --exclude http.log ./ $DEPLOY_HOST:$CI_PROJECT_NAME.$CI_COMMIT_SHA
-    # Stop app, to release DB locks 
-    - ssh $DEPLOY_HOST systemctl --user stop golang@$CI_PROJECT_NAME    
+    # Stop app, to release DB locks, using sudo due to no systemctl --user on CentOS 7 (https://bugs.centos.org/view.php?id=8767)
+    - ssh $DEPLOY_HOST sudo systemctl stop golang@$CI_PROJECT_NAME    
     # Copy data/ from current to new
     - ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME; then cp -rpv $CI_PROJECT_NAME/data $CI_PROJECT_NAME.$CI_COMMIT_SHA/; fi'"
     # If current symlink exists, remove it
     - ssh $DEPLOY_HOST /bin/bash -c "'if test -L $CI_PROJECT_NAME; then rm $CI_PROJECT_NAME; fi'"
     # Create symlink from $CI_PROJECT_NAME.$CI_COMMIT_SHA to $CI_PROJECT_NAME
     - ssh $DEPLOY_HOST ln -sv $CI_PROJECT_NAME.$CI_COMMIT_SHA $CI_PROJECT_NAME
-    # Restart app
-    - ssh $DEPLOY_HOST systemctl --user start golang@$CI_PROJECT_NAME
+    # Restart app, using sudo due to no systemctl --user on CentOS 7 (https://bugs.centos.org/view.php?id=8767)
+    - ssh $DEPLOY_HOST sudo systemctl start golang@$CI_PROJECT_NAME
   environment:
     name: production
     url: https://wiki.jba.io
