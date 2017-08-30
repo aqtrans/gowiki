@@ -2479,7 +2479,7 @@ textarea#wikieditor {
   width: 100%; }
 
 span.label {
-  padding: 0 5px;
+  margin: 0 5px;
   background-color: #464646; }
 
 .preview-tabs {
