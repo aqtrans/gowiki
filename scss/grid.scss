@@ -103,7 +103,8 @@ body > footer {
             padding: 5px;
             margin: 0;
             //float: left;  
-            background-color: darken($almostblack, 5);
+            //background-color: darken($almostblack, 5);
+            border: 1px dashed $almostblack;
             &:hover {
                 background-color: $almostblack;
             }            
