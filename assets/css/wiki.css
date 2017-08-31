@@ -2324,6 +2324,12 @@
   overflow: visible;
   clip: auto; }
 
+html {
+  box-sizing: border-box; }
+
+*, *:before, *:after {
+  box-sizing: inherit; }
+
 a {
   color: #1779ba; }
   a:visited {
@@ -2347,7 +2353,7 @@ body > header {
     list-style-type: none;
     justify-content: space-between;
     background-color: #202020;
-    color: white;
+    color: #fefefe;
     padding: 0 10px;
     margin-bottom: 5px; }
     body > header > ul > li > p {
@@ -2357,7 +2363,7 @@ body > header {
 body > main {
   grid-area: content;
   background-color: #202020;
-  color: white;
+  color: #fefefe;
   padding: 1rem; }
   body > main > footer {
     text-align: right;
@@ -2403,7 +2409,7 @@ body > footer {
 
 @media (min-width: 768px) {
   body {
-    grid-template-columns: 300px 5fr;
+    grid-template-columns: minmax(200px, 2fr) 10fr;
     grid-auto-rows: minmax(0px, auto);
     grid-template-rows: minmax(0px, auto) minmax(0px, auto) minmax(0px, auto) min-content;
     grid-auto-flow: dense;
@@ -2481,6 +2487,17 @@ textarea#wikieditor {
 span.label {
   margin: 0 5px;
   background-color: #464646; }
+
+pre, code {
+  white-space: pre-wrap; }
+
+.input-wrapper {
+  display: flex; }
+  .input-wrapper input[type=text] {
+    flex: 1;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 10px; }
 
 .preview-tabs {
   position: relative;

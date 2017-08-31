@@ -4,8 +4,20 @@ $solarized: #073642;
 $almostblack: #202020;
 $linkcolor: #1779ba;
 
+// Theme
+$background: $white;
+$foreground: $almostblack;
+$foreground-font: $white;
+
 /* Font Awesome 4.7.0 */
 @import "font-awesome/font-awesome";
+
+html {
+    box-sizing: border-box;
+  }
+  *, *:before, *:after {
+    box-sizing: inherit;
+  }
 
 a {
     color: $linkcolor;
@@ -20,7 +32,7 @@ a {
 body {
     font-size: 1.0em;
     line-height: 1.5;    
-    background-color: $white;
+    background-color: $background;
     display: grid;
     grid-column-gap: 20px;
     grid-row-gap: 0;
@@ -38,8 +50,8 @@ body > header {
         display: flex;
         list-style-type: none;
         justify-content: space-between;
-        background-color: $almostblack;
-        color: white;
+        background-color: $foreground;
+        color: $foreground-font;
         padding: 0 10px;
         margin-bottom: 5px;
         > li > p {
@@ -51,8 +63,8 @@ body > header {
 
 body > main {
     grid-area: content;
-    background-color: $almostblack;
-    color: white;
+    background-color: $foreground;
+    color: $foreground-font;
     padding: 1rem;
     > footer {
         text-align: right;
@@ -114,7 +126,7 @@ body > footer {
 
 @media (min-width: 768px) {
     body {
-      grid-template-columns: 300px 5fr;
+      grid-template-columns: minmax(200px, 2fr) 10fr;
       grid-auto-rows: minmax(0px, auto);
       grid-template-rows: minmax(0px, auto) minmax(0px, auto) minmax(0px, auto) min-content;
       grid-auto-flow: dense;
@@ -211,6 +223,21 @@ textarea#wikieditor {
 span.label {
     margin: 0 5px;
     background-color: lighten($almostblack, 15);
+}
+
+pre, code {
+    white-space:pre-wrap;
+
+}
+
+.input-wrapper {
+    display: flex;
+    input[type=text] {
+        flex: 1;
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 10px;
+    }
 }
 
 // Tab definition
