@@ -1,6 +1,6 @@
 {{ define "sidebar" }}
 <fieldset class="fieldset">
-  <legend>Wiki</legend>
+  <legend><i class="fa fa-bars" aria-hidden="true"></i>Menu</legend>
 <ul>
     <li><a href="/">Home</a></li>
     <li><a href="/list">List</a></li>
@@ -12,7 +12,7 @@
 </fieldset>
 {{ if .UserInfo.Username }}
   <fieldset class="fieldset">
-    <legend>Favorite Pages</legend>
+    <legend><i class="fa fa-star-o" aria-hidden="true"></i>Favorite Pages</legend>
   <ul>
   {{range $key, $element := .page.Favs}}
   <li><a href="/{{ $key }}">{{ $key }}</a></li>
@@ -25,7 +25,7 @@
   <div class="input-wrapper">
       <input type="text" placeholder="Add page" id="newwiki" name="newwiki">
       {{.Token}}
-      <button type="submit" class="success button"><i class="fa fa-plus" aria-hidden="true"></i></button>
+      <button type="submit" class="success button"><i class="fa fa-plus fa-fw" aria-hidden="true"></i></button>
   </div>
 </form>
 
@@ -33,7 +33,7 @@
   <div class="input-wrapper">
       <input type="text" placeholder="Search" id="searchwiki" name="searchwiki">
       {{.Token}}
-      <button type="submit" class="success button"><i class="fa fa-search" aria-hidden="true"></i></button>
+      <button type="submit" class="success button"><i class="fa fa-search fa-fw" aria-hidden="true"></i></button>
   </div>
 </form> 
 
