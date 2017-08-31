@@ -2397,7 +2397,7 @@ body > footer {
     .tabs li a {
       padding: 5px;
       margin: 0;
-      background-color: #131313; }
+      border: 1px dashed #202020; }
       .tabs li a:hover {
         background-color: #202020; }
 
