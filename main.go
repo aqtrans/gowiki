@@ -1491,6 +1491,10 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 			if favfound {
 				fm.Favorite = favorite
 			}
+			private, privfound := m["private"].(bool)
+			if privfound && private {
+				fm.Permission = "private"
+			}
 			public, pubfound := m["public"].(bool)
 			if pubfound && public {
 				fm.Permission = "public"
@@ -3083,14 +3087,23 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "setFavoriteHandler")
 	name := nameFromContext(r.Context())
 	p := loadWikiPage(env, r, name)
-	p.Wiki.Frontmatter.Favorite = true
+	if p.Wiki.Frontmatter.Favorite {
+		p.Wiki.Frontmatter.Favorite = false
+		env.authState.SetFlash(name+" has been un-favorited.", w, r)
+		log.Println(name + " page un-favorited!")
+	} else {
+		p.Wiki.Frontmatter.Favorite = true
+		env.authState.SetFlash(name+" has been favorited.", w, r)
+		log.Println(name + " page favorited!")
+	}
+
 	err := p.Wiki.save(env.mutex)
 	if err != nil {
 		log.Println(err)
 	}
-	env.authState.SetFlash(name+" has been favorited.", w, r)
+
 	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
-	log.Println(name + " page favorited!")
+
 }
 
 func main() {

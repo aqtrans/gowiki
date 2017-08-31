@@ -6,7 +6,16 @@
       <li><p>Permission</p>
       <div class="stat">{{ .Wiki.Frontmatter.Permission }}</div></li>
       <li><p>Favorite</p>
-      <div class="stat">{{ .Wiki.Frontmatter.Favorite }}</div></li>
+      <div class="stat">
+      {{ if .UserInfo.Username }}
+        <a href="/fav/{{.Wiki.Filename}}">
+        {{ if .Wiki.Frontmatter.Favorite }}<i class="fa fa-star" aria-hidden="true"></i>{{ else  }}<i class="fa fa-star-o" aria-hidden="true"></i>{{ end }}</a>
+        </div></li>
+      {{ else }}
+        {{ if .Wiki.Frontmatter.Favorite }}<i class="fa fa-star" aria-hidden="true"></i>{{ else  }}<i class="fa fa-star-o" aria-hidden="true"></i>{{ end }}
+        </div></li>
+      {{ end }}      
+      
       <li><p>Tags</p>
       <div class="stat">
       {{ if .Wiki.Frontmatter.Tags }}
