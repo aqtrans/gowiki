@@ -1,9 +1,10 @@
 {{ define "usernav" }}
 <div class="usernav">
 <fieldset class="fieldset">
-  <legend><i class="fa fa-user" aria-hidden="true"></i>User {{ if .UserInfo.Username }}<span><small>(logged in as {{ .UserInfo.Username }})</small></span>{{ end }}</legend>
+  <legend><i class="fa fa-user" aria-hidden="true"></i>User</legend>
 <ul>
 {{ if .UserInfo.Username }}
+    <li>Logged in as {{ .UserInfo.Username }}</li>
     <li><a href="/auth/logout">Logout</a></li>
     {{ if .UserInfo.IsAdmin }}    
         <li><a href="/admin">Admin Panel</a></li>
