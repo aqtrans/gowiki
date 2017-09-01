@@ -12,18 +12,12 @@
         Title:<input type="text" name="title" value="{{.Wiki.Frontmatter.Title}}"><br>
         {{ if .Wiki.Frontmatter.Favorite }}
             Favorite:<input id="favorite" type="checkbox" name="favorite" checked>
-            <label for="favorite">
-                <span>Favorite</span>
-            </label>
         {{ else }}
             Favorite:<input id="favorite" type="checkbox" name="favorite">
-            <label for="favorite">
-                <span>Favorite</span>
-            </label>
             </input>
         {{ end }}
         <br>
-        <label>Permission:
+        Permission:
         <select id="permission" name="permission">
             {{ if eq .Wiki.Frontmatter.Permission "admin" }}
             <option value="admin" selected>Admin</option>
@@ -43,18 +37,29 @@
             <option value="public">Public</option>
             {{ end }}
         </select>
-        </label>
         <br>
         <div class="tag-field">
-            <label for="tags">Tags</label>
+            Tags:
             <input type="text" id="tags" name="tags" placeholder="Separate tags with commas" value="{{ .Wiki.Frontmatter.Tags|jsTags }}" />
         </div>
         {{.Token}}
-        <textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea>
-        <div class="button-group">
-            <a data-open="previewModal" id="preview" class="button">Preview</a>
-            <button type="submit" class="success button">Submit</button>
+        <hr>
+        <div class="preview-tabs two">
+        <input id='tab-1' type='radio' name='tabgroupB' checked />
+        <label class="pseudo button toggle" for="tab-1">Edit</label>
+        <input id='tab-2' type='radio' name='tabgroupB'>
+        <label class="pseudo button toggle" for="tab-2">Preview</label>
+        <div class="row">
+            <div>
+            <textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea>
+            </div>
+            <div>
+            <article class="content" id="preview_content"></article>
+            </div>
         </div>
+        </div>
+
+            <button type="submit" class="success button">Submit</button>
         </form>
     </main>
 
@@ -79,16 +84,17 @@
     }    
     var tagFields = tagdog('.tag-field', options);
 }).call(this);
-
+/*
 var commonmark = window.commonmark;
 var writer = new commonmark.HtmlRenderer();
 var reader = new commonmark.Parser();
 var textarea = document.getElementById("editor");
+*/
 //var initial_text = {{printf "%s" .Wiki.Content}};
 //document.getElementsByName("editor")[0].value = initial_text;
 
 
-document.getElementById("preview").onclick = function() {
+document.getElementById("tab-2").onclick = function() {
     var editortxt = document.getElementsByName("editor")[0].value;
     //var parsed = reader.parse(editortxt);
     //var result = writer.render(parsed);
