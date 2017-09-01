@@ -2076,7 +2076,11 @@ func loadWikiPage(env *wikiEnv, r *http.Request, name string) *wikiPage {
 	var theMarkdown string
 	theMarkdownChan := make(chan string)
 
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	go func() {
+		defer wg.Done()
 		p := loadPage(env, r)
 		thePageChan <- p
 	}()
@@ -2084,6 +2088,7 @@ func loadWikiPage(env *wikiEnv, r *http.Request, name string) *wikiPage {
 	wikiExists := wikiExistsFromContext(r.Context())
 	if !wikiExists {
 		go func() {
+			defer wg.Done()
 			theWiki = &wiki{
 				Title:    name,
 				Filename: name,
@@ -2099,6 +2104,7 @@ func loadWikiPage(env *wikiEnv, r *http.Request, name string) *wikiPage {
 	}
 	if wikiExists {
 		go func() {
+			defer wg.Done()
 			wikip := loadWiki(name)
 			// Render remaining content after frontmatter
 			md := markdownRender(wikip.Content)
@@ -2107,13 +2113,11 @@ func loadWikiPage(env *wikiEnv, r *http.Request, name string) *wikiPage {
 		}()
 	}
 
-	for i := 0; i < 3; i++ {
-		select {
-		case theWiki = <-theWikiChan:
-		case thePage = <-thePageChan:
-		case theMarkdown = <-theMarkdownChan:
-		}
-	}
+	theWiki = <-theWikiChan
+	thePage = <-thePageChan
+	theMarkdown = <-theMarkdownChan
+
+	wg.Wait()
 
 	//md := commonmarkRender(wikip.Content)
 	//markdownRender2(wikip.Content)
