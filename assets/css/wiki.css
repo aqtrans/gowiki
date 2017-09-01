@@ -2415,7 +2415,7 @@ body > footer {
   body {
     grid-template-columns: minmax(200px, 2fr) 10fr;
     grid-auto-rows: minmax(0px, auto);
-    grid-template-rows: minmax(0px, auto) minmax(0px, auto) minmax(0px, auto) min-content;
+    grid-template-rows: minmax(0px, auto) minmax(0px, auto) minmax(0px, auto) minmax(0px, 1em);
     grid-auto-flow: dense;
     grid-template-areas: "nav    header" "nav    tabs" "nav    content" "nav    footer"; }
     body > nav ul {
