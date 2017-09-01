@@ -52,12 +52,12 @@
 			"revisionTime": "2016-03-05T16:54:46Z"
 		},
 		{
-			"checksumSHA1": "w+nFzsLse8fnTD/tXFcYKQJfeHc=",
+			"checksumSHA1": "qGWQ8wQvJEwGNRzqoeijIYEI+Wg=",
 			"path": "github.com/dimfeld/httptreemux",
-			"revision": "86f7c217d9043ebc6adfd8e2ed04a0bb1e1db651",
-			"revisionTime": "2017-02-26T06:22:14Z",
-			"version": "v3.8.0",
-			"versionExact": "v3.8.0"
+			"revision": "90654bdd3dfc3cac55538aa620f2f4d855bbdb83",
+			"revisionTime": "2017-08-02T18:26:40Z",
+			"version": "v4.0.1",
+			"versionExact": "v4.0.1"
 		},
 		{
 			"checksumSHA1": "J0gVUnPJlrKrgZcxzM+b3CFIGAk=",
