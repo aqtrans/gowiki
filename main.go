@@ -1140,7 +1140,7 @@ func gitIsCleanURLs(token template.HTML) template.HTML {
 	case errGitDiverged:
 		return template.HTML(`<a href="/admin/git"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>Issue with git:wiki!</a>`)
 	default:
-		return template.HTML(`<p>Git repo is clean.</p>`)
+		return template.HTML(`Git repo is clean.`)
 	}
 }
 
