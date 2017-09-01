@@ -78,11 +78,17 @@ body > main {
         background-color: darken($almostblack, 15);
         ul {
             margin: 0 1rem;
+            list-style-type: upper-roman;
         }
     }
 }
 body > nav {
     grid-area: nav;
+    ul {
+        padding: 5px 0;
+        list-style-type: none;
+    }
+    
 }
 body > footer {
     grid-area: footer;
