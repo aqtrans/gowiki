@@ -171,6 +171,9 @@ table {
     overflow: hidden;
     background: #f9edbe;
     border-bottom: 1px solid #f0c36d;
+    p {
+        margin: 5px;
+    }
 }
 .notification.anim {
     -webkit-transition: top 0.6s ease-out;  
