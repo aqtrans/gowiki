@@ -1,6 +1,13 @@
 {{ define "title" }}{{ .Wiki.Title }}{{ end }}
-{{ define "header" }}
-    <ul>
+{{ define "content" }}
+  <ul class="tabs">
+    <li class="tabs-title is-active"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
+    <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
+    <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
+  </ul>
+
+  <main>
+    <ul class="frontmatter">
       <li><p>Filename</p>
       <div class="stat">{{ .Wiki.Filename }}</div></li>
       <li><p>Permission</p>
@@ -27,22 +34,12 @@
       <span class="label"><i class="fa fa-tag" aria-hidden="true"></i></span>
       {{ end }}
     </ul>
-
-{{ end }}
-{{ define "content" }}
-  <ul class="tabs">
-    <li class="tabs-title is-active"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
-    <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
-    <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
-  </ul>
-
-  <main>
-      {{.Rendered | safeHTML}}
-        <footer>
-          <ul>
-            <li>Created: {{ .Wiki.CreateTime | prettyDate }}</li>
-            <li>Last Modified: {{ .Wiki.ModTime | prettyDate }}</li>
-          </ul>
-        </footer>
+    {{.Rendered | safeHTML}}
+    <footer>
+      <ul>
+        <li>Created: {{ .Wiki.CreateTime | prettyDate }}</li>
+        <li>Last Modified: {{ .Wiki.ModTime | prettyDate }}</li>
+      </ul>
+    </footer>
   </main>
 {{ end }}
