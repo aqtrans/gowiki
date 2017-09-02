@@ -17,7 +17,7 @@ html {
   }
   *, *:before, *:after {
     box-sizing: inherit;
-  }
+}
 
 a {
     color: $linkcolor;
@@ -30,6 +30,7 @@ a {
 }
 
 body {
+    margin: 0;
     font-size: 1.0em;
     line-height: 1.5;    
     background-color: $background;
@@ -46,18 +47,10 @@ body {
 
 body > header {
     grid-area: header;
-    > ul {
-        display: flex;
-        list-style-type: none;
-        justify-content: space-between;
-        background-color: $foreground;
-        color: $foreground-font;
-        padding: 0 10px;
-        margin-bottom: 5px;
-        > li > p {
-            font-size: 120%;
-            margin: 0;
-        }
+    max-height: 3.5rem;
+    min-height: 3.5rem;
+    > h1 {
+        margin: 0;
     }
 }
 
@@ -69,6 +62,7 @@ body > main {
     > footer {
         text-align: right;
         color: #8a8a8a;
+        font-size: 75%;
         > ul {
             list-style-type: none;
         }
@@ -108,7 +102,8 @@ body > footer {
     list-style-type: none;
     align-self: end;
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    flex-direction: row;
     li {
         padding-top: 5px;
         &.is-active { 
@@ -130,34 +125,22 @@ body > footer {
     }
 }
 
-@media (min-width: 768px) {
-    body {
-      grid-template-columns: minmax(200px, 2fr) 10fr;
-      grid-auto-rows: minmax(0px, auto);
-      grid-template-rows: minmax(0px, auto) minmax(0px, auto) minmax(0px, auto) minmax(0px, 1em);
-      grid-auto-flow: dense;
-      grid-template-areas: 
-        "nav    header"
-        "nav    tabs"
-        "nav    content"
-        "nav    footer";
-        > nav ul {
-          display: flex;
-          justify-content: space-between;
-          flex-direction: column;
-        }
-        > header ul {
-          display: flex;
-          flex-direction: row;
-        }   
-    }
-    .tabs {
-      flex-direction: row;
-      li {
-          margin: 0 10px 0 0;
-        }
+.frontmatter {
+    display: flex;
+    flex-wrap: wrap;
+    list-style-type: none;
+    justify-content: space-between;
+    background-color: lighten($foreground, 5);
+    color: $foreground-font;
+    padding: 0 10px;
+    //margin-bottom: 5px;
+    > li > p {
+        font-size: 120%;
+        margin: 0;
     }
 }
+
+
 
 td, th {
     border: 1px solid #999;
@@ -381,4 +364,27 @@ pre, code {
       >label:first-of-type img {
         margin-left: 0;
       }
+}
+
+
+@media (min-width: 768px) {
+    body {
+      grid-template-areas: 
+        "nav    header"
+        "nav    tabs"
+        "nav    content"
+        "nav    footer";
+        grid-template-columns: 240px 10fr;
+        grid-template-rows: 50px 24px minmax(0, min-content) auto;
+    }
+    .tabs {
+      flex-direction: row;
+      li {
+          margin: 0 10px 0 0;
+        }
+    }
+    .frontmatter {
+        display: flex;
+        flex-direction: row;
+    }       
 }
