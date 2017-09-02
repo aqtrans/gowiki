@@ -20,7 +20,6 @@
     {{ .page.FlashMsg }}
   <header>
     <h1>{{ template "header_title" . }}</h1>
-    {{ block "header" . }}{{ end }}
   </header>
   {{ template "content" . }}
 {{ end }}
