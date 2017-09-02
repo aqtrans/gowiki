@@ -2338,6 +2338,7 @@ a {
     color: #65b6ec; }
 
 body {
+  margin: 0;
   font-size: 1.0em;
   line-height: 1.5;
   background-color: #fefefe;
@@ -2347,18 +2348,11 @@ body {
   grid-template-areas: "header" "nav" "tabs" "content" "footer"; }
 
 body > header {
-  grid-area: header; }
-  body > header > ul {
-    display: flex;
-    list-style-type: none;
-    justify-content: space-between;
-    background-color: #202020;
-    color: #fefefe;
-    padding: 0 10px;
-    margin-bottom: 5px; }
-    body > header > ul > li > p {
-      font-size: 120%;
-      margin: 0; }
+  grid-area: header;
+  max-height: 3.5rem;
+  min-height: 3.5rem; }
+  body > header > h1 {
+    margin: 0; }
 
 body > main {
   grid-area: content;
@@ -2367,7 +2361,8 @@ body > main {
   padding: 1rem; }
   body > main > footer {
     text-align: right;
-    color: #8a8a8a; }
+    color: #8a8a8a;
+    font-size: 75%; }
     body > main > footer > ul {
       list-style-type: none; }
   body > main > nav {
@@ -2398,7 +2393,8 @@ body > footer {
   list-style-type: none;
   align-self: end;
   display: flex;
-  flex-direction: column; }
+  flex-wrap: wrap;
+  flex-direction: row; }
   .tabs li {
     padding-top: 5px; }
     .tabs li.is-active a {
@@ -2411,25 +2407,18 @@ body > footer {
       .tabs li a:hover {
         background-color: #202020; }
 
-@media (min-width: 768px) {
-  body {
-    grid-template-columns: minmax(200px, 2fr) 10fr;
-    grid-auto-rows: minmax(0px, auto);
-    grid-template-rows: minmax(0px, auto) minmax(0px, auto) minmax(0px, auto) minmax(0px, 1em);
-    grid-auto-flow: dense;
-    grid-template-areas: "nav    header" "nav    tabs" "nav    content" "nav    footer"; }
-    body > nav ul {
-      display: flex;
-      justify-content: space-between;
-      flex-direction: column; }
-    body > header ul {
-      display: flex;
-      flex-direction: row; }
+.frontmatter {
+  display: flex;
+  flex-wrap: wrap;
+  list-style-type: none;
+  justify-content: space-between;
+  background-color: #2d2d2d;
+  color: #fefefe;
+  padding: 0 10px; }
+  .frontmatter > li > p {
+    font-size: 120%;
+    margin: 0; }
 
-  .tabs {
-    flex-direction: row; }
-    .tabs li {
-      margin: 0 10px 0 0; } }
 td, th {
   border: 1px solid #999;
   padding: 0.5rem; }
@@ -2576,5 +2565,20 @@ pre, code {
     margin: 4% 0 4% 4%; }
   .preview-tabs > label:first-of-type img {
     margin-left: 0; }
+
+@media (min-width: 768px) {
+  body {
+    grid-template-areas: "nav    header" "nav    tabs" "nav    content" "nav    footer";
+    grid-template-columns: 240px 10fr;
+    grid-template-rows: 50px 24px minmax(0, min-content) auto; }
+
+  .tabs {
+    flex-direction: row; }
+    .tabs li {
+      margin: 0 10px 0 0; }
+
+  .frontmatter {
+    display: flex;
+    flex-direction: row; } }
 
 /*# sourceMappingURL=wiki.css.map */
