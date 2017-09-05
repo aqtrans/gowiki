@@ -375,13 +375,16 @@ pre, code {
         "nav    content"
         "nav    footer";
         grid-template-columns: 240px 10fr;
-        grid-template-rows: 50px 24px minmax(0, min-content) auto;
+        grid-template-rows: 50px 24px auto minmax(10px, 50px);
     }
     .tabs {
       flex-direction: row;
       li {
           margin: 0 10px 0 0;
         }
+    }
+    body > main {
+        align-self: start;
     }
     .frontmatter {
         display: flex;
