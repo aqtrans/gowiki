@@ -1,12 +1,7 @@
 {{ define "title" }}{{ .Wiki.Title }}{{ end }}
-{{ define "icons" }}
-{{ $svgHome := svg "home" }}
-{{ index $svgHome 0 }}
-{{ index $svgHome 1 }}
-{{ end }}
 {{ define "content" }}
   <ul class="tabs">
-    <li class="tabs-title is-active"><a href="#">View Page</a></li>
+    <li class="tabs-title is-active"><a href="#">{{ svg "home" }}View Page</a></li>
     <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
     <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
   </ul>
