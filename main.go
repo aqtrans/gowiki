@@ -37,7 +37,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/pprof"
@@ -2725,13 +2724,8 @@ func typeIcon(gitType string) template.HTML {
 	return html
 }
 
-func svg(iconName string) [2]template.HTML {
-	iconFile, err := ioutil.ReadFile("icomoon/SVG/" + iconName + ".svg")
-	if err != nil {
-		log.Println(err)
-	}
-	html := template.HTML(`<svg class="icon icon-home"><use xlink:href="#icon-` + iconName + `"></use></svg>`)
-	return [2]template.HTML{template.HTML(string(iconFile)), html}
+func svg(iconName string) template.HTML {
+	return template.HTML(`<svg class="icon icon-home"><use xlink:href="assets/symbol-defs.svg#icon-` + iconName + `"></use></svg>`)
 }
 
 func tmplInit(env *wikiEnv) error {
