@@ -37,6 +37,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/pprof"
@@ -2724,6 +2725,15 @@ func typeIcon(gitType string) template.HTML {
 	return html
 }
 
+func svg(iconName string) [2]template.HTML {
+	iconFile, err := ioutil.ReadFile("icomoon/SVG/" + iconName + ".svg")
+	if err != nil {
+		log.Println(err)
+	}
+	html := template.HTML(`<svg class="icon icon-home"><use xlink:href="#icon-` + iconName + `"></use></svg>`)
+	return [2]template.HTML{template.HTML(string(iconFile)), html}
+}
+
 func tmplInit(env *wikiEnv) error {
 	templatesDir := "./templates/"
 	layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
@@ -2735,7 +2745,7 @@ func tmplInit(env *wikiEnv) error {
 		panic(err)
 	}
 
-	funcMap := template.FuncMap{"typeIcon": typeIcon, "prettyDate": httputils.PrettyDate, "safeHTML": httputils.SafeHTML, "imgClass": httputils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
+	funcMap := template.FuncMap{"svg": svg, "typeIcon": typeIcon, "prettyDate": httputils.PrettyDate, "safeHTML": httputils.SafeHTML, "imgClass": httputils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
 
 	for _, layout := range layouts {
 		files := append(includes, layout)
