@@ -2415,7 +2415,9 @@ body > footer {
   background-color: #2d2d2d;
   color: #fefefe;
   padding: 0 10px; }
-  .frontmatter > li > p {
+  .frontmatter li {
+    text-align: center; }
+  .frontmatter li > p {
     font-size: 120%;
     margin: 0; }
 
