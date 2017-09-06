@@ -3251,10 +3251,10 @@ func main() {
 
 	mux.Handle("/", s.Then(r))
 
-	log.Println("Listening on port " + viper.GetString("Port"))
+	log.Println("Listening on 127.0.0.1:" + viper.GetString("Port"))
 
 	srv := &http.Server{
-		Addr:    "0.0.0.0:" + viper.GetString("Port"),
+		Addr:    "127.0.0.1:" + viper.GetString("Port"),
 		Handler: mux,
 	}
 
