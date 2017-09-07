@@ -1,9 +1,9 @@
 {{ define "title" }}{{ .Wiki.Title }}{{ end }}
 {{ define "content" }}
   <ul class="tabs">
-    <li class="tabs-title is-active"><a href="#">{{ svg "home" }}View Page</a></li>
-    <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
-    <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
+    <li class="tabs-title is-active"><a href="#">{{ svg "eye" }}View Page</a></li>
+    <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}">{{svg "pencil"}}Edit Page</a></li>
+    <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}">{{svg "history"}}Page History</a></li>
   </ul>
 
   <main>
@@ -16,10 +16,10 @@
       <div class="stat">
       {{ if .UserInfo.Username }}
         <a href="/fav/{{.Wiki.Filename}}">
-        {{ if .Wiki.Frontmatter.Favorite }}<i class="fa fa-star" aria-hidden="true"></i>{{ else  }}<i class="fa fa-star-o" aria-hidden="true"></i>{{ end }}</a>
+        {{ if .Wiki.Frontmatter.Favorite }}{{svg "star-full"}}{{ else  }}{{svg "star-empty"}}{{ end }}</a>
         </div></li>
       {{ else }}
-        {{ if .Wiki.Frontmatter.Favorite }}<i class="fa fa-star" aria-hidden="true"></i>{{ else  }}<i class="fa fa-star-o" aria-hidden="true"></i>{{ end }}
+        {{ if .Wiki.Frontmatter.Favorite }}{{svg "star-full"}}{{ else  }}{{svg "star-empty"}}{{ end }}
         </div></li>
       {{ end }}      
       
@@ -27,11 +27,11 @@
       <div class="stat">
       {{ if .Wiki.Frontmatter.Tags }}
       {{ range .Wiki.Frontmatter.Tags }}
-        <span class="label"><i class="fa fa-tag" aria-hidden="true"></i>{{ . }}</span>
+        <span class="label">{{svg "price-tag"}}{{ . }}</span>
       {{ end }}
       </div></li>
       {{ else }}
-      <span class="label"><i class="fa fa-tag" aria-hidden="true"></i></span>
+      <span class="label">{{svg "price-tags"}}</span>
       {{ end }}
     </ul>
     {{.Rendered | safeHTML}}
