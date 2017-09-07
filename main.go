@@ -37,6 +37,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/pprof"
@@ -2725,7 +2726,13 @@ func typeIcon(gitType string) template.HTML {
 }
 
 func svg(iconName string) template.HTML {
-	return template.HTML(`<svg class="icon icon-home"><use xlink:href="assets/symbol-defs.svg#icon-` + iconName + `"></use></svg>`)
+	// MAJOR TODO:
+	// Check for file existence before trying to read the file; if non-existent return ""
+	iconFile, err := ioutil.ReadFile("assets/icons/" + iconName + ".svg")
+	if err != nil {
+		log.Println("Error loading assets/icons/", iconName, err)
+	}
+	return template.HTML(string(iconFile))
 }
 
 func tmplInit(env *wikiEnv) error {
