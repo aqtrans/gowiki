@@ -409,9 +409,10 @@ func markdownRender(input []byte) string {
 func (r *renderer) ListItem(out *bytes.Buffer, text []byte, flags int) {
 	switch {
 	case bytes.HasPrefix(text, []byte("[ ] ")):
-		text = append([]byte(`<i class="fa fa-square" aria-hidden="true"></i>`), text[3:]...)
+
+		text = append(svgByte("checkbox-unchecked"), text[3:]...)
 	case bytes.HasPrefix(text, []byte("[x] ")) || bytes.HasPrefix(text, []byte("[X] ")):
-		text = append([]byte(`<i class="fa fa-check-square" aria-hidden="true"></i>`), text[3:]...)
+		text = append(svgByte("checkbox-checked"), text[3:]...)
 	}
 	r.Html.ListItem(out, text, flags)
 }
@@ -1086,9 +1087,9 @@ func loadPage(env *wikiEnv, r *http.Request) *page {
 	var message template.HTML
 	if msg != "" {
 		message = template.HTML(`
-			<div class="notification anim" id="notification">
+			<div class="notification" id="notification">
 			<p>` + msg + `
-			<button class="close-button" aria-label="Dismiss alert" type="button">
+			<button type="button" onclick="notif()">
 			<span aria-hidden="true">&times;</span>
 			</button></p>
 			</div>
@@ -2717,10 +2718,10 @@ func timer(next http.Handler) http.Handler {
 func typeIcon(gitType string) template.HTML {
 	var html template.HTML
 	if gitType == "blob" {
-		html = template.HTML(`<i class="fa fa-file-text-o" aria-hidden="true"></i>`)
+		html = svg("file-text")
 	}
 	if gitType == "tree" {
-		html = template.HTML(`<i class="fa fa-folder-o" aria-hidden="true"></i>`)
+		html = svg("folder-open")
 	}
 	return html
 }
@@ -2732,7 +2733,17 @@ func svg(iconName string) template.HTML {
 	if err != nil {
 		log.Println("Error loading assets/icons/", iconName, err)
 	}
-	return template.HTML(string(iconFile))
+	return template.HTML(`<div class="svg-icon">` + string(iconFile) + `</div>`)
+}
+
+func svgByte(iconName string) []byte {
+	// MAJOR TODO:
+	// Check for file existence before trying to read the file; if non-existent return ""
+	iconFile, err := ioutil.ReadFile("assets/icons/" + iconName + ".svg")
+	if err != nil {
+		log.Println("Error loading assets/icons/", iconName, err)
+	}
+	return []byte(`<div class="svg-icon">` + string(iconFile) + `</div>`)
 }
 
 func tmplInit(env *wikiEnv) error {
