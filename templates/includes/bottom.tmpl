@@ -1,16 +1,11 @@
 {{ define "bottom" }}
-  <script src="/assets/js/jquery.min.js"></script>
+  <!--<script src="/assets/js/jquery.min.js"></script>-->
   <!-- this will include every plugin and utility required by Foundation -->
   <!--<script src="/assets/js/my.js"></script>-->
   <script type="text/javascript" charset="utf-8">
-			$('.notification').delegate(".close-button", "click", function(e) {
-				hideNotification();
-				return false;
-			});
-      function hideNotification() {
-				$('#notification').css('top',-$('#notification').outerHeight());
-				setTimeout(function() { $('#notification').removeClass('anim'); }, 1000);
-			}
+  function notif() {
+    document.getElementById('notification').style.display = 'none';
+  }
   </script>
   {{ template "extra_scripts" . }}
   </body>
