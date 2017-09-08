@@ -13,5 +13,5 @@
 #ls -d main.go main_test.go templates/** scss/grid.scss | entr -r sh -c 'sass scss/grid.scss assets/css/wiki.css && go run main.go'
 
 ## Using Modd (https://github.com/cortesi/modd) now, which allows multiple commands, multiple matches
-go get github.com/cortesi/modd 
+go get github.com/cortesi/modd/cmd/modd
 modd 
