@@ -1,46 +1,48 @@
 {{ define "title" }}{{ .Wiki.Title }} ({{.Commit}}){{ end }}
-{{ define "header" }}
-      <ul>
-        <li><p>Filename</p>
-        <div class="stat">{{ .Wiki.Filename }}</div></li>
-        <li><p>Public</p>
-        <div class="stat">{{ .Wiki.Frontmatter.Public }}</div></li>
-        <li><p>Favorite</p>
-        <div class="stat">{{ .Wiki.Frontmatter.Favorite }}</div></li>
-        <li><p>Tags</p>
-        <div class="stat">{{ range .Wiki.Frontmatter.Tags }}<span class="warning label"><i class="fa fa-tag" aria-hidden="true"></i>{{ . }}</span>{{ end }}</div></li>
-      </ul>
-{{ end }}
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/diff2html.min.css">
   <ul class="tabs">
-    <li class="tabs-title is-active"><a href="#"><i class="fa fa-eye" aria-hidden="true"></i>View Page</a></li>
-    <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}"><i class="fa fa-pencil-square-o" aria-hidden="true"></i>Edit Page</a></li>
-    <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}"><i class="fa fa-history" aria-hidden="true"></i>Page History</a></li>
+    <li class="tabs-title is-active"><a href="#">{{ svg "eye" }}View Page</a></li>
+    <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}">{{ svg "pencil" }}Edit Page</a></li>
+    <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}">{{ svg "history" }}Page History</a></li>
   </ul>
 
 <main>
-
-<div class="preview-tabs two">
-  <input id='tab-1' type='radio' name='tabgroupB' checked />
-  <label class="pseudo button toggle" for="tab-1">Content</label>
-  <input id='tab-2' type='radio' name='tabgroupB'>
-  <label class="pseudo button toggle" for="tab-2">Diff</label>
-  <div class="row">
-    <div>
-      {{.Rendered | safeHTML}}
-    </div>
-    <div>
-      <pre><code>{{.Diff}}</code></pre>
+  <ul class="frontmatter">
+    <li><p>Filename</p>
+    <div class="stat">{{ .Wiki.Filename }}</div></li>
+    <li><p>Public</p>
+    <div class="stat">{{ .Wiki.Frontmatter.Public }}</div></li>
+    <li><p>Favorite</p>
+      <div class="stat">{{ if .Wiki.Frontmatter.Favorite }}{{svg "star-full"}}{{ else  }}{{svg "star-empty"}}{{ end }}</div></li>
+    <li><p>Tags</p>
+    <div class="stat">
+      {{ if .Wiki.Frontmatter.Tags }}
+      {{ range .Wiki.Frontmatter.Tags }}<span class="label">{{svg "price-tag"}}{{ . }}</span>{{ end }}
+      {{ else }}
+      <span class="label">{{svg "price-tags"}}</span>
+      {{ end }}
+    </div></li>
+  </ul>
+  <div class="preview-tabs two">
+    <input id='tab-1' type='radio' name='tabgroupB' checked />
+    <label class="pseudo button toggle" for="tab-1">Content</label>
+    <input id='tab-2' type='radio' name='tabgroupB'>
+    <label class="pseudo button toggle" for="tab-2">Diff</label>
+    <div class="row">
+      <div>
+        {{.Rendered | safeHTML}}
+      </div>
+      <div>
+        <pre><code>{{.Diff}}</code></pre>
+      </div>
     </div>
   </div>
-</div>
-
-    <footer>
-      <ul>
-        <li>Created: {{ .Wiki.CreateTime | prettyDate }}</li>
-        <li>Last Modified: {{ .Wiki.ModTime | prettyDate }}</li>
-      </ul>
-    </footer>
-  </main>
+  <footer>
+    <ul>
+      <li>Created: {{ .Wiki.CreateTime | prettyDate }}</li>
+      <li>Last Modified: {{ .Wiki.ModTime | prettyDate }}</li>
+    </ul>
+  </footer>
+</main>
 {{ end }}

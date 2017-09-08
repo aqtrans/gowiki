@@ -17,22 +17,19 @@
       {{ if .UserInfo.Username }}
         <a href="/fav/{{.Wiki.Filename}}">
         {{ if .Wiki.Frontmatter.Favorite }}{{svg "star-full"}}{{ else  }}{{svg "star-empty"}}{{ end }}</a>
-        </div></li>
       {{ else }}
         {{ if .Wiki.Frontmatter.Favorite }}{{svg "star-full"}}{{ else  }}{{svg "star-empty"}}{{ end }}
-        </div></li>
-      {{ end }}      
+      {{ end }}
+      </div></li>
       
       <li><p>Tags</p>
       <div class="stat">
       {{ if .Wiki.Frontmatter.Tags }}
-      {{ range .Wiki.Frontmatter.Tags }}
-        <span class="label">{{svg "price-tag"}}{{ . }}</span>
-      {{ end }}
-      </div></li>
+      {{ range .Wiki.Frontmatter.Tags }}<span class="label">{{svg "price-tag"}}{{ . }}</span>{{ end }}
       {{ else }}
       <span class="label">{{svg "price-tags"}}</span>
       {{ end }}
+      </div></li>
     </ul>
     {{.Rendered | safeHTML}}
     <hr>

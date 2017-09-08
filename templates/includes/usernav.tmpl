@@ -1,17 +1,17 @@
 {{ define "usernav" }}
 <div class="usernav">
 <fieldset class="fieldset">
-  <legend><i class="fa fa-user" aria-hidden="true"></i>User</legend>
+  <legend>{{ svg "users" }}User</legend>
 <ul>
 {{ if .UserInfo.Username }}
     <li>Logged in as {{ .UserInfo.Username }}</li>
-    <li><a href="/auth/logout">Logout</a></li>
+    <li><a href="/auth/logout">{{ svg "exit" }} Logout</a></li>
     {{ if .UserInfo.IsAdmin }}    
-        <li><a href="/admin">Admin Panel</a></li>
+        <li><a href="/admin">{{ svg "cog" }} Admin Panel</a></li>
     {{ end }}
     <li>{{ .page.GitStatus }}</li>
 {{ else }}
-<li><a href="/login">Login</a></li>
+<li><a href="/login">{{ svg "enter" }} Login</a></li>
 {{ end }}
 </ul>
 </fieldset>
