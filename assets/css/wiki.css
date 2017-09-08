@@ -11,7 +11,8 @@ svg {
   height: 1em;
   stroke-width: 0;
   stroke: currentColor;
-  fill: currentColor; }
+  fill: currentColor;
+  text-align: center; }
 
 /* ==========================================
 Single-colored icons can be modified like so:
