@@ -1,18 +1,17 @@
 {{ define "title" }}{{ .Wiki.Title }} ({{.Commit}}){{ end }}
 {{ define "content" }}
-<link rel="stylesheet" href="/assets/css/diff2html.min.css">
   <ul class="tabs">
-    <li class="tabs-title is-active"><a href="#">{{ svg "eye" }}View Page</a></li>
-    <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}">{{ svg "pencil" }}Edit Page</a></li>
-    <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}">{{ svg "history" }}Page History</a></li>
+    <li class="tabs-title is-active"><a href="#">{{ svg "file-text2" }} View</a></li>
+    <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}">{{ svg "pencil" }} Edit</a></li>
+    <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}">{{ svg "history" }} History</a></li>
   </ul>
 
 <main>
   <ul class="frontmatter">
     <li><p>Filename</p>
     <div class="stat">{{ .Wiki.Filename }}</div></li>
-    <li><p>Public</p>
-    <div class="stat">{{ .Wiki.Frontmatter.Public }}</div></li>
+    <li><p>Permission</p>
+    <div class="stat">{{ .Wiki.Frontmatter.Permission }}}</div></li>
     <li><p>Favorite</p>
       <div class="stat">{{ if .Wiki.Frontmatter.Favorite }}{{svg "star-full"}}{{ else  }}{{svg "star-empty"}}{{ end }}</div></li>
     <li><p>Tags</p>
