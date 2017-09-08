@@ -1,9 +1,9 @@
 {{ define "title" }}{{ .Wiki.Title }}{{ end }}
 {{ define "content" }}
   <ul class="tabs">
-    <li class="tabs-title is-active"><a href="#">{{ svg "eye" }}View Page</a></li>
-    <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}">{{svg "pencil"}}Edit Page</a></li>
-    <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}">{{svg "history"}}Page History</a></li>
+    <li class="tabs-title is-active"><a href="#">{{ svg "file-text2" }} View</a></li>
+    <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}">{{svg "pencil"}} Edit</a></li>
+    <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}">{{svg "history"}} History</a></li>
   </ul>
 
   <main>
@@ -21,7 +21,6 @@
         {{ if .Wiki.Frontmatter.Favorite }}{{svg "star-full"}}{{ else  }}{{svg "star-empty"}}{{ end }}
       {{ end }}
       </div></li>
-      
       <li><p>Tags</p>
       <div class="stat">
       {{ if .Wiki.Frontmatter.Tags }}
