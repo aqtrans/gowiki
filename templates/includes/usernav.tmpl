@@ -9,7 +9,6 @@
     {{ if .UserInfo.IsAdmin }}    
         <li><a href="/admin">{{ svg "cog" }} Admin Panel</a></li>
     {{ end }}
-    <li>{{ .page.GitStatus }}</li>
 {{ else }}
 <li><a href="/login">{{ svg "enter" }} Login</a></li>
 {{ end }}
