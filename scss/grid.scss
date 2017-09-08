@@ -18,16 +18,41 @@ html {
   *, *:before, *:after {
     box-sizing: inherit;
 }
-
+/*
 svg {
-    display: inline-block;
+    display: inline-flex;
     width: 1em;
     height: 1em;
     stroke-width: 0;
     stroke: currentColor;
     fill: currentColor;
-    text-align: center;
-  }
+    align-self: center;
+    bottom: -0.125em;
+    position: absolute;
+}
+*/
+
+.svg-icon {
+    display: inline-flex;
+    align-self: center;
+    position: relative;
+    height: 1em;
+    width: 1em;
+}
+  
+.svg-icon svg {
+    stroke-width: 0;
+    stroke: currentColor;
+    fill: currentColor;
+    align-self: center;    
+    height:1em;
+    width:1em;
+    bottom: -0.125em;
+    position: absolute;
+    &.history {
+        width: 1.0625em;
+    }    
+}
   
   /* ==========================================
   Single-colored icons can be modified like so:
@@ -40,17 +65,15 @@ svg {
   .icon-price-tags {
     width: 1.25em;
   }
-  
-  .icon-history {
-    width: 1.0625em;
-  }
 
 a {
     color: $linkcolor;
+    text-decoration: none;
     &:visited {
         color: complement($linkcolor);
     }
     &:hover {
+        text-decoration: underline;
         color: lighten($linkcolor, 25);
     }
 }
@@ -105,8 +128,12 @@ body > main {
 body > nav {
     grid-area: nav;
     ul {
+        margin: 0;
         padding: 5px 0;
         list-style-type: none;
+    }
+    fieldset {
+        margin: 10px;
     }
     
 }
@@ -139,14 +166,13 @@ body > footer {
             }
         }
         a {
-            text-decoration: none;
+            
             padding: 5px;
             margin: 0;
             //float: left;  
             //background-color: darken($almostblack, 5);
             border: 1px dashed $almostblack;
             &:hover {
-                text-decoration: underline;
                 background-color: $almostblack;
             }            
         }
@@ -185,7 +211,7 @@ table {
     border-collapse: collapse;
 }
 
-.notification {
+#notification {
     position: fixed;
     top: 0em;
     left: 0;
@@ -198,12 +224,12 @@ table {
         margin: 5px;
     }
 }
-.notification.anim {
+#notification.anim {
     -webkit-transition: top 0.6s ease-out;  
     -moz-transition: top 0.6s ease-out;
     -ms-transition: top 0.6s ease-out;
     -o-transition: top 0.6s ease-out;
-    transition: top 0.6s ease-out;
+    transition: display 0.6s ease-out;
 }
 .notification.active {
     top: 0;
@@ -247,7 +273,7 @@ textarea#wikieditor {
 }
 
 span.label {
-    margin: 0 5px;
+    padding: 0 5px;
     background-color: lighten($almostblack, 15);
 }
 
