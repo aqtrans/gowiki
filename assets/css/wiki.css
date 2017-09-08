@@ -203,6 +203,21 @@ textarea#wikieditor {
   min-height: 20rem;
   width: 100%; }
 
+ul.tags {
+  list-style-type: none;
+  align-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  padding: 0;
+  margin: 0; }
+  ul.tags li {
+    padding: 1px 5px;
+    background-color: #073642;
+    border: none;
+    border-radius: 10px 0;
+    margin: 0 5px; }
+
 span.label {
   padding: 0 5px;
   background-color: #464646; }
