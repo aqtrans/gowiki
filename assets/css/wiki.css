@@ -5,14 +5,37 @@ html {
 *, *:before, *:after {
   box-sizing: inherit; }
 
+/*
 svg {
-  display: inline-block;
-  width: 1em;
+    display: inline-flex;
+    width: 1em;
+    height: 1em;
+    stroke-width: 0;
+    stroke: currentColor;
+    fill: currentColor;
+    align-self: center;
+    bottom: -0.125em;
+    position: absolute;
+}
+*/
+.svg-icon {
+  display: inline-flex;
+  align-self: center;
+  position: relative;
   height: 1em;
+  width: 1em; }
+
+.svg-icon svg {
   stroke-width: 0;
   stroke: currentColor;
   fill: currentColor;
-  text-align: center; }
+  align-self: center;
+  height: 1em;
+  width: 1em;
+  bottom: -0.125em;
+  position: absolute; }
+  .svg-icon svg.history {
+    width: 1.0625em; }
 
 /* ==========================================
 Single-colored icons can be modified like so:
@@ -24,14 +47,13 @@ Single-colored icons can be modified like so:
 .icon-price-tags {
   width: 1.25em; }
 
-.icon-history {
-  width: 1.0625em; }
-
 a {
-  color: #1779ba; }
+  color: #1779ba;
+  text-decoration: none; }
   a:visited {
     color: #ba5817; }
   a:hover {
+    text-decoration: underline;
     color: #65b6ec; }
 
 body {
@@ -72,8 +94,11 @@ body > main {
 body > nav {
   grid-area: nav; }
   body > nav ul {
+    margin: 0;
     padding: 5px 0;
     list-style-type: none; }
+  body > nav fieldset {
+    margin: 10px; }
 
 body > footer {
   grid-area: footer;
@@ -98,12 +123,10 @@ body > footer {
       background-color: #202020;
       color: #fefefe; }
     .tabs li a {
-      text-decoration: none;
       padding: 5px;
       margin: 0;
       border: 1px dashed #202020; }
       .tabs li a:hover {
-        text-decoration: underline;
         background-color: #202020; }
 
 .frontmatter {
@@ -127,7 +150,7 @@ td, th {
 table {
   border-collapse: collapse; }
 
-.notification {
+#notification {
   position: fixed;
   top: 0em;
   left: 0;
@@ -136,15 +159,15 @@ table {
   overflow: hidden;
   background: #f9edbe;
   border-bottom: 1px solid #f0c36d; }
-  .notification p {
+  #notification p {
     margin: 5px; }
 
-.notification.anim {
+#notification.anim {
   -webkit-transition: top 0.6s ease-out;
   -moz-transition: top 0.6s ease-out;
   -ms-transition: top 0.6s ease-out;
   -o-transition: top 0.6s ease-out;
-  transition: top 0.6s ease-out; }
+  transition: display 0.6s ease-out; }
 
 .notification.active {
   top: 0; }
@@ -181,7 +204,7 @@ textarea#wikieditor {
   width: 100%; }
 
 span.label {
-  margin: 0 5px;
+  padding: 0 5px;
   background-color: #464646; }
 
 pre, code {
