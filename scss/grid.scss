@@ -272,6 +272,23 @@ textarea#wikieditor {
     width: 100%;
 }
 
+ul.tags {
+    list-style-type: none;
+    align-self: center;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    padding: 0;
+    margin: 0;
+    li {
+        padding: 1px 5px;
+        background-color: $solarized;
+        border: none;
+        border-radius: 10px 0;
+        margin: 0 5px;
+    }
+}
+
 span.label {
     padding: 0 5px;
     background-color: lighten($almostblack, 15);
