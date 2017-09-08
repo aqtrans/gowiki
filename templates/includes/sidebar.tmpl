@@ -10,16 +10,6 @@
     {{ end }}
 </ul>
 </fieldset>
-{{ if .UserInfo.Username }}
-  <fieldset class="fieldset">
-    <legend>{{ svg "star-empty" }}Favorite Pages</legend>
-  <ul>
-  {{range $key, $element := .page.Favs}}
-  <li><a href="/{{ $key }}">{{ $key }}</a></li>
-  {{end}}
-  </ul>
-  </fieldset>
-{{end}}
 
 <form method="GET" action="/new" id="newwiki">
   <div class="input-wrapper">
@@ -37,11 +27,22 @@
   </div>
 </form> 
 
-<fieldset>
-<ul>
-  <li>{{ .page.GitStatus }}</li>
-</ul>
-</fieldset>
+{{ if .UserInfo.Username }}
+  <fieldset class="fieldset">
+    <legend>{{ svg "star-empty" }}Favorite Pages</legend>
+  <ul>
+  {{range $key, $element := .page.Favs}}
+  <li><a href="/{{ $key }}">{{ $key }}</a></li>
+  {{end}}
+  </ul>
+  </fieldset>
+  <fieldset>
+    <legend>{{ svg "git-square" }}Git Status</legend>
+  <ul>
+    <li>{{ .page.GitStatus }}</li>
+  </ul>
+  </fieldset>
+{{end}}
 
     {{ template "usernav" .}}
 {{ end }}
