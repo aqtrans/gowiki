@@ -13,15 +13,15 @@
     <li><p>Permission</p>
     <div class="stat">{{ .Wiki.Frontmatter.Permission }}</div></li>
     <li><p>Favorite</p>
-      <div class="stat">{{ if .Wiki.Frontmatter.Favorite }}{{svg "star-full"}}{{ else  }}{{svg "star-empty"}}{{ end }}</div></li>
+    <div class="stat">{{ if .Wiki.Frontmatter.Favorite }}{{svg "star-full"}}{{ else  }}{{svg "star-empty"}}{{ end }}</div></li>
+    {{ if .Wiki.Frontmatter.Tags }}
     <li><p>Tags</p>
     <div class="stat">
-      {{ if .Wiki.Frontmatter.Tags }}
-      {{ range .Wiki.Frontmatter.Tags }}<span class="label">{{svg "price-tag"}}{{ . }}</span>{{ end }}
-      {{ else }}
-      <span class="label">{{svg "price-tags"}}</span>
-      {{ end }}
-    </div></li>
+    <ul class="tags">
+    {{ range .Wiki.Frontmatter.Tags }}<li>{{ . }}</li>{{ end }}
+    </ul>
+    </div></li>      
+    {{ end }}
   </ul>
   <div class="preview-tabs two">
     <input id='tab-1' type='radio' name='tabgroupB' checked />
