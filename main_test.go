@@ -1075,3 +1075,40 @@ func TestMultipleWrites(t *testing.T) {
 		}()
 	}
 }
+
+func TestMultipleMapReads(t *testing.T) {
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
+	checkT(err, t)
+
+	viper.Set("CacheEnabled", false)
+	viper.Set("Debug", false)
+	httputils.Debug = false
+
+	e := testEnv(t, authState)
+	e.cache = buildCache()
+
+	err = tmplInit(e)
+	checkT(err, t)
+
+	for w := 0; w < 500; w++ {
+		go func() {
+			for {
+				for k, v := range e.cache.Tags {
+					t.Log(k, v)
+				}
+				t.Log(e.cache.Tags["meta"])
+			}
+		}()
+	}
+	for x := 0; x < 500; x++ {
+		go func() {
+			for {
+				for k, v := range e.cache.Favs {
+					t.Log(k, v)
+				}
+			}
+		}()
+	}
+}
