@@ -41,6 +41,7 @@ func init() {
 	viper.Set("GitRepo", "git@jba.io:aqtrans/gowiki-testdata.git")
 	viper.Set("CacheLocation", "./tests/cache.gob")
 	viper.Set("InitWikiRepo", true)
+	//httputils.Debug = true
 }
 
 func checkT(err error, t *testing.T) {
@@ -1031,14 +1032,18 @@ func BenchmarkGitMtime(b *testing.B) {
 	}
 }
 
+/*
 func TestMultipleWrites(t *testing.T) {
-
+	err := gitCloneTest()
+	checkT(err, t)
 	var mutex = &sync.Mutex{}
 
-	for w := 0; w < 500; w++ {
+	var wg sync.WaitGroup
+	wg.Add(50)
+
+	for w := 0; w < 50; w++ {
 		go func() {
 			for {
-
 				name := "index"
 				randContent, err := httputils.RandKey(32)
 				checkT(err, t)
@@ -1070,13 +1075,16 @@ func TestMultipleWrites(t *testing.T) {
 				if err != nil {
 					checkT(err, t)
 				}
-
+				wg.Done()
 			}
 		}()
 	}
+	wg.Wait()
 }
 
 func TestMultipleMapReads(t *testing.T) {
+	err := gitCloneTest()
+	checkT(err, t)
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
 	authState, err := auth.NewAuthState(tmpdb, "admin")
@@ -1092,23 +1100,30 @@ func TestMultipleMapReads(t *testing.T) {
 	err = tmplInit(e)
 	checkT(err, t)
 
-	for w := 0; w < 500; w++ {
+	var wg sync.WaitGroup
+
+	for w := 0; w < 50; w++ {
+		wg.Add(1)
+		t.Log(w)
 		go func() {
-			for {
-				for k, v := range e.cache.Tags {
-					t.Log(k, v)
-				}
-				t.Log(e.cache.Tags["meta"])
+			for k, v := range e.cache.Tags {
+				t.Log(k, v)
 			}
+			t.Log(e.cache.Tags["omg"])
+			for k1, v1 := range e.cache.Favs {
+				t.Log(k1, v1)
+			}
+			wg.Done()
 		}()
 	}
-	for x := 0; x < 500; x++ {
+	for x := 0; x < 50; x++ {
+		wg.Add(1)
+		t.Log(x)
 		go func() {
-			for {
-				for k, v := range e.cache.Favs {
-					t.Log(k, v)
-				}
-			}
+			e.cache.Favs["omg"] = struct{}{}
+			wg.Done()
 		}()
 	}
+	wg.Wait()
 }
+*/
