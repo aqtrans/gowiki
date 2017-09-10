@@ -61,6 +61,7 @@ import (
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
+	//"github.com/spf13/pflag"
 	//"github.com/microcosm-cc/bluemonday"
 	"github.com/spf13/viper"
 	gogit "gopkg.in/src-d/go-git.v4"
@@ -311,6 +312,7 @@ func init() {
 	viper.SetDefault("InitWikiRepo", false)
 	viper.SetDefault("Dev", false)
 	viper.SetDefault("Debug", false)
+	viper.SetDefault("CacheEnabled", true)
 	viper.SetDefault("CacheLocation", "./data/cache.gob")
 
 	viper.SetEnvPrefix("gowiki")
@@ -2965,38 +2967,47 @@ func buildCache() *wikiCache {
 
 	cache.SHA1 = headHash()
 
-	cacheFile, err := os.Create(viper.GetString("CacheLocation"))
-	check(err)
-	cacheEncoder := gob.NewEncoder(cacheFile)
-	cacheEncoder.Encode(cache)
-	cacheFile.Close()
+	if viper.GetBool("CacheEnabled") {
+		cacheFile, err := os.Create(viper.GetString("CacheLocation"))
+		check(err)
+		cacheEncoder := gob.NewEncoder(cacheFile)
+		cacheEncoder.Encode(cache)
+		cacheFile.Close()
+	}
+
 	return cache
 }
 
 func loadCache() *wikiCache {
 	cache := new(wikiCache)
-	cacheFile, err := os.Open("./data/cache.gob")
-	defer cacheFile.Close()
-	if err == nil {
-		log.Println("Loading cache from gob.")
-		cacheDecoder := gob.NewDecoder(cacheFile)
-		err = cacheDecoder.Decode(cache)
-		//check(err)
-		if err != nil {
-			log.Println("Error loading cache. Rebuilding it.")
+	if viper.GetBool("CacheEnabled") {
+		cacheFile, err := os.Open("./data/cache.gob")
+		defer cacheFile.Close()
+		if err == nil {
+			log.Println("Loading cache from gob.")
+			cacheDecoder := gob.NewDecoder(cacheFile)
+			err = cacheDecoder.Decode(cache)
+			//check(err)
+			if err != nil {
+				log.Println("Error loading cache. Rebuilding it.")
+				cache = buildCache()
+			}
+			// Check the cached sha1 versus HEAD sha1, rebuild if they differ
+			if cache.SHA1 != headHash() {
+				log.Println("Cache SHA1s do not match. Rebuilding cache.")
+				cache = buildCache()
+			}
+		}
+		// If cache does not exist, build it
+		if os.IsNotExist(err) {
+			log.Println("Cache does not exist, building it...")
 			cache = buildCache()
 		}
-		// Check the cached sha1 versus HEAD sha1, rebuild if they differ
-		if cache.SHA1 != headHash() {
-			log.Println("Cache SHA1s do not match. Rebuilding cache.")
-			cache = buildCache()
-		}
-	}
-	// If cache does not exist, build it
-	if os.IsNotExist(err) {
-		log.Println("Cache does not exist, building it.")
+	} else {
+		log.Println("Building cache...")
 		cache = buildCache()
 	}
+
 	return cache
 }
 
