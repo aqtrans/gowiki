@@ -144,7 +144,7 @@ type renderer struct {
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
 type page struct {
 	SiteName  string
-	Favs      map[string]struct{}
+	Favs      []string
 	UserInfo  *userInfo
 	Token     template.HTML
 	FlashMsg  template.HTML
@@ -190,7 +190,7 @@ type wikiCache struct {
 	SHA1  string
 	Cache []*gitDirList
 	Tags  map[string][]string
-	Favs  map[string]struct{}
+	Favs  sync.Map
 }
 
 type wikiPage struct {
@@ -1119,14 +1119,17 @@ func loadPage(env *wikiEnv, r *http.Request) *page {
 		}
 	*/
 
-	favs := env.cache.Favs
-	if env.cache.Favs == nil {
-		favs = make(map[string]struct{})
-	}
+	var sfavs []string
+	env.cache.Favs.Range(func(k, v interface{}) bool {
+		sfavs = append(sfavs, k.(string))
+		return true
+	})
+
+	sort.Strings(sfavs)
 
 	return &page{
 		SiteName: "GoWiki",
-		Favs:     favs,
+		Favs:     sfavs,
 		UserInfo: &userInfo{
 			Username:   user,
 			IsAdmin:    isAdmin,
@@ -2020,9 +2023,10 @@ func favsHandler(env *wikiEnv, favs chan []string) {
 
 	//favss := favbuf.String()
 	var sfavs []string
-	for fav := range env.cache.Favs {
-		sfavs = append(sfavs, fav)
-	}
+	env.cache.Favs.Range(func(k, v interface{}) bool {
+		sfavs = append(sfavs, k.(string))
+		return true
+	})
 
 	//httputils.Debugln("Favorites: " + favss)
 	//sfavs := strings.Fields(favss)
@@ -2873,9 +2877,6 @@ func buildCache() *wikiCache {
 	if cache.Tags == nil {
 		cache.Tags = make(map[string][]string)
 	}
-	if cache.Favs == nil {
-		cache.Favs = make(map[string]struct{})
-	}
 
 	var wps []*gitDirList
 
@@ -2935,10 +2936,13 @@ func buildCache() *wikiCache {
 			// Replacing readFavs and readTags
 			if fm.Favorite {
 				//log.Println(file + " is a favorite.")
-				if _, ok := cache.Favs[file.Filename]; !ok {
-					httputils.Debugln("crawlWiki: " + file.Filename + " is not already a favorite.")
-					cache.Favs[file.Filename] = struct{}{}
-				}
+				cache.Favs.LoadOrStore(file.Filename, "")
+				/*
+					if _, ok := cache.Favs[file.Filename]; !ok {
+						httputils.Debugln("crawlWiki: " + file.Filename + " is not already a favorite.")
+						cache.Favs[file.Filename] = struct{}{}
+					}
+				*/
 				//favbuf.WriteString(file + " ")
 			}
 			if fm.Tags != nil {
