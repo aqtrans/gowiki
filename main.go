@@ -144,7 +144,7 @@ type renderer struct {
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
 type page struct {
 	SiteName  string
-	Favs      map[string]struct{}
+	Favs      []string
 	UserInfo  *userInfo
 	Token     template.HTML
 	FlashMsg  template.HTML
@@ -190,7 +190,7 @@ type wikiCache struct {
 	SHA1  string
 	Cache []*gitDirList
 	Tags  *tags
-	Favs  *favs
+	Favs  sync.Map
 }
 
 type favs struct {
@@ -1128,16 +1128,18 @@ func loadPage(env *wikiEnv, r *http.Request) *page {
 			gitStatusErr = errors.New("Git repo is clean")
 		}
 	*/
-	env.cache.Favs.Lock()
-	favs := env.cache.Favs.List
-	env.cache.Favs.Unlock()
-	if favs == nil {
-		favs = make(map[string]struct{})
-	}
+
+	var sfavs []string
+	env.cache.Favs.Range(func(k, v interface{}) bool {
+		sfavs = append(sfavs, k.(string))
+		return true
+	})
+
+	sort.Strings(sfavs)
 
 	return &page{
 		SiteName: "GoWiki",
-		Favs:     favs,
+		Favs:     sfavs,
 		UserInfo: &userInfo{
 			Username:   user,
 			IsAdmin:    isAdmin,
@@ -2031,11 +2033,10 @@ func favsHandler(env *wikiEnv, favs chan []string) {
 
 	//favss := favbuf.String()
 	var sfavs []string
-	env.cache.Favs.Lock()
-	for fav := range env.cache.Favs.List {
-		sfavs = append(sfavs, fav)
-	}
-	env.cache.Favs.Unlock()
+	env.cache.Favs.Range(func(k, v interface{}) bool {
+		sfavs = append(sfavs, k.(string))
+		return true
+	})
 
 	//httputils.Debugln("Favorites: " + favss)
 	//sfavs := strings.Fields(favss)
@@ -2892,7 +2893,6 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 func buildCache() *wikiCache {
 	defer httputils.TimeTrack(time.Now(), "buildCache")
 	cache := new(wikiCache)
-	cache.Favs = new(favs)
 	cache.Tags = new(tags)
 
 	cache.Tags.Lock()
@@ -2900,12 +2900,6 @@ func buildCache() *wikiCache {
 		cache.Tags.List = make(map[string][]string)
 	}
 	cache.Tags.Unlock()
-
-	cache.Favs.Lock()
-	if cache.Favs.List == nil {
-		cache.Favs.List = make(map[string]struct{})
-	}
-	cache.Favs.Unlock()
 
 	var wps []*gitDirList
 
@@ -2965,12 +2959,13 @@ func buildCache() *wikiCache {
 			// Replacing readFavs and readTags
 			if fm.Favorite {
 				//log.Println(file + " is a favorite.")
-				cache.Favs.Lock()
-				if _, ok := cache.Favs.List[file.Filename]; !ok {
-					httputils.Debugln("crawlWiki: " + file.Filename + " is not already a favorite.")
-					cache.Favs.List[file.Filename] = struct{}{}
-				}
-				cache.Favs.Unlock()
+				cache.Favs.LoadOrStore(file.Filename, "")
+				/*
+					if _, ok := cache.Favs[file.Filename]; !ok {
+						httputils.Debugln("crawlWiki: " + file.Filename + " is not already a favorite.")
+						cache.Favs[file.Filename] = struct{}{}
+					}
+				*/
 				//favbuf.WriteString(file + " ")
 			}
 			if fm.Tags != nil {
@@ -3015,7 +3010,6 @@ func buildCache() *wikiCache {
 func loadCache() *wikiCache {
 	cache := new(wikiCache)
 	cache.Tags = new(tags)
-	cache.Favs = new(favs)
 	if viper.GetBool("CacheEnabled") {
 		cacheFile, err := os.Open("./data/cache.gob")
 		defer cacheFile.Close()
