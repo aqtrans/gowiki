@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -36,12 +37,13 @@ var (
 )
 
 func init() {
-	viper.Set("WikiDir", "./tests/gowiki-testdata/")
+	dataDir = "./tests/data/"
+	viper.Set("DataDir", "./tests/data/")
 	viper.Set("Domain", "wiki.example.com")
-	viper.Set("GitRepo", "git@jba.io:aqtrans/gowiki-testdata.git")
-	viper.Set("CacheLocation", "./tests/cache.gob")
+	viper.Set("RemoteGitRepo", "git@jba.io:aqtrans/gowiki-testdata.git")
 	viper.Set("InitWikiRepo", true)
-	//httputils.Debug = true
+	httputils.Debug = true
+	//log.Println(viper.GetString("DataDir"), dataDir)
 }
 
 func checkT(err error, t *testing.T) {
@@ -62,7 +64,7 @@ func gitCloneTest() error {
 	if err != nil {
 		return err
 	}
-	o, err := testGitCommand("clone", viper.GetString("GitRepo"), "./tests/gowiki-testdata/").CombinedOutput()
+	o, err := testGitCommand("clone", viper.GetString("RemoteGitRepo"), "./tests/gowiki-testdata/").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error during `git clone`: %s\n%s", err.Error(), string(o))
 	}
@@ -125,13 +127,14 @@ func TestTmplInit(t *testing.T) {
 }
 
 func TestWikiInit(t *testing.T) {
-	_, err := os.Stat(viper.GetString("WikiDir"))
+	wikiDir := filepath.Join(dataDir, "wikidata")
+	_, err := os.Stat(wikiDir)
 	if err != nil {
-		os.Mkdir(viper.GetString("WikiDir"), 0755)
+		os.Mkdir(wikiDir, 0755)
 	}
-	_, err = os.Stat(viper.GetString("WikiDir") + ".git")
+	_, err = os.Stat(filepath.Join(wikiDir, ".git"))
 	if err != nil {
-		err = gitClone(viper.GetString("GitRepo"))
+		err = gitClone(viper.GetString("RemoteGitRepo"))
 		if err != nil {
 			log.Println(err)
 		}
@@ -582,7 +585,7 @@ func TestListPage(t *testing.T) {
 
 	e := testEnv(t, authState)
 	e.cache = buildCache()
-	err = os.Remove("./tests/cache.gob")
+	err = os.Remove("./tests/data/cache.gob")
 	if err != nil {
 		t.Error(err)
 	}
@@ -780,7 +783,7 @@ func TestCache(t *testing.T) {
 	if cache2 == nil {
 		t.Error("cache2 is empty")
 	}
-	err := os.Remove("./tests/cache.gob")
+	err := os.Remove("./tests/data/cache.gob")
 	if err != nil {
 		t.Error(err)
 	}
