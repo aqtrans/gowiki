@@ -56,7 +56,6 @@ import (
 	"time"
 
 	"github.com/dimfeld/httptreemux"
-	"github.com/getsentry/raven-go"
 	"github.com/gorilla/csrf"
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
@@ -309,8 +308,6 @@ func (a wikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a wikiByModDate) Less(i, j int) bool { return a[i].ModTime < a[j].ModTime }
 
 func init() {
-	raven.SetDSN("https://5ab2f68b0f524799b1d0b324350cc2ae:e01dbad12f8e4fd0bce97681a772a072@app.getsentry.com/94753")
-
 	// Viper config.
 	viper.SetDefault("Port", "5000")
 	viper.SetDefault("Email", "unused@the.moment")
@@ -517,9 +514,6 @@ func errorHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
 	defer func() {
 		if rval := recover(); rval != nil {
 			debug.PrintStack()
-			rvalStr := fmt.Sprint(rval)
-			packet := raven.NewPacket(rvalStr, raven.NewException(errors.New(rvalStr), raven.NewStacktrace(2, 3, nil)), raven.NewHttp(r))
-			raven.Capture(packet, nil)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}()
