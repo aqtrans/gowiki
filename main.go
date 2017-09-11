@@ -35,6 +35,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"github.com/spf13/pflag"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -124,6 +125,7 @@ var (
 	//bufpool        *bpool.BufferPool
 	//templates      map[string]*template.Template
 	gitPath string
+	dataDir string
 	//cache          *wikiCache
 	errNotInGit    = errors.New("given file not in Git repo")
 	errNoFile      = errors.New("no such file")
@@ -308,27 +310,38 @@ func (a wikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a wikiByModDate) Less(i, j int) bool { return a[i].ModTime < a[j].ModTime }
 
 func init() {
+	var err error
+	gitPath, err = exec.LookPath("git")
+	if err != nil {
+		log.Fatalln("git must be installed")
+	}
+
+	pflag.StringVar(&dataDir, "DataDir", "./data/", "Path to store permanent data in.")
+	pflag.Bool("InitWikiRepo", false, "Initialize the wiki directory")
+	pflag.Bool("Debug", false, "Turn on debug logging")
+	pflag.Parse()
+
+	viper.BindPFlags(pflag.CommandLine)
+
 	// Viper config.
+	viper.SetDefault("DataDir", "./data/")
 	viper.SetDefault("Port", "5000")
 	viper.SetDefault("Email", "unused@the.moment")
-	viper.SetDefault("WikiDir", "./data/wikidata/")
 	viper.SetDefault("Domain", "wiki.example.com")
-	viper.SetDefault("GitRepo", "git@example.com:user/wikidata.git")
+	viper.SetDefault("RemoteGitRepo", "")
 	viper.SetDefault("AdminUser", "admin")
 	viper.SetDefault("PushOnSave", false)
 	viper.SetDefault("InitWikiRepo", false)
 	viper.SetDefault("Dev", false)
 	viper.SetDefault("Debug", false)
 	viper.SetDefault("CacheEnabled", true)
-	viper.SetDefault("CacheLocation", "./data/cache.gob")
-
 	viper.SetEnvPrefix("gowiki")
 	viper.AutomaticEnv()
 
 	viper.SetConfigName("conf")
-	viper.AddConfigPath("./data/")
-	err := viper.ReadInConfig() // Find and read the config file
-	if err != nil {             // Handle errors reading the config file
+	viper.AddConfigPath(viper.GetString("DataDir"))
+	err = viper.ReadInConfig() // Find and read the config file
+	if err != nil {            // Handle errors reading the config file
 		//panic(fmt.Errorf("Fatal error config file: %s \n", err))
 		log.Println("No configuration file loaded - using defaults")
 	}
@@ -336,68 +349,12 @@ func init() {
 	if viper.GetBool("Debug") {
 		httputils.Debug = true
 	}
+	// Setting these last; they do not need to be set manually:
 
-	//viper.SetConfigType("toml")
-
-	/*
-			Port     string
-			Email    string
-			WikiDir  string
-			Domain  string
-			GitRepo  string
-		    AuthConf struct {
-		        LdapEnabled bool
-		        LdapConf struct {
-		            LdapPort uint16 `json:",omitempty"`
-		            LdapUrl  string `json:",omitempty"`
-		            LdapDn   string `json:",omitempty"`
-		            LdapUn   string `json:",omitempty"`
-		            LdapOu   string `json:",omitempty"`
-		        }
-		    }
-	*/
-
-	//viper.Unmarshal(&cfg)
-	//viper.UnmarshalKey("AuthConf", &auth.Authcfg)
-
-	/*
-		bufpool = bpool.NewBufferPool(64)
-		if templates == nil {
-			templates = make(map[string]*template.Template)
-		}
-	*/
-
-	gitPath, err = exec.LookPath("git")
-	if err != nil {
-		log.Fatalln("git must be installed")
-	}
-	/*
-		if cache == nil {
-			cache = new(wikiCache)
-		}
-	*/
-	/*
-		templatesDir := "./templates/"
-		layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
-		if err != nil {
-			panic(err)
-		}
-		includes, err := filepath.Glob(templatesDir + "includes/*.tmpl")
-		if err != nil {
-			panic(err)
-		}
-
-		funcMap := template.FuncMap{"prettyDate": utils.PrettyDate, "safeHTML": utils.SafeHTML, "imgClass": utils.ImgClass, "isAdmin": isAdmin, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
-
-		for _, layout := range layouts {
-			files := append(includes, layout)
-			//DEBUG TEMPLATE LOADING
-			utils.Debugln(files)
-			templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFiles(files...))
-		}
-	*/
-
-	//var err error
+	//viper.SetDefault("WikiDir", filepath.Join(dataDir, "wikidata"))
+	//viper.SetDefault("CacheLocation", filepath.Join(dataDir, "cache.gob"))
+	//viper.SetDefault("AuthLocation", filepath.Join(dataDir, "auth.db"))
+	//viper.SetDefault("InitWikiRepo", *initFlag)
 
 }
 
@@ -594,7 +551,7 @@ func gitCommand(args ...string) *exec.Cmd {
 	c := exec.Command(gitPath, args...)
 	c.Env = os.Environ()
 	c.Env = append(c.Env, `GIT_COMMITTER_NAME="Golang Wiki"`, `GIT_COMMITTER_EMAIL="golangwiki@jba.io"`)
-	c.Dir = viper.GetString("WikiDir")
+	c.Dir = filepath.Join(dataDir, "wikidata")
 	return c
 }
 
@@ -982,9 +939,13 @@ func gitHistory() ([]string, error) {
 func gitGetTimes(filename string) (ctime int64, mtime int64) {
 	defer httputils.TimeTrack(time.Now(), "gitGetTimes")
 
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	ctimeChan := make(chan int64)
 	//var ctime int64
 	go func() {
+		defer wg.Done()
 		co, err := gitCommand("log", "--diff-filter=A", "--follow", "--format=%at", "-1", "--", filename).Output()
 		if err != nil {
 			log.Println(err)
@@ -1010,6 +971,7 @@ func gitGetTimes(filename string) (ctime int64, mtime int64) {
 	mtimeChan := make(chan int64)
 	//var mtime int64
 	go func() {
+		defer wg.Done()
 		mo, err := gitCommand("log", "--format=%at", "-1", "--", filename).Output()
 		if err != nil {
 			log.Println(err)
@@ -1032,16 +994,25 @@ func gitGetTimes(filename string) (ctime int64, mtime int64) {
 		mtimeChan <- mtime
 	}()
 
-	for i := 0; i < 2; i++ {
-		select {
-		case ctime = <-ctimeChan:
-		case mtime = <-mtimeChan:
-		}
-	}
+	ctime = <-ctimeChan
+	mtime = <-mtimeChan
+
+	wg.Wait()
+
 	//ctime = <-ctimeChan
 	//mtime = <-mtimeChan
 
 	return ctime, mtime
+}
+
+func gitIsEmpty() bool {
+	// Run git rev-parse HEAD on the repo
+	// If it errors out, should mean it's empty
+	err := gitCommand("rev-parse", "HEAD").Run()
+	if err != nil {
+		return true
+	}
+	return false
 }
 
 // Search results, via git
@@ -1050,7 +1021,7 @@ func gitSearch(searchTerm, fileSpec string) []*result {
 	var results []*result
 	cmd := exec.Command("/bin/sh", "-c", gitPath+" grep "+searchTerm+" -- "+fileSpec)
 	//o := gitCommand("grep", "omg -- 'index'")
-	cmd.Dir = viper.GetString("WikiDir")
+	cmd.Dir = filepath.Join(dataDir, "wikidata")
 	o, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Println("ERROR gitSearch:", err)
@@ -1630,7 +1601,8 @@ func doesPageExist(name string) bool {
 // Check that the given full path is relative to the configured wikidir
 func relativePathCheck(name string) error {
 	defer httputils.TimeTrack(time.Now(), "relativePathCheck")
-	fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
+	wikiDir := filepath.Join(dataDir, "wikidata")
+	fullfilename := filepath.Join(wikiDir, name)
 	dir, _ := filepath.Split(name)
 	if dir != "" {
 		dirErr := checkDir(dir)
@@ -1639,7 +1611,7 @@ func relativePathCheck(name string) error {
 		}
 	}
 
-	_, err := filepath.Rel(viper.GetString("WikiDir"), fullfilename)
+	_, err := filepath.Rel(wikiDir, fullfilename)
 	return err
 }
 
@@ -1680,7 +1652,8 @@ func checkName(name *string) (bool, error) {
 	}
 
 	// Build the full path
-	fullfilename := filepath.Join(viper.GetString("WikiDir"), *name)
+
+	fullfilename := filepath.Join(dataDir, "wikidata", *name)
 
 	exists := doesPageExist(fullfilename)
 
@@ -1720,7 +1693,7 @@ func checkName(name *string) (bool, error) {
 		*name = strings.ToLower(*name)
 		*name = separators.ReplaceAllString(*name, "-")
 		*name = dashes.ReplaceAllString(*name, "-")
-		fullnewfilename := filepath.Join(viper.GetString("WikiDir"), *name)
+		fullnewfilename := filepath.Join(dataDir, "wikidata", *name)
 		exists = doesPageExist(fullnewfilename)
 	}
 	return exists, nil
@@ -1739,7 +1712,7 @@ func checkDir(dir string) error {
 		// relpath progressively builds up the /path/to/file, element by element
 		relpath = filepath.Join(relpath, v)
 		// We combine that with the configured WikiDir to get the fullpath
-		fullpath := filepath.Join(viper.GetString("WikiDir"), relpath)
+		fullpath := filepath.Join(dataDir, "wikidata", relpath)
 		// Then try and open the fullpath to the element in question
 		file, fileOpenErr := os.Open(fullpath)
 		// If it doesn't exist, move on
@@ -1786,15 +1759,14 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "viewHandler")
 
 	name := nameFromContext(r.Context())
-
-	nameStat, err := os.Stat(filepath.Join(viper.GetString("WikiDir"), name))
+	nameStat, err := os.Stat(filepath.Join(dataDir, "wikidata", name))
 	if err != nil {
 		log.Println(err)
 	}
 	if err == nil {
 		if nameStat.IsDir() {
 			// Check if name/index exists, and if it does, serve it
-			_, err := os.Stat(filepath.Join(viper.GetString("WikiDir"), name, "index"))
+			_, err := os.Stat(filepath.Join(dataDir, "wikidata", name, "index"))
 			if err == nil {
 				/*
 					name = filepath.Join(name, "index")
@@ -1802,7 +1774,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 					p := loadWikiPage(env, r.WithContext(ctx), name)
 					renderTemplate(ctx, env, w, "wiki_view.tmpl", p)
 				*/
-				http.Redirect(w, r, filepath.Join(name, "index"), http.StatusFound)
+				http.Redirect(w, r, "/"+filepath.Join(name, "index"), http.StatusFound)
 				return
 			}
 			if os.IsNotExist(err) {
@@ -1836,7 +1808,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 		renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
 		return
 	} else {
-		http.ServeFile(w, r, filepath.Join(viper.GetString("WikiDir"), name))
+		http.ServeFile(w, r, "/"+filepath.Join(dataDir, "wikidata", name))
 		return
 		/*
 			var html template.HTML
@@ -1861,7 +1833,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 
 func getFileType(filename string) string {
 	var realFileType string
-	file, err := os.Open(filepath.Join(viper.GetString("WikiDir"), filename))
+	file, err := os.Open(filepath.Join(dataDir, "wikidata", filename))
 	if err != nil {
 		log.Println(err)
 	}
@@ -1976,49 +1948,11 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/"+pagetitle, http.StatusSeeOther)
 
-	/* Off-loading most of this, by just redirecting to the pagetitle
-	//fullfilename := cfg.WikiDir + pagetitle
-		fullfilename := filepath.Join(viper.GetString("WikiDir"), pagetitle)
-		rel, err := filepath.Rel(viper.GetString("WikiDir"), fullfilename)
-		if err != nil {
-			panic(err)
-		}
-		if strings.HasPrefix(rel, "../") {
-			panic(err)
-		}
-
-		_, fierr := os.Stat(pagetitle)
-		if os.IsNotExist(fierr) {
-
-	checkName(&pagetitle)
-	fullfilename := filepath.Join(viper.GetString("WikiDir"), pagetitle)
-	feErr := relativePathCheck(pagetitle)
-	if feErr != nil {
-		log.Println(feErr)
-		httpErrorHandler(w, r, feErr)
-		return
-	}
-
-	// If page does not exist, ask to create it
-	if !doesPageExist(fullfilename) {
-		createWiki(w, r, pagetitle)
-		//http.Redirect(w, r, "/edit/"+pagetitle, http.StatusTemporaryRedirect)
-		return
-	}
-
-	// If pagetitle2 isn't blank, and there is no error returned by checkName,
-	//   that should mean the page exists, so redirect to it.
-	if pagetitle != "" && feErr == nil {
-		http.Redirect(w, r, pagetitle, http.StatusTemporaryRedirect)
-	}
-
-	return
-	*/
-
 }
 
 func urlFromPath(path string) string {
-	url := filepath.Clean(viper.GetString("WikiDir")) + "/"
+	wikiDir := filepath.Join(dataDir, "wikidata")
+	url := filepath.Clean(wikiDir) + "/"
 	return strings.TrimPrefix(path, url)
 }
 
@@ -2045,7 +1979,9 @@ func loadWiki(name string) *wiki {
 
 	var fm frontmatter
 
-	fm, content := readFileAndFront(filepath.Join(viper.GetString("WikiDir"), name))
+	wikiDir := filepath.Join(dataDir, "wikidata")
+
+	fm, content := readFileAndFront(filepath.Join(wikiDir, name))
 
 	pagetitle := setPageTitle(fm.Title, name)
 
@@ -2150,13 +2086,13 @@ func (wiki *wiki) save(mutex *sync.Mutex) error {
 	defer httputils.TimeTrack(time.Now(), "wiki.save()")
 
 	dir, filename := filepath.Split(wiki.Filename)
-	fullfilename := filepath.Join(viper.GetString("WikiDir"), dir, filename)
+	wikiDir := filepath.Join(dataDir, "wikidata")
+	fullfilename := filepath.Join(wikiDir, dir, filename)
 
 	// If directory doesn't exist, create it
 	// - Check if dir is null first
 	if dir != "" {
-		//dirpath := cfg.WikiDir + dir
-		dirpath := filepath.Join(viper.GetString("WikiDir"), dir)
+		dirpath := filepath.Join(wikiDir, dir)
 		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
 			err := os.MkdirAll(dirpath, 0755)
 			if err != nil {
@@ -2418,7 +2354,7 @@ func (env *wikiEnv) gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 		s,
-		viper.GetString("GitRepo"),
+		viper.GetString("RemoteGitRepo"),
 	}
 	renderTemplate(r.Context(), env, w, "git_checkin.tmpl", gp)
 }
@@ -2501,7 +2437,7 @@ func (env *wikiEnv) adminGitHandler(w http.ResponseWriter, r *http.Request) {
 		p,
 		title,
 		err.Error(),
-		viper.GetString("GitRepo"),
+		viper.GetString("RemoteGitRepo"),
 	}
 	renderTemplate(r.Context(), env, w, "admin_git.tmpl", gp)
 }
@@ -2791,22 +2727,44 @@ func tmplInit(env *wikiEnv) error {
 }
 
 func initWikiDir() {
-	//Check for wikiDir directory + git repo existence
-	wikidir := viper.GetString("WikiDir")
-	_, err := os.Stat(wikidir)
+	// Check for root DataDir existence first
+	dir, err := os.Stat(viper.GetString("DataDir"))
 	if err != nil {
-		log.Println(wikidir + " does not exist, creating it.")
-		os.Mkdir(wikidir, 0755)
-	}
-	_, err = os.Stat(wikidir + ".git")
-	if err != nil {
-		log.Println(wikidir + " is not a git repo!")
-		if viper.GetBool("InitWikiRepo") {
-			log.Println("-init flag is given. Cloning " + viper.GetString("GitRepo") + " into " + wikidir + "...")
-			err = gitClone(viper.GetString("GitRepo"))
-			check(err)
+		if os.IsNotExist(err) {
+			log.Println(viper.GetString("DataDir"), "does not exist; creating it.")
+			err = os.Mkdir(viper.GetString("DataDir"), 0755)
+			if err != nil {
+				log.Fatalln(err)
+			}
 		} else {
-			repoNotExistErr := errors.New("clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo")
+			log.Fatalln(err)
+		}
+	} else if !dir.IsDir() {
+		log.Fatalln(viper.GetString("DataDir"), "is not a directory. This is where wiki data is stored.")
+	}
+
+	//Check for wikiDir directory + git repo existence
+	wikiDir := filepath.Join(dataDir, "wikidata")
+	_, err = os.Stat(wikiDir)
+	if err != nil {
+		log.Println(wikiDir + " does not exist, creating it.")
+		os.Mkdir(wikiDir, 0755)
+	}
+	_, err = os.Stat(filepath.Join(wikiDir, ".git"))
+	if err != nil {
+		log.Println(wikiDir + " is not a git repo!")
+		if viper.GetBool("InitWikiRepo") {
+			if viper.GetString("RemoteGitRepo") != "" {
+				log.Println("--InitWikiRepo flag is given. Cloning " + viper.GetString("RemoteGitRepo") + " into " + wikiDir + "...")
+				err = gitClone(viper.GetString("RemoteGitRepo"))
+				check(err)
+			} else {
+				log.Println("No RemoteGitRepo defined. Creating a new git repo at", wikiDir)
+				err = gitInit()
+				check(err)
+			}
+		} else {
+			repoNotExistErr := errors.New("clone/move your existing repo here, change the config, or run with --InitWikiRepo to clone a specified remote repo")
 			//log.Fatalln("Clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo.")
 			panic(repoNotExistErr)
 		}
@@ -2897,101 +2855,105 @@ func buildCache() *wikiCache {
 
 	var wps []*gitDirList
 
-	fileList, err := gitLsTree()
-	check(err)
-	for _, file := range fileList {
+	if !gitIsEmpty() {
 
-		// If using Git, build the full path:
-		fullname := filepath.Join(viper.GetString("WikiDir"), file.Filename)
+		fileList, err := gitLsTree()
+		check(err)
+		for _, file := range fileList {
+			wikiDir := filepath.Join(dataDir, "wikidata")
+			// If using Git, build the full path:
+			fullname := filepath.Join(wikiDir, file.Filename)
 
-		// If this is a directory, add it to the list for listing
-		//   but just assume it is private
-		if file.Type == "tree" {
-			var wp *gitDirList
-			wp = &gitDirList{
-				Type:       "tree",
-				Filename:   file.Filename,
-				CreateTime: 0,
-				ModTime:    0,
-				Permission: "private",
-			}
-			wps = append(wps, wp)
-		}
-
-		// If not a directory, get frontmatter from file and add to list
-		if file.Type == "blob" {
-
-			// If this is an absolute path, including the cfg.WikiDir, trim it
-			//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
-			//fileURL := strings.TrimPrefix(file, withoutdotslash)
-
-			var wp *gitDirList
-
-			// Read YAML frontmatter into fm
-			f, err := os.Open(fullname)
-			check(err)
-
-			fm := readFront(f)
-			//fm, content := readWikiPage(f)
-			f.Close()
-			//checkErr("crawlWiki()/readFront", err)
-
-			if fm.Title == "" {
-				fm.Title = file.Filename
-			}
-			if fm.Permission == "" {
-				fm.Permission = "private"
-			}
-			if fm.Favorite != true {
-				fm.Favorite = false
-			}
-			if fm.Tags == nil {
-				fm.Tags = []string{}
-			}
-
-			// Tags and Favorites building
-			// Replacing readFavs and readTags
-			if fm.Favorite {
-				//log.Println(file + " is a favorite.")
-				cache.Favs.LoadOrStore(file.Filename, "")
-				/*
-					if _, ok := cache.Favs[file.Filename]; !ok {
-						httputils.Debugln("crawlWiki: " + file.Filename + " is not already a favorite.")
-						cache.Favs[file.Filename] = struct{}{}
-					}
-				*/
-				//favbuf.WriteString(file + " ")
-			}
-			if fm.Tags != nil {
-				cache.Tags.Lock()
-				for _, tag := range fm.Tags {
-					cache.Tags.List[tag] = append(cache.Tags.List[tag], file.Filename)
+			// If this is a directory, add it to the list for listing
+			//   but just assume it is private
+			if file.Type == "tree" {
+				var wp *gitDirList
+				wp = &gitDirList{
+					Type:       "tree",
+					Filename:   file.Filename,
+					CreateTime: 0,
+					ModTime:    0,
+					Permission: "private",
 				}
-				cache.Tags.Unlock()
+				wps = append(wps, wp)
 			}
 
-			ctime, err := gitGetCtime(file.Filename)
-			check(err)
-			mtime, err := gitGetMtime(file.Filename)
-			check(err)
+			// If not a directory, get frontmatter from file and add to list
+			if file.Type == "blob" {
 
-			wp = &gitDirList{
-				Type:       "blob",
-				Filename:   file.Filename,
-				CreateTime: ctime,
-				ModTime:    mtime,
-				Permission: fm.Permission,
+				// If this is an absolute path, including the cfg.WikiDir, trim it
+				//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
+				//fileURL := strings.TrimPrefix(file, withoutdotslash)
+
+				var wp *gitDirList
+
+				// Read YAML frontmatter into fm
+				f, err := os.Open(fullname)
+				check(err)
+
+				fm := readFront(f)
+				//fm, content := readWikiPage(f)
+				f.Close()
+				//checkErr("crawlWiki()/readFront", err)
+
+				if fm.Title == "" {
+					fm.Title = file.Filename
+				}
+				if fm.Permission == "" {
+					fm.Permission = "private"
+				}
+				if fm.Favorite != true {
+					fm.Favorite = false
+				}
+				if fm.Tags == nil {
+					fm.Tags = []string{}
+				}
+
+				// Tags and Favorites building
+				// Replacing readFavs and readTags
+				if fm.Favorite {
+					//log.Println(file + " is a favorite.")
+					cache.Favs.LoadOrStore(file.Filename, "")
+					/*
+						if _, ok := cache.Favs[file.Filename]; !ok {
+							httputils.Debugln("crawlWiki: " + file.Filename + " is not already a favorite.")
+							cache.Favs[file.Filename] = struct{}{}
+						}
+					*/
+					//favbuf.WriteString(file + " ")
+				}
+				if fm.Tags != nil {
+					cache.Tags.Lock()
+					for _, tag := range fm.Tags {
+						cache.Tags.List[tag] = append(cache.Tags.List[tag], file.Filename)
+					}
+					cache.Tags.Unlock()
+				}
+				/*
+					ctime, err := gitGetCtime(file.Filename)
+					check(err)
+					mtime, err := gitGetMtime(file.Filename)
+					check(err)
+				*/
+				ctime, mtime := gitGetTimes(file.Filename)
+
+				wp = &gitDirList{
+					Type:       "blob",
+					Filename:   file.Filename,
+					CreateTime: ctime,
+					ModTime:    mtime,
+					Permission: fm.Permission,
+				}
+				wps = append(wps, wp)
 			}
-			wps = append(wps, wp)
 		}
+		cache.SHA1 = headHash()
 	}
 
 	cache.Cache = wps
 
-	cache.SHA1 = headHash()
-
 	if viper.GetBool("CacheEnabled") {
-		cacheFile, err := os.Create(viper.GetString("CacheLocation"))
+		cacheFile, err := os.Create(filepath.Join(dataDir, "cache.gob"))
 		check(err)
 		cacheEncoder := gob.NewEncoder(cacheFile)
 		cacheEncoder.Encode(cache)
@@ -3005,7 +2967,7 @@ func loadCache() *wikiCache {
 	cache := new(wikiCache)
 	cache.Tags = new(tags)
 	if viper.GetBool("CacheEnabled") {
-		cacheFile, err := os.Open("./data/cache.gob")
+		cacheFile, err := os.Open(filepath.Join(dataDir, "cache.gob"))
 		defer cacheFile.Close()
 		if err == nil {
 			log.Println("Loading cache from gob.")
@@ -3017,7 +2979,7 @@ func loadCache() *wikiCache {
 				cache = buildCache()
 			}
 			// Check the cached sha1 versus HEAD sha1, rebuild if they differ
-			if cache.SHA1 != headHash() {
+			if !gitIsEmpty() && cache.SHA1 != headHash() {
 				log.Println("Cache SHA1s do not match. Rebuilding cache.")
 				cache = buildCache()
 			}
@@ -3036,7 +2998,7 @@ func loadCache() *wikiCache {
 }
 
 func headHash() string {
-	repo, err := gogit.PlainOpen(viper.GetString("WikiDir"))
+	repo, err := gogit.PlainOpen(filepath.Join(dataDir, "wikidata"))
 	check(err)
 	head, err := repo.Head()
 	check(err)
@@ -3061,7 +3023,8 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		_, isAdmin := auth.GetUsername(r.Context())
 		userLoggedIn := auth.IsLoggedIn(r.Context())
 		pageExists, relErr := checkName(&name)
-		fullfilename := filepath.Join(viper.GetString("WikiDir"), name)
+		wikiDir := filepath.Join(dataDir, "wikidata")
+		fullfilename := filepath.Join(wikiDir, name)
 		//relErr := relativePathCheck(name)
 		if relErr != nil {
 			if relErr == errBaseNotDir {
@@ -3170,6 +3133,23 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func dataDirCheck() {
+	dir, err := os.Stat(viper.GetString("DataDir"))
+	if err != nil {
+		if os.IsNotExist(err) {
+			log.Println(viper.GetString("DataDir"), "does not exist; creating it.")
+			err = os.Mkdir(viper.GetString("DataDir"), 0755)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		} else {
+			log.Fatalln(err)
+		}
+	} else if !dir.IsDir() {
+		log.Fatalln(viper.GetString("DataDir"), "is not a directory. This is where wiki data is stored.")
+	}
+}
+
 func main() {
 
 	// subscribe to SIGINT signals
@@ -3177,39 +3157,12 @@ func main() {
 	signal.Notify(stopChan, os.Interrupt)
 	mux := http.NewServeMux()
 
-	/*
-		f, err := os.Create("trace.out")
-		if err != nil {
-			panic(err)
-		}
-		defer f.Close()
-
-		err = trace.Start(f)
-		if err != nil {
-			panic(err)
-		}
-		defer trace.Stop()
-	*/
-
-	dataDir, err := os.Stat("./data/")
-	if err != nil {
-		if os.IsNotExist(err) {
-			err = os.Mkdir("data", 0755)
-			if err != nil {
-				log.Fatalln(err)
-			}
-		}
-	}
-
-	if !dataDir.IsDir() {
-		log.Fatalln("./data/ is not a directory. This is where wiki data is stored.")
-	}
-
 	initWikiDir()
+	dataDirCheck()
 
 	// Bring up authState
 	//var err error
-	anAuthState, err := auth.NewAuthState("./data/auth.db", viper.GetString("AdminUser"))
+	anAuthState, err := auth.NewAuthState(filepath.Join(dataDir, "auth.db"), viper.GetString("AdminUser"))
 	check(err)
 
 	theCache := loadCache()
@@ -3227,9 +3180,11 @@ func main() {
 	}
 
 	// Check for unclean Git dir on startup
-	err = gitIsCleanStartup()
-	if err != nil {
-		log.Fatalln("There was an issue with the git repo:", err)
+	if !gitIsEmpty() {
+		err = gitIsCleanStartup()
+		if err != nil {
+			log.Fatalln("There was an issue with the git repo:", err)
+		}
 	}
 
 	csrfSecure := true
