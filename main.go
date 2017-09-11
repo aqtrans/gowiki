@@ -189,8 +189,18 @@ type wiki struct {
 type wikiCache struct {
 	SHA1  string
 	Cache []*gitDirList
-	Tags  map[string][]string
-	Favs  map[string]struct{}
+	Tags  *tags
+	Favs  *favs
+}
+
+type favs struct {
+	sync.Mutex
+	List map[string]struct{}
+}
+
+type tags struct {
+	sync.Mutex
+	List map[string][]string
 }
 
 type wikiPage struct {
@@ -1118,9 +1128,10 @@ func loadPage(env *wikiEnv, r *http.Request) *page {
 			gitStatusErr = errors.New("Git repo is clean")
 		}
 	*/
-
-	favs := env.cache.Favs
-	if env.cache.Favs == nil {
+	env.cache.Favs.Lock()
+	favs := env.cache.Favs.List
+	env.cache.Favs.Unlock()
+	if favs == nil {
 		favs = make(map[string]struct{})
 	}
 
@@ -2020,9 +2031,11 @@ func favsHandler(env *wikiEnv, favs chan []string) {
 
 	//favss := favbuf.String()
 	var sfavs []string
-	for fav := range env.cache.Favs {
+	env.cache.Favs.Lock()
+	for fav := range env.cache.Favs.List {
 		sfavs = append(sfavs, fav)
 	}
+	env.cache.Favs.Unlock()
 
 	//httputils.Debugln("Favorites: " + favss)
 	//sfavs := strings.Fields(favss)
@@ -2503,10 +2516,15 @@ func (env *wikiEnv) tagMapHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := loadPage(env, r)
 
+	env.cache.Tags.Lock()
+	list := env.cache.Tags.List
+	env.cache.Tags.Unlock()
+
 	tagpage := &tagMapPage{
 		page:    p,
-		TagKeys: env.cache.Tags,
+		TagKeys: list,
 	}
+
 	renderTemplate(r.Context(), env, w, "tag_list.tmpl", tagpage)
 }
 
@@ -2518,10 +2536,14 @@ func (env *wikiEnv) tagHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := loadPage(env, r)
 
+	env.cache.Tags.Lock()
+	results := env.cache.Tags.List[name]
+	env.cache.Tags.Unlock()
+
 	tagpage := &tagPage{
 		page:    p,
 		TagName: name,
-		Results: env.cache.Tags[name],
+		Results: results,
 	}
 	renderTemplate(r.Context(), env, w, "tag_view.tmpl", tagpage)
 }
@@ -2870,12 +2892,20 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 func buildCache() *wikiCache {
 	defer httputils.TimeTrack(time.Now(), "buildCache")
 	cache := new(wikiCache)
-	if cache.Tags == nil {
-		cache.Tags = make(map[string][]string)
+	cache.Favs = new(favs)
+	cache.Tags = new(tags)
+
+	cache.Tags.Lock()
+	if cache.Tags.List == nil {
+		cache.Tags.List = make(map[string][]string)
 	}
-	if cache.Favs == nil {
-		cache.Favs = make(map[string]struct{})
+	cache.Tags.Unlock()
+
+	cache.Favs.Lock()
+	if cache.Favs.List == nil {
+		cache.Favs.List = make(map[string]struct{})
 	}
+	cache.Favs.Unlock()
 
 	var wps []*gitDirList
 
@@ -2935,16 +2965,20 @@ func buildCache() *wikiCache {
 			// Replacing readFavs and readTags
 			if fm.Favorite {
 				//log.Println(file + " is a favorite.")
-				if _, ok := cache.Favs[file.Filename]; !ok {
+				cache.Favs.Lock()
+				if _, ok := cache.Favs.List[file.Filename]; !ok {
 					httputils.Debugln("crawlWiki: " + file.Filename + " is not already a favorite.")
-					cache.Favs[file.Filename] = struct{}{}
+					cache.Favs.List[file.Filename] = struct{}{}
 				}
+				cache.Favs.Unlock()
 				//favbuf.WriteString(file + " ")
 			}
 			if fm.Tags != nil {
+				cache.Tags.Lock()
 				for _, tag := range fm.Tags {
-					cache.Tags[tag] = append(cache.Tags[tag], file.Filename)
+					cache.Tags.List[tag] = append(cache.Tags.List[tag], file.Filename)
 				}
+				cache.Tags.Unlock()
 			}
 
 			ctime, err := gitGetCtime(file.Filename)
@@ -2980,6 +3014,8 @@ func buildCache() *wikiCache {
 
 func loadCache() *wikiCache {
 	cache := new(wikiCache)
+	cache.Tags = new(tags)
+	cache.Favs = new(favs)
 	if viper.GetBool("CacheEnabled") {
 		cacheFile, err := os.Open("./data/cache.gob")
 		defer cacheFile.Close()
