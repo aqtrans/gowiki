@@ -31,8 +31,8 @@
   <fieldset class="fieldset">
     <legend>{{ svg "star-empty" }}Favorite Pages</legend>
   <ul>
-  {{range $key, $element := .page.Favs}}
-  <li><a href="/{{ $key }}">{{ $key }}</a></li>
+  {{range .page.Favs}}
+  <li><a href="/{{ . }}">{{ . }}</a></li>
   {{end}}
   </ul>
   </fieldset>
