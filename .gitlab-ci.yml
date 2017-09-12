@@ -72,7 +72,7 @@ deploy_staging:
     # Stop app, to release DB locks 
     - ssh $DEPLOY_HOST systemctl --user stop golang@$CI_PROJECT_NAME    
     # Copy data/ from current to new
-    - ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME; then cp -rpv $CI_PROJECT_NAME/data $CI_PROJECT_NAME.$CI_COMMIT_SHA/; fi'"
+    #- ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME; then cp -rpv $CI_PROJECT_NAME/data $CI_PROJECT_NAME.$CI_COMMIT_SHA/; fi'"
     # If current symlink exists, remove it, else fail here
     - ssh $DEPLOY_HOST /bin/bash -c "'if test -L $CI_PROJECT_NAME; then rm $CI_PROJECT_NAME; else echo ERROR $CI_PROJECT_NAME is not a symlink && exit 1; fi'"
     # Create symlink from $CI_PROJECT_NAME.$CI_COMMIT_SHA to $CI_PROJECT_NAME
@@ -97,7 +97,7 @@ deploy_prod:
     # Stop app, to release DB locks, using sudo due to no systemctl --user on CentOS 7 (https://bugs.centos.org/view.php?id=8767)
     - ssh $DEPLOY_HOST sudo systemctl stop golang@$CI_PROJECT_NAME    
     # Copy data/ from current to new
-    - ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME; then cp -rpv $CI_PROJECT_NAME/data $CI_PROJECT_NAME.$CI_COMMIT_SHA/; fi'"
+    #- ssh $DEPLOY_HOST /bin/bash -c "'if test -d $CI_PROJECT_NAME; then cp -rpv $CI_PROJECT_NAME/data $CI_PROJECT_NAME.$CI_COMMIT_SHA/; fi'"
     # If current symlink exists, remove it, else fail here
     - ssh $DEPLOY_HOST /bin/bash -c "'if test -L $CI_PROJECT_NAME; then rm $CI_PROJECT_NAME; else echo ERROR $CI_PROJECT_NAME is not a symlink && exit 1; fi'"
     # Create symlink from $CI_PROJECT_NAME.$CI_COMMIT_SHA to $CI_PROJECT_NAME
