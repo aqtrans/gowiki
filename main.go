@@ -191,16 +191,16 @@ type wikiCache struct {
 	SHA1  string
 	Cache []*gitDirList
 	Tags  *tags
-	Favs  sync.Map
+	Favs  *favs
 }
 
 type favs struct {
-	sync.Mutex
+	sync.RWMutex
 	List map[string]struct{}
 }
 
 type tags struct {
-	sync.Mutex
+	sync.RWMutex
 	List map[string][]string
 }
 
@@ -1051,6 +1051,60 @@ func gitSearch(searchTerm, fileSpec string) []*result {
 	return results
 }
 
+func (f *favs) LoadOrStore(s string) {
+	f.Lock()
+	if _, ok := f.List[s]; !ok {
+		httputils.Debugln("favs.LoadOrStore: " + s + " is not already a favorite.")
+		f.List[s] = struct{}{}
+	}
+	f.Unlock()
+}
+
+func (f *favs) GetAll() (sfavs []string) {
+	f.RLock()
+	for k := range f.List {
+		sfavs = append(sfavs, k)
+	}
+	f.RUnlock()
+	sort.Strings(sfavs)
+	return sfavs
+}
+
+func newFavsMap() *favs {
+	return &favs{
+		List: make(map[string]struct{}),
+	}
+}
+
+func newTagsMap() *tags {
+	return &tags{
+		List: make(map[string][]string),
+	}
+}
+
+func (t *tags) LoadOrStore(tags []string, filename string) {
+	t.Lock()
+	for _, tag := range tags {
+		t.List[tag] = append(t.List[tag], filename)
+	}
+	t.Unlock()
+}
+
+func (t *tags) GetOne(tag string) (pages []string) {
+	t.RLock()
+	pages = t.List[tag]
+	t.RUnlock()
+	sort.Strings(pages)
+	return pages
+}
+
+func (t *tags) GetAll() (tMap map[string][]string) {
+	t.RLock()
+	tMap = t.List
+	t.RUnlock()
+	return tMap
+}
+
 func loadPage(env *wikiEnv, r *http.Request) *page {
 	defer httputils.TimeTrack(time.Now(), "loadPage")
 	//timer.Step("loadpageFunc")
@@ -1094,17 +1148,9 @@ func loadPage(env *wikiEnv, r *http.Request) *page {
 		}
 	*/
 
-	var sfavs []string
-	env.cache.Favs.Range(func(k, v interface{}) bool {
-		sfavs = append(sfavs, k.(string))
-		return true
-	})
-
-	sort.Strings(sfavs)
-
 	return &page{
 		SiteName: "GoWiki",
-		Favs:     sfavs,
+		Favs:     env.cache.Favs.GetAll(),
 		UserInfo: &userInfo{
 			Username:   user,
 			IsAdmin:    isAdmin,
@@ -1956,24 +2002,6 @@ func urlFromPath(path string) string {
 	return strings.TrimPrefix(path, url)
 }
 
-func favsHandler(env *wikiEnv, favs chan []string) {
-	defer httputils.TimeTrack(time.Now(), "favsHandler")
-
-	//favss := favbuf.String()
-	var sfavs []string
-	env.cache.Favs.Range(func(k, v interface{}) bool {
-		sfavs = append(sfavs, k.(string))
-		return true
-	})
-
-	//httputils.Debugln("Favorites: " + favss)
-	//sfavs := strings.Fields(favss)
-
-	sort.Strings(sfavs)
-
-	favs <- sfavs
-}
-
 func loadWiki(name string) *wiki {
 	defer httputils.TimeTrack(time.Now(), "loadWiki")
 
@@ -2447,9 +2475,7 @@ func (env *wikiEnv) tagMapHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := loadPage(env, r)
 
-	env.cache.Tags.Lock()
-	list := env.cache.Tags.List
-	env.cache.Tags.Unlock()
+	list := env.cache.Tags.GetAll()
 
 	tagpage := &tagMapPage{
 		page:    p,
@@ -2467,9 +2493,7 @@ func (env *wikiEnv) tagHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := loadPage(env, r)
 
-	env.cache.Tags.Lock()
-	results := env.cache.Tags.List[name]
-	env.cache.Tags.Unlock()
+	results := env.cache.Tags.GetOne(name)
 
 	tagpage := &tagPage{
 		page:    p,
@@ -2845,13 +2869,8 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 func buildCache() *wikiCache {
 	defer httputils.TimeTrack(time.Now(), "buildCache")
 	cache := new(wikiCache)
-	cache.Tags = new(tags)
-
-	cache.Tags.Lock()
-	if cache.Tags.List == nil {
-		cache.Tags.List = make(map[string][]string)
-	}
-	cache.Tags.Unlock()
+	cache.Tags = newTagsMap()
+	cache.Favs = newFavsMap()
 
 	var wps []*gitDirList
 
@@ -2912,22 +2931,10 @@ func buildCache() *wikiCache {
 				// Tags and Favorites building
 				// Replacing readFavs and readTags
 				if fm.Favorite {
-					//log.Println(file + " is a favorite.")
-					cache.Favs.LoadOrStore(file.Filename, "")
-					/*
-						if _, ok := cache.Favs[file.Filename]; !ok {
-							httputils.Debugln("crawlWiki: " + file.Filename + " is not already a favorite.")
-							cache.Favs[file.Filename] = struct{}{}
-						}
-					*/
-					//favbuf.WriteString(file + " ")
+					cache.Favs.LoadOrStore(file.Filename)
 				}
 				if fm.Tags != nil {
-					cache.Tags.Lock()
-					for _, tag := range fm.Tags {
-						cache.Tags.List[tag] = append(cache.Tags.List[tag], file.Filename)
-					}
-					cache.Tags.Unlock()
+					cache.Tags.LoadOrStore(fm.Tags, file.Filename)
 				}
 				/*
 					ctime, err := gitGetCtime(file.Filename)
