@@ -44,22 +44,27 @@
         </div>
         {{.Token}}
         <hr>
-        <div class="preview-tabs two">
-        <input id='tab-1' type='radio' name='tabgroupB' checked />
-        <label class="pseudo button toggle" for="tab-1">Edit</label>
-        <input id='tab-2' type='radio' name='tabgroupB'>
-        <label class="pseudo button toggle" for="tab-2">Preview</label>
-        <div class="row">
-            <div>
-            <textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea>
+        <div class="preview-tabs">
+            <div class="tab">
+                <input class="tab-radio" type="radio" id="tab-1" name="tab-group-1" checked>
+                <label class="tab-label" for="tab-1">Edit</label>
+                <div class="tab-panel">
+                    <div class="tab-content">
+                        <textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea>
+                    </div>
+                </div>
             </div>
-            <div>
-            <article class="content" id="preview_content"></article>
+            <div class="tab">
+                <input class="tab-radio" type="radio" id="tab-2" name="tab-group-1">
+                <label class="tab-label" for="tab-2">Preview</label>
+                <div class="tab-panel">
+                    <div class="tab-content">
+                        <article class="content" id="preview_content"></article>
+                    </div>
+                </div>
             </div>
         </div>
-        </div>
-
-            <button type="submit" class="success button">Submit</button>
+        <button type="submit" class="success button">Submit</button>
         </form>
     </main>
 
