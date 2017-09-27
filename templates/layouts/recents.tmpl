@@ -10,8 +10,8 @@
         </tr>
     </thead>
     <tbody>
-    {{ $user := .page.UserInfo.IsLoggedIn }}
-    {{ $admin := .page.UserInfo.IsAdmin }}
+    {{ $user := .UserInfo.IsLoggedIn }}
+    {{ $admin := .UserInfo.IsAdmin }}
     {{range .Recents}}
         <tr>
         <td>{{.Date | prettyDate}}</td>
