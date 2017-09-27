@@ -2002,7 +2002,7 @@ func urlFromPath(path string) string {
 	return strings.TrimPrefix(path, url)
 }
 
-func loadWiki(name string) wiki {
+func loadWiki(name string) *wiki {
 	defer httputils.TimeTrack(time.Now(), "loadWiki")
 
 	var fm frontmatter
@@ -2022,7 +2022,7 @@ func loadWiki(name string) wiki {
 	*/
 	ctime, mtime := gitGetTimes(name)
 
-	return wiki{
+	return &wiki{
 		Title:       pagetitle,
 		Filename:    name,
 		Frontmatter: fm,
@@ -2050,8 +2050,8 @@ func loadWikiPage(env *wikiEnv, r *http.Request, name string) wikiPage {
 
 	var thePage page
 	thePageChan := make(chan page)
-	var theWiki wiki
-	theWikiChan := make(chan wiki)
+	var theWiki *wiki
+	theWikiChan := make(chan *wiki)
 	var theMarkdown string
 	theMarkdownChan := make(chan string)
 
@@ -2068,7 +2068,7 @@ func loadWikiPage(env *wikiEnv, r *http.Request, name string) wikiPage {
 	if !wikiExists {
 		go func() {
 			defer wg.Done()
-			theWiki = wiki{
+			theWiki = &wiki{
 				Title:    name,
 				Filename: name,
 				Frontmatter: frontmatter{
@@ -2103,7 +2103,7 @@ func loadWikiPage(env *wikiEnv, r *http.Request, name string) wikiPage {
 
 	wp := wikiPage{
 		page:     thePage,
-		Wiki:     theWiki,
+		Wiki:     *theWiki,
 		Rendered: theMarkdown,
 	}
 	return wp
