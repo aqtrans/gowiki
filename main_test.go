@@ -100,13 +100,13 @@ func newState() *auth.AuthState {
 
 func testEnv(t *testing.T, authState *auth.State) *wikiEnv {
 	return &wikiEnv{
-		authState: authState,
+		authState: *authState,
 		cache: &wikiCache{
 			Tags: newTagsMap(),
 			Favs: newFavsMap(),
 		},
 		templates: make(map[string]*template.Template),
-		mutex:     &sync.Mutex{},
+		mutex:     sync.Mutex{},
 	}
 }
 
