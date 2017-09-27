@@ -146,7 +146,7 @@ type renderer struct {
 type page struct {
 	SiteName  string
 	Favs      []string
-	UserInfo  *userInfo
+	UserInfo  userInfo
 	Token     template.HTML
 	FlashMsg  template.HTML
 	GitStatus template.HTML
@@ -181,7 +181,7 @@ type badFrontmatter struct {
 type wiki struct {
 	Title       string
 	Filename    string
-	Frontmatter *frontmatter
+	Frontmatter frontmatter
 	Content     []byte
 	CreateTime  int64
 	ModTime     int64
@@ -189,9 +189,9 @@ type wiki struct {
 
 type wikiCache struct {
 	SHA1  string
-	Cache []*gitDirList
-	Tags  *tags
-	Favs  *favs
+	Cache []gitDirList
+	Tags  tags
+	Favs  favs
 }
 
 type favs struct {
@@ -205,62 +205,62 @@ type tags struct {
 }
 
 type wikiPage struct {
-	*page
-	Wiki     *wiki
+	page
+	Wiki     wiki
 	Rendered string
 }
 
 type commitPage struct {
-	*page
-	Wiki     *wiki
+	page
+	Wiki     wiki
 	Commit   string
 	Rendered string
 	Diff     string
 }
 
 type listPage struct {
-	*page
-	Wikis []*gitDirList
+	page
+	Wikis []gitDirList
 }
 
 type genPage struct {
-	*page
+	page
 	Title string
 }
 
 type gitPage struct {
-	*page
+	page
 	Title     string
 	GitStatus string
 	GitRemote string
 }
 
 type historyPage struct {
-	*page
-	Wiki        *wiki
+	page
+	Wiki        wiki
 	Filename    string
-	FileHistory []*commitLog
+	FileHistory []commitLog
 }
 
 type tagMapPage struct {
-	*page
+	page
 	TagKeys map[string][]string
 }
 
 type tagPage struct {
-	*page
+	page
 	TagName string
 	Results []string
 }
 
 type searchPage struct {
-	*page
-	Results []*result
+	page
+	Results []result
 }
 
 type recentsPage struct {
-	*page
-	Recents []*recent
+	page
+	Recents []recent
 }
 
 type recent struct {
@@ -290,20 +290,20 @@ type gitDirList struct {
 }
 
 type wikiEnv struct {
-	authState *auth.State
+	authState auth.State
 	cache     *wikiCache
 	templates map[string]*template.Template
-	mutex     *sync.Mutex
+	mutex     sync.Mutex
 }
 
 // Sorting functions
-type wikiByDate []*wiki
+type wikiByDate []wiki
 
 func (a wikiByDate) Len() int           { return len(a) }
 func (a wikiByDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a wikiByDate) Less(i, j int) bool { return a[i].CreateTime < a[j].CreateTime }
 
-type wikiByModDate []*wiki
+type wikiByModDate []wiki
 
 func (a wikiByModDate) Len() int           { return len(a) }
 func (a wikiByModDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
@@ -782,7 +782,7 @@ func gitGetMtime(filename string) (int64, error) {
 // File history
 // git log --pretty=format:"commit:%H date:%at message:%s" [filename]
 // git log --pretty=format:"%H,%at,%s" [filename]
-func gitGetFileLog(filename string) ([]*commitLog, error) {
+func gitGetFileLog(filename string) ([]commitLog, error) {
 	o, err := gitCommand("log", "--pretty=format:%H,%at,%s", filename).Output()
 	if err != nil {
 		return nil, fmt.Errorf("error during `git log`: %s\n%s", err.Error(), string(o))
@@ -791,7 +791,7 @@ func gitGetFileLog(filename string) ([]*commitLog, error) {
 	logsplit := strings.Split(string(o), "\n")
 	// now split each commit-line into it's slice
 	// format should be: [sha1],[date],[message]
-	var commits []*commitLog
+	var commits []commitLog
 	for _, v := range logsplit {
 		//var theCommit *commitLog
 		var vs = strings.SplitN(v, ",", 3)
@@ -804,7 +804,7 @@ func gitGetFileLog(filename string) ([]*commitLog, error) {
 		shortsha := vs[0][0:7]
 
 		// vs[0] = commit, vs[1] = date, vs[2] = message
-		theCommit := &commitLog{
+		theCommit := commitLog{
 			Filename: filename,
 			Commit:   shortsha,
 			Date:     mtime,
@@ -1017,8 +1017,8 @@ func gitIsEmpty() bool {
 
 // Search results, via git
 // git grep --break 'searchTerm'
-func gitSearch(searchTerm, fileSpec string) []*result {
-	var results []*result
+func gitSearch(searchTerm, fileSpec string) []result {
+	var results []result
 	cmd := exec.Command("/bin/sh", "-c", gitPath+" grep "+searchTerm+" -- "+fileSpec)
 	//o := gitCommand("grep", "omg -- 'index'")
 	cmd.Dir = filepath.Join(dataDir, "wikidata")
@@ -1041,7 +1041,7 @@ func gitSearch(searchTerm, fileSpec string) []*result {
 
 		// vs[0] = commit, vs[1] = date, vs[2] = message
 		if len(vs) == 2 {
-			theResult := &result{
+			theResult := result{
 				Name:   vs[0],
 				Result: vs[1],
 			}
@@ -1070,14 +1070,14 @@ func (f *favs) GetAll() (sfavs []string) {
 	return sfavs
 }
 
-func newFavsMap() *favs {
-	return &favs{
+func newFavsMap() favs {
+	return favs{
 		List: make(map[string]struct{}),
 	}
 }
 
-func newTagsMap() *tags {
-	return &tags{
+func newTagsMap() tags {
+	return tags{
 		List: make(map[string][]string),
 	}
 }
@@ -1105,7 +1105,7 @@ func (t *tags) GetAll() (tMap map[string][]string) {
 	return tMap
 }
 
-func loadPage(env *wikiEnv, r *http.Request) *page {
+func loadPage(env *wikiEnv, r *http.Request) page {
 	defer httputils.TimeTrack(time.Now(), "loadPage")
 	//timer.Step("loadpageFunc")
 
@@ -1148,10 +1148,10 @@ func loadPage(env *wikiEnv, r *http.Request) *page {
 		}
 	*/
 
-	return &page{
+	return page{
 		SiteName: "GoWiki",
 		Favs:     env.cache.Favs.GetAll(),
-		UserInfo: &userInfo{
+		UserInfo: userInfo{
 			Username:   user,
 			IsAdmin:    isAdmin,
 			IsLoggedIn: auth.IsLoggedIn(r.Context()),
@@ -1250,10 +1250,10 @@ func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, co
 
 	cp := &commitPage{
 		page: p,
-		Wiki: &wiki{
+		Wiki: wiki{
 			Title:       pagetitle,
 			Filename:    name,
-			Frontmatter: &fm,
+			Frontmatter: fm,
 			Content:     content,
 			CreateTime:  ctime,
 			ModTime:     mtime,
@@ -1281,7 +1281,7 @@ func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 	*/
 	var split []string
 	var split2 []string
-	var recents []*recent
+	var recents []recent
 
 	for _, v := range gh {
 		split = strings.Split(strings.TrimSpace(v), " ")
@@ -1294,7 +1294,7 @@ func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 		split2 = strings.Split(split[1], "\n")
 		if len(split2) >= 2 {
 
-			r := &recent{
+			r := recent{
 				Date:      date,
 				Commit:    split2[0],
 				Filenames: strings.Split(split2[1], "\n"),
@@ -1304,7 +1304,7 @@ func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	s := &recentsPage{p, recents}
+	s := recentsPage{p, recents}
 	renderTemplate(r.Context(), env, w, "recents.tmpl", s)
 
 }
@@ -1313,7 +1313,7 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := loadPage(env, r)
 
-	var list []*gitDirList
+	var list []gitDirList
 
 	userLoggedIn := auth.IsLoggedIn(r.Context())
 	_, isAdmin := auth.GetUsername(r.Context())
@@ -1337,7 +1337,7 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	l := &listPage{p, list}
+	l := listPage{p, list}
 	renderTemplate(r.Context(), env, w, "list.tmpl", l)
 }
 
@@ -1942,7 +1942,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 		tagsA = strings.Split(tags, ",")
 	}
 
-	fm := &frontmatter{
+	fm := frontmatter{
 		Title:      title,
 		Tags:       tagsA,
 		Favorite:   favoritebool,
@@ -1956,7 +1956,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 		Content:     []byte(content),
 	}
 
-	err := thewiki.save(env.mutex)
+	err := thewiki.save(&env.mutex)
 	if err != nil {
 		panic(err)
 	}
@@ -2002,7 +2002,7 @@ func urlFromPath(path string) string {
 	return strings.TrimPrefix(path, url)
 }
 
-func loadWiki(name string) *wiki {
+func loadWiki(name string) wiki {
 	defer httputils.TimeTrack(time.Now(), "loadWiki")
 
 	var fm frontmatter
@@ -2022,10 +2022,10 @@ func loadWiki(name string) *wiki {
 	*/
 	ctime, mtime := gitGetTimes(name)
 
-	return &wiki{
+	return wiki{
 		Title:       pagetitle,
 		Filename:    name,
-		Frontmatter: &fm,
+		Frontmatter: fm,
 		Content:     content,
 		CreateTime:  ctime,
 		ModTime:     mtime,
@@ -2045,13 +2045,13 @@ type Wiki struct {
     Content      string
 }*/
 /////////////////////////////
-func loadWikiPage(env *wikiEnv, r *http.Request, name string) *wikiPage {
+func loadWikiPage(env *wikiEnv, r *http.Request, name string) wikiPage {
 	defer httputils.TimeTrack(time.Now(), "loadWikiPage")
 
-	var thePage *page
-	thePageChan := make(chan *page)
-	var theWiki *wiki
-	theWikiChan := make(chan *wiki)
+	var thePage page
+	thePageChan := make(chan page)
+	var theWiki wiki
+	theWikiChan := make(chan wiki)
 	var theMarkdown string
 	theMarkdownChan := make(chan string)
 
@@ -2068,10 +2068,10 @@ func loadWikiPage(env *wikiEnv, r *http.Request, name string) *wikiPage {
 	if !wikiExists {
 		go func() {
 			defer wg.Done()
-			theWiki = &wiki{
+			theWiki = wiki{
 				Title:    name,
 				Filename: name,
-				Frontmatter: &frontmatter{
+				Frontmatter: frontmatter{
 					Title: name,
 				},
 				CreateTime: 0,
@@ -2101,7 +2101,7 @@ func loadWikiPage(env *wikiEnv, r *http.Request, name string) *wikiPage {
 	//md := commonmarkRender(wikip.Content)
 	//markdownRender2(wikip.Content)
 
-	wp := &wikiPage{
+	wp := wikiPage{
 		page:     thePage,
 		Wiki:     theWiki,
 		Rendered: theMarkdown,
@@ -2266,7 +2266,7 @@ func (env *wikiEnv) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
-		*page
+		page
 		Title string
 		Users []string
 	}{
@@ -2298,7 +2298,7 @@ func (env *wikiEnv) adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	selectedUser := params["username"]
 
 	data := struct {
-		*page
+		page
 		Title string
 		Users []string
 		User  string
@@ -2345,7 +2345,7 @@ func (env *wikiEnv) adminConfigHandler(w http.ResponseWriter, r *http.Request) {
 	p := loadPage(env, r)
 
 	data := struct {
-		*page
+		page
 		Title  string
 		Config map[string]interface{}
 	}{
@@ -2517,10 +2517,10 @@ func (env *wikiEnv) createWiki(w http.ResponseWriter, r *http.Request, name stri
 		}*/
 		wp := &wikiPage{
 			page: p,
-			Wiki: &wiki{
+			Wiki: wiki{
 				Title:    name,
 				Filename: name,
-				Frontmatter: &frontmatter{
+				Frontmatter: frontmatter{
 					Title: name,
 				},
 			},
@@ -2872,7 +2872,7 @@ func buildCache() *wikiCache {
 	cache.Tags = newTagsMap()
 	cache.Favs = newFavsMap()
 
-	var wps []*gitDirList
+	var wps []gitDirList
 
 	if !gitIsEmpty() {
 
@@ -2886,8 +2886,8 @@ func buildCache() *wikiCache {
 			// If this is a directory, add it to the list for listing
 			//   but just assume it is private
 			if file.Type == "tree" {
-				var wp *gitDirList
-				wp = &gitDirList{
+				var wp gitDirList
+				wp = gitDirList{
 					Type:       "tree",
 					Filename:   file.Filename,
 					CreateTime: 0,
@@ -2904,7 +2904,7 @@ func buildCache() *wikiCache {
 				//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
 				//fileURL := strings.TrimPrefix(file, withoutdotslash)
 
-				var wp *gitDirList
+				var wp gitDirList
 
 				// Read YAML frontmatter into fm
 				f, err := os.Open(fullname)
@@ -2944,7 +2944,7 @@ func buildCache() *wikiCache {
 				*/
 				ctime, mtime := gitGetTimes(file.Filename)
 
-				wp = &gitDirList{
+				wp = gitDirList{
 					Type:       "blob",
 					Filename:   file.Filename,
 					CreateTime: ctime,
@@ -2972,7 +2972,8 @@ func buildCache() *wikiCache {
 
 func loadCache() *wikiCache {
 	cache := new(wikiCache)
-	cache.Tags = new(tags)
+	cache.Tags = newTagsMap()
+	cache.Favs = newFavsMap()
 	if viper.GetBool("CacheEnabled") {
 		cacheFile, err := os.Open(filepath.Join(dataDir, "cache.gob"))
 		defer cacheFile.Close()
@@ -3131,7 +3132,7 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(name + " page favorited!")
 	}
 
-	err := p.Wiki.save(env.mutex)
+	err := p.Wiki.save(&env.mutex)
 	if err != nil {
 		log.Println(err)
 	}
@@ -3175,10 +3176,10 @@ func main() {
 	theCache := loadCache()
 
 	env := &wikiEnv{
-		authState: anAuthState,
+		authState: *anAuthState,
 		cache:     theCache,
 		templates: make(map[string]*template.Template),
-		mutex:     &sync.Mutex{},
+		mutex:     sync.Mutex{},
 	}
 
 	err = tmplInit(env)
