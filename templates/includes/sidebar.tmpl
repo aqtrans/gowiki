@@ -31,7 +31,7 @@
   <fieldset class="fieldset">
     <legend>{{ svg "star-empty" }}Favorite Pages</legend>
   <ul>
-  {{range .page.Favs}}
+  {{range .Favs}}
   <li><a href="/{{ . }}">{{ . }}</a></li>
   {{end}}
   </ul>
@@ -39,7 +39,7 @@
   <fieldset>
     <legend>{{ svg "git-square" }}Git Status</legend>
   <ul>
-    <li>{{ .page.GitStatus }}</li>
+    <li>{{ .GitStatus }}</li>
   </ul>
   </fieldset>
 {{end}}
