@@ -167,17 +167,6 @@ type frontmatter struct {
 	//Admin      bool     `yaml:"admin,omitempty"`
 }
 
-/*
-type badFrontmatter struct {
-	Title      string `yaml:"title"`
-	Tags       string `yaml:"tags,omitempty"`
-	Favorite   bool   `yaml:"favorite,omitempty"`
-	Permission string `yaml:"permission,omitempty"`
-	Public     bool   `yaml:"public,omitempty"`
-	Admin      bool   `yaml:"admin,omitempty"`
-}
-*/
-
 type wiki struct {
 	Title       string
 	Filename    string
@@ -185,23 +174,6 @@ type wiki struct {
 	Content     []byte
 	CreateTime  int64
 	ModTime     int64
-}
-
-type wikiCache struct {
-	SHA1  string
-	Cache []gitDirList
-	Tags  tags
-	Favs  favs
-}
-
-type favs struct {
-	sync.RWMutex
-	List map[string]struct{}
-}
-
-type tags struct {
-	sync.RWMutex
-	List map[string][]string
 }
 
 type wikiPage struct {
@@ -289,11 +261,30 @@ type gitDirList struct {
 	Permission string
 }
 
+// Env wrapper to hold app-specific configs, to pass to handlers
+// cache is a pointer here since it's pretty large itself, and holds a mutex
 type wikiEnv struct {
 	authState auth.State
 	cache     *wikiCache
 	templates map[string]*template.Template
 	mutex     sync.Mutex
+}
+
+type wikiCache struct {
+	SHA1  string
+	Cache []gitDirList
+	Tags  tags
+	Favs  favs
+}
+
+type favs struct {
+	sync.RWMutex
+	List map[string]struct{}
+}
+
+type tags struct {
+	sync.RWMutex
+	List map[string][]string
 }
 
 // Sorting functions
@@ -625,12 +616,6 @@ func gitIsClean() error {
 		return errGitDiverged
 	}
 
-	/*
-		if len(o) != 0 {
-			return o, ErrGitDirty
-		}
-	*/
-
 	return nil
 }
 
@@ -678,12 +663,6 @@ func gitIsCleanStartup() error {
 		return errors.New(string(o))
 		//return ErrGitDiverged
 	}
-
-	/*
-		if len(o) != 0 {
-			return o, ErrGitDirty
-		}
-	*/
 
 	return nil
 }
