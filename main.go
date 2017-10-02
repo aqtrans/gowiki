@@ -1835,28 +1835,27 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 		p := loadWikiPage(env, r, name)
 		renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
 		return
-	} else {
-		http.ServeFile(w, r, "/"+filepath.Join(dataDir, "wikidata", name))
-		return
-		/*
-			var html template.HTML
-			if strings.Contains(fileType, "image") {
-				html = template.HTML(`<img src="/` + name + `">`)
-			}
-			p := loadPage(env, r)
-			data := struct {
-				*page
-				Title   string
-				TheHTML template.HTML
-			}{
-				p,
-				name,
-				html,
-			}
-			renderTemplate(r.Context(), env, w, "file_view.tmpl", data)
-		*/
 	}
 
+	http.ServeFile(w, r, "/"+filepath.Join(dataDir, "wikidata", name))
+	return
+	/*
+		var html template.HTML
+		if strings.Contains(fileType, "image") {
+			html = template.HTML(`<img src="/` + name + `">`)
+		}
+		p := loadPage(env, r)
+		data := struct {
+			*page
+			Title   string
+			TheHTML template.HTML
+		}{
+			p,
+			name,
+			html,
+		}
+		renderTemplate(r.Context(), env, w, "file_view.tmpl", data)
+	*/
 }
 
 func getFileType(filename string) string {
