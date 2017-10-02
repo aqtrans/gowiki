@@ -268,13 +268,15 @@ type wikiEnv struct {
 	cache     *wikiCache
 	templates map[string]*template.Template
 	mutex     sync.Mutex
+	favs
+	tags
 }
 
 type wikiCache struct {
 	SHA1  string
 	Cache []gitDirList
-	Tags  tags
-	Favs  favs
+	Tags  map[string][]string
+	Favs  map[string]struct{}
 }
 
 type favs struct {
@@ -1129,7 +1131,7 @@ func loadPage(env *wikiEnv, r *http.Request) page {
 
 	return page{
 		SiteName: "GoWiki",
-		Favs:     env.cache.Favs.GetAll(),
+		Favs:     env.favs.GetAll(),
 		UserInfo: userInfo{
 			Username:   user,
 			IsAdmin:    isAdmin,
@@ -1595,6 +1597,7 @@ func parseBool(value string) bool {
 // If there is anything wrong, it panics
 func doesPageExist(name string) bool {
 	defer httputils.TimeTrack(time.Now(), "doesPageExist")
+	httputils.Debugln("doesPageExist", name)
 
 	exists := false
 
@@ -2454,7 +2457,7 @@ func (env *wikiEnv) tagMapHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := loadPage(env, r)
 
-	list := env.cache.Tags.GetAll()
+	list := env.tags.GetAll()
 
 	tagpage := &tagMapPage{
 		page:    p,
@@ -2472,7 +2475,7 @@ func (env *wikiEnv) tagHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := loadPage(env, r)
 
-	results := env.cache.Tags.GetOne(name)
+	results := env.tags.GetOne(name)
 
 	tagpage := &tagPage{
 		page:    p,
@@ -2848,9 +2851,8 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 func buildCache() *wikiCache {
 	defer httputils.TimeTrack(time.Now(), "buildCache")
 	cache := new(wikiCache)
-	cache.Tags = newTagsMap()
-	cache.Favs = newFavsMap()
-
+	cache.Tags = make(map[string][]string)
+	cache.Favs = make(map[string]struct{})
 	var wps []gitDirList
 
 	if !gitIsEmpty() {
@@ -2910,10 +2912,17 @@ func buildCache() *wikiCache {
 				// Tags and Favorites building
 				// Replacing readFavs and readTags
 				if fm.Favorite {
-					cache.Favs.LoadOrStore(file.Filename)
+					//cache.Favs.LoadOrStore(file.Filename)
+					if _, ok := cache.Favs[file.Filename]; !ok {
+						httputils.Debugln("buildCache.favs: " + file.Filename + " is not already a favorite.")
+						cache.Favs[file.Filename] = struct{}{}
+					}
 				}
 				if fm.Tags != nil {
-					cache.Tags.LoadOrStore(fm.Tags, file.Filename)
+					//cache.Tags.LoadOrStore(fm.Tags, file.Filename)
+					for _, tag := range fm.Tags {
+						cache.Tags[tag] = append(cache.Tags[tag], file.Filename)
+					}
 				}
 				/*
 					ctime, err := gitGetCtime(file.Filename)
@@ -2942,8 +2951,10 @@ func buildCache() *wikiCache {
 		cacheFile, err := os.Create(filepath.Join(dataDir, "cache.gob"))
 		check(err)
 		cacheEncoder := gob.NewEncoder(cacheFile)
-		cacheEncoder.Encode(cache)
-		cacheFile.Close()
+		err = cacheEncoder.Encode(cache)
+		check(err)
+		err = cacheFile.Close()
+		check(err)
 	}
 
 	return cache
@@ -2951,18 +2962,18 @@ func buildCache() *wikiCache {
 
 func loadCache() *wikiCache {
 	cache := new(wikiCache)
-	cache.Tags = newTagsMap()
-	cache.Favs = newFavsMap()
+	cache.Tags = make(map[string][]string)
+	cache.Favs = make(map[string]struct{})
 	if viper.GetBool("CacheEnabled") {
 		cacheFile, err := os.Open(filepath.Join(dataDir, "cache.gob"))
 		defer cacheFile.Close()
 		if err == nil {
 			log.Println("Loading cache from gob.")
 			cacheDecoder := gob.NewDecoder(cacheFile)
-			err = cacheDecoder.Decode(cache)
+			err = cacheDecoder.Decode(&cache)
 			//check(err)
 			if err != nil {
-				log.Println("Error loading cache. Rebuilding it.")
+				log.Println("Error loading cache. Rebuilding it.", err)
 				cache = buildCache()
 			}
 			// Check the cached sha1 versus HEAD sha1, rebuild if they differ
@@ -2984,6 +2995,23 @@ func loadCache() *wikiCache {
 	return cache
 }
 
+/*
+func (c wikiCache) MarshalBinary() ([]byte, error) {
+	// A simple encoding: plain text.
+	var b bytes.Buffer
+	fmt.Fprintln(&b, c.SHA1, c.Cache, c.Favs.List, c.Tags.List)
+	return b.Bytes(), nil
+}
+
+// UnmarshalBinary modifies the receiver so it must take a pointer receiver.
+func (c *wikiCache) UnmarshalBinary(data []byte) error {
+	// A simple encoding: plain text.
+	b := bytes.NewBuffer(data)
+	_, err := fmt.Fscanln(b, &c.SHA1, &c.Cache, &c.Favs.List, &c.Tags.List)
+	return err
+}
+*/
+
 func headHash() string {
 	repo, err := gogit.PlainOpen(filepath.Join(dataDir, "wikidata"))
 	check(err)
@@ -2995,6 +3023,8 @@ func headHash() string {
 // This should be all the stuff we need to be refreshed on startup and when pages are saved
 func (env *wikiEnv) refreshStuff() {
 	env.cache = loadCache()
+	env.favs.List = env.cache.Favs
+	env.tags.List = env.cache.Tags
 }
 
 func markdownPreview(w http.ResponseWriter, r *http.Request) {
@@ -3160,6 +3190,8 @@ func main() {
 		templates: make(map[string]*template.Template),
 		mutex:     sync.Mutex{},
 	}
+	env.favs.List = env.cache.Favs
+	env.tags.List = env.cache.Tags
 
 	err = tmplInit(env)
 	if err != nil {
