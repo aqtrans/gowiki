@@ -63,6 +63,8 @@ import (
 	"github.com/russross/blackfriday"
 	//"github.com/spf13/pflag"
 	//"github.com/microcosm-cc/bluemonday"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 	gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/yaml.v2"
@@ -3281,6 +3283,10 @@ func main() {
 	mux.HandleFunc("/favicon.ico", httputils.FaviconICO)
 	mux.HandleFunc("/favicon.png", httputils.FaviconPNG)
 	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
+
+	collector := prometheus.NewGoCollector()
+	prometheus.MustRegister(collector)
+	mux.Handle("/metrics", promhttp.Handler())
 
 	mux.Handle("/", s.Then(r))
 
