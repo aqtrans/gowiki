@@ -36,8 +36,7 @@ build-my-project:
     #- apt-get update -y && apt-get install -y nodejs
     #- npm install -g bower gulp    
     #- /bin/sh ./build_css.sh
-    - apt-get update -y
-    - apt-get install -y ruby-sass
+    - apt-get update -y && apt-get install -y ruby-sass
     - sass -t compressed scss/grid.scss assets/css/wiki.css
     - go get -u github.com/kardianos/govendor
     - govendor sync
@@ -67,7 +66,7 @@ deploy_staging:
   script:
     - echo $DEPLOY_HOST
     - echo $CI_PROJECT_NAME
-    - apt-get install -y rsync
+    - apt-get update -y && apt-get install -y rsync
     # rsync to fresh folder
     - rsync -av --exclude data/ --exclude vendor/ --exclude http.log ./ $DEPLOY_HOST:$CI_PROJECT_NAME.$CI_COMMIT_SHA
     # Stop app, to release DB locks 
@@ -92,7 +91,7 @@ deploy_prod:
   script:
     - echo $DEPLOY_HOST
     - echo $CI_PROJECT_NAME
-    - apt-get install -y rsync
+    - apt-get update -y && apt-get install -y rsync
     # rsync to fresh folder
     - rsync -av --exclude data/ --exclude vendor/ --exclude http.log ./ $DEPLOY_HOST:$CI_PROJECT_NAME.$CI_COMMIT_SHA
     # Stop app, to release DB locks, using sudo due to no systemctl --user on CentOS 7 (https://bugs.centos.org/view.php?id=8767)
