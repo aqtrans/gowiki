@@ -1898,9 +1898,15 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 	name := nameFromContext(r.Context())
 
 	r.ParseForm()
-	//txt := r.Body
 	content := r.FormValue("editor")
-	//bwiki := txt
+
+	// Strip out CRLF here,
+	// as I cannot figure out if it's the browser or what inserting them...
+	if strings.Contains(content, "\r\n") {
+		log.Println("crlf detected in saveHandler; replacing with just newlines.")
+		content = strings.Replace(content, "\r\n", "\n", -1)
+		//log.Println(strings.Contains(content, "\r\n"))
+	}
 
 	// Check for and install required YAML frontmatter
 	title := r.FormValue("title")
