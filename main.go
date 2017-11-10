@@ -1000,7 +1000,8 @@ func gitIsEmpty() bool {
 // git grep --break 'searchTerm'
 func gitSearch(searchTerm, fileSpec string) []result {
 	var results []result
-	cmd := exec.Command("/bin/sh", "-c", gitPath+" grep "+searchTerm+" -- "+fileSpec)
+	quotedSearchTerm := `'` + searchTerm + `'`
+	cmd := exec.Command("/bin/sh", "-c", gitPath+" grep "+quotedSearchTerm+" -- "+fileSpec)
 	//o := gitCommand("grep", "omg -- 'index'")
 	cmd.Dir = filepath.Join(dataDir, "wikidata")
 	o, err := cmd.CombinedOutput()
@@ -1029,6 +1030,25 @@ func gitSearch(searchTerm, fileSpec string) []result {
 			results = append(results, theResult)
 		}
 	}
+	// Check for matching filenames
+	u := gitCommand("ls-files", `'*`+searchTerm+`*'`)
+	uo, err := u.CombinedOutput()
+	if err != nil {
+		log.Println("ERROR gitSearch ls-files:", err)
+		log.Println(string(uo))
+		return nil
+	}
+	log.Println(searchTerm, uo)
+	lssplit := strings.Split(string(uo), "\n")
+	for _, v := range lssplit {
+		log.Println(v)
+		theResult := result{
+			Name:   v,
+			Result: "",
+		}
+		results = append(results, theResult)
+	}
+
 	return results
 }
 
@@ -2847,7 +2867,7 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 
 	//log.Println(fileList)
 
-	results := gitSearch(`'`+name+`'`, strings.TrimSpace(fileList))
+	results := gitSearch(name, strings.TrimSpace(fileList))
 
 	s := &searchPage{p, results}
 	renderTemplate(r.Context(), env, w, "search_results.tmpl", s)
