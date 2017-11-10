@@ -1031,22 +1031,17 @@ func gitSearch(searchTerm, fileSpec string) []result {
 		}
 	}
 	// Check for matching filenames
-	u := gitCommand("ls-files", `'*`+searchTerm+`*'`)
-	uo, err := u.CombinedOutput()
-	if err != nil {
-		log.Println("ERROR gitSearch ls-files:", err)
-		log.Println(string(uo))
-		return nil
-	}
-	log.Println(searchTerm, uo)
-	lssplit := strings.Split(string(uo), "\n")
-	for _, v := range lssplit {
-		log.Println(v)
-		theResult := result{
-			Name:   v,
-			Result: "",
+	listOfFiles := strings.Fields(fileSpec)
+	for _, v := range listOfFiles {
+		if strings.Contains(v, searchTerm) {
+			cleanV := strings.TrimPrefix(v, "\"")
+			cleanV = strings.TrimSuffix(cleanV, "\"")
+			log.Println(cleanV)
+			theResult := result{
+				Name: cleanV,
+			}
+			results = append(results, theResult)
 		}
-		results = append(results, theResult)
 	}
 
 	return results
