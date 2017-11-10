@@ -1484,6 +1484,11 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 			} else {
 				start = true
 				end = true
+				// If given two buffers, but we cannot find the beginning, assume the entire page is text
+				if grabPage {
+					bufs[1].Write(scanner.Bytes())
+					bufs[1].WriteString("\n")
+				}
 			}
 		}
 	}
@@ -1881,6 +1886,7 @@ func getFileType(filename string) string {
 	if err != nil {
 		log.Println(err)
 	}
+
 	defer file.Close()
 	buff := make([]byte, 512)
 	_, err = file.Read(buff)
@@ -1891,6 +1897,11 @@ func getFileType(filename string) string {
 	if filetype == "application/octet-stream" {
 		// Definitely wiki page...but others probably
 		if string(buff[:3]) == "---" {
+			realFileType = "wiki"
+		}
+
+		// Account for .page files from gitit
+		if filepath.Ext(filename) == ".page" {
 			realFileType = "wiki"
 		}
 		// TODO Fixes gitit-created files, until I can figure out a better way
