@@ -1612,7 +1612,6 @@ func parseBool(value string) bool {
 // If there is anything wrong, it panics
 func doesPageExist(name string) bool {
 	defer httputils.TimeTrack(time.Now(), "doesPageExist")
-	httputils.Debugln("doesPageExist", name)
 
 	exists := false
 
@@ -1637,6 +1636,8 @@ func doesPageExist(name string) bool {
 			exists = false
 		}
 	}
+
+	httputils.Debugln("doesPageExist", name, exists)
 
 	return exists
 }
@@ -1739,6 +1740,7 @@ func checkName(name *string) (bool, error) {
 		fullnewfilename := filepath.Join(dataDir, "wikidata", *name)
 		exists = doesPageExist(fullnewfilename)
 	}
+
 	return exists, nil
 
 }
@@ -1852,7 +1854,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.ServeFile(w, r, "/"+filepath.Join(dataDir, "wikidata", name))
+	http.ServeFile(w, r, filepath.Join(dataDir, "wikidata", name))
 	return
 	/*
 		var html template.HTML
@@ -1886,12 +1888,13 @@ func getFileType(filename string) string {
 		log.Println(err)
 	}
 	filetype := http.DetectContentType(buff)
-	//log.Println(filetype)
 	if filetype == "application/octet-stream" {
 		// Definitely wiki page...but others probably
 		if string(buff[:3]) == "---" {
 			realFileType = "wiki"
 		}
+		// TODO Fixes gitit-created files, until I can figure out a better way
+		//realFileType = "wiki"
 	} else if filetype == "text/plain; charset=utf-8" {
 		realFileType = "wiki"
 	} else {
