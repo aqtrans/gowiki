@@ -39,8 +39,11 @@ build-my-project:
     #- /bin/sh ./build_css.sh
     - apt-get update -y && apt-get install -y ruby-sass
     - sass -t compressed scss/grid.scss assets/css/wiki.css
-    - go get -u github.com/kardianos/govendor
-    - govendor sync
+    #- go get -u github.com/kardianos/govendor
+    #- govendor sync
+    - curl -sL https://github.com/golang/dep/releases/download/v0.3.2/dep-linux-amd64
+    - chmod +x dep-linux-amd64
+    - ./dep-linux-amd64 ensure
     - go get -d
     - go build -o ./wiki
   artifacts:
