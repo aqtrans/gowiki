@@ -64,7 +64,7 @@ import (
 	//"github.com/microcosm-cc/bluemonday"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
-	gogit "gopkg.in/src-d/go-git.v4"
+	//gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/yaml.v2"
 	"jba.io/go/auth"
 	"jba.io/go/httputils"
@@ -3047,11 +3047,12 @@ func (c *wikiCache) UnmarshalBinary(data []byte) error {
 */
 
 func headHash() string {
-	repo, err := gogit.PlainOpen(filepath.Join(dataDir, "wikidata"))
-	check(err)
-	head, err := repo.Head()
-	check(err)
-	return head.Hash().String()
+	output, err := gitCommand("rev-parse", "HEAD").CombinedOutput()
+	if err != nil {
+		log.Println("Error retrieving SHA1 of wikidata:", err)
+		return ""
+	}
+	return string(output)
 }
 
 // This should be all the stuff we need to be refreshed on startup and when pages are saved
