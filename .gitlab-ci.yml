@@ -41,9 +41,9 @@ build-my-project:
     - sass -t compressed scss/grid.scss assets/css/wiki.css
     #- go get -u github.com/kardianos/govendor
     #- govendor sync
-    - curl -sL https://github.com/golang/dep/releases/download/v0.3.2/dep-linux-amd64
-    - chmod +x dep-linux-amd64
-    - ./dep-linux-amd64 ensure
+    - curl -o dep -sL https://github.com/golang/dep/releases/download/v0.3.2/dep-linux-amd64
+    - chmod +x dep
+    - ./dep ensure
     - go get -d
     - go build -o ./wiki
   artifacts:
