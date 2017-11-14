@@ -2888,101 +2888,92 @@ func buildCache() *wikiCache {
 		fileList, err := gitLsTree()
 		check(err)
 
-		sem := make(chan bool, 50)
-		wg := sync.WaitGroup{}
-
 		for _, file := range fileList {
-			wg.Add(1)
-			sem <- true
+
 			wikiDir := filepath.Join(dataDir, "wikidata")
-			go func(file *gitDirList) {
-				// If using Git, build the full path:
-				fullname := filepath.Join(wikiDir, file.Filename)
+			// If using Git, build the full path:
+			fullname := filepath.Join(wikiDir, file.Filename)
 
-				// If this is a directory, add it to the list for listing
-				//   but just assume it is private
-				if file.Type == "tree" {
-					var wp gitDirList
-					wp = gitDirList{
-						Type:       "tree",
-						Filename:   file.Filename,
-						CreateTime: 0,
-						ModTime:    0,
-						Permission: "private",
-					}
-					wps = append(wps, wp)
+			// If this is a directory, add it to the list for listing
+			//   but just assume it is private
+			if file.Type == "tree" {
+				var wp gitDirList
+				wp = gitDirList{
+					Type:       "tree",
+					Filename:   file.Filename,
+					CreateTime: 0,
+					ModTime:    0,
+					Permission: "private",
+				}
+				wps = append(wps, wp)
+			}
+
+			// If not a directory, get frontmatter from file and add to list
+			if file.Type == "blob" {
+
+				// If this is an absolute path, including the cfg.WikiDir, trim it
+				//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
+				//fileURL := strings.TrimPrefix(file, withoutdotslash)
+
+				var wp gitDirList
+
+				// Read YAML frontmatter into fm
+				f, err := os.Open(fullname)
+				check(err)
+
+				fm := readFront(f)
+				//fm, content := readWikiPage(f)
+				f.Close()
+				//checkErr("crawlWiki()/readFront", err)
+
+				if fm.Title == "" {
+					fm.Title = file.Filename
+				}
+				if fm.Permission == "" {
+					fm.Permission = "private"
+				}
+				if fm.Favorite != true {
+					fm.Favorite = false
+				}
+				if fm.Tags == nil {
+					fm.Tags = []string{}
 				}
 
-				// If not a directory, get frontmatter from file and add to list
-				if file.Type == "blob" {
-
-					// If this is an absolute path, including the cfg.WikiDir, trim it
-					//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
-					//fileURL := strings.TrimPrefix(file, withoutdotslash)
-
-					var wp gitDirList
-
-					// Read YAML frontmatter into fm
-					f, err := os.Open(fullname)
+				// Tags and Favorites building
+				// Replacing readFavs and readTags
+				if fm.Favorite {
+					//cache.Favs.LoadOrStore(file.Filename)
+					if _, ok := cache.Favs[file.Filename]; !ok {
+						httputils.Debugln("buildCache.favs: " + file.Filename + " is not already a favorite.")
+						cache.Favs[file.Filename] = struct{}{}
+					}
+				}
+				if fm.Tags != nil {
+					//cache.Tags.LoadOrStore(fm.Tags, file.Filename)
+					for _, tag := range fm.Tags {
+						cache.Tags[tag] = append(cache.Tags[tag], file.Filename)
+					}
+				}
+				/*
+					ctime, err := gitGetCtime(file.Filename)
 					check(err)
+					mtime, err := gitGetMtime(file.Filename)
+					check(err)
+				*/
+				ctime := make(chan int64, 1)
+				mtime := make(chan int64, 1)
+				gitGetTimes(file.Filename, ctime, mtime)
 
-					fm := readFront(f)
-					//fm, content := readWikiPage(f)
-					f.Close()
-					//checkErr("crawlWiki()/readFront", err)
-
-					if fm.Title == "" {
-						fm.Title = file.Filename
-					}
-					if fm.Permission == "" {
-						fm.Permission = "private"
-					}
-					if fm.Favorite != true {
-						fm.Favorite = false
-					}
-					if fm.Tags == nil {
-						fm.Tags = []string{}
-					}
-
-					// Tags and Favorites building
-					// Replacing readFavs and readTags
-					if fm.Favorite {
-						//cache.Favs.LoadOrStore(file.Filename)
-						if _, ok := cache.Favs[file.Filename]; !ok {
-							httputils.Debugln("buildCache.favs: " + file.Filename + " is not already a favorite.")
-							cache.Favs[file.Filename] = struct{}{}
-						}
-					}
-					if fm.Tags != nil {
-						//cache.Tags.LoadOrStore(fm.Tags, file.Filename)
-						for _, tag := range fm.Tags {
-							cache.Tags[tag] = append(cache.Tags[tag], file.Filename)
-						}
-					}
-					/*
-						ctime, err := gitGetCtime(file.Filename)
-						check(err)
-						mtime, err := gitGetMtime(file.Filename)
-						check(err)
-					*/
-					ctime := make(chan int64, 1)
-					mtime := make(chan int64, 1)
-					gitGetTimes(file.Filename, ctime, mtime)
-
-					wp = gitDirList{
-						Type:       "blob",
-						Filename:   file.Filename,
-						CreateTime: <-ctime,
-						ModTime:    <-mtime,
-						Permission: fm.Permission,
-					}
-					wps = append(wps, wp)
+				wp = gitDirList{
+					Type:       "blob",
+					Filename:   file.Filename,
+					CreateTime: <-ctime,
+					ModTime:    <-mtime,
+					Permission: fm.Permission,
 				}
-				wg.Done()
-				<-sem
-			}(file)
+				wps = append(wps, wp)
+			}
 		}
-		wg.Wait()
 		cache.SHA1 = headHash()
 	}
 
