@@ -2017,6 +2017,10 @@ func loadWiki(name string) *wiki {
 
 	wikiDir := filepath.Join(dataDir, "wikidata")
 
+	ctime := make(chan int64, 1)
+	mtime := make(chan int64, 1)
+	go gitGetTimes(name, ctime, mtime)
+
 	fm, content := readFileAndFront(filepath.Join(wikiDir, name))
 
 	pagetitle := setPageTitle(fm.Title, name)
@@ -2028,9 +2032,6 @@ func loadWiki(name string) *wiki {
 		mtime, err := gitGetMtime(name)
 		checkErr("loadWiki()/gitGetMtime", err)
 	*/
-	ctime := make(chan int64, 1)
-	mtime := make(chan int64, 1)
-	gitGetTimes(name, ctime, mtime)
 
 	return &wiki{
 		Title:       pagetitle,
@@ -2915,6 +2916,10 @@ func buildCache() *wikiCache {
 				//withoutdotslash := strings.TrimPrefix(viper.GetString("WikiDir"), "./")
 				//fileURL := strings.TrimPrefix(file, withoutdotslash)
 
+				ctime := make(chan int64, 1)
+				mtime := make(chan int64, 1)
+				go gitGetTimes(file.Filename, ctime, mtime)
+
 				var wp gitDirList
 
 				// Read YAML frontmatter into fm
@@ -2960,9 +2965,6 @@ func buildCache() *wikiCache {
 					mtime, err := gitGetMtime(file.Filename)
 					check(err)
 				*/
-				ctime := make(chan int64, 1)
-				mtime := make(chan int64, 1)
-				gitGetTimes(file.Filename, ctime, mtime)
 
 				wp = gitDirList{
 					Type:       "blob",
