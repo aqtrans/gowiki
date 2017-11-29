@@ -20,6 +20,7 @@
 #  name = "github.com/x/y"
 #  version = "2.4.0"
 
+ignored = ["jba.io/go/auth", "jba.io/go/httputils"]
 
 [[constraint]]
   name = "github.com/dimfeld/httptreemux"
@@ -56,11 +57,3 @@
 [[constraint]]
   branch = "v2"
   name = "gopkg.in/yaml.v2"
-
-[[constraint]]
-  branch = "master"
-  name = "jba.io/go/auth"
-
-[[constraint]]
-  branch = "master"
-  name = "jba.io/go/httputils"
