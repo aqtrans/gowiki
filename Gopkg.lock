@@ -8,12 +8,6 @@
   revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
 
 [[projects]]
-  name = "github.com/boltdb/bolt"
-  packages = ["."]
-  revision = "2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8"
-  version = "v1.3.1"
-
-[[projects]]
   name = "github.com/dimfeld/httptreemux"
   packages = ["."]
   revision = "8cc36ee10f84b82d0742ffcab770815c7d3f9ad7"
@@ -159,12 +153,6 @@
 
 [[projects]]
   branch = "master"
-  name = "golang.org/x/crypto"
-  packages = ["bcrypt","blowfish"]
-  revision = "9f005a07e0d31d45e6656d241bb5c0f2efd4bc94"
-
-[[projects]]
-  branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
   revision = "665f6529cca930e27b831a0d1dafffbe1c172924"
@@ -181,21 +169,9 @@
   packages = ["."]
   revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
 
-[[projects]]
-  branch = "master"
-  name = "jba.io/go/auth"
-  packages = ["."]
-  revision = "f41f58526f436ade641e609d7a82a9d41fad4ff4"
-
-[[projects]]
-  branch = "master"
-  name = "jba.io/go/httputils"
-  packages = ["."]
-  revision = "a25be4c3745c6e94cbbefcc0a26a785e36909a3a"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "801a0adb6887e25b6d59cfe2b241669d19e01ea68bf9f2242f1c559d17b5777e"
+  inputs-digest = "e1f3ad6bf448d9e970cd4528feded77f90a8357db414dcbc2da2c364bef575ff"
   solver-name = "gps-cdcl"
   solver-version = 1
