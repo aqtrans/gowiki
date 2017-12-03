@@ -2019,7 +2019,7 @@ func urlFromPath(path string) string {
 	return strings.TrimPrefix(path, url)
 }
 
-func loadWiki(name string) *wiki {
+func loadWiki(name string, w chan<- wiki) {
 	defer httputils.TimeTrack(time.Now(), "loadWiki")
 
 	var fm frontmatter
@@ -2042,7 +2042,7 @@ func loadWiki(name string) *wiki {
 		checkErr("loadWiki()/gitGetMtime", err)
 	*/
 
-	return &wiki{
+	w <- wiki{
 		Title:       pagetitle,
 		Filename:    name,
 		Frontmatter: fm,
@@ -2068,38 +2068,29 @@ type Wiki struct {
 func loadWikiPage(env *wikiEnv, r *http.Request, name string) wikiPage {
 	defer httputils.TimeTrack(time.Now(), "loadWikiPage")
 
-	var theWiki *wiki
-	theWikiChan := make(chan *wiki)
-	var theMarkdown string
-	theMarkdownChan := make(chan string)
+	var theWiki wiki
+	var md string
 
 	p := make(chan page, 1)
 	go loadPage(env, r, p)
 
 	wikiExists := wikiExistsFromContext(r.Context())
 	if !wikiExists {
-		go func() {
-			theWiki = &wiki{
-				Title:    name,
-				Filename: name,
-				Frontmatter: frontmatter{
-					Title: name,
-				},
-				CreateTime: 0,
-				ModTime:    0,
-			}
-			theWikiChan <- theWiki
-			theMarkdownChan <- theMarkdown
-		}()
+		theWiki = wiki{
+			Title:    name,
+			Filename: name,
+			Frontmatter: frontmatter{
+				Title: name,
+			},
+			CreateTime: 0,
+			ModTime:    0,
+		}
 	}
 	if wikiExists {
-		go func() {
-			wikip := loadWiki(name)
-			// Render remaining content after frontmatter
-			md := markdownRender(wikip.Content)
-			theWikiChan <- wikip
-			theMarkdownChan <- md
-		}()
+		wc := make(chan wiki, 1)
+		go loadWiki(name, wc)
+		theWiki = <-wc
+		md = markdownRender(theWiki.Content)
 	}
 
 	//md := commonmarkRender(wikip.Content)
@@ -2107,8 +2098,8 @@ func loadWikiPage(env *wikiEnv, r *http.Request, name string) wikiPage {
 
 	wp := wikiPage{
 		page:     <-p,
-		Wiki:     *<-theWikiChan,
-		Rendered: <-theMarkdownChan,
+		Wiki:     theWiki,
+		Rendered: md,
 	}
 	return wp
 }
