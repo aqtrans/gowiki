@@ -3244,6 +3244,8 @@ func main() {
 		csrfSecure = false
 	}
 
+	httputils.Logfile = filepath.Join(dataDir, "http.log")
+
 	// HTTP stuff from here on out
 	s := alice.New(timer, httputils.Logger, env.authState.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
 
