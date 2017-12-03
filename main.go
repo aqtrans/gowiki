@@ -3062,9 +3062,8 @@ func (env *wikiEnv) refreshStuff() {
 }
 
 func markdownPreview(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
 
-	w.Write([]byte(markdownRender([]byte(r.FormValue("md")))))
+	w.Write([]byte(markdownRender([]byte(r.PostFormValue("md")))))
 }
 
 func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
@@ -3294,7 +3293,7 @@ func main() {
 	r.POST("/gitadd", env.authState.AuthMiddle(gitCheckinPostHandler))
 	r.GET("/gitadd", env.authState.AuthMiddle(env.gitCheckinHandler))
 
-	r.GET("/md_render", markdownPreview)
+	r.POST("/md_render", markdownPreview)
 
 	r.GET("/uploads/*", treeMuxWrapper(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads")))))
 
