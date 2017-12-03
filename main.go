@@ -1670,6 +1670,7 @@ func relativePathCheck(name string) error {
 // Edge cases checked for currently:
 // - If name is trying to escape or otherwise a bad path
 // - If name is a /directory/file combo, but /directory is actually a file
+// - If name contains a .git entry, error out
 func checkName(name *string) (bool, error) {
 	defer httputils.TimeTrack(time.Now(), "checkName")
 
@@ -1685,6 +1686,12 @@ func checkName(name *string) (bool, error) {
 	// Remove trailing spaces
 	*name = strings.Trim(*name, " ")
 	//log.Println(name)
+
+	// Security check; ensure we are not serving any files from wikidata/.git
+	// If so, toss them to the index, no hints given
+	if strings.Contains(*name, ".git") {
+		return false, errors.New("Unable to access given file")
+	}
 
 	/*
 		// Directory without specified index
