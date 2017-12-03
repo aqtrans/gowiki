@@ -1926,7 +1926,10 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	name := nameFromContext(r.Context())
 
-	r.ParseForm()
+	err := r.ParseForm()
+	if err != nil {
+		log.Println("Error parsing form ", err)
+	}
 	content := r.FormValue("editor")
 
 	// Strip out CRLF here,
@@ -1972,7 +1975,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 		Content:     []byte(content),
 	}
 
-	err := thewiki.save(&env.mutex)
+	err = thewiki.save(&env.mutex)
 	if err != nil {
 		panic(err)
 	}
