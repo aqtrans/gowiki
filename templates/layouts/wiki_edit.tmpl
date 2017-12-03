@@ -93,12 +93,13 @@ var textarea = document.getElementById("editor");
 
 document.getElementById("tab-2").onclick = function() {
     var editortxt = document.getElementsByName("editor")[0].value;
+    var csrf = document.getElementsByName("gorilla.csrf.Token")[0].value;
     //var parsed = reader.parse(editortxt);
     //var result = writer.render(parsed);
     $.ajax({
-        type: "GET",
+        type: "POST",
         url: "/md_render",
-        data: { md: editortxt },
+        data: { md: editortxt, 'gorilla.csrf.Token': csrf },
         success: function (msg) {
             document.getElementById("preview_content").innerHTML = msg;
         },
