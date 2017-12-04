@@ -1434,54 +1434,160 @@ func readFront(reader io.Reader) frontmatter {
 
 }
 
-func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
-	grabPage := false
-	// If we are given two buffers, do something with the bottom data
-	if len(bufs) == 2 {
-		grabPage = true
+/*
+func splitWiki(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	//advance, token, err = bufio.ScanLines(data, atEOF)
+	// YAML separator:
+	yamlsepB := []byte{45, 45, 45}
+	yamlsep2B := []byte{46, 46, 46}
+
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
 	}
+
+	if i := bytes.Index(data, yamlsepB); i == 0 {
+		log.Println("Opening YAML tag found.")
+
+		if i := bytes.LastIndex(data[3:], yamlsepB); i > 0 {
+			// Check for closing YAML tag
+			log.Println("Closing YAML tag found.", i, string(data[3:i+3]))
+			return len(data[0 : i+3]), data[3 : i+3], nil
+
+		} else if i := bytes.LastIndex(data[3:], yamlsep2B); i > 0 {
+			// Check for gitit-compatible closing YAML tag (...)
+			log.Println("Closing YAML tag found.", i, string(data[3:i+3]))
+			return len(data[0 : i+3]), data[3 : i+3], nil
+
+		} else {
+			// Or ask for more data
+			return 3, nil, nil
+		}
+	} else {
+		return len(data), data, nil
+	}
+
+	// Request more data.
+	return 0, nil, nil
+}
+*/
+
+func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
+	/*
+		var grabPage bool
+		// If we are given two buffers, assume we want to capture frontmatter and page
+		if len(bufs) == 2 {
+			log.Println("grabPage is true")
+			grabPage = true
+		}
+	*/
+
+	splitWiki := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		//advance, token, err = bufio.ScanLines(data, atEOF)
+		// YAML separator:
+		yamlsepB := []byte{45, 45, 45}
+		yamlsep2B := []byte{46, 46, 46}
+
+		if atEOF && len(data) == 0 {
+			return 0, nil, nil
+		}
+		// Try checking for YAML by trying to find the end tag first
+		if i := bytes.LastIndex(data[3:], yamlsepB); i > 0 {
+			// Check for closing YAML tag
+			log.Println("Closing YAML tag found.", i)
+			return i + 3, data[3 : i+3], nil
+
+		} else if i := bytes.LastIndex(data[3:], yamlsep2B); i > 0 {
+			// Check for gitit-compatible closing YAML tag (...)
+			log.Println("Closing YAML tag found.")
+			return i + 3, data[3 : i+3], nil
+
+		} else {
+			// Or ask for more data
+			return 0, nil, nil
+		}
+
+		/*
+			if i := bytes.Index(data, yamlsepB); i == 0 {
+				log.Println("Opening YAML tag found.", string(data[:3]), atEOF, len(data))
+
+				if i := bytes.LastIndex(data[3:], yamlsepB); i > 0 {
+					// Check for closing YAML tag
+					log.Println("Closing YAML tag found.")
+					return i + 3, data[3 : i+3], nil
+
+				} else if i := bytes.LastIndex(data[3:], yamlsep2B); i > 0 {
+					// Check for gitit-compatible closing YAML tag (...)
+					log.Println("Closing YAML tag found.")
+					return i + 3, data[3 : i+3], nil
+
+				} else {
+					// Or ask for more data
+					return 3, nil, nil
+				}
+			} else {
+				log.Println("Opening YAML tag not found. Presuming the rest is a page.")
+				if !grabPage {
+					return 0, []byte(""), nil
+				}
+				return len(data), data, nil
+			}
+		*/
+	}
+
 	scanner := bufio.NewScanner(reader)
-	start := false
-	end := false
+	scanner.Split(splitWiki)
 	for scanner.Scan() {
 
-		if start && end {
-			if grabPage {
-				bufs[1].Write(scanner.Bytes())
-				bufs[1].WriteString("\n")
-			} else {
-				break
-			}
-		}
-		if start && !end {
-			// Anything after the --- tag, add to the topbuffer
-			if scanner.Text() != yamlsep || scanner.Text() != yamlsep2 {
-				bufs[0].Write(scanner.Bytes())
-				bufs[0].WriteString("\n")
-			}
-			if scanner.Text() == yamlsep || scanner.Text() == yamlsep2 {
-				end = true
-				// If not given 2 buffers, end here.
-				if !grabPage {
+		log.Println("Scanner text: ", scanner.Text())
+		/*
+			if startToken && endToken {
+				if grabPage {
+					//bufs[1].Write(scanner.Bytes())
+					if _, err := bufs[1].WriteString(scanner.Text() + "\n"); err != nil {
+						log.Println("Error scanning line:", err)
+					}
+				} else {
 					break
 				}
 			}
-		}
-
-		// Hopefully catch the first --- tag
-		if !start && !end {
-			if scanner.Text() == yamlsep {
-				start = true
-			} else {
-				start = true
-				end = true
-				// If given two buffers, but we cannot find the beginning, assume the entire page is text
-				if grabPage {
-					bufs[1].Write(scanner.Bytes())
-					bufs[1].WriteString("\n")
+			if startToken && !endToken {
+				// Anything after the --- tag, add to the frontmatter buffer
+				if scanner.Text() != yamlsep || scanner.Text() != yamlsep2 {
+					//bufs[0].Write(scanner.Bytes())
+					if _, err := bufs[0].WriteString(scanner.Text() + "\n"); err != nil {
+						log.Println("Error scanning line:", err)
+					}
+				}
+				if scanner.Text() == yamlsep || scanner.Text() == yamlsep2 {
+					endToken = true
+					// If not given 2 buffers, end here, only capturing the frontmatter
+					if !grabPage {
+						break
+					}
 				}
 			}
-		}
+
+			// Try to catch the first YAML tag (---)
+			if !startToken && !endToken {
+				if scanner.Text() == yamlsep {
+					startToken = true
+					// If not found, presume there is no YAML, and capture the first line here
+				} else {
+					startToken = true
+					endToken = true
+					// If given two buffers, but we cannot find the beginning, assume the entire page is text
+					if grabPage {
+						//bufs[1].Write(scanner.Bytes())
+						if _, err := bufs[1].WriteString("\n"); err != nil {
+							log.Println("Error scanning line:", err)
+						}
+					}
+				}
+			}
+		*/
+	}
+	if err := scanner.Err(); err != nil {
+		log.Println("scanWikiPage scanner error:", err)
 	}
 }
 
