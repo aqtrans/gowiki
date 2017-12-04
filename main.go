@@ -1491,19 +1491,20 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 			return 0, nil, nil
 		}
 		// Try checking for YAML by trying to find the end tag first
-		if i := bytes.LastIndex(data[3:], yamlsepB); i > 0 {
+		if i := bytes.LastIndex(data, yamlsepB); i > 0 {
 			// Check for closing YAML tag
-			log.Println("Closing YAML tag found.", i)
-			return i + 3, data[3 : i+3], nil
+			log.Println("Closing YAML tag found.")
+			return i, data[:i], nil
 
-		} else if i := bytes.LastIndex(data[3:], yamlsep2B); i > 0 {
+		} else if i := bytes.LastIndex(data, yamlsep2B); i > 0 {
 			// Check for gitit-compatible closing YAML tag (...)
 			log.Println("Closing YAML tag found.")
-			return i + 3, data[3 : i+3], nil
+			return i, data[:i], nil
 
 		} else {
 			// Or ask for more data
-			return 0, nil, nil
+			//return 0, nil, nil
+			return len(data), data, nil
 		}
 
 		/*
