@@ -1482,7 +1482,6 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 	*/
 
 	splitWiki := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
-		//advance, token, err = bufio.ScanLines(data, atEOF)
 		// YAML separator:
 		yamlsepB := []byte{45, 45, 45}
 		yamlsep2B := []byte{46, 46, 46}
@@ -1501,11 +1500,14 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 			log.Println("Closing YAML tag found.")
 			return i + 3, data[:i+3], nil
 
-		} else {
+		}
+		if atEOF {
 			// Or ask for more data
 			//return 0, nil, nil
 			return len(data), data, nil
 		}
+
+		return 0, nil, nil
 
 		/*
 			if i := bytes.Index(data, yamlsepB); i == 0 {
@@ -1538,8 +1540,8 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(splitWiki)
 	for scanner.Scan() {
+		log.Println(scanner.Text())
 
-		log.Println("Scanner text: ", scanner.Text())
 		/*
 			if startToken && endToken {
 				if grabPage {
