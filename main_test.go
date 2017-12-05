@@ -779,6 +779,56 @@ func TestSearchPage(t *testing.T) {
 	}
 }
 
+// Test that we are unable to access Git repo data (wikidata/.git)
+func TestDotGit(t *testing.T) {
+	err := gitPull()
+	checkT(err, t)
+
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
+	checkT(err, t)
+
+	e := testEnv(t, authState)
+
+	err = tmplInit(e)
+	checkT(err, t)
+
+	e.cache = buildCache()
+	if e.cache == nil {
+		t.Error("cache is empty")
+	}
+
+	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
+	// pass 'nil' as the third parameter.
+	req, err := http.NewRequest("GET", "/.git/index", nil)
+	checkT(err, t)
+
+	router := httptreemux.NewContextMux()
+	router.GET("/*name", e.wikiMiddle(e.viewHandler))
+
+	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
+	rr := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
+		Username: "admin",
+		IsAdmin:  true,
+	})
+
+	rctx := req.WithContext(ctx)
+
+	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
+	// directly and pass in our Request and ResponseRecorder.
+	router.DefaultContext = ctx
+	router.ServeHTTP(rr, rctx)
+
+	// Check the status code is what we expect.
+	if status := rr.Code; status != http.StatusInternalServerError {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusInternalServerError)
+	}
+}
+
 func TestCache(t *testing.T) {
 	cache := buildCache()
 	if cache == nil {
