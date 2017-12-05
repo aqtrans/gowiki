@@ -1478,10 +1478,10 @@ func dropYAML(data []byte) []byte {
 	if len(data) > 0 && bytes.Equal(data[:3], yamlsepB) {
 		data = data[3:]
 	}
-	if len(data) > 0 && bytes.Equal(data[len(data)-3:len(data)], yamlsepB) {
+	if len(data) > 0 && bytes.Equal(data[len(data)-3:len(data)], yamlsep2B) {
 		data = data[:len(data)-3]
 	}
-	if len(data) > 0 && bytes.Equal(data[len(data)-3:len(data)], yamlsep2B) {
+	if len(data) > 0 && bytes.Equal(data[len(data)-3:len(data)], yamlsepB) {
 		data = data[:len(data)-3]
 	}
 	return data
@@ -1505,18 +1505,23 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 		if atEOF && len(data) == 0 {
 			return 0, nil, nil
 		}
-		// Try checking for YAML by trying to find the end tag first
-		if i := bytes.LastIndex(data, yamlsepB); i > 0 {
-			// Check for closing YAML tag
-			log.Println("Closing YAML tag found.")
-			return i + 3, dropYAML(data[:i+3]), nil
-
-		} else if i := bytes.LastIndex(data, yamlsep2B); i > 0 {
-			// Check for gitit-compatible closing YAML tag (...)
-			log.Println("Closing YAML tag found.")
-			return i + 3, dropYAML(data[:i+3]), nil
-
+		// Try to find YAML by checking for the opening tag
+		if i := bytes.Index(data, yamlsepB); i == 0 {
+			log.Println("Opening YAML tag found.")
+			data = data[3:]
+			log.Println("index", bytes.Index(data, yamlsepB))
+			// Now check for the end tag, starting with the gitit-compatible (...)
+			if i := bytes.Index(data, yamlsep2B); i > 0 {
+				// Check for gitit-compatible closing YAML tag (...)
+				log.Println("Closing YAML tag found.")
+				return i + 3, data[:i], nil
+			} else if i := bytes.Index(data, yamlsepB); i > 0 {
+				// Check for closing YAML tag
+				log.Println("Closing YAML tag found.")
+				return i + 3, data[:i], nil
+			}
 		}
+
 		if atEOF {
 			// Or ask for more data
 			//return 0, nil, nil
