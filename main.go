@@ -1471,15 +1471,31 @@ func splitWiki(data []byte, atEOF bool) (advance int, token []byte, err error) {
 }
 */
 
+// dropYAML drops a --- from the data.
+func dropYAML(data []byte) []byte {
+	yamlsepB := []byte{45, 45, 45}
+	yamlsep2B := []byte{46, 46, 46}
+	if len(data) > 0 && bytes.Equal(data[:3], yamlsepB) {
+		data = data[3:]
+	}
+	if len(data) > 0 && bytes.Equal(data[len(data)-3:len(data)], yamlsepB) {
+		data = data[:len(data)-3]
+	}
+	if len(data) > 0 && bytes.Equal(data[len(data)-3:len(data)], yamlsep2B) {
+		data = data[:len(data)-3]
+	}
+	return data
+}
+
 func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
-	/*
-		var grabPage bool
-		// If we are given two buffers, assume we want to capture frontmatter and page
-		if len(bufs) == 2 {
-			log.Println("grabPage is true")
-			grabPage = true
-		}
-	*/
+
+	var grabPage bool
+	var i int
+	// If we are given two buffers, assume we want to capture frontmatter and page
+	if len(bufs) == 2 {
+		log.Println("grabPage is true")
+		grabPage = true
+	}
 
 	splitWiki := func(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		// YAML separator:
@@ -1493,18 +1509,20 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 		if i := bytes.LastIndex(data, yamlsepB); i > 0 {
 			// Check for closing YAML tag
 			log.Println("Closing YAML tag found.")
-			return i + 3, data[:i+3], nil
+			return i + 3, dropYAML(data[:i+3]), nil
 
 		} else if i := bytes.LastIndex(data, yamlsep2B); i > 0 {
 			// Check for gitit-compatible closing YAML tag (...)
 			log.Println("Closing YAML tag found.")
-			return i + 3, data[:i+3], nil
+			return i + 3, dropYAML(data[:i+3]), nil
 
 		}
 		if atEOF {
 			// Or ask for more data
 			//return 0, nil, nil
-			return len(data), data, nil
+			if grabPage {
+				return len(data), data, nil
+			}
 		}
 
 		return 0, nil, nil
@@ -1540,7 +1558,26 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(splitWiki)
 	for scanner.Scan() {
-		log.Println(scanner.Text())
+		log.Println(i)
+		//log.Println(scanner.Text())
+
+		if i == 0 {
+			log.Println(scanner.Text())
+			_, err := bufs[0].Write(scanner.Bytes())
+			if err != nil {
+				log.Println("Error writing frontmatter:", err)
+			}
+		}
+
+		if i == 1 && grabPage {
+			log.Println(scanner.Text())
+			_, err := bufs[1].Write(scanner.Bytes())
+			if err != nil {
+				log.Println("Error writing body:", err)
+			}
+		}
+
+		i++
 
 		/*
 			if startToken && endToken {
