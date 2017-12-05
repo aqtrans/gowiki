@@ -1441,26 +1441,32 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 		grabPage = true
 	}
 	scanner := bufio.NewScanner(reader)
-	start := false
-	end := false
+	startTokenFound := false
+	endTokenFound := false
 	for scanner.Scan() {
 
-		if start && end {
+		if startTokenFound && endTokenFound {
 			if grabPage {
-				bufs[1].Write(scanner.Bytes())
-				bufs[1].WriteString("\n")
+				//bufs[1].Write(scanner.Bytes())
+				_, err := bufs[1].WriteString(scanner.Text() + "\n")
+				if err != nil {
+					log.Println("Error writing page data:", err)
+				}
 			} else {
 				break
 			}
 		}
-		if start && !end {
+		if startTokenFound && !endTokenFound {
 			// Anything after the --- tag, add to the topbuffer
 			if scanner.Text() != yamlsep || scanner.Text() != yamlsep2 {
-				bufs[0].Write(scanner.Bytes())
-				bufs[0].WriteString("\n")
+				//bufs[0].Write(scanner.Bytes())
+				_, err := bufs[0].WriteString(scanner.Text() + "\n")
+				if err != nil {
+					log.Println("Error writing page data:", err)
+				}
 			}
 			if scanner.Text() == yamlsep || scanner.Text() == yamlsep2 {
-				end = true
+				endTokenFound = true
 				// If not given 2 buffers, end here.
 				if !grabPage {
 					break
@@ -1469,16 +1475,20 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 		}
 
 		// Hopefully catch the first --- tag
-		if !start && !end {
+		if !startTokenFound && !endTokenFound {
 			if scanner.Text() == yamlsep {
-				start = true
+				startTokenFound = true
 			} else {
-				start = true
-				end = true
+				startTokenFound = true
+				endTokenFound = true
 				// If given two buffers, but we cannot find the beginning, assume the entire page is text
 				if grabPage {
-					bufs[1].Write(scanner.Bytes())
-					bufs[1].WriteString("\n")
+					//bufs[1].Write(scanner.Bytes())
+					_, err := bufs[1].WriteString(scanner.Text() + "\n")
+					if err != nil {
+						log.Println("Error writing page data:", err)
+					}
+
 				}
 			}
 		}
