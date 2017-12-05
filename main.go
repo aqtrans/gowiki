@@ -1502,6 +1502,8 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 		yamlsepB := []byte{45, 45, 45}
 		yamlsep2B := []byte{46, 46, 46}
 
+		log.Println(atEOF, string(data))
+
 		if atEOF && len(data) == 0 {
 			return 0, nil, nil
 		}
@@ -1509,16 +1511,16 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 		if i := bytes.Index(data, yamlsepB); i == 0 {
 			log.Println("Opening YAML tag found.")
 			data = data[3:]
-			log.Println("index", bytes.Index(data, yamlsepB))
 			// Now check for the end tag, starting with the gitit-compatible (...)
 			if i := bytes.Index(data, yamlsep2B); i > 0 {
 				// Check for gitit-compatible closing YAML tag (...)
 				log.Println("Closing YAML tag found.")
-				return i + 3, data[:i], nil
+				return i + 3, dropYAML(data[:i]), nil
 			} else if i := bytes.Index(data, yamlsepB); i > 0 {
-				// Check for closing YAML tag
+				// Check for standard closing YAML tag (---)
+				//data = data[:i+3]
 				log.Println("Closing YAML tag found.")
-				return i + 3, data[:i], nil
+				return i + 3, dropYAML(data[:i]), nil
 			}
 		}
 
@@ -1526,7 +1528,8 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 			// Or ask for more data
 			//return 0, nil, nil
 			if grabPage {
-				return len(data), data, nil
+				//return len(data), data, nil
+				return 0, data, bufio.ErrFinalToken
 			}
 		}
 
@@ -1563,11 +1566,11 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 	scanner := bufio.NewScanner(reader)
 	scanner.Split(splitWiki)
 	for scanner.Scan() {
-		log.Println(i)
+		//log.Println(i)
 		//log.Println(scanner.Text())
 
 		if i == 0 {
-			log.Println(scanner.Text())
+			//log.Println(scanner.Text())
 			_, err := bufs[0].Write(scanner.Bytes())
 			if err != nil {
 				log.Println("Error writing frontmatter:", err)
@@ -1575,7 +1578,7 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 		}
 
 		if i == 1 && grabPage {
-			log.Println(scanner.Text())
+			//log.Println(scanner.Text())
 			_, err := bufs[1].Write(scanner.Bytes())
 			if err != nil {
 				log.Println("Error writing body:", err)
