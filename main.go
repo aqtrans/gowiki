@@ -144,12 +144,15 @@ type renderer struct {
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
 type page struct {
-	SiteName  string
-	Favs      []string
-	UserInfo  userInfo
-	Token     template.HTML
-	FlashMsg  template.HTML
-	GitStatus template.HTML
+	SiteName   string
+	Favs       []string
+	UserInfo   userInfo
+	Token      template.HTML
+	FlashMsg   template.HTML
+	GitStatus  template.HTML
+	PageTitle  string
+	Extra      interface{}
+	RenderTime string
 }
 
 type userInfo struct {
@@ -177,13 +180,11 @@ type wiki struct {
 }
 
 type wikiPage struct {
-	page
 	Wiki     wiki
 	Rendered string
 }
 
 type commitPage struct {
-	page
 	Wiki     wiki
 	Commit   string
 	Rendered string
@@ -191,47 +192,39 @@ type commitPage struct {
 }
 
 type listPage struct {
-	page
 	Wikis []gitDirList
 }
 
 type genPage struct {
-	page
 	Title string
 }
 
 type gitPage struct {
-	page
 	Title     string
 	GitStatus string
 	GitRemote string
 }
 
 type historyPage struct {
-	page
 	Wiki        wiki
 	Filename    string
 	FileHistory []commitLog
 }
 
 type tagMapPage struct {
-	page
 	TagKeys map[string][]string
 }
 
 type tagPage struct {
-	page
 	TagName string
 	Results []string
 }
 
 type searchPage struct {
-	page
 	Results []result
 }
 
 type recentsPage struct {
-	page
 	Recents []recent
 }
 
@@ -1083,7 +1076,7 @@ func (t *tags) GetAll() (tMap map[string][]string) {
 	return tMap
 }
 
-func loadPage(env *wikiEnv, r *http.Request, p chan<- page) {
+func loadPage(pageTitle string, env *wikiEnv, r *http.Request) page {
 	defer httputils.TimeTrack(time.Now(), "loadPage")
 	//timer.Step("loadpageFunc")
 
@@ -1126,9 +1119,10 @@ func loadPage(env *wikiEnv, r *http.Request, p chan<- page) {
 		}
 	*/
 
-	p <- page{
-		SiteName: "GoWiki",
-		Favs:     env.favs.GetAll(),
+	return page{
+		PageTitle: pageTitle,
+		SiteName:  "GoWiki",
+		Favs:      env.favs.GetAll(),
 		UserInfo: userInfo{
 			Username:   user,
 			IsAdmin:    isAdmin,
@@ -1163,19 +1157,17 @@ func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wikip := loadWikiPage(env, r, name)
-
 	history, err := gitGetFileLog(name)
 	if err != nil {
 		panic(err)
 	}
-	hp := &historyPage{
-		wikip.page,
-		wikip.Wiki,
-		name,
-		history,
+	p := loadPage("History of"+name, env, r)
+	p.Extra = &historyPage{
+		Wiki:        loadWiki(name),
+		Filename:    name,
+		FileHistory: history,
 	}
-	renderTemplate(r.Context(), env, w, "wiki_history.tmpl", hp)
+	renderTemplate(r.Context(), env, w, "wiki_history.tmpl", p)
 }
 
 // Need to get content of the file at specified commit
@@ -1189,8 +1181,7 @@ func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, co
 
 	//commit := vars["commit"]
 
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage(name+"@"+commit, env, r)
 
 	body, err := gitGetFileCommit(name, commit)
 	if err != nil {
@@ -1227,8 +1218,7 @@ func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, co
 
 	pageContent = md
 
-	cp := &commitPage{
-		page: <-p,
+	p.Extra = &commitPage{
 		Wiki: wiki{
 			Title:       pagetitle,
 			Filename:    name,
@@ -1242,15 +1232,14 @@ func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, co
 		Diff:     diffstring,
 	}
 
-	renderTemplate(r.Context(), env, w, "wiki_commit.tmpl", cp)
+	renderTemplate(r.Context(), env, w, "wiki_commit.tmpl", p)
 
 }
 
 // TODO: Fix this
 func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage("Recent activity", env, r)
 
 	gh, err := gitHistory()
 	check(err)
@@ -1284,18 +1273,16 @@ func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	s := recentsPage{
-		page:    <-p,
+	p.Extra = recentsPage{
 		Recents: recents,
 	}
-	renderTemplate(r.Context(), env, w, "recents.tmpl", s)
+	renderTemplate(r.Context(), env, w, "recents.tmpl", p)
 
 }
 
 func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage("Page List", env, r)
 
 	var list []gitDirList
 
@@ -1321,11 +1308,10 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	l := listPage{
-		page:  <-p,
+	p.Extra = listPage{
 		Wikis: list,
 	}
-	renderTemplate(r.Context(), env, w, "list.tmpl", l)
+	renderTemplate(r.Context(), env, w, "list.tmpl", p)
 }
 
 func readFileAndFront(filename string) (frontmatter, []byte) {
@@ -1562,17 +1548,21 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 	return fm
 }
 
-func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name string, data interface{}) {
+func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name string, p page) {
 	tmpl, ok := env.templates[name]
 	if !ok {
 		log.Println(fmt.Errorf("The template %s does not exist", name))
 		panic(fmt.Errorf("The template %s does not exist", name))
 	}
 
+	start := timeFromContext(c)
+	elapsed := time.Since(start)
+	p.RenderTime = elapsed.String()
+
 	// Create buffer to write to and check for errors
 	bufpool := bpool.NewBufferPool(64)
 	buf := bufpool.Get()
-	err := tmpl.ExecuteTemplate(buf, "base", data)
+	err := tmpl.ExecuteTemplate(buf, "base", p)
 	if err != nil {
 		log.Println("renderTemplate error:")
 		log.Println(err)
@@ -1583,25 +1573,6 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 	// Set the header and write the buffer to w
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	// Squeeze in our response time here
-	// Real hacky solution, but better than modifying the struct
-	start := timeFromContext(c)
-	elapsed := time.Since(start)
-	tmpl.Execute(buf, elapsed.String())
-	err = tmpl.ExecuteTemplate(buf, "footer", elapsed.String())
-	if err != nil {
-		log.Println("renderTemplate error:")
-		log.Println(err)
-		bufpool.Put(buf)
-		panic(err)
-	}
-	err = tmpl.ExecuteTemplate(buf, "bottom", data)
-	if err != nil {
-		log.Println("renderTemplate error:")
-		log.Println(err)
-		bufpool.Put(buf)
-		panic(err)
-	}
 	buf.WriteTo(w)
 	bufpool.Put(buf)
 }
@@ -1862,7 +1833,9 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	if fileType == "wiki" {
 		httputils.Debugln("Yay proper wiki page!")
 		// Get Wiki
-		p := loadWikiPage(env, r, name)
+		p := loadPage(name, env, r)
+		p.Extra = loadWiki(name)
+
 		renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
 		return
 	}
@@ -1925,7 +1898,8 @@ func getFileType(filename string) string {
 func (env *wikiEnv) editHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "editHandler")
 	name := nameFromContext(r.Context())
-	p := loadWikiPage(env, r, name)
+	p := loadPage("Editing"+name, env, r)
+	p.Extra = loadWiki(name)
 	renderTemplate(r.Context(), env, w, "wiki_edit.tmpl", p)
 }
 
@@ -2029,7 +2003,7 @@ func urlFromPath(path string) string {
 	return strings.TrimPrefix(path, url)
 }
 
-func loadWiki(name string, w chan<- wiki) {
+func loadWiki(name string) wiki {
 	defer httputils.TimeTrack(time.Now(), "loadWiki")
 
 	var fm frontmatter
@@ -2052,7 +2026,7 @@ func loadWiki(name string, w chan<- wiki) {
 		checkErr("loadWiki()/gitGetMtime", err)
 	*/
 
-	w <- wiki{
+	return wiki{
 		Title:       pagetitle,
 		Filename:    name,
 		Frontmatter: fm,
@@ -2075,6 +2049,7 @@ type Wiki struct {
     Content      string
 }*/
 /////////////////////////////
+/*
 func loadWikiPage(env *wikiEnv, r *http.Request, name string) wikiPage {
 	defer httputils.TimeTrack(time.Now(), "loadWikiPage")
 
@@ -2107,12 +2082,12 @@ func loadWikiPage(env *wikiEnv, r *http.Request, name string) wikiPage {
 	//markdownRender2(wikip.Content)
 
 	wp := wikiPage{
-		page:     <-p,
 		Wiki:     theWiki,
 		Rendered: md,
 	}
 	return wp
 }
+*/
 
 func (wiki *wiki) save(mutex *sync.Mutex) error {
 	mutex.Lock()
@@ -2236,57 +2211,47 @@ func (wiki *wiki) save(mutex *sync.Mutex) error {
 func (env *wikiEnv) loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "loginPageHandler")
 
-	title := "login"
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage("login", env, r)
 
-	gp := &genPage{
-		<-p,
-		title,
-	}
-	renderTemplate(r.Context(), env, w, "login.tmpl", gp)
+	renderTemplate(r.Context(), env, w, "login.tmpl", p)
 }
 
 func (env *wikiEnv) signupPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "signupPageHandler")
 
 	title := "signup"
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage(title, env, r)
 
-	gp := &genPage{
-		<-p,
-		title,
-	}
-	renderTemplate(r.Context(), env, w, "signup.tmpl", gp)
+	renderTemplate(r.Context(), env, w, "signup.tmpl", p)
 }
 
 func (env *wikiEnv) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminUsersHandler")
 
-	title := "admin-users"
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage("admin-users", env, r)
 
 	userlist, err := env.authState.Userlist()
 	if err != nil {
 		panic(err)
 	}
-
-	data := struct {
-		page
-		Title string
-		Users []string
-	}{
-		<-p,
-		title,
-		userlist,
-	}
+	/*
+		data := struct {
+			page
+			Title string
+			Users []string
+		}{
+			<-p,
+			title,
+			userlist,
+		}
+	*/
 	/*gp := &genPage{
 		p,
 		title,
 	}*/
-	renderTemplate(r.Context(), env, w, "admin_users.tmpl", data)
+	p.Extra = userlist
+
+	renderTemplate(r.Context(), env, w, "admin_users.tmpl", p)
 
 }
 
@@ -2294,8 +2259,7 @@ func (env *wikiEnv) adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminUserHandler")
 
 	title := "admin-user"
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage(title, env, r)
 
 	userlist, err := env.authState.Userlist()
 	if err != nil {
@@ -2307,21 +2271,20 @@ func (env *wikiEnv) adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	selectedUser := params["username"]
 
 	data := struct {
-		page
 		Title string
 		Users []string
 		User  string
 	}{
-		<-p,
 		title,
 		userlist,
 		selectedUser,
 	}
+	p.Extra = data
 	/*gp := &genPage{
 		p,
 		title,
 	}*/
-	renderTemplate(r.Context(), env, w, "admin_user.tmpl", data)
+	renderTemplate(r.Context(), env, w, "admin_user.tmpl", p)
 }
 
 // Function to take a <select><option> value and redirect to a URL based on it
@@ -2335,14 +2298,9 @@ func (env *wikiEnv) adminMainHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminMainHandler")
 
 	title := "admin-main"
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage(title, env, r)
 
-	gp := &genPage{
-		<-p,
-		title,
-	}
-	renderTemplate(r.Context(), env, w, "admin_main.tmpl", gp)
+	renderTemplate(r.Context(), env, w, "admin_main.tmpl", p)
 }
 
 func (env *wikiEnv) adminConfigHandler(w http.ResponseWriter, r *http.Request) {
@@ -2352,27 +2310,23 @@ func (env *wikiEnv) adminConfigHandler(w http.ResponseWriter, r *http.Request) {
 	viperMap := viper.AllSettings()
 
 	title := "admin-config"
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage(title, env, r)
 
-	data := struct {
-		page
+	p.Extra = struct {
 		Title  string
 		Config map[string]interface{}
 	}{
-		<-p,
 		title,
 		viperMap,
 	}
-	renderTemplate(r.Context(), env, w, "admin_config.tmpl", data)
+	renderTemplate(r.Context(), env, w, "admin_config.tmpl", p)
 }
 
 func (env *wikiEnv) gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "gitCheckinHandler")
 
 	title := "Git Checkin"
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage(title, env, r)
 
 	var s string
 
@@ -2390,13 +2344,12 @@ func (env *wikiEnv) gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 		//owithnewlines = bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
 	}
 
-	gp := &gitPage{
-		<-p,
+	p.Extra = &gitPage{
 		title,
 		s,
 		viper.GetString("RemoteGitRepo"),
 	}
-	renderTemplate(r.Context(), env, w, "git_checkin.tmpl", gp)
+	renderTemplate(r.Context(), env, w, "git_checkin.tmpl", p)
 }
 
 func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -2456,8 +2409,7 @@ func (env *wikiEnv) adminGitHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "adminGitHandler")
 
 	title := "Git Management"
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage(title, env, r)
 
 	//var owithnewlines []byte
 
@@ -2474,29 +2426,26 @@ func (env *wikiEnv) adminGitHandler(w http.ResponseWriter, r *http.Request) {
 		owithnewlines = bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
 	*/
 
-	gp := &gitPage{
-		<-p,
+	p.Extra = &gitPage{
 		title,
 		err.Error(),
 		viper.GetString("RemoteGitRepo"),
 	}
-	renderTemplate(r.Context(), env, w, "admin_git.tmpl", gp)
+	renderTemplate(r.Context(), env, w, "admin_git.tmpl", p)
 }
 
 func (env *wikiEnv) tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "tagMapHandler")
 
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage("Tag Map", env, r)
 
 	list := env.tags.GetAll()
 
-	tagpage := &tagMapPage{
-		page:    <-p,
+	p.Extra = &tagMapPage{
 		TagKeys: list,
 	}
 
-	renderTemplate(r.Context(), env, w, "tag_list.tmpl", tagpage)
+	renderTemplate(r.Context(), env, w, "tag_list.tmpl", p)
 }
 
 func (env *wikiEnv) tagHandler(w http.ResponseWriter, r *http.Request) {
@@ -2505,17 +2454,15 @@ func (env *wikiEnv) tagHandler(w http.ResponseWriter, r *http.Request) {
 	params := getParams(r.Context())
 	name := params["name"]
 
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage(name, env, r)
 
 	results := env.tags.GetOne(name)
 
-	tagpage := &tagPage{
-		page:    <-p,
+	p.Extra = &tagPage{
 		TagName: name,
 		Results: results,
 	}
-	renderTemplate(r.Context(), env, w, "tag_view.tmpl", tagpage)
+	renderTemplate(r.Context(), env, w, "tag_view.tmpl", p)
 }
 
 func (env *wikiEnv) createWiki(w http.ResponseWriter, r *http.Request, name string) {
@@ -2523,16 +2470,14 @@ func (env *wikiEnv) createWiki(w http.ResponseWriter, r *http.Request, name stri
 	//if username != "" {
 	if auth.IsLoggedIn(r.Context()) {
 		w.WriteHeader(404)
-		//title := "Create " + name + "?"
-		p := make(chan page, 1)
-		go loadPage(env, r, p)
+		title := "Create " + name + "?"
+		p := loadPage(title, env, r)
 
 		/*gp := &genPage{
 			p,
 			name,
 		}*/
-		wp := &wikiPage{
-			page: <-p,
+		p.Extra = &wikiPage{
 			Wiki: wiki{
 				Title:    name,
 				Filename: name,
@@ -2541,7 +2486,7 @@ func (env *wikiEnv) createWiki(w http.ResponseWriter, r *http.Request, name stri
 				},
 			},
 		}
-		renderTemplate(r.Context(), env, w, "wiki_create.tmpl", wp)
+		renderTemplate(r.Context(), env, w, "wiki_create.tmpl", p)
 		return
 	}
 
@@ -2848,8 +2793,7 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	p := loadPage("Results for "+name, env, r)
 
 	userLoggedIn := auth.IsLoggedIn(r.Context())
 	_, isAdmin := auth.GetUsername(r.Context())
@@ -2880,11 +2824,10 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 
 	results := gitSearch(name, strings.TrimSpace(fileList))
 
-	s := &searchPage{
-		page:    <-p,
+	p.Extra = &searchPage{
 		Results: results,
 	}
-	renderTemplate(r.Context(), env, w, "search_results.tmpl", s)
+	renderTemplate(r.Context(), env, w, "search_results.tmpl", p)
 }
 
 func buildCache() *wikiCache {
@@ -3174,18 +3117,18 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "setFavoriteHandler")
 	name := nameFromContext(r.Context())
-	p := loadWikiPage(env, r, name)
-	if p.Wiki.Frontmatter.Favorite {
-		p.Wiki.Frontmatter.Favorite = false
+	wi := loadWiki(name)
+	if wi.Frontmatter.Favorite {
+		wi.Frontmatter.Favorite = false
 		env.authState.SetFlash(name+" has been un-favorited.", w, r)
 		log.Println(name + " page un-favorited!")
 	} else {
-		p.Wiki.Frontmatter.Favorite = true
+		wi.Frontmatter.Favorite = true
 		env.authState.SetFlash(name+" has been favorited.", w, r)
 		log.Println(name + " page favorited!")
 	}
 
-	err := p.Wiki.save(&env.mutex)
+	err := wi.save(&env.mutex)
 	if err != nil {
 		log.Println(err)
 	}
