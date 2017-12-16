@@ -2862,13 +2862,14 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 				//log.Println("priv", v.Filename)
 				fileList = fileList + " " + `"` + v.Filename + `"`
 			}
-		}
-		if isAdmin {
-			if v.Permission == "private" {
-				//log.Println("admin", v.Filename)
-				fileList = fileList + " " + `"` + v.Filename + `"`
+			if isAdmin {
+				if v.Permission == "admin" {
+					//log.Println("admin", v.Filename)
+					fileList = fileList + " " + `"` + v.Filename + `"`
+				}
 			}
 		}
+
 		if v.Permission == "public" {
 			//log.Println("pubic", v.Filename)
 			fileList = fileList + " " + `"` + v.Filename + `"`
