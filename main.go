@@ -91,12 +91,16 @@ const (
 		blackfriday.EXTENSION_FOOTNOTES |
 		blackfriday.EXTENSION_TITLEBLOCK
 
-	timerKey      key = 0
-	wikiNameKey   key = 1
-	wikiExistsKey key = 2
-	wikiKey       key = 3
-	yamlsep           = "---"
-	yamlsep2          = "..."
+	timerKey       key = 0
+	wikiNameKey    key = 1
+	wikiExistsKey  key = 2
+	wikiKey        key = 3
+	yamlSeparator      = "---"
+	yamlSeparator2     = "..."
+
+	adminPermission   = "admin"
+	privatePermission = "private"
+	publicPermission  = "public"
 
 	/*
 		commonHTMLFlags2 = 0 |
@@ -1303,18 +1307,18 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 	_, isAdmin := auth.GetUsername(r.Context())
 
 	for _, v := range env.cache.Cache {
-		if v.Permission == "public" {
+		if v.Permission == publicPermission {
 			//log.Println("pubic", v.Filename)
 			list = append(list, v)
 		}
 		if userLoggedIn {
-			if v.Permission == "private" {
+			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
 				list = append(list, v)
 			}
 		}
 		if isAdmin {
-			if v.Permission == "admin" {
+			if v.Permission == adminPermission {
 				//log.Println("admin", v.Filename)
 				list = append(list, v)
 			}
@@ -1458,14 +1462,14 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 		}
 		if startTokenFound && !endTokenFound {
 			// Anything after the --- tag, add to the topbuffer
-			if scanner.Text() != yamlsep || scanner.Text() != yamlsep2 {
+			if scanner.Text() != yamlSeparator || scanner.Text() != yamlSeparator2 {
 				//bufs[0].Write(scanner.Bytes())
 				_, err := bufs[0].WriteString(scanner.Text() + "\n")
 				if err != nil {
 					log.Println("Error writing page data:", err)
 				}
 			}
-			if scanner.Text() == yamlsep || scanner.Text() == yamlsep2 {
+			if scanner.Text() == yamlSeparator || scanner.Text() == yamlSeparator2 {
 				endTokenFound = true
 				// If not given 2 buffers, end here.
 				if !grabPage {
@@ -1476,7 +1480,7 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 
 		// Hopefully catch the first --- tag
 		if !startTokenFound && !endTokenFound {
-			if scanner.Text() == yamlsep {
+			if scanner.Text() == yamlSeparator {
 				startTokenFound = true
 			} else {
 				startTokenFound = true
@@ -1524,17 +1528,18 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 			if favfound {
 				fm.Favorite = favorite
 			}
-			private, privfound := m["private"].(bool)
+			// Check for deprecated individual admin/private/public tags
+			private, privfound := m[privatePermission].(bool)
 			if privfound && private {
-				fm.Permission = "private"
+				fm.Permission = privatePermission
 			}
-			public, pubfound := m["public"].(bool)
+			public, pubfound := m[publicPermission].(bool)
 			if pubfound && public {
-				fm.Permission = "public"
+				fm.Permission = publicPermission
 			}
-			admin, adminfound := m["admin"].(bool)
+			admin, adminfound := m[adminPermission].(bool)
 			if adminfound && admin {
-				fm.Permission = "admin"
+				fm.Permission = adminPermission
 			}
 			permission, permfound := m["permission"].(string)
 			if permfound {
@@ -2858,18 +2863,18 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 
 	for _, v := range env.cache.Cache {
 		if userLoggedIn {
-			if v.Permission == "private" {
+			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
 				fileList = fileList + " " + `"` + v.Filename + `"`
 			}
 		}
 		if isAdmin {
-			if v.Permission == "private" {
+			if v.Permission == privatePermission {
 				//log.Println("admin", v.Filename)
 				fileList = fileList + " " + `"` + v.Filename + `"`
 			}
 		}
-		if v.Permission == "public" {
+		if v.Permission == publicPermission {
 			//log.Println("pubic", v.Filename)
 			fileList = fileList + " " + `"` + v.Filename + `"`
 		}
@@ -3107,7 +3112,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			fm := readFront(f)
 			f.Close()
 			switch fm.Permission {
-			case "admin":
+			case adminPermission:
 				if userLoggedIn && isAdmin {
 					next.ServeHTTP(w, r.WithContext(ctx))
 					return
@@ -3124,10 +3129,10 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 					http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
 					return
 				}
-			case "public":
+			case publicPermission:
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
-			case "private":
+			case privatePermission:
 				if !userLoggedIn {
 					rurl := r.URL.String()
 					httputils.Debugln("wikiMiddle mitigating: " + r.Host + rurl)
@@ -3144,7 +3149,24 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 					next.ServeHTTP(w, r.WithContext(ctx))
 					return
 				}
+			default:
+				if userLoggedIn && isAdmin {
+					next.ServeHTTP(w, r.WithContext(ctx))
+					return
+				}
+				if !isAdmin {
+					httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.String())
+
+					// Detect if we're in an endless loop, if so, just panic
+					if strings.HasPrefix(r.URL.String(), "login?url=/login") {
+						panic("AuthMiddle is in an endless redirect loop")
+					}
+					env.authState.SetFlash("Please login to see that.", w, r)
+					http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+r.URL.String(), http.StatusSeeOther)
+					return
+				}
 			}
+
 		}
 
 		if userLoggedIn {
