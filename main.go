@@ -3169,7 +3169,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 
 			}
 
-			// If not logged in, mitigate, as the page is presumed private
+			// If not logged in, redirect to login page
 			if !userLoggedIn {
 				rurl := r.URL.String()
 				httputils.Debugln("wikiMiddle mitigating: " + r.Host + rurl)
