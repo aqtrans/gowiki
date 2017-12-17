@@ -1349,43 +1349,6 @@ func readFileAndFront(filename string) (frontmatter, []byte) {
 }
 
 func readWikiPage(reader io.Reader) (frontmatter, []byte) {
-	//defer httputils.TimeTrack(time.Now(), "readWikiPage")
-	/*
-		s := bufio.NewScanner(reader)
-
-		topbuf := new(bytes.Buffer)
-		bottombuf := new(bytes.Buffer)
-		start := false
-		end := false
-		for s.Scan() {
-
-			if start && end {
-				bottombuf.Write(s.Bytes())
-				bottombuf.WriteString("\n")
-			}
-			if start && !end {
-				// Anything after the --- tag, add to the topbuffer
-				if s.Text() != yamlsep || s.Text() != yamlsep2 {
-					topbuf.Write(s.Bytes())
-					topbuf.WriteString("\n")
-				}
-				if s.Text() == yamlsep || s.Text() == yamlsep2 {
-					end = true
-				}
-			}
-
-			// Hopefully catch the first --- tag
-			if !start && !end {
-				if s.Text() == yamlsep {
-					start = true
-				} else {
-					start = true
-					end = true
-				}
-
-			}
-		}
-	*/
 	topbuf := new(bytes.Buffer)
 	bottombuf := new(bytes.Buffer)
 	scanWikiPage(reader, topbuf, bottombuf)
@@ -1394,43 +1357,6 @@ func readWikiPage(reader io.Reader) (frontmatter, []byte) {
 }
 
 func readFront(reader io.Reader) frontmatter {
-	//defer httputils.TimeTrack(time.Now(), "readFront")
-	/*
-		s := bufio.NewScanner(reader)
-
-		topbuf := new(bytes.Buffer)
-		start := false
-		end := false
-		for s.Scan() {
-
-			if start && end {
-				break
-			}
-			if start && !end {
-				// Anything after the --- tag, add to the topbuffer
-				if s.Text() != yamlsep || s.Text() != yamlsep2 {
-					topbuf.Write(s.Bytes())
-					topbuf.WriteString("\n")
-				}
-				// This should be the end separator
-				if s.Text() == yamlsep || s.Text() == yamlsep2 {
-					end = true
-					break
-				}
-			}
-
-			// Hopefully catch the first --- tag
-			if !start && !end {
-				if s.Text() == yamlsep {
-					start = true
-				} else {
-					start = true
-					end = true
-				}
-
-			}
-		}
-	*/
 	topbuf := new(bytes.Buffer)
 	scanWikiPage(reader, topbuf)
 
@@ -1451,7 +1377,6 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 
 		if startTokenFound && endTokenFound {
 			if grabPage {
-				//bufs[1].Write(scanner.Bytes())
 				_, err := bufs[1].WriteString(scanner.Text() + "\n")
 				if err != nil {
 					log.Println("Error writing page data:", err)
@@ -1463,7 +1388,6 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 		if startTokenFound && !endTokenFound {
 			// Anything after the --- tag, add to the topbuffer
 			if scanner.Text() != yamlSeparator || scanner.Text() != yamlSeparator2 {
-				//bufs[0].Write(scanner.Bytes())
 				_, err := bufs[0].WriteString(scanner.Text() + "\n")
 				if err != nil {
 					log.Println("Error writing page data:", err)
@@ -1487,7 +1411,6 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 				endTokenFound = true
 				// If given two buffers, but we cannot find the beginning, assume the entire page is text
 				if grabPage {
-					//bufs[1].Write(scanner.Bytes())
 					_, err := bufs[1].WriteString(scanner.Text() + "\n")
 					if err != nil {
 						log.Println("Error writing page data:", err)
@@ -1546,23 +1469,6 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 				fm.Permission = permission
 			}
 		}
-		// Deal with old Public and Admin tags
-		/*
-			if fm.Permission == "" {
-				if fm.Public {
-					log.Println("FIXME; fm.Public being assigned")
-					fm.Permission = "public"
-				}
-				if !fm.Public {
-					log.Println("FIXME; fm.Public being assigned")
-					fm.Permission = "private"
-				}
-				if fm.Admin {
-					log.Println("FIXME; fm.Admin being assigned")
-					fm.Permission = "admin"
-				}
-			}
-		*/
 	}
 	return fm
 }
@@ -1732,21 +1638,6 @@ func checkName(name *string) (bool, error) {
 			}
 		}
 	}
-	/*
-		if !exists && (filepath.Ext(*name) == "") {
-
-			if doesPageExist(fullfilename + ".md") {
-				*name = *name + ".md"
-				log.Println(*name + " found!")
-				exists = true
-			}
-			if doesPageExist(fullfilename + ".page") {
-				*name = *name + ".page"
-				log.Println(*name + " found!")
-				exists = true
-			}
-		}
-	*/
 
 	// If original filename does not exist, normalize the filename, and check if that exists
 	if !exists {
@@ -1803,10 +1694,7 @@ func checkDir(dir string) error {
 				}
 			}
 		}
-
-		//log.Println(dirs[:k])
 	}
-	//log.Println(relpath)
 	return err
 }
 
@@ -2006,25 +1894,6 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
 	log.Println(name + " page saved!")
 }
-
-/*
-func newHandler(w http.ResponseWriter, r *http.Request) {
-	defer httputils.TimeTrack(time.Now(), "newHandler")
-		pagetitle := r.FormValue("newwiki")
-		_, err := checkName(&pagetitle)
-		if err != nil {
-			if err == errBaseNotDir {
-				log.Println("ERROR: Cannot create subdir of a file:", pagetitle)
-				http.Error(w, "Cannot create subdir of a file.", 500)
-				return
-			}
-			httpErrorHandler(w, r, err)
-			return
-		}
-
-	http.Redirect(w, r, "/"+r.FormValue("newwiki"), http.StatusSeeOther)
-}
-*/
 
 func urlFromPath(path string) string {
 	wikiDir := filepath.Join(dataDir, "wikidata")
