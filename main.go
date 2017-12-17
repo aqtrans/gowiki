@@ -3287,7 +3287,6 @@ func main() {
 	r.GET("/tags", env.authState.AuthMiddle(env.tagMapHandler))
 	r.GET("/tag/*name", env.authState.AuthMiddle(env.tagHandler))
 
-	//r.GET("/new", env.authState.AuthMiddle(newHandler))
 	r.GET("/login", env.loginPageHandler)
 	r.GET("/logout", env.authState.LogoutHandler)
 	//r.GET("/signup", signupPageHandler)
@@ -3300,7 +3299,6 @@ func main() {
 	admin := r.NewContextGroup("/admin")
 	admin.GET("/", env.authState.AuthAdminMiddle(env.adminMainHandler))
 	admin.GET("/config", env.authState.AuthAdminMiddle(env.adminConfigHandler))
-	//admin.POST("/config", env.authState.AuthAdminMiddle(adminConfigPostHandler))
 	admin.GET("/git", env.authState.AuthAdminMiddle(env.adminGitHandler))
 	admin.POST("/git/push", env.authState.AuthAdminMiddle(gitPushPostHandler))
 	admin.POST("/git/checkin", env.authState.AuthAdminMiddle(gitCheckinPostHandler))
@@ -3331,7 +3329,6 @@ func main() {
 	r.GET(`/edit/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.editHandler)))
 	r.POST(`/save/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.saveHandler)))
 	r.GET(`/history/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.historyHandler)))
-	//r.GET(`/new/*name`, auth.AuthMiddle(newHandler))
 	r.GET(`/*name`, env.wikiMiddle(env.viewHandler))
 
 	mux.Handle("/debug/pprof/", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Index)))
