@@ -1157,15 +1157,6 @@ func gitIsCleanURLs(token template.HTML) template.HTML {
 
 func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
 	name := nameFromContext(r.Context())
-	/*
-		wikiExists := wikiExistsFromContext(r.Context())
-		if !wikiExists {
-			httputils.Debugln("wikiExists false: No such file...creating one.")
-			//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
-			env.createWiki(w, r, name)
-			return
-		}
-	*/
 
 	wikip := loadWikiPage(env, r, name)
 
