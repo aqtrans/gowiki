@@ -179,25 +179,6 @@ type wiki struct {
 	ModTime     int64
 }
 
-type wikiPage struct {
-	page
-	Wiki     wiki
-	Rendered string
-}
-
-type commitPage struct {
-	page
-	Wiki     wiki
-	Commit   string
-	Rendered string
-	Diff     string
-}
-
-type listPage struct {
-	page
-	Wikis []gitDirList
-}
-
 type genPage struct {
 	page
 	Title string
@@ -208,52 +189,6 @@ type gitPage struct {
 	Title     string
 	GitStatus string
 	GitRemote string
-}
-
-type historyPage struct {
-	page
-	Wiki        wiki
-	Filename    string
-	FileHistory []commitLog
-}
-
-type tagMapPage struct {
-	page
-	TagKeys map[string][]string
-}
-
-type tagPage struct {
-	page
-	TagName string
-	Results []string
-}
-
-type searchPage struct {
-	page
-	Results []result
-}
-
-type recentsPage struct {
-	page
-	Recents []recent
-}
-
-type recent struct {
-	Date      int64
-	Commit    string
-	Filenames []string
-}
-
-type result struct {
-	Name   string
-	Result string
-}
-
-type commitLog struct {
-	Filename string
-	Commit   string
-	Date     int64
-	Message  string
 }
 
 type gitDirList struct {
@@ -763,6 +698,13 @@ func gitGetMtime(filename string) (int64, error) {
 	return mtime, err
 }
 
+type commitLog struct {
+	Filename string
+	Commit   string
+	Date     int64
+	Message  string
+}
+
 // File history
 // git log --pretty=format:"commit:%H date:%at message:%s" [filename]
 // git log --pretty=format:"%H,%at,%s" [filename]
@@ -1155,6 +1097,13 @@ func gitIsCleanURLs(token template.HTML) template.HTML {
 	}
 }
 
+type historyPage struct {
+	page
+	Wiki        wiki
+	Filename    string
+	FileHistory []commitLog
+}
+
 func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
 	name := nameFromContext(r.Context())
 
@@ -1178,6 +1127,14 @@ func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
 // As well as the date
 // > git log -1 --format=%at [commit sha1]
 // TODO: need to find a way to detect sha1s
+type commitPage struct {
+	page
+	Wiki     wiki
+	Commit   string
+	Rendered string
+	Diff     string
+}
+
 func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name string) {
 	var fm frontmatter
 	var pageContent string
@@ -1241,6 +1198,17 @@ func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, co
 
 }
 
+type recent struct {
+	Date      int64
+	Commit    string
+	Filenames []string
+}
+
+type recentsPage struct {
+	page
+	Recents []recent
+}
+
 // TODO: Fix this
 func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -1285,6 +1253,11 @@ func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	renderTemplate(r.Context(), env, w, "recents.tmpl", s)
 
+}
+
+type listPage struct {
+	page
+	Wikis []gitDirList
 }
 
 func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
@@ -1926,18 +1899,12 @@ func loadWiki(name string, w chan<- wiki) {
 
 }
 
-//////////////////////////////
-/* Get type WikiPage struct {
-	PageTitle    string
-	Filename     string
-	*Frontmatter
-	*Wiki
+type wikiPage struct {
+	page
+	Wiki     wiki
+	Rendered string
 }
-type Wiki struct {
-	Rendered     string
-    Content      string
-}*/
-/////////////////////////////
+
 func loadWikiPage(env *wikiEnv, r *http.Request, name string) wikiPage {
 	defer httputils.TimeTrack(time.Now(), "loadWikiPage")
 
@@ -2346,6 +2313,11 @@ func (env *wikiEnv) adminGitHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(r.Context(), env, w, "admin_git.tmpl", gp)
 }
 
+type tagMapPage struct {
+	page
+	TagKeys map[string][]string
+}
+
 func (env *wikiEnv) tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "tagMapHandler")
 
@@ -2360,6 +2332,12 @@ func (env *wikiEnv) tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderTemplate(r.Context(), env, w, "tag_list.tmpl", tagpage)
+}
+
+type tagPage struct {
+	page
+	TagName string
+	Results []string
 }
 
 func (env *wikiEnv) tagHandler(w http.ResponseWriter, r *http.Request) {
@@ -2682,6 +2660,16 @@ func setPageTitle(frontmatterTitle, filename string) string {
 		name = filename
 	}
 	return name
+}
+
+type result struct {
+	Name   string
+	Result string
+}
+
+type searchPage struct {
+	page
+	Results []result
 }
 
 func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
