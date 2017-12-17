@@ -45,7 +45,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -927,7 +926,7 @@ func gitGetTimes(filename string, ctime, mtime chan<- int64) {
 	go func() {
 		co, err := gitCommand("log", "--diff-filter=A", "--follow", "--format=%at", "-1", "--", filename).Output()
 		if err != nil {
-			log.Println(err)
+			log.Println(filename, err)
 			ctime <- 0
 			return
 		}
@@ -950,7 +949,7 @@ func gitGetTimes(filename string, ctime, mtime chan<- int64) {
 	go func() {
 		mo, err := gitCommand("log", "--format=%at", "-1", "--", filename).Output()
 		if err != nil {
-			log.Println(err)
+			log.Println(filename, err)
 			mtime <- 0
 			return
 		}
@@ -1022,7 +1021,6 @@ func gitSearch(searchTerm, fileSpec string) []result {
 		if strings.Contains(v, searchTerm) {
 			cleanV := strings.TrimPrefix(v, "\"")
 			cleanV = strings.TrimSuffix(cleanV, "\"")
-			log.Println(cleanV)
 			theResult := result{
 				Name: cleanV,
 			}
@@ -1159,13 +1157,15 @@ func gitIsCleanURLs(token template.HTML) template.HTML {
 
 func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
 	name := nameFromContext(r.Context())
-	wikiExists := wikiExistsFromContext(r.Context())
-	if !wikiExists {
-		httputils.Debugln("wikiExists false: No such file...creating one.")
-		//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
-		env.createWiki(w, r, name)
-		return
-	}
+	/*
+		wikiExists := wikiExistsFromContext(r.Context())
+		if !wikiExists {
+			httputils.Debugln("wikiExists false: No such file...creating one.")
+			//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
+			env.createWiki(w, r, name)
+			return
+		}
+	*/
 
 	wikip := loadWikiPage(env, r, name)
 
@@ -1683,15 +1683,14 @@ func checkName(name *string) (bool, error) {
 	separators := regexp.MustCompile(`[ &_=+:]`)
 	dashes := regexp.MustCompile(`[\-]+`)
 
-	// First 'sanitize' the name
-	//log.Println(name)
-	*name = strings.Replace(*name, "..", "", -1)
-	//log.Println(name)
-	*name = path.Clean(*name)
-	//log.Println(name)
+	// Rely on httptreemux's Clean function;
+	//  stripping off the / so we can pass it along to git
+	*name = httptreemux.Clean(*name)
+	if strings.HasPrefix(*name, "/") {
+		*name = strings.TrimPrefix(*name, "/")
+	}
 	// Remove trailing spaces
 	*name = strings.Trim(*name, " ")
-	//log.Println(name)
 
 	// Security check; ensure we are not serving any files from wikidata/.git
 	// If so, toss them to the index, no hints given
@@ -2008,25 +2007,24 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println(name + " page saved!")
 }
 
+/*
 func newHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "newHandler")
-
-	pagetitle := r.FormValue("newwiki")
-
-	relErr := relativePathCheck(pagetitle)
-	if relErr != nil {
-		if relErr == errBaseNotDir {
-			log.Println("ERROR: Cannot create subdir of a file:", pagetitle)
-			http.Error(w, "Cannot create subdir of a file.", 500)
+		pagetitle := r.FormValue("newwiki")
+		_, err := checkName(&pagetitle)
+		if err != nil {
+			if err == errBaseNotDir {
+				log.Println("ERROR: Cannot create subdir of a file:", pagetitle)
+				http.Error(w, "Cannot create subdir of a file.", 500)
+				return
+			}
+			httpErrorHandler(w, r, err)
 			return
 		}
-		httpErrorHandler(w, r, relErr)
-		return
-	}
 
-	http.Redirect(w, r, "/"+pagetitle, http.StatusSeeOther)
-
+	http.Redirect(w, r, "/"+r.FormValue("newwiki"), http.StatusSeeOther)
 }
+*/
 
 func urlFromPath(path string) string {
 	wikiDir := filepath.Join(dataDir, "wikidata")
@@ -2524,35 +2522,23 @@ func (env *wikiEnv) tagHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (env *wikiEnv) createWiki(w http.ResponseWriter, r *http.Request, name string) {
-	//username, _ := auth.GetUsername(r.Context())
-	//if username != "" {
-	if auth.IsLoggedIn(r.Context()) {
-		w.WriteHeader(404)
-		//title := "Create " + name + "?"
-		p := make(chan page, 1)
-		go loadPage(env, r, p)
 
-		/*gp := &genPage{
-			p,
-			name,
-		}*/
-		wp := &wikiPage{
-			page: <-p,
-			Wiki: wiki{
-				Title:    name,
-				Filename: name,
-				Frontmatter: frontmatter{
-					Title: name,
-				},
+	w.WriteHeader(404)
+	//title := "Create " + name + "?"
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	wp := &wikiPage{
+		page: <-p,
+		Wiki: wiki{
+			Title:    name,
+			Filename: name,
+			Frontmatter: frontmatter{
+				Title: name,
 			},
-		}
-		renderTemplate(r.Context(), env, w, "wiki_create.tmpl", wp)
-		return
+		},
 	}
-
-	env.authState.SetFlash("Please login to view that page.", w, r)
-	//h := viper.GetString("Domain")
-	http.Redirect(w, r, "/login"+"?url="+r.URL.String(), http.StatusSeeOther)
+	renderTemplate(r.Context(), env, w, "wiki_create.tmpl", wp)
 	return
 
 }
@@ -3168,28 +3154,36 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 				}
 			}
 
-		}
+			// If page does not exist, either redirect to /pageName to allow viewHandler to prompt for creation
+			//    or redirect to the login screen, to protect against leaking page existence
+		} else {
+			if userLoggedIn {
+				// Pass along if the URL is the /edit/name or /name
+				if r.URL.Path == "/"+name || r.URL.Path[:len("/edit/")] == "/edit/" {
+					next.ServeHTTP(w, r.WithContext(ctx))
+					return
+				}
 
-		if userLoggedIn {
-			next.ServeHTTP(w, r.WithContext(ctx))
-			return
-		}
+				http.Redirect(w, r.WithContext(ctx), "/"+name, http.StatusNotFound)
+				return
 
-		// If not logged in, mitigate, as the page is presumed private
-		if !userLoggedIn {
-			rurl := r.URL.String()
-			httputils.Debugln("wikiMiddle mitigating: " + r.Host + rurl)
-
-			// Detect if we're in an endless loop, if so, just panic
-			if strings.HasPrefix(rurl, "login?url=/login") {
-				panic("AuthMiddle is in an endless redirect loop")
 			}
-			env.authState.SetFlash("Please login to view that page.", w, r)
-			http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
-			return
+
+			// If not logged in, mitigate, as the page is presumed private
+			if !userLoggedIn {
+				rurl := r.URL.String()
+				httputils.Debugln("wikiMiddle mitigating: " + r.Host + rurl)
+
+				// Detect if we're in an endless loop, if so, just panic
+				if strings.HasPrefix(rurl, "login?url=/login") {
+					panic("AuthMiddle is in an endless redirect loop")
+				}
+				env.authState.SetFlash("Please login to view that page.", w, r)
+				http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
+				return
+			}
 		}
 
-		//next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
@@ -3293,7 +3287,7 @@ func main() {
 	r.GET("/tags", env.authState.AuthMiddle(env.tagMapHandler))
 	r.GET("/tag/*name", env.authState.AuthMiddle(env.tagHandler))
 
-	r.GET("/new", env.authState.AuthMiddle(newHandler))
+	//r.GET("/new", env.authState.AuthMiddle(newHandler))
 	r.GET("/login", env.loginPageHandler)
 	r.GET("/logout", env.authState.LogoutHandler)
 	//r.GET("/signup", signupPageHandler)
