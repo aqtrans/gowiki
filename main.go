@@ -2938,6 +2938,8 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		//pageExists := doesPageExist(fullfilename)
 		ctx := newWikiExistsContext(nameCtx, pageExists)
 
+		r = r.WithContext(ctx)
+
 		// if pageExists, read its frontmatter
 		if pageExists {
 			// Read YAML frontmatter into fm
@@ -2953,32 +2955,21 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 					return
 				}
 				if !isAdmin {
-					rurl := r.URL.String()
-					httputils.Debugln("wikiMiddle mitigating: " + r.Host + rurl)
-
-					// Detect if we're in an endless loop, if so, just panic
-					if strings.HasPrefix(rurl, "login?url=/login") {
-						panic("AuthMiddle is in an endless redirect loop")
-					}
+					httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
 					env.authState.SetFlash("Please login to see that.", w, r)
-					http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
-					return
+					// Use auth.Redirect to redirect while storing the current URL for future use
+					auth.Redirect(&env.authState, w, r)
 				}
 			case publicPermission:
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			case privatePermission:
 				if !userLoggedIn {
-					rurl := r.URL.String()
-					httputils.Debugln("wikiMiddle mitigating: " + r.Host + rurl)
-
-					// Detect if we're in an endless loop, if so, just panic
-					if strings.HasPrefix(rurl, "login?url=/login") {
-						panic("AuthMiddle is in an endless redirect loop")
-					}
+					httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
 					env.authState.SetFlash("Please login to see that.", w, r)
-					http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
-					return
+					//http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
+					// Use auth.Redirect to redirect while storing the current URL for future use
+					auth.Redirect(&env.authState, w, r)
 				}
 				if userLoggedIn {
 					next.ServeHTTP(w, r.WithContext(ctx))
@@ -2990,15 +2981,12 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 					return
 				}
 				if !isAdmin {
-					httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.String())
+					httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
 
-					// Detect if we're in an endless loop, if so, just panic
-					if strings.HasPrefix(r.URL.String(), "login?url=/login") {
-						panic("AuthMiddle is in an endless redirect loop")
-					}
 					env.authState.SetFlash("Please login to see that.", w, r)
-					http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+r.URL.String(), http.StatusSeeOther)
-					return
+					//http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+r.URL.String(), http.StatusSeeOther)
+					// Use auth.Redirect to redirect while storing the current URL for future use
+					auth.Redirect(&env.authState, w, r)
 				}
 			}
 
@@ -3019,15 +3007,15 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 
 			// If not logged in, redirect to login page
 			if !userLoggedIn {
-				rurl := r.URL.String()
-				httputils.Debugln("wikiMiddle mitigating: " + r.Host + rurl)
+				httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
 
-				// Detect if we're in an endless loop, if so, just panic
-				if strings.HasPrefix(rurl, "login?url=/login") {
-					panic("AuthMiddle is in an endless redirect loop")
-				}
 				env.authState.SetFlash("Please login to view that page.", w, r)
-				http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
+				//http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
+
+				// Save URL in cookie for later use
+				env.authState.SetSession("redirect", r.URL.Path, w, r)
+				// Redirect to the login page, should be at LoginPath
+				http.Redirect(w, r, auth.LoginPath, http.StatusSeeOther)
 				return
 			}
 		}
