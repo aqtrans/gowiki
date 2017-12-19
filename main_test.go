@@ -206,13 +206,13 @@ func TestNewWikiPageNotLoggedIn(t *testing.T) {
 	r, err := http.NewRequest("GET", "/"+randPage, nil)
 	checkT(err, t)
 
-	router := httptreemux.NewContextMux()
-	router.GET(`/*name`, e.wikiMiddle(e.viewHandler))
+	//router := httptreemux.NewContextMux()
+	//router.GET(`/*name`, e.wikiMiddle(e.viewHandler))
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	w := httptest.NewRecorder()
 
-	router.ServeHTTP(w, r)
+	router(e).ServeHTTP(w, r)
 
 	// Check the status code is what we expect.
 	if status := w.Code; status != http.StatusSeeOther {
@@ -247,12 +247,21 @@ func TestHealthCheckHandler(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
-	router := httptreemux.NewContextMux()
-	router.GET("/health", healthCheckHandler)
+	//router := httptreemux.NewContextMux()
+	//router.GET("/health", healthCheckHandler)
+
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
+	checkT(err, t)
+
+	e := testEnv(t, authState)
+	err = tmplInit(e)
+	checkT(err, t)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusOK {
@@ -301,16 +310,16 @@ func TestNewHandler(t *testing.T) {
 		Username: "admin",
 		IsAdmin:  true,
 	})
-	rctx := req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
-	router := httptreemux.NewContextMux()
-	router.GET("/*name", e.wikiMiddle(e.viewHandler))
+	//router := httptreemux.NewContextMux()
+	//router.GET("/*name", e.wikiMiddle(e.viewHandler))
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.DefaultContext = ctx
-	router.ServeHTTP(rr, rctx)
+	//router.DefaultContext = ctx
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusNotFound {
@@ -351,8 +360,8 @@ func TestIndexPage(t *testing.T) {
 	req, err := http.NewRequest("GET", "/", nil)
 	checkT(err, t)
 
-	router := httptreemux.NewContextMux()
-	router.GET("/", indexHandler)
+	//router := httptreemux.NewContextMux()
+	//router.GET("/", indexHandler)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -364,12 +373,12 @@ func TestIndexPage(t *testing.T) {
 	//params := make(map[string]string)
 	//params["name"] = "index"
 	//ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
-	rctx := req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.DefaultContext = ctx
-	router.ServeHTTP(rr, rctx)
+	//router.DefaultContext = ctx
+	router(e).ServeHTTP(rr, req)
 	//t.Log(rr.Body.String())
 	//t.Log(randPage)
 	//t.Log(rr.Code)
@@ -410,8 +419,8 @@ func TestIndexHistoryPage(t *testing.T) {
 	req, err := http.NewRequest("GET", "/history/index", nil)
 	checkT(err, t)
 
-	router := httptreemux.NewContextMux()
-	router.GET(`/history/*name`, e.authState.AuthMiddle(e.wikiMiddle(e.historyHandler)))
+	//router := httptreemux.NewContextMux()
+	//router.GET(`/history/*name`, e.authState.AuthMiddle(e.wikiMiddle(e.historyHandler)))
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -425,12 +434,12 @@ func TestIndexHistoryPage(t *testing.T) {
 		params["name"] = "index"
 		ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
 	*/
-	rctx := req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.DefaultContext = ctx
-	router.ServeHTTP(rr, rctx)
+	//router.DefaultContext = ctx
+	router(e).ServeHTTP(rr, req)
 	//t.Log(rr.Body.String())
 	//t.Log(randPage)
 	//t.Log(rr.Code)
@@ -469,8 +478,8 @@ func TestIndexEditPage(t *testing.T) {
 	req, err := http.NewRequest("GET", "/edit/index", nil)
 	checkT(err, t)
 
-	router := httptreemux.NewContextMux()
-	router.GET(`/edit/*name`, e.authState.AuthMiddle(e.wikiMiddle(e.editHandler)))
+	//router := httptreemux.NewContextMux()
+	//router.GET(`/edit/*name`, e.authState.AuthMiddle(e.wikiMiddle(e.editHandler)))
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -484,12 +493,12 @@ func TestIndexEditPage(t *testing.T) {
 		params["name"] = "index"
 		ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
 	*/
-	rctx := req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.DefaultContext = ctx
-	router.ServeHTTP(rr, rctx)
+	//router.DefaultContext = ctx
+	router(e).ServeHTTP(rr, req)
 	//t.Log(rr.Body.String())
 	//t.Log(randPage)
 	//t.Log(rr.Code)
@@ -539,16 +548,16 @@ func TestDirBaseHandler(t *testing.T) {
 		Username: "admin",
 		IsAdmin:  true,
 	})
-	rctx := req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
-	router := httptreemux.NewContextMux()
-	router.GET("/*name", e.wikiMiddle(e.viewHandler))
+	//router := httptreemux.NewContextMux()
+	//router.GET("/*name", e.wikiMiddle(e.viewHandler))
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.DefaultContext = ctx
-	router.ServeHTTP(rr, rctx)
+	//router.DefaultContext = ctx
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusInternalServerError {
@@ -588,8 +597,8 @@ func TestRecentsPage(t *testing.T) {
 	req, err := http.NewRequest("GET", "/recent", nil)
 	checkT(err, t)
 
-	router := httptreemux.NewContextMux()
-	router.GET("/recent", e.authState.AuthMiddle(e.recentHandler))
+	//router := httptreemux.NewContextMux()
+	//router.GET("/recent", e.authState.AuthMiddle(e.recentHandler))
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -598,12 +607,12 @@ func TestRecentsPage(t *testing.T) {
 		Username: "admin",
 		IsAdmin:  true,
 	})
-	rctx := req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.DefaultContext = ctx
-	router.ServeHTTP(rr, rctx)
+	//router.DefaultContext = ctx
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusOK {
@@ -636,8 +645,8 @@ func TestListPage(t *testing.T) {
 	req, err := http.NewRequest("GET", "/list", nil)
 	checkT(err, t)
 
-	router := httptreemux.NewContextMux()
-	router.GET("/list", e.listHandler)
+	//router := httptreemux.NewContextMux()
+	//router.GET("/list", e.listHandler)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -646,12 +655,12 @@ func TestListPage(t *testing.T) {
 		Username: "admin",
 		IsAdmin:  true,
 	})
-	rctx := req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.DefaultContext = ctx
-	router.ServeHTTP(rr, rctx)
+	//router.DefaultContext = ctx
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusOK {
@@ -679,20 +688,20 @@ func TestPrivatePageNotLoggedIn(t *testing.T) {
 	req, err := http.NewRequest("GET", "/sites.page", nil)
 	checkT(err, t)
 
-	router := httptreemux.NewContextMux()
-	router.GET(`/*name`, e.wikiMiddle(e.viewHandler))
+	//router := httptreemux.NewContextMux()
+	//router.GET(`/*name`, e.wikiMiddle(e.viewHandler))
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, wikiNameKey, "sites.page")
 	ctx = context.WithValue(ctx, wikiExistsKey, true)
-	rctx := req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.DefaultContext = ctx
-	router.ServeHTTP(rr, rctx)
+	//router.DefaultContext = ctx
+	router(e).ServeHTTP(rr, req)
 	//t.Log(rr.Body.String())
 
 	// Check the status code is what we expect.
@@ -727,8 +736,8 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 	req, err := http.NewRequest("GET", "/sites.page", nil)
 	checkT(err, t)
 
-	router := httptreemux.NewContextMux()
-	router.GET(`/*name`, e.wikiMiddle(e.viewHandler))
+	//router := httptreemux.NewContextMux()
+	//router.GET(`/*name`, e.wikiMiddle(e.viewHandler))
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -744,12 +753,12 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 		params["name"] = "sites.page"
 		ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
 	*/
-	rctx := req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.DefaultContext = ctx
-	router.ServeHTTP(rr, rctx)
+	//router.DefaultContext = ctx
+	router(e).ServeHTTP(rr, req)
 	//t.Log(rr.Body.String())
 
 	// Check the status code is what we expect.
@@ -783,8 +792,8 @@ func TestSearchPage(t *testing.T) {
 	req, err := http.NewRequest("GET", "/search/omg", nil)
 	checkT(err, t)
 
-	router := httptreemux.NewContextMux()
-	router.GET("/search/*name", e.search)
+	//router := httptreemux.NewContextMux()
+	//router.GET("/search/*name", e.search)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -798,12 +807,12 @@ func TestSearchPage(t *testing.T) {
 		params["name"] = "omg"
 		ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
 	*/
-	rctx := req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.DefaultContext = ctx
-	router.ServeHTTP(rr, rctx)
+	//router.DefaultContext = ctx
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusOK {
@@ -837,8 +846,8 @@ func TestDotGit(t *testing.T) {
 	req, err := http.NewRequest("GET", "/.git/index", nil)
 	checkT(err, t)
 
-	router := httptreemux.NewContextMux()
-	router.GET("/*name", e.wikiMiddle(e.viewHandler))
+	//router := httptreemux.NewContextMux()
+	//router.GET("/*name", e.wikiMiddle(e.viewHandler))
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -848,12 +857,12 @@ func TestDotGit(t *testing.T) {
 		IsAdmin:  true,
 	})
 
-	rctx := req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.DefaultContext = ctx
-	router.ServeHTTP(rr, rctx)
+	//router.DefaultContext = ctx
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusInternalServerError {
@@ -887,8 +896,8 @@ func TestWikiDirEscape(t *testing.T) {
 	req, err := http.NewRequest("GET", "/../../test.md", nil)
 	checkT(err, t)
 
-	router := httptreemux.NewContextMux()
-	router.GET("/*name", e.wikiMiddle(e.viewHandler))
+	//router := httptreemux.NewContextMux()
+	//router.GET("/*name", e.wikiMiddle(e.viewHandler))
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -898,15 +907,16 @@ func TestWikiDirEscape(t *testing.T) {
 		IsAdmin:  true,
 	})
 
-	rctx := req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.DefaultContext = ctx
-	router.ServeHTTP(rr, rctx)
+	//router.DefaultContext = ctx
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusNotFound {
+		t.Log(rr.Body.String(), req.Context())
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusNotFound)
 	}
@@ -1137,8 +1147,8 @@ func BenchmarkWholeWiki(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	router := httptreemux.NewContextMux()
-	router.GET("/", indexHandler)
+	//router := httptreemux.NewContextMux()
+	//router.GET("/", indexHandler)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
@@ -1150,14 +1160,14 @@ func BenchmarkWholeWiki(b *testing.B) {
 	//params := make(map[string]string)
 	//params["name"] = "index"
 	//ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
-	rctx := req.WithContext(ctx)
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
-	router.DefaultContext = ctx
+	//router.DefaultContext = ctx
 
 	for n := 0; n < b.N; n++ {
-		router.ServeHTTP(rr, rctx)
+		router(nil).ServeHTTP(rr, req)
 	}
 }
 
