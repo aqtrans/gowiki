@@ -1606,11 +1606,15 @@ func checkName(name *string) (bool, error) {
 	// If original filename does not exist, normalize the filename, and check if that exists
 	if !exists {
 		// Normalize the name if the original name doesn't exist
-		*name = strings.ToLower(*name)
-		*name = separators.ReplaceAllString(*name, "-")
-		*name = dashes.ReplaceAllString(*name, "-")
-		fullnewfilename := filepath.Join(dataDir, "wikidata", *name)
-		exists = doesPageExist(fullnewfilename)
+		normalName := strings.ToLower(*name)
+		normalName = separators.ReplaceAllString(normalName, "-")
+		normalName = dashes.ReplaceAllString(normalName, "-")
+		fullnewfilename := filepath.Join(dataDir, "wikidata", normalName)
+		// Only check for the existence of the normalized name if anything changed
+		if normalName != *name {
+			exists = doesPageExist(fullnewfilename)
+			*name = normalName
+		}
 	}
 
 	return exists, nil
