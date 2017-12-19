@@ -1553,7 +1553,7 @@ func checkName(name *string) (bool, error) {
 	separators := regexp.MustCompile(`[ &_=+:]`)
 	dashes := regexp.MustCompile(`[\-]+`)
 
-	// Rely on httptreemux's Clean function;
+	// Rely on httptreemux's Clean function to clean up ../ and other potential path-escaping sequences;
 	//  stripping off the / so we can pass it along to git
 	*name = httptreemux.Clean(*name)
 	if strings.HasPrefix(*name, "/") {
