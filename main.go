@@ -3063,8 +3063,7 @@ func dataDirCheck() {
 	}
 }
 
-func router(env *wikiEnv) *http.ServeMux {
-	mux := http.NewServeMux()
+func router(env *wikiEnv) http.Handler {
 
 	csrfSecure := true
 	if viper.GetBool("Dev") {
@@ -3129,21 +3128,7 @@ func router(env *wikiEnv) *http.ServeMux {
 	r.GET(`/history/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.historyHandler)))
 	r.GET(`/*name`, env.wikiMiddle(env.viewHandler))
 
-	mux.Handle("/debug/pprof/", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Index)))
-	mux.Handle("/debug/pprof/cmdline", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Cmdline)))
-	mux.Handle("/debug/pprof/profile", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Profile)))
-	mux.Handle("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
-	mux.Handle("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
-
-	mux.HandleFunc("/robots.txt", httputils.Robots)
-	mux.HandleFunc("/favicon.ico", httputils.FaviconICO)
-	mux.HandleFunc("/favicon.png", httputils.FaviconPNG)
-	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
-
-	mux.Handle("/metrics", promhttp.Handler())
-
-	mux.Handle("/", s.Then(r))
-	return mux
+	return s.Then(r)
 }
 
 func main() {
@@ -3184,7 +3169,18 @@ func main() {
 		}
 	}
 
-	mux := router(env)
+	mux := http.NewServeMux()
+	mux.Handle("/debug/pprof/", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Index)))
+	mux.Handle("/debug/pprof/cmdline", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Cmdline)))
+	mux.Handle("/debug/pprof/profile", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Profile)))
+	mux.Handle("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
+	mux.Handle("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
+	mux.HandleFunc("/robots.txt", httputils.Robots)
+	mux.HandleFunc("/favicon.ico", httputils.FaviconICO)
+	mux.HandleFunc("/favicon.png", httputils.FaviconPNG)
+	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
+	mux.Handle("/metrics", promhttp.Handler())
+	mux.Handle("/", router(env))
 
 	httputils.Logfile = filepath.Join(dataDir, "http.log")
 
