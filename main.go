@@ -1675,7 +1675,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	name := nameFromContext(r.Context())
 	nameStat, err := os.Stat(filepath.Join(dataDir, "wikidata", name))
 	if err != nil {
-		log.Println(err)
+		log.Println("viewHandler error reading", name, err)
 	}
 	if err == nil {
 		if nameStat.IsDir() {
@@ -3063,51 +3063,13 @@ func dataDirCheck() {
 	}
 }
 
-func main() {
-
-	// subscribe to SIGINT signals
-	stopChan := make(chan os.Signal)
-	signal.Notify(stopChan, os.Interrupt)
+func router(env *wikiEnv) *http.ServeMux {
 	mux := http.NewServeMux()
-
-	initWikiDir()
-	dataDirCheck()
-
-	// Bring up authState
-	//var err error
-	anAuthState, err := auth.NewAuthState(filepath.Join(dataDir, "auth.db"), viper.GetString("AdminUser"))
-	check(err)
-
-	theCache := loadCache()
-
-	env := &wikiEnv{
-		authState: *anAuthState,
-		cache:     theCache,
-		templates: make(map[string]*template.Template),
-		mutex:     sync.Mutex{},
-	}
-	env.favs.List = env.cache.Favs
-	env.tags.List = env.cache.Tags
-
-	err = tmplInit(env)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	// Check for unclean Git dir on startup
-	if !gitIsEmpty() {
-		err = gitIsCleanStartup()
-		if err != nil {
-			log.Fatalln("There was an issue with the git repo:", err)
-		}
-	}
 
 	csrfSecure := true
 	if viper.GetBool("Dev") {
 		csrfSecure = false
 	}
-
-	httputils.Logfile = filepath.Join(dataDir, "http.log")
 
 	// HTTP stuff from here on out
 	s := alice.New(timer, httputils.Logger, env.authState.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
@@ -3181,6 +3143,50 @@ func main() {
 	mux.Handle("/metrics", promhttp.Handler())
 
 	mux.Handle("/", s.Then(r))
+	return mux
+}
+
+func main() {
+
+	// subscribe to SIGINT signals
+	stopChan := make(chan os.Signal)
+	signal.Notify(stopChan, os.Interrupt)
+
+	initWikiDir()
+	dataDirCheck()
+
+	// Bring up authState
+	//var err error
+	anAuthState, err := auth.NewAuthState(filepath.Join(dataDir, "auth.db"), viper.GetString("AdminUser"))
+	check(err)
+
+	theCache := loadCache()
+
+	env := &wikiEnv{
+		authState: *anAuthState,
+		cache:     theCache,
+		templates: make(map[string]*template.Template),
+		mutex:     sync.Mutex{},
+	}
+	env.favs.List = env.cache.Favs
+	env.tags.List = env.cache.Tags
+
+	err = tmplInit(env)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	// Check for unclean Git dir on startup
+	if !gitIsEmpty() {
+		err = gitIsCleanStartup()
+		if err != nil {
+			log.Fatalln("There was an issue with the git repo:", err)
+		}
+	}
+
+	mux := router(env)
+
+	httputils.Logfile = filepath.Join(dataDir, "http.log")
 
 	log.Println("Listening on 127.0.0.1:" + viper.GetString("Port"))
 
