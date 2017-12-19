@@ -669,6 +669,30 @@ func TestListPage(t *testing.T) {
 	}
 }
 
+func testServer(t *testing.T) {
+	err := gitPull()
+	checkT(err, t)
+
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
+	checkT(err, t)
+
+	e := testEnv(t, authState)
+
+	err = tmplInit(e)
+	checkT(err, t)
+
+	ts := httptest.NewServer(router(e))
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(resp.StatusCode)
+}
+
 func TestPrivatePageNotLoggedIn(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
