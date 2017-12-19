@@ -15,8 +15,6 @@ import (
 	"sync"
 	"testing"
 
-	//"github.com/boltdb/bolt"
-	"github.com/dimfeld/httptreemux"
 	"github.com/spf13/viper"
 	"jba.io/go/auth"
 	"jba.io/go/httputils"
@@ -41,6 +39,7 @@ func init() {
 	viper.Set("RemoteGitRepo", "git@jba.io:aqtrans/gowiki-testdata.git")
 	viper.Set("InitWikiRepo", true)
 	httputils.Debug = testing.Verbose()
+	auth.Debug = testing.Verbose()
 	//log.Println(viper.GetString("DataDir"), dataDir)
 }
 
@@ -165,8 +164,8 @@ func TestNewWikiPage(t *testing.T) {
 	r, err := http.NewRequest("GET", "/"+randPage, nil)
 	checkT(err, t)
 
-	router := httptreemux.NewContextMux()
-	router.GET(`/*name`, e.wikiMiddle(e.viewHandler))
+	//router := httptreemux.NewContextMux()
+	//router.GET(`/*name`, e.wikiMiddle(e.viewHandler))
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	w := httptest.NewRecorder()
@@ -175,9 +174,10 @@ func TestNewWikiPage(t *testing.T) {
 		Username: "admin",
 		IsAdmin:  true,
 	})
+	r = r.WithContext(ctx)
 
-	router.DefaultContext = ctx
-	router.ServeHTTP(w, r)
+	//router.DefaultContext = ctx
+	router(e).ServeHTTP(w, r)
 
 	// Check the status code is what we expect.
 	if status := w.Code; status != http.StatusNotFound {
@@ -669,7 +669,8 @@ func TestListPage(t *testing.T) {
 	}
 }
 
-func testServer(t *testing.T) {
+/*
+func TestServer(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
@@ -686,12 +687,14 @@ func testServer(t *testing.T) {
 	ts := httptest.NewServer(router(e))
 	defer ts.Close()
 
-	resp, err := http.Get(ts.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log(resp.StatusCode)
+	//req, err := http.NewRequest("GET", ts.URL+"/", nil)
+	//checkT(err, t)
+	res, err := http.Get(ts.URL + "/")
+	checkT(err, t)
+	t.Log(res.Request.Referer(), res.Request.URL)
+
 }
+*/
 
 func TestPrivatePageNotLoggedIn(t *testing.T) {
 	err := gitPull()
