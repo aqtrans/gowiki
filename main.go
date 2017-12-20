@@ -1678,7 +1678,7 @@ func checkDir(dir string) error {
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "indexHandler")
 
-	http.Redirect(w, r, "/index", http.StatusSeeOther)
+	http.Redirect(w, r, "/index", http.StatusFound)
 	//viewHandler(w, r, "index")
 }
 
@@ -1864,7 +1864,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 	go env.refreshStuff()
 
 	env.authState.SetFlash("Wiki page successfully saved.", w, r)
-	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
+	http.Redirect(w, r, "/"+name, http.StatusFound)
 	log.Println(name + " page saved!")
 }
 
@@ -3016,12 +3016,12 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		} else {
 			if userLoggedIn {
 				// Pass along if the URL is /edit/name or /name
-				if r.URL.Path == "/"+name || r.URL.Path[:len("/edit/")] == "/edit/" {
+				if r.URL.Path == "/"+name || r.URL.Path[:len("/edit/")] == "/edit/" || r.URL.Path[:len("/save/")] == "/save/" {
 					next.ServeHTTP(w, r.WithContext(ctx))
 					return
 				}
 
-				http.Redirect(w, r.WithContext(ctx), "/"+name, http.StatusNotFound)
+				http.Redirect(w, r.WithContext(ctx), "/"+name, http.StatusFound)
 				return
 
 			}
