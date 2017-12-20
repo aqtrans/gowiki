@@ -2943,7 +2943,6 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			if relErr == errIsDir && r.URL.Path[:len("/"+name)] == "/"+name {
 				// Check if name/index exists, and if it does, serve it
 				_, err := os.Stat(filepath.Join(dataDir, "wikidata", name, "index"))
-				log.Println("omg")
 				if err == nil {
 					http.Redirect(w, r, "/"+path.Join(name, "index"), http.StatusFound)
 					return
@@ -2996,20 +2995,19 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 					next.ServeHTTP(w, r.WithContext(ctx))
 					return
 				}
-				if !isAdmin {
-					httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
 
-					env.authState.SetFlash("Please login to see that.", w, r)
-					// Use auth.Redirect to redirect while storing the current URL for future use
-					auth.Redirect(&env.authState, w, r)
-				}
+				httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
+
+				env.authState.SetFlash("Please login to see that.", w, r)
+				// Use auth.Redirect to redirect while storing the current URL for future use
+				auth.Redirect(&env.authState, w, r)
 			}
 
 			// If page does not exist, either redirect to /pageName to allow viewHandler to prompt for creation
 			//    or redirect to the login screen, to protect against leaking page existence
 		} else {
 			if userLoggedIn {
-				// Pass along if the URL is /edit/name or /name
+				// Pass along if the URL is /edit/name, /save/name or /name
 				if r.URL.Path == "/"+name || r.URL.Path[:len("/edit/")] == "/edit/" || r.URL.Path[:len("/save/")] == "/save/" {
 					next.ServeHTTP(w, r.WithContext(ctx))
 					return
