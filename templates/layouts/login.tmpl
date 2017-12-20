@@ -1,5 +1,9 @@
-{{ define "title" }}Login - {{.Title}}{{ end }}
+{{ define "title" }}Login{{ end }}
 {{ define "content" }}
+  <ul class="tabs">
+    <li class="tabs-title is-active"><a href="#">{{ svg "enter" }} Login</a></li>
+  </ul>
+
   <main>
         <form method="post" action="/auth/login" id="login">
         <input type="text" id="username" name="username" placeholder="Username" size="12">
