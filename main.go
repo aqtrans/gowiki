@@ -139,6 +139,7 @@ var (
 	errGitAhead    = errors.New("wiki git repo is ahead; Need to push")
 	errGitBehind   = errors.New("wiki git repo is behind; Need to pull")
 	errGitDiverged = errors.New("wiki git repo has diverged; Need to intervene manually")
+	errIsDir       = errors.New("file is a directory")
 )
 
 type renderer struct {
@@ -1489,12 +1490,13 @@ func parseBool(value string) bool {
 	return boolValue
 }
 
-// doesPageExist checks if the given name exists, and is a  regular file
+// doesPageExist checks if the given name exists, and is a regular file
 // If there is anything wrong, it panics
-func doesPageExist(name string) bool {
+func doesPageExist(name string) (bool, error) {
 	defer httputils.TimeTrack(time.Now(), "doesPageExist")
 
-	exists := false
+	var exists bool
+	var finError error
 
 	fileInfo, err := os.Stat(name)
 	if err == nil {
@@ -1502,25 +1504,25 @@ func doesPageExist(name string) bool {
 		if fileMode.IsRegular() {
 			exists = true
 		}
+		if fileMode.IsDir() {
+			exists = false
+			finError = errIsDir
+		}
 	}
 
 	if err != nil {
 		if os.IsNotExist(err) {
 			exists = false
-			//} else if !fileInfo. {
-			//	log.Println("not a dir?")
-			//	exists = false
 		} else {
-			log.Println("doesPageExist, unhandled error: ")
-			log.Println(err)
-			//panic(err)
+			log.Println("doesPageExist, unhandled error:", err)
 			exists = false
+			finError = err
 		}
 	}
 
 	httputils.Debugln("doesPageExist", name, exists)
 
-	return exists
+	return exists, finError
 }
 
 // Check that the given full path is relative to the configured wikidir
@@ -1586,14 +1588,18 @@ func checkName(name *string) (bool, error) {
 
 	fullfilename := filepath.Join(dataDir, "wikidata", *name)
 
-	exists := doesPageExist(fullfilename)
+	exists, err := doesPageExist(fullfilename)
+	if err == errIsDir {
+		return false, errIsDir
+	}
 
 	// If name doesn't exist, and there is no file extension given, try .page and then .md
 	if !exists {
 		possbileExts := []string{".md", ".page"}
 		for _, ext := range possbileExts {
 			if !exists && (filepath.Ext(*name) == "") {
-				if doesPageExist(fullfilename + ext) {
+				existsWithExt, _ := doesPageExist(fullfilename + ext)
+				if existsWithExt {
 					*name = *name + ext
 					httputils.Debugln(*name + " found!")
 					exists = true
@@ -1612,7 +1618,10 @@ func checkName(name *string) (bool, error) {
 		fullnewfilename := filepath.Join(dataDir, "wikidata", normalName)
 		// Only check for the existence of the normalized name if anything changed
 		if normalName != *name {
-			exists = doesPageExist(fullnewfilename)
+			exists, err = doesPageExist(fullnewfilename)
+			if err == errIsDir {
+				return false, errIsDir
+			}
 			*name = normalName
 		}
 	}
@@ -1677,30 +1686,26 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "viewHandler")
 
 	name := nameFromContext(r.Context())
-	nameStat, err := os.Stat(filepath.Join(dataDir, "wikidata", name))
-	if err != nil {
-		log.Println("viewHandler error reading", name, err)
-	}
-	if err == nil {
-		if nameStat.IsDir() {
-			// Check if name/index exists, and if it does, serve it
-			_, err := os.Stat(filepath.Join(dataDir, "wikidata", name, "index"))
-			if err == nil {
-				/*
-					name = filepath.Join(name, "index")
-					ctx := newWikiExistsContext(r.Context(), true)
-					p := loadWikiPage(env, r.WithContext(ctx), name)
-					renderTemplate(ctx, env, w, "wiki_view.tmpl", p)
-				*/
-				http.Redirect(w, r, "/"+filepath.Join(name, "index"), http.StatusFound)
-				return
-			}
-			if os.IsNotExist(err) {
-				// TODO: List directory
-				log.Println("TODO: List directory")
+	/*
+		nameStat, err := os.Stat(filepath.Join(dataDir, "wikidata", name))
+		if err != nil {
+			log.Println("viewHandler error reading", name, err)
+		}
+		if err == nil {
+			if nameStat.IsDir() {
+				// Check if name/index exists, and if it does, serve it
+				_, err := os.Stat(filepath.Join(dataDir, "wikidata", name, "index"))
+				if err == nil {
+					http.Redirect(w, r, "/"+filepath.Join(name, "index"), http.StatusFound)
+					return
+				}
+				if os.IsNotExist(err) {
+					// TODO: List directory
+					log.Println("TODO: List directory")
+				}
 			}
 		}
-	}
+	*/
 
 	wikiExists := wikiExistsFromContext(r.Context())
 	if !wikiExists {
@@ -2929,11 +2934,23 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		pageExists, relErr := checkName(&name)
 		wikiDir := filepath.Join(dataDir, "wikidata")
 		fullfilename := filepath.Join(wikiDir, name)
-		//relErr := relativePathCheck(name)
+
 		if relErr != nil {
 			if relErr == errBaseNotDir {
 				http.Error(w, "Cannot create subdir of a file.", 500)
 				return
+			}
+
+			// If the given name is a directory, and URL is just /name/, check for /name/index
+			//    If name/index exists, redirect to it
+			if relErr == errIsDir && r.URL.Path == "/"+name+"/" {
+				// Check if name/index exists, and if it does, serve it
+				_, err := os.Stat(filepath.Join(dataDir, "wikidata", name, "index"))
+				log.Println("omg")
+				if err == nil {
+					http.Redirect(w, r, "/"+filepath.Join(name, "index"), http.StatusFound)
+					return
+				}
 			}
 			httpErrorHandler(w, r, relErr)
 			return
@@ -2998,7 +3015,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			//    or redirect to the login screen, to protect against leaking page existence
 		} else {
 			if userLoggedIn {
-				// Pass along if the URL is the /edit/name or /name
+				// Pass along if the URL is /edit/name or /name
 				if r.URL.Path == "/"+name || r.URL.Path[:len("/edit/")] == "/edit/" {
 					next.ServeHTTP(w, r.WithContext(ctx))
 					return
