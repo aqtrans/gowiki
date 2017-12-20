@@ -1737,17 +1737,17 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fileType := getFileType(name)
-	if fileType == "wiki" {
-		httputils.Debugln("Yay proper wiki page!")
-		// Get Wiki
-		p := loadWikiPage(env, r, name)
-		renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
+	if !isWiki(name) {
+		http.ServeFile(w, r, filepath.Join(dataDir, "wikidata", name))
 		return
 	}
 
-	http.ServeFile(w, r, filepath.Join(dataDir, "wikidata", name))
+	httputils.Debugln("Yay proper wiki page!")
+	// Get Wiki
+	p := loadWikiPage(env, r, name)
+	renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
 	return
+
 	/*
 		var html template.HTML
 		if strings.Contains(fileType, "image") {
@@ -1767,11 +1767,12 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	*/
 }
 
-func getFileType(filename string) string {
-	var realFileType string
+func isWiki(filename string) bool {
+	var isWiki bool
 	file, err := os.Open(filepath.Join(dataDir, "wikidata", filename))
 	if err != nil {
 		log.Println(err)
+		isWiki = false
 	}
 
 	defer file.Close()
@@ -1779,26 +1780,27 @@ func getFileType(filename string) string {
 	_, err = file.Read(buff)
 	if err != nil {
 		log.Println(err)
+		isWiki = false
 	}
 	filetype := http.DetectContentType(buff)
 	if filetype == "application/octet-stream" {
 		// Definitely wiki page...but others probably
 		if string(buff[:3]) == "---" {
-			realFileType = "wiki"
+			isWiki = true
 		}
 
 		// Account for .page files from gitit
-		if filepath.Ext(filename) == ".page" {
-			realFileType = "wiki"
+		if filepath.Ext(filename) == ".page" || filepath.Ext(filename) == ".md" {
+			isWiki = true
 		}
 		// TODO Fixes gitit-created files, until I can figure out a better way
 		//realFileType = "wiki"
 	} else if filetype == "text/plain; charset=utf-8" {
-		realFileType = "wiki"
+		isWiki = true
 	} else {
-		realFileType = filetype
+		isWiki = false
 	}
-	return realFileType
+	return isWiki
 }
 
 func (env *wikiEnv) editHandler(w http.ResponseWriter, r *http.Request) {
@@ -2412,41 +2414,6 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	// In the future we could report back on the status of our DB, or our cache
 	// (e.g. Redis) by performing a simple PING, and include them in the response.
 	io.WriteString(w, `{"alive": true}`)
-}
-
-func isWikiPage(fullname string) bool {
-	isIt := false
-	// Detect filetype first
-	file, err := os.Open(fullname)
-	if err != nil {
-		log.Println(err)
-		isIt = false
-	}
-	buff := make([]byte, 512)
-	_, err = file.Read(buff)
-	if err != nil {
-		log.Println(err)
-		isIt = false
-	}
-
-	filetype := http.DetectContentType(buff)
-	// Try and detect mis-detected wiki pages
-	if filetype == "application/octet-stream" {
-		/*
-			if bytes.Equal(buff[:3], []byte("---")) {
-				log.Println(fullname + " is a wiki page.")
-				return true
-			}
-		*/
-		isIt = true
-	}
-	if filetype == "text/plain; charset=utf-8" {
-		isIt = true
-	}
-
-	log.Println(fullname + " is " + filetype)
-
-	return isIt
 }
 
 /*
