@@ -1,5 +1,9 @@
 {{ define "title" }}Tag: {{ .TagName }} {{ end }}
 {{ define "content" }}
+<ul class="tabs">
+    <li class="tabs-title is-active"><a href="#">{{ svg "price-tag" }} {{ .TagName }}</a></li>
+</ul>
+
   <main>
       <table>
       <thead>
