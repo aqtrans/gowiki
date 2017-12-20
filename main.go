@@ -45,6 +45,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -449,6 +450,19 @@ func wikiExistsFromContext(c context.Context) bool {
 		return false
 	}
 	return t
+}
+
+func newWikiContext(c context.Context, w *wiki) context.Context {
+	return context.WithValue(c, wikiKey, w)
+}
+
+func wikiFromContext(c context.Context) *wiki {
+	w, ok := c.Value(wikiKey).(*wiki)
+	if !ok {
+		httputils.Debugln("No wiki in context.")
+		return &wiki{}
+	}
+	return w
 }
 
 func isAdmin(s string) bool {
@@ -2887,23 +2901,6 @@ func loadCache() *wikiCache {
 	return cache
 }
 
-/*
-func (c wikiCache) MarshalBinary() ([]byte, error) {
-	// A simple encoding: plain text.
-	var b bytes.Buffer
-	fmt.Fprintln(&b, c.SHA1, c.Cache, c.Favs.List, c.Tags.List)
-	return b.Bytes(), nil
-}
-
-// UnmarshalBinary modifies the receiver so it must take a pointer receiver.
-func (c *wikiCache) UnmarshalBinary(data []byte) error {
-	// A simple encoding: plain text.
-	b := bytes.NewBuffer(data)
-	_, err := fmt.Fscanln(b, &c.SHA1, &c.Cache, &c.Favs.List, &c.Tags.List)
-	return err
-}
-*/
-
 func headHash() string {
 	output, err := gitCommand("rev-parse", "HEAD").CombinedOutput()
 	if err != nil {
@@ -2948,17 +2945,16 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 				_, err := os.Stat(filepath.Join(dataDir, "wikidata", name, "index"))
 				log.Println("omg")
 				if err == nil {
-					http.Redirect(w, r, "/"+filepath.Join(name, "index"), http.StatusFound)
+					http.Redirect(w, r, "/"+path.Join(name, "index"), http.StatusFound)
 					return
 				}
 			}
 			httpErrorHandler(w, r, relErr)
 			return
 		}
-		nameCtx := newNameContext(r.Context(), name)
-		//pageExists := doesPageExist(fullfilename)
-		ctx := newWikiExistsContext(nameCtx, pageExists)
 
+		nameCtx := newNameContext(r.Context(), name)
+		ctx := newWikiExistsContext(nameCtx, pageExists)
 		r = r.WithContext(ctx)
 
 		// if pageExists, read its frontmatter
@@ -2988,7 +2984,6 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 				if !userLoggedIn {
 					httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
 					env.authState.SetFlash("Please login to see that.", w, r)
-					//http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
 					// Use auth.Redirect to redirect while storing the current URL for future use
 					auth.Redirect(&env.authState, w, r)
 				}
@@ -3005,7 +3000,6 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 					httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
 
 					env.authState.SetFlash("Please login to see that.", w, r)
-					//http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+r.URL.String(), http.StatusSeeOther)
 					// Use auth.Redirect to redirect while storing the current URL for future use
 					auth.Redirect(&env.authState, w, r)
 				}
@@ -3031,7 +3025,6 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 				httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
 
 				env.authState.SetFlash("Please login to view that page.", w, r)
-				//http.Redirect(w, r.WithContext(ctx), "/login"+"?url="+rurl, http.StatusSeeOther)
 
 				// Save URL in cookie for later use
 				env.authState.SetSession("redirect", r.URL.Path, w, r)
@@ -3094,8 +3087,6 @@ func router(env *wikiEnv) http.Handler {
 	// HTTP stuff from here on out
 	s := alice.New(timer, httputils.Logger, env.authState.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
 
-	//h := httptreemux.New()
-	//h.PanicHandler = httptreemux.ShowErrorsPanicHandler
 	r := httptreemux.NewContextMux()
 
 	r.PanicHandler = errorHandler
@@ -3162,7 +3153,6 @@ func main() {
 	dataDirCheck()
 
 	// Bring up authState
-	//var err error
 	anAuthState, err := auth.NewAuthState(filepath.Join(dataDir, "auth.db"), viper.GetString("AdminUser"))
 	check(err)
 
