@@ -109,6 +109,17 @@ func testEnv(t *testing.T, authState *auth.State) *wikiEnv {
 	}
 }
 
+func testEnvInit(t *testing.T) (string, *wikiEnv) {
+	tmpdb := tempfile()
+	//defer os.Remove(tmpdb)
+	authState, err := auth.NewAuthState(tmpdb, "admin")
+	checkT(err, t)
+	e := testEnv(t, authState)
+	err = tmplInit(e)
+	checkT(err, t)
+	return tmpdb, e
+}
+
 func TestAuthInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
@@ -148,26 +159,15 @@ func TestWikiInit(t *testing.T) {
 func TestNewWikiPage(t *testing.T) {
 	err := gitCloneTest()
 	checkT(err, t)
-	tmpdb := tempfile()
+
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
 
-	e := testEnv(t, authState)
-	err = tmplInit(e)
-	checkT(err, t)
-
-	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
-	// pass 'nil' as the third parameter.
 	randPage, err := httputils.RandKey(8)
 	checkT(err, t)
 	r, err := http.NewRequest("GET", "/"+randPage, nil)
 	checkT(err, t)
 
-	//router := httptreemux.NewContextMux()
-	//router.GET(`/*name`, e.wikiMiddle(e.viewHandler))
-
-	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	w := httptest.NewRecorder()
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
@@ -176,10 +176,8 @@ func TestNewWikiPage(t *testing.T) {
 	})
 	r = r.WithContext(ctx)
 
-	//router.DefaultContext = ctx
 	router(e).ServeHTTP(w, r)
 
-	// Check the status code is what we expect.
 	if status := w.Code; status != http.StatusFound {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusFound)
@@ -190,31 +188,19 @@ func TestNewWikiPage(t *testing.T) {
 func TestNewWikiPageNotLoggedIn(t *testing.T) {
 	err := gitCloneTest()
 	checkT(err, t)
-	tmpdb := tempfile()
+
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
 
-	e := testEnv(t, authState)
-	err = tmplInit(e)
-	checkT(err, t)
-
-	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
-	// pass 'nil' as the third parameter.
 	randPage, err := httputils.RandKey(8)
 	checkT(err, t)
 	r, err := http.NewRequest("GET", "/"+randPage, nil)
 	checkT(err, t)
 
-	//router := httptreemux.NewContextMux()
-	//router.GET(`/*name`, e.wikiMiddle(e.viewHandler))
-
-	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	w := httptest.NewRecorder()
 
 	router(e).ServeHTTP(w, r)
 
-	// Check the status code is what we expect.
 	if status := w.Code; status != http.StatusSeeOther {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusSeeOther)
@@ -225,52 +211,23 @@ func TestNewWikiPageNotLoggedIn(t *testing.T) {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			w.Header().Get("Location"), expected)
 	}
-	/*
-		url, err := w.Result().Location()
-		if err != nil {
-			t.Error(err)
-		}
-		if url.String() != "/login?url=/"+randPage {
-			t.Error("URL does not equal /login?url=/"+randPage, url.Path)
-		}
-	*/
 }
 
 func TestHealthCheckHandler(t *testing.T) {
-	//assert := assert.New(t)
-	//setup()
-
-	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
-	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("GET", "/health", nil)
 	checkT(err, t)
 	rr := httptest.NewRecorder()
 
-	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
-	//router := httptreemux.NewContextMux()
-	//router.GET("/health", healthCheckHandler)
-
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
 
-	e := testEnv(t, authState)
-	err = tmplInit(e)
-	checkT(err, t)
-
-	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
-	// directly and pass in our Request and ResponseRecorder.
 	router(e).ServeHTTP(rr, req)
 
-	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
-	//assert.Equal(rr.Code, http.StatusOK, "HealthCheckHandler not returning 200")
 
-	// Check the response body is what we expect.
 	expected := `{"alive": true}`
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
@@ -282,26 +239,11 @@ func TestNewHandler(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
 
-	e := testEnv(t, authState)
-
-	err = tmplInit(e)
-	checkT(err, t)
-
-	// Create a request to pass to our handler.
-	/*
-		form := url.Values{}
-		form.Add("newwiki", "afefwdwdef/dwwafefe/fegegrgr")
-		reader = strings.NewReader(form.Encode())
-	*/
 	req, err := http.NewRequest("GET", "/afefwdwdef/dwwafefe/fegegrgr", reader)
 	checkT(err, t)
-
-	//req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	rr := httptest.NewRecorder()
 
@@ -312,32 +254,13 @@ func TestNewHandler(t *testing.T) {
 	})
 	req = req.WithContext(ctx)
 
-	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
-	//router := httptreemux.NewContextMux()
-	//router.GET("/*name", e.wikiMiddle(e.viewHandler))
-
-	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
-	// directly and pass in our Request and ResponseRecorder.
-	//router.DefaultContext = ctx
 	router(e).ServeHTTP(rr, req)
 
-	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusNotFound {
 		t.Log(rr.Body.String())
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusNotFound)
 	}
-
-	//log.Println(rr.Header().Get("Location"))
-	/*
-		// Check the response body is what we expect.
-		expected := `/edit/omg/yeah/what`
-		if rr.Header().Get("Location") != expected {
-			t.Errorf("handler returned unexpected body: got %v want %v",
-				rr.Header().Get("Location"), expected)
-		}
-	*/
-
 }
 
 // TestIndex tests if viewing the index page, as a logged in user, properly returns a 200
@@ -345,58 +268,27 @@ func TestIndexPage(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
 
-	e := testEnv(t, authState)
-
-	err = tmplInit(e)
-	checkT(err, t)
-
-	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
-	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("GET", "/", nil)
 	checkT(err, t)
 
-	//router := httptreemux.NewContextMux()
-	//router.GET("/", indexHandler)
-
-	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
 		Username: "admin",
 		IsAdmin:  true,
 	})
-	//params := make(map[string]string)
-	//params["name"] = "index"
-	//ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
+
 	req = req.WithContext(ctx)
 
-	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
-	// directly and pass in our Request and ResponseRecorder.
-	//router.DefaultContext = ctx
 	router(e).ServeHTTP(rr, req)
-	//t.Log(rr.Body.String())
-	//t.Log(randPage)
-	//t.Log(rr.Code)
 
-	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusFound {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusFound)
 	}
-
-	/*
-	   // Check the response body is what we expect.
-	   expected := `{"alive": true}`
-	   if rr.Body.String() != expected {
-	       t.Errorf("handler returned unexpected body: got %v want %v",
-	           rr.Body.String(), expected)
-	   }
-	*/
 }
 
 // TestIndexHistoryPage tests if viewing the history of the index page, as a logged in user, properly returns a 200
@@ -404,60 +296,27 @@ func TestIndexHistoryPage(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
 
-	e := testEnv(t, authState)
-
-	err = tmplInit(e)
-	checkT(err, t)
-
-	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
-	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("GET", "/history/index", nil)
 	checkT(err, t)
 
-	//router := httptreemux.NewContextMux()
-	//router.GET(`/history/*name`, e.authState.AuthMiddle(e.wikiMiddle(e.historyHandler)))
-
-	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
 		Username: "admin",
 		IsAdmin:  true,
 	})
-	/*
-		params := make(map[string]string)
-		params["name"] = "index"
-		ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
-	*/
+
 	req = req.WithContext(ctx)
 
-	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
-	// directly and pass in our Request and ResponseRecorder.
-	//router.DefaultContext = ctx
 	router(e).ServeHTTP(rr, req)
-	//t.Log(rr.Body.String())
-	//t.Log(randPage)
-	//t.Log(rr.Code)
 
-	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
-
-	/*
-	   // Check the response body is what we expect.
-	   expected := `{"alive": true}`
-	   if rr.Body.String() != expected {
-	       t.Errorf("handler returned unexpected body: got %v want %v",
-	           rr.Body.String(), expected)
-	   }
-	*/
 }
 
 // TestIndexEditPage tests if trying to edit the index page, as a logged in user, properly returns a 200
@@ -465,58 +324,38 @@ func TestIndexEditPage(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
+	/*
+		tmpdb := tempfile()
+		defer os.Remove(tmpdb)
+		authState, err := auth.NewAuthState(tmpdb, "admin")
+		checkT(err, t)
 
-	e := testEnv(t, authState)
-	err = tmplInit(e)
-	checkT(err, t)
-	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
-	// pass 'nil' as the third parameter.
+		e := testEnv(t, authState)
+		err = tmplInit(e)
+		checkT(err, t)
+	*/
+
 	req, err := http.NewRequest("GET", "/edit/index", nil)
 	checkT(err, t)
 
-	//router := httptreemux.NewContextMux()
-	//router.GET(`/edit/*name`, e.authState.AuthMiddle(e.wikiMiddle(e.editHandler)))
-
-	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
 		Username: "admin",
 		IsAdmin:  true,
 	})
-	/*
-		params := make(map[string]string)
-		params["name"] = "index"
-		ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
-	*/
+
 	req = req.WithContext(ctx)
 
-	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
-	// directly and pass in our Request and ResponseRecorder.
-	//router.DefaultContext = ctx
 	router(e).ServeHTTP(rr, req)
-	//t.Log(rr.Body.String())
-	//t.Log(randPage)
-	//t.Log(rr.Code)
 
-	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
 
-	/*
-	   // Check the response body is what we expect.
-	   expected := `{"alive": true}`
-	   if rr.Body.String() != expected {
-	       t.Errorf("handler returned unexpected body: got %v want %v",
-	           rr.Body.String(), expected)
-	   }
-	*/
 }
 
 // TestDirBaseHandler tests if trying to create a file 'inside' a file fails
@@ -528,16 +367,8 @@ func TestDirBaseHandler(t *testing.T) {
 	req, err := http.NewRequest("GET", "/index/what/omg", nil)
 	checkT(err, t)
 
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
-
-	testEnv(t, authState)
-
-	e := testEnv(t, authState)
-	err = tmplInit(e)
-	checkT(err, t)
 
 	//req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
@@ -582,15 +413,8 @@ func TestRecentsPage(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
-
-	e := testEnv(t, authState)
-
-	err = tmplInit(e)
-	checkT(err, t)
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -625,20 +449,14 @@ func TestListPage(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
 
-	e := testEnv(t, authState)
 	e.cache = buildCache()
 	err = os.Remove("./tests/data/cache.gob")
 	if err != nil {
 		t.Error(err)
 	}
-
-	err = tmplInit(e)
-	checkT(err, t)
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -700,15 +518,8 @@ func TestPrivatePageNotLoggedIn(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
-
-	e := testEnv(t, authState)
-
-	err = tmplInit(e)
-	checkT(err, t)
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -748,15 +559,8 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
-
-	e := testEnv(t, authState)
-
-	err = tmplInit(e)
-	checkT(err, t)
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -799,15 +603,8 @@ func TestSearchPage(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
-
-	e := testEnv(t, authState)
-
-	err = tmplInit(e)
-	checkT(err, t)
 
 	e.cache = buildCache()
 	if e.cache == nil {
@@ -853,15 +650,8 @@ func TestDotGit(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
-
-	e := testEnv(t, authState)
-
-	err = tmplInit(e)
-	checkT(err, t)
 
 	e.cache = buildCache()
 	if e.cache == nil {
@@ -903,42 +693,24 @@ func TestWikiDirEscape(t *testing.T) {
 	err := gitPull()
 	checkT(err, t)
 
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
-
-	e := testEnv(t, authState)
-
-	err = tmplInit(e)
-	checkT(err, t)
 
 	e.cache = buildCache()
 	if e.cache == nil {
 		t.Error("cache is empty")
 	}
 
-	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
-	// pass 'nil' as the third parameter.
 	req, err := http.NewRequest("GET", "/../../test.md", nil)
 	checkT(err, t)
-
-	//router := httptreemux.NewContextMux()
-	//router.GET("/*name", e.wikiMiddle(e.viewHandler))
-
-	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
 		Username: "admin",
 		IsAdmin:  true,
 	})
-
 	req = req.WithContext(ctx)
 
-	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
-	// directly and pass in our Request and ResponseRecorder.
-	//router.DefaultContext = ctx
 	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
