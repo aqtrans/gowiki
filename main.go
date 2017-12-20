@@ -2943,7 +2943,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 
 			// If the given name is a directory, and URL is just /name/, check for /name/index
 			//    If name/index exists, redirect to it
-			if relErr == errIsDir && r.URL.Path == "/"+name+"/" {
+			if relErr == errIsDir && r.URL.Path[:len("/"+name)] == "/"+name {
 				// Check if name/index exists, and if it does, serve it
 				_, err := os.Stat(filepath.Join(dataDir, "wikidata", name, "index"))
 				log.Println("omg")
