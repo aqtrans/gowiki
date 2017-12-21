@@ -753,8 +753,41 @@ func TestWikiHistoryNonExistent(t *testing.T) {
 	// Transform/normalize the randPage name
 	checkName(&randPage)
 
-	// TODO: figure out how to test this since it's in a cookie now
 	expected := `/` + randPage
+	if w.Header().Get("Location") != expected {
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			w.Header().Get("Location"), expected)
+	}
+}
+
+// TestWikiDirIndex tests if trying to view /dir/ properly redirects to /dir/index when it exists
+func TestWikiDirIndex(t *testing.T) {
+	err := gitCloneTest()
+	checkT(err, t)
+
+	tmpdb, e := testEnvInit(t)
+	defer os.Remove(tmpdb)
+
+	r, err := http.NewRequest("GET", "/work", nil)
+	checkT(err, t)
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
+		Username: "admin",
+		IsAdmin:  true,
+	})
+	r = r.WithContext(ctx)
+
+	w := httptest.NewRecorder()
+
+	router(e).ServeHTTP(w, r)
+
+	if status := w.Code; status != http.StatusFound {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusFound)
+	}
+
+	expected := `/work/index`
 	if w.Header().Get("Location") != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			w.Header().Get("Location"), expected)
