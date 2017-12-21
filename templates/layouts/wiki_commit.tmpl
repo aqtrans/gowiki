@@ -23,18 +23,18 @@
     </div></li>      
     {{ end }}
   </ul>
-  <div class="preview-tabs two">
-    <input id='tab-1' type='radio' name='tabgroupB' checked />
-    <label class="pseudo button toggle" for="tab-1">Content</label>
-    <input id='tab-2' type='radio' name='tabgroupB'>
-    <label class="pseudo button toggle" for="tab-2">Diff</label>
-    <div class="row">
-      <div>
-        {{.Rendered | safeHTML}}
-      </div>
-      <div>
-        <pre><code>{{.Diff}}</code></pre>
-      </div>
+  <div class="preview-tabs">
+    <button class="tablinks" onclick="openTab(event, 'Content')" id="defaultOpen">Content</button>
+    <button class="tablinks" onclick="openTab(event, 'Diff')">Diff</button>
+  </div>
+  <div id="Content" class="tabcontent">
+    <div>
+      {{.Rendered | safeHTML}}
+    </div>
+  </div>
+  <div id="Diff" class="tabcontent">
+    <div>
+      <pre><code>{{.Diff}}</code></pre>
     </div>
   </div>
   <footer>
@@ -44,4 +44,29 @@
     </ul>
   </footer>
 </main>
+{{ end }}
+{{ define "extra_scripts" }}
+<script type="text/javascript" charset="utf-8">
+function openTab(evt, tabName) {
+    // Declare all variables
+    var i, tabcontent, tablinks;
+
+    // Get all elements with class="tabcontent" and hide them
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+
+    // Get all elements with class="tablinks" and remove the class "active"
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    // Show the current tab, and add an "active" class to the button that opened the tab
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " active";
+}  
+document.getElementById("defaultOpen").click();
+</script>
 {{ end }}
