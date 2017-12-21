@@ -225,7 +225,8 @@ span.label {
   background-color: #464646; }
 
 pre, code {
-  white-space: pre-wrap; }
+  white-space: pre-wrap;
+  background: #073642; }
 
 .input-wrapper {
   display: flex; }
