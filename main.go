@@ -2992,7 +2992,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 				env.authState.SetFlash("Please login to view that page.", w, r)
 
 				// Save URL in cookie for later use
-				env.authState.SetSession("redirect", r.URL.Path, w, r)
+				env.authState.SetSession("redirect", r.URL.Path, w)
 				// Redirect to the login page, should be at LoginPath
 				http.Redirect(w, r, auth.LoginPath, http.StatusSeeOther)
 				return
