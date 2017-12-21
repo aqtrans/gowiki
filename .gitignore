@@ -12,3 +12,4 @@ scss/bower_components/**
 scss/node_modules/**
 vendor/*/
 .sass-cache/*
+tests/data/**
