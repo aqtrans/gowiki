@@ -314,79 +314,30 @@ pre, code {
 
 // Tab definition
 .preview-tabs {
-    font-size: 0;
-    margin: 25px 0;
-    &:after {
-        clear: both;
-        content: '';
-        display: table;
-    }
+    background: lighten($almostblack, 25);
       
-    .tab {
-        display: inline;
-    }
-      
-    .tab-label {
+    .tablinks {
         //background: #eee; 
-        border: 1px solid #ccc; 
+        //border: 1px solid #ccc; 
         display: inline-block;
-        font-size: 16px;
         font-size: 1rem;
-        left: 1px;
-        margin-left: -1px;
-        padding: 10px; 
         position: relative;
+        border: none;
+        outline: none;
         vertical-align: bottom;
         cursor: pointer;
+        background: lighten($almostblack, 25);
     }
-      
-    .tab > [type="radio"] {
-        clip: rect(0 0 0 0);
-        height: 1px;
-        opacity: 0;
-        position: fixed;
-        width: 1px;
-        z-index: -1;
-    }
-      
-    .tab-panel {
-        display: inline;
-        display: inline-block;
-        overflow: hidden;
-        position: relative;
-        height: 0;
-        width: 0;
-    }
-      
-    .tab-content {
-        -webkit-box-sizing: border-box;
-        -moz-box-sizing: border-box;
-        box-sizing: border-box;
-        display: block;
-        //background: white;
-        padding: 0 20px;
-        border: 1px solid #ccc;
-        float: left;
-        //font-size: 16px;
-        font-size: 1rem;
-        margin-top: -1px;
-        width: 100%;
-    }
-      
-    .tab [type="radio"]:checked + .tab-label {
-        //background: white;
+
+    .tablinks.active {
         border-bottom: 2px solid white;
-        background: darken($almostblack, 15);         
-        //border-bottom-width: 0;
-        padding-bottom: 11px;
-        z-index: 1;
-    }
-      
-    .tab [type="radio"]:checked ~ .tab-panel {
-        display: inline;
+        background: darken($almostblack, 15); 
     }
 }
 
+.tabcontent {
+    display: none;
+}
 
 @media (min-width: 768px) {
     body {
