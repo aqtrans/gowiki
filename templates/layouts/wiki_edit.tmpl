@@ -45,25 +45,19 @@
         {{.Token}}
         <hr>
         <div class="preview-tabs">
-            <div class="tab">
-                <input class="tab-radio" type="radio" id="tab-1" name="tab-group-1" checked>
-                <label class="tab-label" for="tab-1">Edit</label>
-                <div class="tab-panel">
-                    <div class="tab-content">
-                        <textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="tab">
-                <input class="tab-radio" type="radio" id="tab-2" name="tab-group-1">
-                <label class="tab-label" for="tab-2">Preview</label>
-                <div class="tab-panel">
-                    <div class="tab-content">
-                        <article class="content" id="preview_content"></article>
-                    </div>
-                </div>
+            <a class="tablinks" onclick="openTab(event, 'Edit')" id="defaultOpen">Edit</a>
+            <a class="tablinks" onclick="openTab(event, 'Preview')">Preview</a>
+        </div>
+        <div id="Edit" class="tabcontent">
+            <div>
+                <textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea>
             </div>
         </div>
+        <div id="Preview" class="tabcontent">
+            <div>
+                <article class="content" id="preview_content"></article>
+            </div>
+        </div>        
         <button type="submit" class="success button">Submit</button>
         </form>
     </main>
@@ -81,32 +75,42 @@
     }    
     var tagFields = tagdog('.tag-field', options);
 }).call(this);
-/*
-var commonmark = window.commonmark;
-var writer = new commonmark.HtmlRenderer();
-var reader = new commonmark.Parser();
-var textarea = document.getElementById("editor");
-*/
-//var initial_text = {{printf "%s" .Wiki.Content}};
-//document.getElementsByName("editor")[0].value = initial_text;
 
+function openTab(evt, tabName) {
+    // Declare all variables
+    var i, tabcontent, tablinks;
 
-document.getElementById("tab-2").onclick = function() {
-    var editortxt = document.getElementsByName("editor")[0].value;
-    var csrf = document.getElementsByName("gorilla.csrf.Token")[0].value;
-    //var parsed = reader.parse(editortxt);
-    //var result = writer.render(parsed);
-    $.ajax({
-        type: "POST",
-        url: "/md_render",
-        data: { md: editortxt, 'gorilla.csrf.Token': csrf },
-        success: function (msg) {
-            document.getElementById("preview_content").innerHTML = msg;
-        },
-        dataType: "html"
-    });    
-    //document.getElementById("preview_content").innerHTML=result;
-};
+    // Get all elements with class="tabcontent" and hide them
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+
+    // Get all elements with class="tablinks" and remove the class "active"
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    // Show the current tab, and add an "active" class to the button that opened the tab
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.className += " active";
+
+    if (tabName == "Preview") {
+        var editortxt = document.getElementsByName("editor")[0].value;
+        var csrf = document.getElementsByName("gorilla.csrf.Token")[0].value;
+        $.ajax({
+            type: "POST",
+            url: "/md_render",
+            data: { md: editortxt, 'gorilla.csrf.Token': csrf },
+            success: function (msg) {
+                document.getElementById("preview_content").innerHTML = msg;
+            },
+            dataType: "html"
+        });
+    }
+}  
+document.getElementById("defaultOpen").click();
 
 </script>
 {{ end }}

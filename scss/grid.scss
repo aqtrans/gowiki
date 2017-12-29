@@ -328,6 +328,8 @@ pre, code {
         vertical-align: bottom;
         cursor: pointer;
         background: lighten($almostblack, 25);
+        color: $foreground-font;
+        text-decoration: none;
     }
 
     .tablinks.active {
