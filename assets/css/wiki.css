@@ -246,7 +246,9 @@ pre, code {
     outline: none;
     vertical-align: bottom;
     cursor: pointer;
-    background: #606060; }
+    background: #606060;
+    color: #fefefe;
+    text-decoration: none; }
   .preview-tabs .tablinks.active {
     border-bottom: 2px solid white;
     background: black; }
