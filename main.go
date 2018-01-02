@@ -1122,6 +1122,11 @@ type historyPage struct {
 func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
 	name := nameFromContext(r.Context())
 
+	if !wikiExistsFromContext(r.Context()) {
+		http.Redirect(w, r, "/"+name, http.StatusFound)
+		return
+	}
+
 	wikip := loadWikiPage(env, r, name)
 
 	history, err := gitGetFileLog(name)
@@ -2889,6 +2894,54 @@ func markdownPreview(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(markdownRender([]byte(r.PostFormValue("md")))))
 }
 
+// return false if request should be allowed
+// return true if request should be rejected
+func wikiRejected(wikiName string, wikiExists, isAdmin, isLoggedIn bool) bool {
+
+	log.Println("wikiRejected name", wikiName)
+
+	// if wikiExists, read the frontmatter and reject/accept based on frontmatter.Permission
+	if wikiExists {
+		wikiDir := filepath.Join(dataDir, "wikidata")
+		fullfilename := filepath.Join(wikiDir, wikiName)
+	
+		// If err, reject, and log that error
+		f, err := os.Open(fullfilename)
+		if err != nil {
+			log.Println("wikiRejected: Error reading", fullfilename, err)
+			return true
+		}
+		fm := readFront(f)
+		f.Close()
+		switch fm.Permission {
+		case adminPermission:
+			if isAdmin {
+				return false
+			}
+		case publicPermission:
+			return false
+		case privatePermission:
+			if isLoggedIn {
+				return false
+			}
+		default:
+			if isAdmin {
+				return false
+			}
+		}
+		if isAdmin {
+			return false
+		}		
+	}
+
+	if isLoggedIn {
+		return false
+	}
+
+	return true
+
+}
+
 func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		params := getParams(r.Context())
@@ -2896,8 +2949,8 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		_, isAdmin := auth.GetUsername(r.Context())
 		userLoggedIn := auth.IsLoggedIn(r.Context())
 		pageExists, relErr := checkName(&name)
-		wikiDir := filepath.Join(dataDir, "wikidata")
-		fullfilename := filepath.Join(wikiDir, name)
+		//wikiDir := filepath.Join(dataDir, "wikidata")
+		//fullfilename := filepath.Join(wikiDir, name)
 
 		if relErr != nil {
 			if relErr == errBaseNotDir {
@@ -2923,88 +2976,36 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		ctx := newWikiExistsContext(nameCtx, pageExists)
 		r = r.WithContext(ctx)
 
-		// if pageExists, read its frontmatter
-		if pageExists {
-			// Read YAML frontmatter into fm
-			// If err, just return, as file should not contain frontmatter
-			f, err := os.Open(fullfilename)
-			check(err)
-			fm := readFront(f)
-			f.Close()
-			switch fm.Permission {
-			case adminPermission:
-				if userLoggedIn && isAdmin {
-					next.ServeHTTP(w, r.WithContext(ctx))
-					return
-				}
-				if !isAdmin {
-					httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
-					env.authState.SetFlash("Please login to see that.", w, r)
-					// Use auth.Redirect to redirect while storing the current URL for future use
-					auth.Redirect(&env.authState, w, r)
-				}
-			case publicPermission:
-				next.ServeHTTP(w, r.WithContext(ctx))
-				return
-			case privatePermission:
-				if !userLoggedIn {
-					httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
-					env.authState.SetFlash("Please login to see that.", w, r)
-					// Use auth.Redirect to redirect while storing the current URL for future use
-					auth.Redirect(&env.authState, w, r)
-				}
-				if userLoggedIn {
-					next.ServeHTTP(w, r.WithContext(ctx))
-					return
-				}
-			default:
-				if userLoggedIn && isAdmin {
-					next.ServeHTTP(w, r.WithContext(ctx))
-					return
-				}
-
-				httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
-
-				env.authState.SetFlash("Please login to see that.", w, r)
-				// Use auth.Redirect to redirect while storing the current URL for future use
-				auth.Redirect(&env.authState, w, r)
-			}
-
-			// If page does not exist, either redirect to /pageName to allow viewHandler to prompt for creation
-			//    or redirect to the login screen, to protect against leaking page existence
+		if wikiRejected(name, pageExists, isAdmin, userLoggedIn) {
+			mitigateWiki(true, env, r, w)
 		} else {
-			if userLoggedIn {
-				// Pass along if the URL is /edit/name, /save/name or /name
-				if r.URL.Path == "/"+name || r.URL.Path[:len("/edit/")] == "/edit/" || r.URL.Path[:len("/save/")] == "/save/" {
-					next.ServeHTTP(w, r.WithContext(ctx))
-					return
-				}
-
-				http.Redirect(w, r.WithContext(ctx), "/"+name, http.StatusFound)
-				return
-
-			}
-
-			// If not logged in, redirect to login page
-			if !userLoggedIn {
-				httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
-
-				env.authState.SetFlash("Please login to view that page.", w, r)
-
-				// Save URL in cookie for later use
-				env.authState.SetSession("redirect", r.URL.Path, w)
-				// Redirect to the login page, should be at LoginPath
-				http.Redirect(w, r, auth.LoginPath, http.StatusSeeOther)
-				return
-			}
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return			
 		}
 
 	})
 }
 
+// mitigateWiki is a general redirect handler; redirect should be set to true for login mitigations
+func mitigateWiki(redirect bool, env *wikiEnv, r *http.Request, w http.ResponseWriter) {
+	httputils.Debugln("mitigateWiki: " + r.Host + r.URL.Path)
+	env.authState.SetFlash("Unable to view that.", w, r)
+	if redirect {
+		// Use auth.Redirect to redirect while storing the current URL for future use
+		auth.Redirect(&env.authState, w, r)
+	} else {
+		http.Redirect(w, r, "/index", http.StatusFound)
+	}
+
+}
+
 func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "setFavoriteHandler")
 	name := nameFromContext(r.Context())
+	if !wikiExistsFromContext(r.Context()) {
+		http.Redirect(w, r, "/"+name, http.StatusFound)
+		return
+	}	
 	p := loadWikiPage(env, r, name)
 	if p.Wiki.Frontmatter.Favorite {
 		p.Wiki.Frontmatter.Favorite = false
