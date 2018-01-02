@@ -178,9 +178,9 @@ func TestNewWikiPage(t *testing.T) {
 
 	router(e).ServeHTTP(w, r)
 
-	if status := w.Code; status != http.StatusFound {
+	if status := w.Code; status != http.StatusNotFound {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusFound)
+			status, http.StatusNotFound)
 	}
 }
 
@@ -714,10 +714,10 @@ func TestWikiDirEscape(t *testing.T) {
 	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
-	if status := rr.Code; status != http.StatusFound {
+	if status := rr.Code; status != http.StatusNotFound {
 		//t.Log(rr.Body.String(), req.Context())
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusFound)
+			status, http.StatusNotFound)
 	}
 }
 
