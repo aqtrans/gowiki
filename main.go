@@ -29,6 +29,7 @@ package main
 // Markdown stuff from https://raw.githubusercontent.com/gogits/gogs/master/modules/markdown/markdown.go
 
 import (
+	"path"
 	"bufio"
 	"bytes"
 	"context"
@@ -45,7 +46,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"path"
+	//"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -66,9 +67,37 @@ import (
 	"github.com/spf13/viper"
 	//gogit "gopkg.in/src-d/go-git.v4"
 	"gopkg.in/yaml.v2"
-	"jba.io/go/auth"
+	//"jba.io/go/auth"
 	"jba.io/go/httputils"
+	"jba.io/go/flash"
+	"github.com/xyproto/permissionbolt"
+	"github.com/xyproto/pinterface"	
 )
+
+type permissionHandler struct {
+	// perm is a Permissions structure that can be used to deny requests
+	// and acquire the UserState. By using `pinterface.IPermissions` instead
+	// of `*permissionbolt.Permissions`, the code is compatible with not only
+	// `permissionbolt`, but also other modules that uses other database
+	// backends, like `permissions2` which uses Redis.
+	perm pinterface.IPermissions
+
+	// The HTTP multiplexer
+	mux *http.ServeMux
+}
+
+// Implement the ServeHTTP method to make a permissionHandler a http.Handler
+func (ph *permissionHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// Check if the user has the right admin/user rights
+	if ph.wikiRejected(w, req) {
+		// Let the user know, by calling the custom "permission denied" function
+		ph.perm.DenyFunction()(w, req)
+		// Reject the request by not calling the next handler below
+		return
+	}
+	// Serve the requested page if permissions were granted
+	ph.mux.ServeHTTP(w, req)
+}
 
 type key int
 
@@ -204,7 +233,8 @@ type gitDirList struct {
 // Env wrapper to hold app-specific configs, to pass to handlers
 // cache is a pointer here since it's pretty large itself, and holds a mutex
 type wikiEnv struct {
-	authState auth.State
+	//authState auth.State
+	userState pinterface.IUserState
 	cache     *wikiCache
 	templates map[string]*template.Template
 	mutex     sync.Mutex
@@ -1047,8 +1077,10 @@ func loadPage(env *wikiEnv, r *http.Request, p chan<- page) {
 	//timer.Step("loadpageFunc")
 
 	// Auth lib middlewares should load the user and tokens into context for reading
-	user, isAdmin := auth.GetUsername(r.Context())
-	msg := auth.GetFlash(r.Context())
+	//user, isAdmin := auth.GetUsername(r.Context())
+	user := env.userState.Username(r)
+	
+	msg := flash.GetFlash(r.Context())
 	//token := auth.GetToken(r.Context())
 	token := csrf.TemplateField(r)
 
@@ -1090,8 +1122,8 @@ func loadPage(env *wikiEnv, r *http.Request, p chan<- page) {
 		Favs:     env.favs.GetAll(),
 		UserInfo: userInfo{
 			Username:   user,
-			IsAdmin:    isAdmin,
-			IsLoggedIn: auth.IsLoggedIn(r.Context()),
+			IsAdmin:    env.userState.IsAdmin(user),
+			IsLoggedIn: env.userState.IsLoggedIn(user),
 		},
 		Token:     token,
 		FlashMsg:  message,
@@ -1282,8 +1314,9 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 
 	var list []gitDirList
 
-	userLoggedIn := auth.IsLoggedIn(r.Context())
-	_, isAdmin := auth.GetUsername(r.Context())
+	user := env.userState.Username(r)
+	userLoggedIn := env.userState.IsLoggedIn(user)
+	isAdmin := env.userState.IsAdmin(user)
 
 	for _, v := range env.cache.Cache {
 		if v.Permission == publicPermission {
@@ -1879,7 +1912,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	go env.refreshStuff()
 
-	env.authState.SetFlash("Wiki page successfully saved.", w, r)
+	flash.SetFlash("Wiki page successfully saved.", w)
 	http.Redirect(w, r, "/"+name, http.StatusFound)
 	log.Println(name + " page saved!")
 }
@@ -2123,9 +2156,11 @@ func (env *wikiEnv) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 	p := make(chan page, 1)
 	go loadPage(env, r, p)
 
-	userlist, err := env.authState.Userlist()
+	ul := env.userState.Users()
+	userlist, err := ul.GetAll()
 	if err != nil {
-		panic(err)
+		log.Println("Error loading users", err)
+		userlist = []string{""}
 	}
 
 	data := struct {
@@ -2152,9 +2187,11 @@ func (env *wikiEnv) adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	p := make(chan page, 1)
 	go loadPage(env, r, p)
 
-	userlist, err := env.authState.Userlist()
+	ul := env.userState.Users()
+	userlist, err := ul.GetAll()
 	if err != nil {
-		panic(err)
+		log.Println("Error loading users", err)
+		userlist = []string{""}
 	}
 
 	//ctx := r.Context()
@@ -2680,8 +2717,9 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 	p := make(chan page, 1)
 	go loadPage(env, r, p)
 
-	userLoggedIn := auth.IsLoggedIn(r.Context())
-	_, isAdmin := auth.GetUsername(r.Context())
+	user := env.userState.Username(r)
+	userLoggedIn := env.userState.IsLoggedIn(user)
+	isAdmin := env.userState.IsAdmin(user)
 
 	var fileList string
 
@@ -2889,15 +2927,13 @@ func markdownPreview(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(markdownRender([]byte(r.PostFormValue("md")))))
 }
 
+
 func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		params := getParams(r.Context())
-		name := params["name"]
-		_, isAdmin := auth.GetUsername(r.Context())
-		userLoggedIn := auth.IsLoggedIn(r.Context())
+		name := params["wikiname"]
+
 		pageExists, relErr := checkName(&name)
-		wikiDir := filepath.Join(dataDir, "wikidata")
-		fullfilename := filepath.Join(wikiDir, name)
 
 		if relErr != nil {
 			if relErr == errBaseNotDir {
@@ -2923,83 +2959,63 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		ctx := newWikiExistsContext(nameCtx, pageExists)
 		r = r.WithContext(ctx)
 
-		// if pageExists, read its frontmatter
-		if pageExists {
-			// Read YAML frontmatter into fm
-			// If err, just return, as file should not contain frontmatter
-			f, err := os.Open(fullfilename)
-			check(err)
-			fm := readFront(f)
-			f.Close()
-			switch fm.Permission {
-			case adminPermission:
-				if userLoggedIn && isAdmin {
-					next.ServeHTTP(w, r.WithContext(ctx))
-					return
-				}
-				if !isAdmin {
-					httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
-					env.authState.SetFlash("Please login to see that.", w, r)
-					// Use auth.Redirect to redirect while storing the current URL for future use
-					auth.Redirect(&env.authState, w, r)
-				}
-			case publicPermission:
-				next.ServeHTTP(w, r.WithContext(ctx))
-				return
-			case privatePermission:
-				if !userLoggedIn {
-					httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
-					env.authState.SetFlash("Please login to see that.", w, r)
-					// Use auth.Redirect to redirect while storing the current URL for future use
-					auth.Redirect(&env.authState, w, r)
-				}
-				if userLoggedIn {
-					next.ServeHTTP(w, r.WithContext(ctx))
-					return
-				}
-			default:
-				if userLoggedIn && isAdmin {
-					next.ServeHTTP(w, r.WithContext(ctx))
-					return
-				}
-
-				httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
-
-				env.authState.SetFlash("Please login to see that.", w, r)
-				// Use auth.Redirect to redirect while storing the current URL for future use
-				auth.Redirect(&env.authState, w, r)
-			}
-
-			// If page does not exist, either redirect to /pageName to allow viewHandler to prompt for creation
-			//    or redirect to the login screen, to protect against leaking page existence
-		} else {
-			if userLoggedIn {
-				// Pass along if the URL is /edit/name, /save/name or /name
-				if r.URL.Path == "/"+name || r.URL.Path[:len("/edit/")] == "/edit/" || r.URL.Path[:len("/save/")] == "/save/" {
-					next.ServeHTTP(w, r.WithContext(ctx))
-					return
-				}
-
-				http.Redirect(w, r.WithContext(ctx), "/"+name, http.StatusFound)
-				return
-
-			}
-
-			// If not logged in, redirect to login page
-			if !userLoggedIn {
-				httputils.Debugln("wikiMiddle mitigating: " + r.Host + r.URL.Path)
-
-				env.authState.SetFlash("Please login to view that page.", w, r)
-
-				// Save URL in cookie for later use
-				env.authState.SetSession("redirect", r.URL.Path, w)
-				// Redirect to the login page, should be at LoginPath
-				http.Redirect(w, r, auth.LoginPath, http.StatusSeeOther)
-				return
-			}
-		}
+		next.ServeHTTP(w, r.WithContext(ctx))
 
 	})
+}
+
+
+// return false if request should be allowed
+// return true if request should be rejected
+func (ph *permissionHandler) wikiRejected(w http.ResponseWriter, r *http.Request) bool {
+		params := getParams(r.Context())
+		name := params["wikiname"]
+
+		if name != "" {
+			log.Println("wikiRejected name", name)
+
+			pageExists := wikiExistsFromContext(r.Context())
+			wikiDir := filepath.Join(dataDir, "wikidata")
+			fullfilename := filepath.Join(wikiDir, name)
+		
+			// if pageExists, read its frontmatter
+			if pageExists {
+				// Read YAML frontmatter into fm
+				// If err, just return, as file should not contain frontmatter
+				f, err := os.Open(fullfilename)
+				if err != nil {
+					return true
+				}
+				fm := readFront(f)
+				f.Close()
+				switch fm.Permission {
+				case adminPermission:
+					if ph.perm.UserState().AdminRights(r) {
+						return false
+					}
+				case publicPermission:
+					return false
+				case privatePermission:
+					if ph.perm.UserState().UserRights(r) {
+						return false
+					}
+				default:
+					if ph.perm.UserState().AdminRights(r) {
+						return false
+					}
+				}
+	
+			// If page does not exist, only allow admin to create pages
+			} else {
+				if ph.perm.UserState().AdminRights(r) {
+					return false
+				}
+			}
+			return true
+		}
+
+		return false
+
 }
 
 func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
@@ -3008,11 +3024,11 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 	p := loadWikiPage(env, r, name)
 	if p.Wiki.Frontmatter.Favorite {
 		p.Wiki.Frontmatter.Favorite = false
-		env.authState.SetFlash(name+" has been un-favorited.", w, r)
+		flash.SetFlash(name+" has been un-favorited.", w)
 		log.Println(name + " page un-favorited!")
 	} else {
 		p.Wiki.Frontmatter.Favorite = true
-		env.authState.SetFlash(name+" has been favorited.", w, r)
+		flash.SetFlash(name+" has been favorited.", w)
 		log.Println(name + " page favorited!")
 	}
 
@@ -3050,7 +3066,7 @@ func router(env *wikiEnv) http.Handler {
 	}
 
 	// HTTP stuff from here on out
-	s := alice.New(timer, httputils.Logger, env.authState.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
+	s := alice.New(flash.Middle, timer, httputils.Logger, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
 
 	r := httptreemux.NewContextMux()
 
@@ -3058,52 +3074,62 @@ func router(env *wikiEnv) http.Handler {
 
 	r.GET("/", indexHandler)
 
-	r.GET("/tags", env.authState.AuthMiddle(env.tagMapHandler))
-	r.GET("/tag/*name", env.authState.AuthMiddle(env.tagHandler))
+	r.GET("/tags", env.tagMapHandler)
+	r.GET("/tag/*wikiname", env.wikiMiddle(env.tagHandler))
 
 	r.GET("/login", env.loginPageHandler)
-	r.GET("/logout", env.authState.LogoutHandler)
+	r.GET("/logout", func(w http.ResponseWriter, req *http.Request) {
+		user := env.userState.Username(req)
+		env.userState.Logout(user)
+		http.Redirect(w, req, "/", http.StatusSeeOther)
+	})
 	//r.GET("/signup", signupPageHandler)
 	r.GET("/list", env.listHandler)
 	r.GET("/search/*name", env.search)
 	r.POST("/search", env.search)
-	r.GET("/recent", env.authState.AuthMiddle(env.recentHandler))
+	r.GET("/recent", env.recentHandler)
 	r.GET("/health", healthCheckHandler)
 
 	admin := r.NewContextGroup("/admin")
-	admin.GET("/", env.authState.AuthAdminMiddle(env.adminMainHandler))
-	admin.GET("/config", env.authState.AuthAdminMiddle(env.adminConfigHandler))
-	admin.GET("/git", env.authState.AuthAdminMiddle(env.adminGitHandler))
-	admin.POST("/git/push", env.authState.AuthAdminMiddle(gitPushPostHandler))
-	admin.POST("/git/checkin", env.authState.AuthAdminMiddle(gitCheckinPostHandler))
-	admin.POST("/git/pull", env.authState.AuthAdminMiddle(gitPullPostHandler))
-	admin.GET("/users", env.authState.AuthAdminMiddle(env.adminUsersHandler))
-	admin.POST("/users", env.authState.AuthAdminMiddle(env.authState.UserSignupPostHandler))
-	admin.POST("/user", env.authState.AuthAdminMiddle(adminUserPostHandler))
-	admin.GET("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
-	admin.POST("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
-	admin.POST("/user/password_change", env.authState.AuthAdminMiddle(env.authState.AdminUserPassChangePostHandler))
-	admin.POST("/user/delete", env.authState.AuthAdminMiddle(env.authState.AdminUserDeletePostHandler))
+	admin.GET("/", env.adminMainHandler)
+	admin.GET("/config", env.adminConfigHandler)
+	admin.GET("/git", env.adminGitHandler)
 
 	a := r.NewContextGroup("/auth")
-	a.POST("/login", env.authState.LoginPostHandler)
-	a.POST("/logout", env.authState.LogoutHandler)
-	a.GET("/logout", env.authState.LogoutHandler)
+	a.POST("/login", func(w http.ResponseWriter, req *http.Request) {
+		username := template.HTMLEscapeString(req.FormValue("username"))
+		password := template.HTMLEscapeString(req.FormValue("password"))
+		if env.userState.CorrectPassword(username, password) {
+			env.userState.Login(w, username)
+		}
+		
+		http.Redirect(w, req, "/", http.StatusSeeOther)
+	})
+	a.POST("/logout", func(w http.ResponseWriter, req *http.Request) {
+		user := env.userState.Username(req)
+		env.userState.Logout(user)
+		http.Redirect(w, req, "/", http.StatusSeeOther)
+	})
+	a.GET("/logout", func(w http.ResponseWriter, req *http.Request) {
+		user := env.userState.Username(req)
+		env.userState.Logout(user)
+		http.Redirect(w, req, "/", http.StatusSeeOther)
+	})
 	//a.POST("/signup", auth.SignupPostHandler)
 
-	r.POST("/gitadd", env.authState.AuthMiddle(gitCheckinPostHandler))
-	r.GET("/gitadd", env.authState.AuthMiddle(env.gitCheckinHandler))
+	r.POST("/gitadd", gitCheckinPostHandler)
+	r.GET("/gitadd", env.gitCheckinHandler)
 
 	r.POST("/md_render", markdownPreview)
 
 	r.GET("/uploads/*", treeMuxWrapper(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads")))))
 
-	r.GET(`/fav/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.setFavoriteHandler)))
+	r.GET(`/fav/*wikiname`, env.wikiMiddle(env.setFavoriteHandler))
 
-	r.GET(`/edit/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.editHandler)))
-	r.POST(`/save/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.saveHandler)))
-	r.GET(`/history/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.historyHandler)))
-	r.GET(`/*name`, env.wikiMiddle(env.viewHandler))
+	r.GET(`/edit/*wikiname`, env.wikiMiddle(env.editHandler))
+	r.POST(`/save/*wikiname`, env.wikiMiddle(env.saveHandler))
+	r.GET(`/history/*wikiname`, env.wikiMiddle(env.historyHandler))
+	r.GET(`/*wikiname`, env.wikiMiddle(env.viewHandler))
 
 	return s.Then(r)
 }
@@ -3117,14 +3143,18 @@ func main() {
 	initWikiDir()
 	dataDirCheck()
 
-	// Bring up authState
-	anAuthState, err := auth.NewAuthState(filepath.Join(dataDir, "auth.db"), viper.GetString("AdminUser"))
-	check(err)
+	perm, err := permissionbolt.NewWithConf(filepath.Join(dataDir, "auth2.db"))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	perm.Clear()
+	userstate := perm.UserState()
+
 
 	theCache := loadCache()
 
 	env := &wikiEnv{
-		authState: *anAuthState,
+		userState: userstate,
 		cache:     theCache,
 		templates: make(map[string]*template.Template),
 		mutex:     sync.Mutex{},
@@ -3146,11 +3176,11 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle("/debug/pprof/", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Index)))
-	mux.Handle("/debug/pprof/cmdline", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Cmdline)))
-	mux.Handle("/debug/pprof/profile", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Profile)))
-	mux.Handle("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
-	mux.Handle("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
+	mux.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
+	mux.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
+	mux.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
+	mux.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
+	mux.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
 	mux.HandleFunc("/robots.txt", httputils.Robots)
 	mux.HandleFunc("/favicon.ico", httputils.FaviconICO)
 	mux.HandleFunc("/favicon.png", httputils.FaviconPNG)
@@ -3164,7 +3194,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:    "127.0.0.1:" + viper.GetString("Port"),
-		Handler: mux,
+		Handler: &permissionHandler{perm, mux},
 	}
 
 	go func() {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/xyproto/permissionbolt"
 	"context"
 	"fmt"
 	"html/template"
@@ -16,7 +17,7 @@ import (
 	"testing"
 
 	"github.com/spf13/viper"
-	"jba.io/go/auth"
+	//"jba.io/go/auth"
 	"jba.io/go/httputils"
 )
 
@@ -39,7 +40,7 @@ func init() {
 	viper.Set("RemoteGitRepo", "git@jba.io:aqtrans/gowiki-testdata.git")
 	viper.Set("InitWikiRepo", true)
 	httputils.Debug = testing.Verbose()
-	auth.Debug = testing.Verbose()
+	//auth.Debug = testing.Verbose()
 	//log.Println(viper.GetString("DataDir"), dataDir)
 }
 
@@ -95,9 +96,11 @@ func newState() *auth.AuthState {
 }
 */
 
-func testEnv(t *testing.T, authState *auth.State) *wikiEnv {
+func testEnv(t *testing.T, perm *permissionbolt.Permissions) *wikiEnv {
+	userstate := perm.UserState()
+
 	return &wikiEnv{
-		authState: *authState,
+		userState: userstate,
 		cache: &wikiCache{
 			Tags: make(map[string][]string),
 			Favs: make(map[string]struct{}),
@@ -111,10 +114,13 @@ func testEnv(t *testing.T, authState *auth.State) *wikiEnv {
 
 func testEnvInit(t *testing.T) (string, *wikiEnv) {
 	tmpdb := tempfile()
-	//defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
+	perm, err := permissionbolt.NewWithConf(tmpdb)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	perm.Clear()
 	checkT(err, t)
-	e := testEnv(t, authState)
+	e := testEnv(t, perm)
 	err = tmplInit(e)
 	checkT(err, t)
 	return tmpdb, e
@@ -123,18 +129,24 @@ func testEnvInit(t *testing.T) (string, *wikiEnv) {
 func TestAuthInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
-	_, err = authState.Userlist()
-	checkT(err, t)
+	
+	perm, err := permissionbolt.NewWithConf(tmpdb)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	perm.Clear()
+
+	t.Log(perm.UserState().Users())
 }
 
 func TestTmplInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
-	e := testEnv(t, authState)
+	perm, err := permissionbolt.NewWithConf(tmpdb)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	e := testEnv(t, perm)
 	err = tmplInit(e)
 	checkT(err, t)
 }
@@ -169,12 +181,6 @@ func TestNewWikiPage(t *testing.T) {
 	checkT(err, t)
 
 	w := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-	r = r.WithContext(ctx)
 
 	router(e).ServeHTTP(w, r)
 
@@ -247,13 +253,6 @@ func TestNewHandler(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-	req = req.WithContext(ctx)
-
 	router(e).ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusNotFound {
@@ -273,15 +272,7 @@ func TestIndexPage(t *testing.T) {
 
 	req, err := http.NewRequest("GET", "/", nil)
 	checkT(err, t)
-
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-
-	req = req.WithContext(ctx)
 
 	router(e).ServeHTTP(rr, req)
 
@@ -303,13 +294,6 @@ func TestIndexHistoryPage(t *testing.T) {
 	checkT(err, t)
 
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-
-	req = req.WithContext(ctx)
 
 	router(e).ServeHTTP(rr, req)
 
@@ -341,13 +325,6 @@ func TestIndexEditPage(t *testing.T) {
 	checkT(err, t)
 
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-
-	req = req.WithContext(ctx)
 
 	router(e).ServeHTTP(rr, req)
 
@@ -374,12 +351,6 @@ func TestDirBaseHandler(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-	req = req.WithContext(ctx)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	//router := httptreemux.NewContextMux()
@@ -426,12 +397,6 @@ func TestRecentsPage(t *testing.T) {
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
@@ -468,12 +433,6 @@ func TestListPage(t *testing.T) {
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
@@ -573,10 +532,6 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
 	ctx = context.WithValue(ctx, wikiNameKey, "sites.page")
 	ctx = context.WithValue(ctx, wikiExistsKey, true)
 	/*
@@ -621,17 +576,6 @@ func TestSearchPage(t *testing.T) {
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-	/*
-		params := make(map[string]string)
-		params["name"] = "omg"
-		ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
-	*/
-	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
@@ -668,13 +612,6 @@ func TestDotGit(t *testing.T) {
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-
-	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
@@ -704,12 +641,6 @@ func TestWikiDirEscape(t *testing.T) {
 	req, err := http.NewRequest("GET", "/../../test.md", nil)
 	checkT(err, t)
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-	req = req.WithContext(ctx)
 
 	router(e).ServeHTTP(rr, req)
 
@@ -733,13 +664,6 @@ func TestWikiHistoryNonExistent(t *testing.T) {
 	checkT(err, t)
 	r, err := http.NewRequest("GET", "/history/"+randPage, nil)
 	checkT(err, t)
-
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-	r = r.WithContext(ctx)
 
 	w := httptest.NewRecorder()
 
@@ -770,13 +694,6 @@ func TestWikiDirIndex(t *testing.T) {
 
 	r, err := http.NewRequest("GET", "/work", nil)
 	checkT(err, t)
-
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-	r = r.WithContext(ctx)
 
 	w := httptest.NewRecorder()
 
@@ -1024,15 +941,7 @@ func BenchmarkWholeWiki(b *testing.B) {
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, &auth.User{
-		Username: "admin",
-		IsAdmin:  true,
-	})
-	//params := make(map[string]string)
-	//params["name"] = "index"
-	//ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
-	req = req.WithContext(ctx)
+
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
