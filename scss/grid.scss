@@ -89,9 +89,9 @@ body {
     grid-row-gap: 0;
     grid-template-areas: 
         "header"
-        "nav"
         "tabs"
         "content"
+        "nav"        
         "footer";
 }
 
