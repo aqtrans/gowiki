@@ -35,7 +35,6 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"github.com/spf13/pflag"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -56,6 +55,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/spf13/pflag"
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/dimfeld/httptreemux"
 	"github.com/gorilla/csrf"
 	"github.com/justinas/alice"
@@ -65,7 +67,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/viper"
 	//gogit "gopkg.in/src-d/go-git.v4"
-	"gopkg.in/yaml.v2"
+
 	"jba.io/go/auth"
 	"jba.io/go/httputils"
 )
@@ -2904,7 +2906,7 @@ func wikiRejected(wikiName string, wikiExists, isAdmin, isLoggedIn bool) bool {
 	if wikiExists {
 		wikiDir := filepath.Join(dataDir, "wikidata")
 		fullfilename := filepath.Join(wikiDir, wikiName)
-	
+
 		// If err, reject, and log that error
 		f, err := os.Open(fullfilename)
 		if err != nil {
@@ -2931,7 +2933,7 @@ func wikiRejected(wikiName string, wikiExists, isAdmin, isLoggedIn bool) bool {
 		}
 		if isAdmin {
 			return false
-		}		
+		}
 	}
 
 	if isLoggedIn {
@@ -2980,7 +2982,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			mitigateWiki(true, env, r, w)
 		} else {
 			next.ServeHTTP(w, r.WithContext(ctx))
-			return			
+			return
 		}
 
 	})
@@ -3005,7 +3007,7 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 	if !wikiExistsFromContext(r.Context()) {
 		http.Redirect(w, r, "/"+name, http.StatusFound)
 		return
-	}	
+	}
 	p := loadWikiPage(env, r, name)
 	if p.Wiki.Frontmatter.Favorite {
 		p.Wiki.Frontmatter.Favorite = false
