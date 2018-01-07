@@ -1049,7 +1049,7 @@ func loadPage(env *wikiEnv, r *http.Request, p chan<- page) {
 	//timer.Step("loadpageFunc")
 
 	// Auth lib middlewares should load the user and tokens into context for reading
-	user, isAdmin := auth.GetUsername(r.Context())
+	user := auth.GetUserState(r.Context())
 	msg := auth.GetFlash(r.Context())
 	//token := auth.GetToken(r.Context())
 	token := csrf.TemplateField(r)
@@ -1091,8 +1091,8 @@ func loadPage(env *wikiEnv, r *http.Request, p chan<- page) {
 		SiteName: "GoWiki",
 		Favs:     env.favs.GetAll(),
 		UserInfo: userInfo{
-			Username:   user,
-			IsAdmin:    isAdmin,
+			Username:   user.Username(),
+			IsAdmin:    user.IsAdmin(),
 			IsLoggedIn: auth.IsLoggedIn(r.Context()),
 		},
 		Token:     token,
@@ -1289,21 +1289,20 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 
 	var list []gitDirList
 
-	userLoggedIn := auth.IsLoggedIn(r.Context())
-	_, isAdmin := auth.GetUsername(r.Context())
+	user := auth.GetUserState(r.Context())
 
 	for _, v := range env.cache.Cache {
 		if v.Permission == publicPermission {
 			//log.Println("pubic", v.Filename)
 			list = append(list, v)
 		}
-		if userLoggedIn {
+		if user.IsLoggedIn() {
 			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
 				list = append(list, v)
 			}
 		}
-		if isAdmin {
+		if user.IsAdmin() {
 			if v.Permission == adminPermission {
 				//log.Println("admin", v.Filename)
 				list = append(list, v)
@@ -1886,7 +1885,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	go env.refreshStuff()
 
-	env.authState.SetFlash("Wiki page successfully saved.", w, r)
+	env.authState.SetFlash("Wiki page successfully saved.", w)
 	http.Redirect(w, r, "/"+name, http.StatusFound)
 	log.Println(name + " page saved!")
 }
@@ -2687,18 +2686,17 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 	p := make(chan page, 1)
 	go loadPage(env, r, p)
 
-	userLoggedIn := auth.IsLoggedIn(r.Context())
-	_, isAdmin := auth.GetUsername(r.Context())
+	user := auth.GetUserState(r.Context())
 
 	var fileList string
 
 	for _, v := range env.cache.Cache {
-		if userLoggedIn {
+		if user.IsLoggedIn() {
 			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
 				fileList = fileList + " " + `"` + v.Filename + `"`
 			}
-			if isAdmin {
+			if user.IsAdmin() {
 				if v.Permission == adminPermission {
 					//log.Println("admin", v.Filename)
 					fileList = fileList + " " + `"` + v.Filename + `"`
@@ -2948,8 +2946,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		params := getParams(r.Context())
 		name := params["name"]
-		_, isAdmin := auth.GetUsername(r.Context())
-		userLoggedIn := auth.IsLoggedIn(r.Context())
+		user := auth.GetUserState(r.Context())
 		pageExists, relErr := checkName(&name)
 		//wikiDir := filepath.Join(dataDir, "wikidata")
 		//fullfilename := filepath.Join(wikiDir, name)
@@ -2978,7 +2975,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		ctx := newWikiExistsContext(nameCtx, pageExists)
 		r = r.WithContext(ctx)
 
-		if wikiRejected(name, pageExists, isAdmin, userLoggedIn) {
+		if wikiRejected(name, pageExists, user.IsAdmin(), user.IsLoggedIn()) {
 			mitigateWiki(true, env, r, w)
 		} else {
 			next.ServeHTTP(w, r.WithContext(ctx))
@@ -2991,7 +2988,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 // mitigateWiki is a general redirect handler; redirect should be set to true for login mitigations
 func mitigateWiki(redirect bool, env *wikiEnv, r *http.Request, w http.ResponseWriter) {
 	httputils.Debugln("mitigateWiki: " + r.Host + r.URL.Path)
-	env.authState.SetFlash("Unable to view that.", w, r)
+	env.authState.SetFlash("Unable to view that.", w)
 	if redirect {
 		// Use auth.Redirect to redirect while storing the current URL for future use
 		auth.Redirect(&env.authState, w, r)
@@ -3011,11 +3008,11 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 	p := loadWikiPage(env, r, name)
 	if p.Wiki.Frontmatter.Favorite {
 		p.Wiki.Frontmatter.Favorite = false
-		env.authState.SetFlash(name+" has been un-favorited.", w, r)
+		env.authState.SetFlash(name+" has been un-favorited.", w)
 		log.Println(name + " page un-favorited!")
 	} else {
 		p.Wiki.Frontmatter.Favorite = true
-		env.authState.SetFlash(name+" has been favorited.", w, r)
+		env.authState.SetFlash(name+" has been favorited.", w)
 		log.Println(name + " page favorited!")
 	}
 
@@ -3121,7 +3118,7 @@ func main() {
 	dataDirCheck()
 
 	// Bring up authState
-	anAuthState, err := auth.NewAuthState(filepath.Join(dataDir, "auth.db"), viper.GetString("AdminUser"))
+	anAuthState, err := auth.NewAuthState(filepath.Join(dataDir, "auth.db"))
 	check(err)
 
 	theCache := loadCache()
