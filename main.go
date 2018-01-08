@@ -1091,9 +1091,9 @@ func loadPage(env *wikiEnv, r *http.Request, p chan<- page) {
 		SiteName: "GoWiki",
 		Favs:     env.favs.GetAll(),
 		UserInfo: userInfo{
-			Username:   user.Username(),
+			Username:   user.GetName(),
 			IsAdmin:    user.IsAdmin(),
-			IsLoggedIn: auth.IsLoggedIn(r.Context()),
+			IsLoggedIn: user.IsLoggedIn(),
 		},
 		Token:     token,
 		FlashMsg:  message,
