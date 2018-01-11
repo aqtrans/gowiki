@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"html/template"
@@ -995,7 +996,23 @@ func BenchmarkReadFront(b *testing.B) {
 	defer f.Close()
 
 	for n := 0; n < b.N; n++ {
-		readWikiPage(f)
+		topbuf := new(bytes.Buffer)
+		bottombuf := new(bytes.Buffer)
+		scanWikiPage(f, topbuf, bottombuf)
+	}
+}
+
+func BenchmarkReadFront2(b *testing.B) {
+	f, err := os.Open("./tests/gowiki-testdata/index")
+	if err != nil {
+		log.Println(err)
+	}
+	defer f.Close()
+
+	for n := 0; n < b.N; n++ {
+		topbuf := new(bytes.Buffer)
+		bottombuf := new(bytes.Buffer)
+		scanWikiPageB(f, topbuf, bottombuf)
 	}
 }
 
