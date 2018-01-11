@@ -1408,6 +1408,75 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 	}
 }
 
+func scanWikiPageB(reader io.Reader, bufs ...*bytes.Buffer) {
+	grabPage := false
+	// If we are given two buffers, do something with the bottom data
+	if len(bufs) == 2 {
+		grabPage = true
+	}
+	scanner := bufio.NewScanner(reader)
+	startTokenFound := false
+	endTokenFound := false
+	for scanner.Scan() {
+
+		if startTokenFound && endTokenFound {
+			if grabPage {
+				_, err := bufs[1].Write(scanner.Bytes())
+				if err != nil {
+					log.Println("Error writing page data:", err)
+				}
+				err = bufs[1].WriteByte('\n')
+				if err != nil {
+					log.Println("Error writing page data:", err)
+				}
+			} else {
+				break
+			}
+		}
+		if startTokenFound && !endTokenFound {
+			// Anything after the --- tag, add to the topbuffer
+			if !bytes.Equal(scanner.Bytes(), []byte(yamlSeparator)) || !bytes.Equal(scanner.Bytes(), []byte(yamlSeparator2)) {
+				_, err := bufs[0].Write(scanner.Bytes())
+				if err != nil {
+					log.Println("Error writing page data:", err)
+				}
+				err = bufs[0].WriteByte('\n')
+				if err != nil {
+					log.Println("Error writing page data:", err)
+				}
+			}
+			if bytes.Equal(scanner.Bytes(), []byte(yamlSeparator)) || bytes.Equal(scanner.Bytes(), []byte(yamlSeparator2)) {
+				endTokenFound = true
+				// If not given 2 buffers, end here.
+				if !grabPage {
+					break
+				}
+			}
+		}
+
+		// Hopefully catch the first --- tag
+		if !startTokenFound && !endTokenFound {
+			if bytes.Equal(scanner.Bytes(), []byte(yamlSeparator)) {
+				startTokenFound = true
+			} else {
+				startTokenFound = true
+				endTokenFound = true
+				// If given two buffers, but we cannot find the beginning, assume the entire page is text
+				if grabPage {
+					_, err := bufs[1].Write(scanner.Bytes())
+					if err != nil {
+						log.Println("Error writing page data:", err)
+					}
+					err = bufs[1].WriteByte('\n')
+					if err != nil {
+						log.Println("Error writing page data:", err)
+					}
+				}
+			}
+		}
+	}
+}
+
 func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 	//defer httputils.TimeTrack(time.Now(), "marshalFrontmatter")
 
