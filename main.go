@@ -64,10 +64,11 @@ import (
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
 	//"github.com/microcosm-cc/bluemonday"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/spf13/viper"
 	//gogit "gopkg.in/src-d/go-git.v4"
 	"github.com/fukata/golang-stats-api-handler"
+	_ "github.com/tevjef/go-runtime-metrics/expvar"
 
 	"jba.io/go/auth"
 	"jba.io/go/httputils"
@@ -3225,7 +3226,6 @@ func main() {
 	mux.HandleFunc("/favicon.ico", httputils.FaviconICO)
 	mux.HandleFunc("/favicon.png", httputils.FaviconPNG)
 	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
-	mux.Handle("/metrics", promhttp.Handler())
 	mux.HandleFunc("/stats", stats_api.Handler)
 	mux.Handle("/", router(env))
 
