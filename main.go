@@ -34,6 +34,7 @@ import (
 	"context"
 	"encoding/gob"
 	"errors"
+	"expvar"
 	"fmt"
 	"html/template"
 	"io"
@@ -3217,6 +3218,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	mux.Handle("/debug/vars", expvar.Handler())
 	mux.Handle("/debug/pprof/", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Index)))
 	mux.Handle("/debug/pprof/cmdline", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Cmdline)))
 	mux.Handle("/debug/pprof/profile", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Profile)))
