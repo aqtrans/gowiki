@@ -65,7 +65,7 @@ body {
   display: grid;
   grid-column-gap: 20px;
   grid-row-gap: 0;
-  grid-template-areas: "header" "nav" "tabs" "content" "footer"; }
+  grid-template-areas: "header" "tabs" "content" "nav"         "footer"; }
 
 body > header {
   grid-area: header;
@@ -255,6 +255,20 @@ pre, code {
 
 .tabcontent {
   display: none; }
+
+.button {
+  background-color: #4CAF50;
+  /* Green */
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px; }
+
+.button.delete {
+  background-color: #f44336; }
 
 @media (min-width: 768px) {
   body {
