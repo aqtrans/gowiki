@@ -58,7 +58,12 @@
                 <article class="content" id="preview_content"></article>
             </div>
         </div>        
-        <button type="submit" class="success button">Submit</button>
+        <button type="submit" class="success button">Save</button>
+        </form>
+        <br>
+        <form action="/delete/{{.Wiki.Filename}}" method="POST" id="deletewiki">
+            {{.Token}}
+            <button type="submit" class="delete button">Delete File</button>
         </form>
     </main>
 
