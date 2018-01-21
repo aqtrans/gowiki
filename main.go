@@ -613,8 +613,11 @@ func gitIsCleanStartup() error {
 	}
 
 	if bytes.Contains(o, gitAhead) {
-		httputils.Debugln("gitIsCleanStartup: Pushing git repo...")
-		return gitPush()
+		if viper.GetBool("PushOnSave") {
+			httputils.Debugln("gitIsCleanStartup: Pushing git repo...")
+			return gitPush()
+		}
+		return nil
 		//return errors.New(string(o))
 		//return ErrGitAhead
 	}
@@ -632,6 +635,15 @@ func gitAddFilepath(filepath string) error {
 	o, err := gitCommand("add", filepath).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error during `git add`: %s\n%s", err.Error(), string(o))
+	}
+	return nil
+}
+
+// Execute `git rm {filepath}` in workingDirectory
+func gitRmFilepath(filepath string) error {
+	o, err := gitCommand("rm", filepath).CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("error during `git rm`: %s\n%s", err.Error(), string(o))
 	}
 	return nil
 }
@@ -3097,6 +3109,30 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (env *wikiEnv) deleteHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "deleteHandler")
+	name := nameFromContext(r.Context())
+	if !wikiExistsFromContext(r.Context()) {
+		http.Redirect(w, r, "/"+name, http.StatusFound)
+		return
+	}
+	err := gitRmFilepath(name)
+	if err != nil {
+		log.Println("Error deleting file from git repo,", name, err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+
+	err = gitCommitWithMessage(name + " has been removed from git repo.")
+	if err != nil {
+		log.Println("Error commiting to git repo,", name, err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+
+	env.authState.SetFlash(name+" page successfully deleted.", w)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+
+}
+
 func dataDirCheck() {
 	dir, err := os.Stat(viper.GetString("DataDir"))
 	if err != nil {
@@ -3170,11 +3206,12 @@ func router(env *wikiEnv) http.Handler {
 
 	r.GET("/uploads/*", treeMuxWrapper(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads")))))
 
+	// Wiki page handlers
 	r.GET(`/fav/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.setFavoriteHandler)))
-
 	r.GET(`/edit/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.editHandler)))
 	r.POST(`/save/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.saveHandler)))
 	r.GET(`/history/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.historyHandler)))
+	r.POST(`/delete/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.deleteHandler)))
 	r.GET(`/*name`, env.wikiMiddle(env.viewHandler))
 
 	return s.Then(r)
