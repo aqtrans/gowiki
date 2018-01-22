@@ -47,11 +47,11 @@ build-my-project:
     - go get -d
     - go build -o ./wiki
   artifacts:
+    expire_in: 1 day
     paths:
       - wiki
       - assets/css/wiki.css
       - assets/css/wiki.css.map
-      - vendor/
 
 test-my-project:
   stage: test
