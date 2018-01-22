@@ -882,6 +882,27 @@ func TestMarkdownRender4(t *testing.T) {
 	}
 }
 
+// Tests my custom link renderer, with YAML frontmatter
+func TestMarkdownRender5(t *testing.T) {
+	rawmdf := "./tests/test5.md"
+	_, rawmd := readFileAndFront(rawmdf)
+
+	// Read what rendered Markdown HTML should look like
+	rendermdf := "./tests/test5.html"
+	rendermd, err := ioutil.ReadFile(rendermdf)
+	checkT(err, t)
+	// []byte to string
+	rendermds := string(rendermd)
+
+	rawmds := markdownRender(rawmd)
+	//rawmds := commonmarkRender(rawmd)
+
+	if rawmds != rendermds {
+		//ioutil.WriteFile("./tests/test4.html", []byte(rawmds), 0755)
+		t.Error("Converted Markdown does not equal test5" + "\n Output: \n" + rawmds + "Expected: \n" + rendermds)
+	}
+}
+
 func TestYamlRender(t *testing.T) {
 	f, err := os.Open("./tests/yamltest")
 	checkT(err, t)
