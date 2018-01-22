@@ -309,7 +309,7 @@ func markdownRender(input []byte) string {
 	return string(unsanitized)
 }
 
-// Task List support.
+// Task List support, replacing checkboxs with an SVG for more visibility
 func (r *renderer) ListItem(out *bytes.Buffer, text []byte, flags int) {
 	switch {
 	case bytes.HasPrefix(text, []byte("[ ] ")):
@@ -321,14 +321,16 @@ func (r *renderer) ListItem(out *bytes.Buffer, text []byte, flags int) {
 	r.Html.ListItem(out, text, flags)
 }
 
+// Inter-wiki linking, [PageName]() and [/PageName]()
 func (r *renderer) NormalText(out *bytes.Buffer, text []byte) {
-	linkPattern := regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
+	linkPattern := regexp.MustCompile(`\[(?:\/|)(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
 
 	switch {
 	case linkPattern.Match(text):
-		domain := "//" + viper.GetString("Domain")
-		link := linkPattern.ReplaceAll(text, []byte(domain+"/$1"))
-		title := linkPattern.ReplaceAll(text, []byte("/$1"))
+		//joinedText := path.Join(viper.GetString("Domain"), string(text))
+		//domain := "//" + viper.GetString("Domain")
+		link := linkPattern.ReplaceAll(text, []byte(path.Join("/", "$1")))
+		title := linkPattern.ReplaceAll(text, []byte("$1"))
 		r.Html.Link(out, link, []byte(""), title)
 		return
 	}
