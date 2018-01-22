@@ -47,6 +47,7 @@
         <div class="preview-tabs">
             <a class="tablinks" onclick="openTab(event, 'Edit')" id="defaultOpen">Edit</a>
             <a class="tablinks" onclick="openTab(event, 'Preview')">Preview</a>
+            <a class="tablinks" onclick="openTab(event, 'Help')">Help</a>
         </div>
         <div id="Edit" class="tabcontent">
             <div>
@@ -56,6 +57,34 @@
         <div id="Preview" class="tabcontent">
             <div>
                 <article class="content" id="preview_content"></article>
+            </div>
+        </div>        
+        <div id="Help" class="tabcontent">
+            <div>
+<pre><code>
+Headings:
+# Header
+## Subheader
+
+Text:
+*italics*
+**bold**
+~~strikeout~~
+super^script^
+sub~script~
+> quotation
+
+Links:
+[Title](http://google.com)
+[Local Wiki Page]()
+[/Local Wiki Page]()
+
+Code:
+```
+some code
+```
+` one-line-code `
+</code></pre>
             </div>
         </div>        
         <button type="submit" class="success button">Save</button>
