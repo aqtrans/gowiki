@@ -1,0 +1,6 @@
+---
+title: omg
+---
+
+[omg/yeah]()
+
