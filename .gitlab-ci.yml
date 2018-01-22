@@ -46,12 +46,6 @@ build-my-project:
     - ./dep ensure
     - go get -d
     - go build -o ./wiki
-  artifacts:
-    paths:
-      - wiki
-      - assets/css/wiki.css
-      - assets/css/wiki.css.map
-      - vendor/
 
 test-my-project:
   stage: test
