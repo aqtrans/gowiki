@@ -109,7 +109,7 @@ deploy_prod:
     - ssh $DEPLOY_HOST ln -sv $CI_PROJECT_NAME.$CI_COMMIT_SHA $CI_PROJECT_NAME
     # Restart app, using sudo due to no systemctl --user on CentOS 7 (https://bugs.centos.org/view.php?id=8767)
     - ssh $DEPLOY_HOST sudo systemctl start golang@$CI_PROJECT_NAME
-    - ssh $DEPLOY_HOST curl --create-dirs "https://git.jba.io/api/v4/projects/$CI_PROJECT_ID/jobs/artifacts/$CI_COMMIT_REF_NAME/download?job=build-my-project&private_token=Kvou_5QhNqSGg_G_cqX6" -o $CI_PROJECT_NAME.$CI_COMMIT_SHA/artifact.zip'
+    - ssh $DEPLOY_HOST curl --create-dirs "https://git.jba.io/api/v4/projects/$CI_PROJECT_ID/jobs/artifacts/$CI_COMMIT_REF_NAME/download?job=build-my-project&private_token=Kvou_5QhNqSGg_G_cqX6" -o $CI_PROJECT_NAME.$CI_COMMIT_SHA/artifact.zip
   environment:
     name: production
     url: https://wiki.jba.io
