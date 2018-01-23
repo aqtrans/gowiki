@@ -83,7 +83,6 @@ deploy_staging:
     - ssh $DEPLOY_HOST ln -sv $CI_PROJECT_NAME.$CI_COMMIT_SHA $CI_PROJECT_NAME
     # Restart app
     - ssh $DEPLOY_HOST systemctl --user start golang@$CI_PROJECT_NAME
-    - 'ssh $DEPLOY_HOST curl --create-dirs --header "PRIVATE-TOKEN: Kvou_5QhNqSGg_G_cqX6" "https://git.jba.io/api/v4/projects/$CI_PROJECT_ID/jobs/artifacts/$CI_COMMIT_REF_NAME/download?job=build-my-project" -o $CI_PROJECT_NAME.$CI_COMMIT_SHA/artifact.zip'
   environment:
     name: staging
     url: http://wiki.rick.jba.io
@@ -110,7 +109,7 @@ deploy_prod:
     # Restart app, using sudo due to no systemctl --user on CentOS 7 (https://bugs.centos.org/view.php?id=8767)
     - ssh $DEPLOY_HOST sudo systemctl start golang@$CI_PROJECT_NAME
     - echo "https://git.jba.io/api/v4/projects/$CI_PROJECT_ID/jobs/artifacts/$CI_COMMIT_REF_SLUG/download?job=build-my-project&private_token=Kvou_5QhNqSGg_G_cqX6"
-    - ssh $DEPLOY_HOST curl -o $CI_PROJECT_NAME.$CI_COMMIT_SHA/artifact.zip --create-dirs "https://git.jba.io/api/v4/projects/$CI_PROJECT_ID/jobs/artifacts/$CI_COMMIT_REF_SLUG/download?job=build-my-project&private_token=Kvou_5QhNqSGg_G_cqX6"
+    - ssh $DEPLOY_HOST 'curl -o $CI_PROJECT_NAME.$CI_COMMIT_SHA/artifact.zip --create-dirs "https://git.jba.io/api/v4/projects/$CI_PROJECT_ID/jobs/artifacts/$CI_COMMIT_REF_SLUG/download?job=build-my-project&private_token=Kvou_5QhNqSGg_G_cqX6"'
   environment:
     name: production
     url: https://wiki.jba.io
