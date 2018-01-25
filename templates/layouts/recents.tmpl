@@ -17,9 +17,10 @@
     {{ $user := .UserInfo.IsLoggedIn }}
     {{ $admin := .UserInfo.IsAdmin }}
     {{range .Recents}}
+        {{ $commit := .Commit}}
         <tr>
         <td>{{.Date | prettyDate}}</td>
-        <td>{{.Commit}}</td>
+        <td>{{range .Filenames}} <a href="/{{.}}?commit={{$commit}}">{{$commit}}</a>{{end}}</td>
         <td>{{range .Filenames}}  <a href="/{{.}}">{{.}}</a>{{end}}</td>
         </tr>
     {{ end }}
