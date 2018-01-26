@@ -14,12 +14,6 @@
   version = "v1.4.2"
 
 [[projects]]
-  name = "github.com/fukata/golang-stats-api-handler"
-  packages = ["."]
-  revision = "90f0b59102629831cc109845475a8d77043412ec"
-  version = "v1.0.0"
-
-[[projects]]
   name = "github.com/gorilla/context"
   packages = ["."]
   revision = "1ea25387ff6f684839d82767c1733ff4d4d15d0a"
@@ -166,6 +160,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0dc5c49f19364fcc9fe60fc7ae3b4c46e27025b6c29e4e4609213cb9c5c0b98f"
+  inputs-digest = "8bf1fb648558e08ed8562e6fade16f9e8b5b43adf20a13683dbb1da5dd71e8d7"
   solver-name = "gps-cdcl"
   solver-version = 1
