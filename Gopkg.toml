@@ -39,7 +39,7 @@ ignored = ["jba.io/go/auth", "jba.io/go/httputils"]
   name = "github.com/oxtoacart/bpool"
 
 [[constraint]]
-  name = "github.com/prometheus/client_golang"
+  name = "github.com/tevjef/go-runtime-metrics"
   branch = "master"
 
 [[constraint]]
