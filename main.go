@@ -2980,7 +2980,7 @@ func markdownPreview(w http.ResponseWriter, r *http.Request) {
 // return true if request should be rejected
 func wikiRejected(wikiName string, wikiExists, isAdmin, isLoggedIn bool) bool {
 
-	log.Println("wikiRejected name", wikiName)
+	httputils.Debugln("wikiRejected name", wikiName)
 
 	// if wikiExists, read the frontmatter and reject/accept based on frontmatter.Permission
 	if wikiExists {
