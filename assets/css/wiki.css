@@ -237,21 +237,34 @@ pre, code {
     min-width: 10px; }
 
 .preview-tabs {
-  background: #606060; }
-  .preview-tabs .tablinks {
-    display: inline-block;
-    font-size: 1rem;
-    position: relative;
-    border: none;
-    outline: none;
-    vertical-align: bottom;
-    cursor: pointer;
-    background: #606060;
-    color: #fefefe;
-    text-decoration: none; }
-  .preview-tabs .tablinks.active {
-    border-bottom: 2px solid white;
-    background: black; }
+  background: #606060;
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  align-self: end;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row; }
+  .preview-tabs li {
+    padding-top: 5px; }
+    .preview-tabs li a {
+      display: inline-block;
+      font-size: 1rem;
+      position: relative;
+      border: none;
+      outline: none;
+      vertical-align: bottom;
+      cursor: pointer;
+      background: #606060;
+      color: #fefefe;
+      text-decoration: none;
+      padding: 5px;
+      margin: 0; }
+      .preview-tabs li a:hover {
+        background-color: #202020; }
+      .preview-tabs li a.is-active {
+        border-bottom: 2px solid white;
+        background: black; }
 
 .tabcontent {
   display: none; }
