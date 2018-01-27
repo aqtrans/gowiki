@@ -316,25 +316,38 @@ pre, code {
 // Tab definition
 .preview-tabs {
     background: lighten($almostblack, 25);
-      
-    .tablinks {
-        //background: #eee; 
-        //border: 1px solid #ccc; 
-        display: inline-block;
-        font-size: 1rem;
-        position: relative;
-        border: none;
-        outline: none;
-        vertical-align: bottom;
-        cursor: pointer;
-        background: lighten($almostblack, 25);
-        color: $foreground-font;
-        text-decoration: none;
-    }
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    align-self: end;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    li {
+        padding-top: 5px;
+        a {
+            display: inline-block;
+            font-size: 1rem;
+            position: relative;
+            border: none;
+            outline: none;
+            vertical-align: bottom;
+            cursor: pointer;
+            background: lighten($almostblack, 25);
+            color: $foreground-font;
+            text-decoration: none;            
+            padding: 5px;
+            margin: 0;
+            &:hover {
+                background-color: $almostblack;
+            }  
+            &.is-active { 
+                border-bottom: 2px solid white;
+                background: darken($almostblack, 15);             
 
-    .tablinks.active {
-        border-bottom: 2px solid white;
-        background: darken($almostblack, 15); 
+            }
+        }
+
     }
 }
 

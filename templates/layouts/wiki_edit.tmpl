@@ -44,11 +44,11 @@
         </div>
         {{.Token}}
         <hr>
-        <div class="preview-tabs">
-            <a class="tablinks" onclick="openTab(event, 'Edit')" id="defaultOpen">Edit</a>
-            <a class="tablinks" onclick="openTab(event, 'Preview')">Preview</a>
-            <a class="tablinks" onclick="openTab(event, 'Help')">Help</a>
-        </div>
+        <ul class="preview-tabs">
+            <li class="tab-title"><a class="tablinks is-active" onclick="openTab(event, 'Edit')" id="defaultOpen">Edit</a></li>
+            <li class="tab-title"><a class="tablinks" onclick="openTab(event, 'Preview')">Preview</a></li>
+            <li class="tab-title"><a class="tablinks" onclick="openTab(event, 'Help')">Help</a></li>
+        </ul>
         <div id="Edit" class="tabcontent">
             <div>
                 <textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea>
@@ -61,6 +61,7 @@
         </div>        
         <div id="Help" class="tabcontent">
             <div>
+            <h2>Markdown Cheatsheet:</h2>
 <pre><code>
 Headings:
 # Header
@@ -123,12 +124,12 @@ function openTab(evt, tabName) {
     // Get all elements with class="tablinks" and remove the class "active"
     tablinks = document.getElementsByClassName("tablinks");
     for (i = 0; i < tablinks.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" active", "");
+        tablinks[i].className = tablinks[i].className.replace(" is-active", "");
     }
 
     // Show the current tab, and add an "active" class to the button that opened the tab
     document.getElementById(tabName).style.display = "block";
-    evt.currentTarget.className += " active";
+    evt.currentTarget.className += " is-active";
 
     if (tabName == "Preview") {
         var editortxt = document.getElementsByName("editor")[0].value;
