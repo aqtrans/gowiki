@@ -21,6 +21,22 @@
   </header>
   {{ template "content" . }}
 {{ end }}
+{{ define "footer" }}
+    <footer>
+    Render time: {{.}}
+    </footer>
+{{ end }}  
+{{ define "bottom" }}
+  <script type="text/javascript" charset="utf-8">
+  function notif() {
+    document.getElementById('notification').style.top = '-36px';
+  }
+  </script>
+  {{ block "extra_scripts" . }}{{ end }}
+  </body>
+  </html>
+{{ end }}
+
 {{ define "header_title" }}
 {{ template "title" . }}
 {{ end }}
