@@ -1565,17 +1565,14 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	// Squeeze in our response time here
-	// Real hacky solution, but better than modifying the struct
-	start := timeFromContext(c)
-	elapsed := time.Since(start)
-	tmpl.Execute(buf, elapsed.String())
-	err = tmpl.ExecuteTemplate(buf, "footer", elapsed.String())
+	err = tmpl.ExecuteTemplate(buf, "footer", httputils.GetRenderTime(c))
 	if err != nil {
 		log.Println("renderTemplate error:")
 		log.Println(err)
 		bufpool.Put(buf)
 		panic(err)
 	}
+
 	err = tmpl.ExecuteTemplate(buf, "bottom", data)
 	if err != nil {
 		log.Println("renderTemplate error:")
@@ -3159,7 +3156,7 @@ func router(env *wikiEnv) http.Handler {
 	}
 
 	// HTTP stuff from here on out
-	s := alice.New(timer, httputils.Logger, env.authState.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
+	s := alice.New(httputils.Logger, env.authState.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
 
 	r := httptreemux.NewContextMux()
 
