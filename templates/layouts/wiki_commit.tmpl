@@ -7,26 +7,10 @@
   </ul>
 
 <main>
-  <ul class="frontmatter">
-    <li><p>Filename</p>
-    <div class="stat">{{ .Wiki.Filename }}</div></li>
-    <li><p>Permission</p>
-    <div class="stat">{{ .Wiki.Frontmatter.Permission }}</div></li>
-    <li><p>Favorite</p>
-    <div class="stat">{{ if .Wiki.Frontmatter.Favorite }}{{svg "star-full"}}{{ else  }}{{svg "star-empty"}}{{ end }}</div></li>
-    {{ if .Wiki.Frontmatter.Tags }}
-    <li><p>Tags</p>
-    <div class="stat">
-    <ul class="tags">
-    {{ range .Wiki.Frontmatter.Tags }}<li>{{ . }}</li>{{ end }}
-    </ul>
-    </div></li>      
-    {{ end }}
+  <ul class="preview-tabs">
+    <li class="tab-title"><a class="tablinks" onclick="openTab(event, 'Content')" id="defaultOpen">Content</a></li>
+    <li class="tab-title"><a class="tablinks" onclick="openTab(event, 'Diff')">Diff</a></li>
   </ul>
-  <div class="preview-tabs">
-    <button class="tablinks" onclick="openTab(event, 'Content')" id="defaultOpen">Content</button>
-    <button class="tablinks" onclick="openTab(event, 'Diff')">Diff</button>
-  </div>
   <div id="Content" class="tabcontent">
     <div>
       {{.Rendered | safeHTML}}
@@ -38,6 +22,22 @@
     </div>
   </div>
   <footer>
+    <ul class="frontmatter">
+      <li><p>Filename</p>
+      <div class="stat">{{ .Wiki.Filename }}</div></li>
+      <li><p>Permission</p>
+      <div class="stat">{{ .Wiki.Frontmatter.Permission }}</div></li>
+      <li><p>Favorite</p>
+      <div class="stat">{{ if .Wiki.Frontmatter.Favorite }}{{svg "star-full"}}{{ else  }}{{svg "star-empty"}}{{ end }}</div></li>
+      {{ if .Wiki.Frontmatter.Tags }}
+      <li><p>Tags</p>
+      <div class="stat">
+      <ul class="tags">
+      {{ range .Wiki.Frontmatter.Tags }}<li>{{ . }}</li>{{ end }}
+      </ul>
+      </div></li>
+      {{ end }}
+    </ul>
     <ul>
       <li>Created: {{ .Wiki.CreateTime | prettyDate }}</li>
       <li>Last Modified: {{ .Wiki.ModTime | prettyDate }}</li>
@@ -60,12 +60,12 @@ function openTab(evt, tabName) {
     // Get all elements with class="tablinks" and remove the class "active"
     tablinks = document.getElementsByClassName("tablinks");
     for (i = 0; i < tablinks.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" active", "");
+        tablinks[i].className = tablinks[i].className.replace(" is-active", "");
     }
 
     // Show the current tab, and add an "active" class to the button that opened the tab
     document.getElementById(tabName).style.display = "block";
-    evt.currentTarget.className += " active";
+    evt.currentTarget.className += " is-active";
 }  
 document.getElementById("defaultOpen").click();
 </script>
