@@ -57,3 +57,7 @@ ignored = ["jba.io/go/auth", "jba.io/go/httputils"]
 [[constraint]]
   branch = "v2"
   name = "gopkg.in/yaml.v2"
+
+[[constraint]]
+  name = "github.com/sahilm/fuzzy"
+  version = "0.0.3"

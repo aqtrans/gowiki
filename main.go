@@ -56,6 +56,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sahilm/fuzzy"
+
 	"github.com/spf13/pflag"
 	yaml "gopkg.in/yaml.v2"
 
@@ -1833,6 +1835,35 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	httputils.Debugln("Yay proper wiki page!")
 	// Get Wiki
 	p := loadWikiPage(env, r, name)
+
+	// Build a list of filenames to be fed to closestmatch, for similarity matching
+	var filelist []string
+	user := auth.GetUserState(r.Context())
+	for _, v := range env.cache.Cache {
+		if v.Permission == publicPermission {
+			//log.Println("pubic", v.Filename)
+			filelist = append(filelist, v.Filename)
+		}
+		if user.IsLoggedIn() {
+			if v.Permission == privatePermission {
+				//log.Println("priv", v.Filename)
+				filelist = append(filelist, v.Filename)
+			}
+		}
+		if user.IsAdmin() {
+			if v.Permission == adminPermission {
+				//log.Println("admin", v.Filename)
+				filelist = append(filelist, v.Filename)
+			}
+		}
+	}
+	// Check for similar filenames
+	var similarPages []string
+	for _, match := range fuzzy.Find(name, filelist) {
+		similarPages = append(similarPages, match.Str)
+	}
+	p.SimilarPages = similarPages
+
 	renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
 	return
 
@@ -2014,8 +2045,9 @@ func loadWiki(name string, w chan<- wiki) {
 
 type wikiPage struct {
 	page
-	Wiki     wiki
-	Rendered string
+	Wiki         wiki
+	Rendered     string
+	SimilarPages []string
 }
 
 func loadWikiPage(env *wikiEnv, r *http.Request, name string) wikiPage {
