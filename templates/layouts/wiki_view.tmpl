@@ -18,6 +18,9 @@
     {{.Rendered | safeHTML}}
     <hr>
     <footer>
+      {{ if .SimilarPages }}
+        Similar Pages: {{ range .SimilarPages }}<a href="{{.}}">{{.}}</a> {{ end }}
+      {{ end }}
       <ul class="frontmatter">
         <li><p>Filename</p>
         <div class="stat">{{ .Wiki.Filename }}</div></li>
