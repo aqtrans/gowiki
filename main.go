@@ -56,7 +56,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sahilm/fuzzy"
+	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
 
 	"github.com/spf13/pflag"
 	yaml "gopkg.in/yaml.v2"
@@ -69,7 +69,6 @@ import (
 	//"github.com/microcosm-cc/bluemonday"
 
 	"github.com/spf13/viper"
-	//gogit "gopkg.in/src-d/go-git.v4"
 	_ "github.com/tevjef/go-runtime-metrics/expvar"
 
 	"jba.io/go/auth"
@@ -1858,10 +1857,14 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// Check for similar filenames
-	var similarPages []string
-	for _, match := range fuzzy.Find(name, filelist) {
-		similarPages = append(similarPages, match.Str)
-	}
+	/*
+		var similarPages []string
+		for _, match := range fuzzy.Find(name, filelist) {
+			similarPages = append(similarPages, match.Str)
+		}
+	*/
+
+	similarPages := fuzzy2.FindFold(name, filelist)
 	p.SimilarPages = similarPages
 
 	renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
