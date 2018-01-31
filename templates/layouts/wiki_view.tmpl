@@ -1,4 +1,5 @@
 {{ define "title" }}{{ .Wiki.Title }}{{ end }}
+
 {{ define "header_title" }}
 {{ .Wiki.Title }}
   {{ if .UserInfo.Username }}
@@ -6,7 +7,8 @@
   {{ else }}
     {{ if .Wiki.Frontmatter.Favorite }}{{svg "star-full"}}{{ else  }}{{svg "star-empty"}}{{ end }}
   {{ end }}
-{{ end }}        
+{{ end }}
+
 {{ define "content" }}
   <ul class="tabs">
     <li class="tabs-title is-active"><a href="#">{{ svg "file-text2" }} View</a></li>
@@ -34,7 +36,7 @@
         <li><p>Tags</p>
         <div class="stat">
         <ul class="tags">
-        {{ range .Wiki.Frontmatter.Tags }}<li>{{ . }}</li>{{ end }}
+        {{ range .Wiki.Frontmatter.Tags }}<li><a href="/tag/{{ . }}">{{ . }}</a></li>{{ end }}
         </ul>
         </div></li>      
         {{ end }}
