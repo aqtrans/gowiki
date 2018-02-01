@@ -11,14 +11,6 @@
 </ul>
 </fieldset>
 
-<form method="POST" action="/search" id="searchwiki">
-  <div class="input-wrapper">
-      <input type="text" placeholder="Search" id="searchwiki" name="searchwiki">
-      {{.Token}}
-      <button type="submit">{{ svg "search" }}</button>
-  </div>
-</form> 
-
 {{ if .UserInfo.Username }}
   <fieldset class="fieldset">
     <legend>{{ svg "star-empty" }}Favorite Pages</legend>
