@@ -12,13 +12,21 @@
 </head>
 <body>
   <nav>
-    <h1><a href="/">Wiki</a></h1>
       {{ template "sidebar" . }}
   </nav>
     {{ .FlashMsg }}
   <header>
     <h1>{{ template "header_title" . }}</h1>
   </header>
+  <div class="searchwiki">
+    <form method="POST" action="/search" id="searchwiki">
+      <div class="input-wrapper">
+          <input type="text" placeholder="Search" id="searchwiki" name="searchwiki">
+          {{.Token}}
+          <button type="submit">{{ svg "search" }}</button>
+      </div>
+    </form>   
+  </div>
   {{ template "content" . }}
 {{ end }}
 {{ define "footer" }}
@@ -29,7 +37,7 @@
 {{ define "bottom" }}
   <script type="text/javascript" charset="utf-8">
   function notif() {
-    document.getElementById('notification').style.top = '-36px';
+    document.getElementById('notification').classList.remove("active");
   }
   </script>
   {{ block "extra_scripts" . }}{{ end }}
