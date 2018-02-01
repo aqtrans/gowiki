@@ -49,6 +49,7 @@ svg {
     width:1em;
     bottom: -0.125em;
     position: absolute;
+    z-index: 0;
     &.history {
         width: 1.0625em;
     }    
@@ -81,7 +82,7 @@ a {
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     margin: 0;
-    font-size: 1.0em;
+    font-size: 0.85em;
     line-height: 1.5;    
     background-color: $background;
     display: grid;
@@ -91,7 +92,8 @@ body {
         "header"
         "tabs"
         "content"
-        "nav"        
+        "nav"
+        "search"
         "footer";
 }
 
@@ -99,8 +101,9 @@ body > header {
     grid-area: header;
     max-height: 3.5rem;
     min-height: 3.5rem;
+    align-self: center;
     > h1 {
-        margin: 0;
+        margin: 0 0.5rem;
     }
 }
 
@@ -126,6 +129,7 @@ body > main {
         }
     }
 }
+
 body > nav {
     grid-area: nav;
     ul {
@@ -134,18 +138,21 @@ body > nav {
         list-style-type: none;
     }
     fieldset {
-        margin: 10px;
+        margin: 0.5rem;
     }
     
 }
+
 body > footer {
     grid-area: footer;
     text-align: center;
     font-size: 80%;
 }
 
-.stat {
-    color: #8a8a8a;
+div.searchwiki {
+    grid-area: search;
+    align-self: center;
+    margin: 0 0.5rem;
 }
 
 .tabs {
@@ -178,6 +185,10 @@ body > footer {
             }            
         }
     }
+}
+
+.stat {
+    color: #8a8a8a;
 }
 
 .frontmatter {
@@ -213,10 +224,11 @@ table {
 }
 
 #notification {
+    z-index: 1;
     position: fixed;
-    top: 0em;
+    top: -2.3em;
     left: 0;
-    height: 35px;
+    height: 2.3em;
     width: 100%;
     padding: 0 1em;
     overflow: hidden;
@@ -234,36 +246,9 @@ table {
     -o-transition: top 0.6s ease-out;
     transition: top 0.6s ease-out;
 }
-.notification.active {
+
+#notification.active {
     top: 0;
-}
-.notification .actions {
-    margin-top: 0.5em;
-}
-.notification .btn {
-    border: 1px solid #f0c36d;
-    background: #f0c36d;
-    color: #fff;
-    display: inline-block;
-    padding: 0.3em;
-}
-
-.notification .dismiss-btn {
-    display: inline-block;
-    margin-left: 1em;
-}
-
-@media all and (min-width: 50em) {
-    .notification .msg {
-        float: left;
-        width: 70%;
-    }
-    .notification .actions {
-        float: right;
-        text-align: right;
-        width: 30%;
-        margin-top: -0.3em;
-    }
 }
 
 .close-button {
@@ -327,7 +312,6 @@ pre, code {
         padding-top: 5px;
         a {
             display: inline-block;
-            font-size: 1rem;
             position: relative;
             border: none;
             outline: none;
@@ -363,7 +347,6 @@ pre, code {
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    font-size: 16px;
 }
 
 .button.delete {
@@ -372,19 +355,23 @@ pre, code {
 
 @media (min-width: 768px) {
     body {
-      grid-template-areas: 
-        "nav    header"
-        "nav    tabs"
-        "nav    content"
-        "nav    footer";
-        grid-template-columns: 240px 10fr;
-        grid-template-rows: 50px 24px auto minmax(10px, 50px);
+        font-size: 1em;
+        grid-template-areas: 
+            "header search"
+            "nav    tabs"
+            "nav    content"
+            "nav    footer";
+            grid-template-columns: 240px 10fr;
+            grid-template-rows: 50px 24px auto minmax(10px, 50px);
+    }
+    div.searchwiki {
+        justify-self: end;
     }
     .tabs {
-      flex-direction: row;
-      li {
-          margin: 0 10px 0 0;
-        }
+        flex-direction: row;
+        li {
+            margin: 0 10px 0 0;
+            }
     }
     body > main {
         align-self: start;
@@ -392,5 +379,5 @@ pre, code {
     .frontmatter {
         display: flex;
         flex-direction: row;
-    }       
+    }
 }
