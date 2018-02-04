@@ -2772,7 +2772,10 @@ func setPageTitle(frontmatterTitle, filename string) string {
 	} else {
 		name = filename
 	}
-	return name
+
+	_, onlyFileName := filepath.Split(name)
+
+	return onlyFileName
 }
 
 type result struct {
