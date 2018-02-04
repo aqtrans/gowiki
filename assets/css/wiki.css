@@ -268,7 +268,7 @@ pre, code {
 @media (min-width: 768px) {
   body {
     font-size: 1em;
-    grid-template-areas: "header search" "nav    tabs" "nav    content" "nav    footer";
+    grid-template-areas: "header header  search" "nav    tabs    tabs" "nav    content content" "nav    footer  footer";
     grid-template-columns: 240px 10fr;
     grid-template-rows: 50px 24px auto minmax(10px, 50px); }
 
