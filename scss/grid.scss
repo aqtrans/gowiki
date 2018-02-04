@@ -357,10 +357,10 @@ pre, code {
     body {
         font-size: 1em;
         grid-template-areas: 
-            "header search"
-            "nav    tabs"
-            "nav    content"
-            "nav    footer";
+            "header header  search"
+            "nav    tabs    tabs"
+            "nav    content content"
+            "nav    footer  footer";
             grid-template-columns: 240px 10fr;
             grid-template-rows: 50px 24px auto minmax(10px, 50px);
     }
