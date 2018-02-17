@@ -105,24 +105,13 @@ body {
 
 body > header {
     grid-area: header;
-    //max-height: 3.5rem;
-    //min-height: 3.5rem;
-    align-self: center;
+    align-items: center;
     > h1 {
         margin: 0;
-        flex: 0 0 100%;
-        order: 0;
+        width: 100%;
     }
     > div.searchwiki {
-        order: 1;
         width: 100%;
-    }
-    > ul.tabs {
-        order: 2;
-        width: 100%;
-        li {
-            margin: 0 10px 0 0;
-        }        
     }
     display: flex;
     flex-wrap: wrap;
@@ -178,8 +167,6 @@ body > footer {
 }
 
 div.searchwiki {
-    //grid-area: search;
-    align-self: center;
     margin: 0;
 }
 
@@ -193,24 +180,26 @@ div.searchwiki {
     display: flex;
     flex-wrap: wrap;
     flex-direction: row;
+    border-bottom: 1px solid $white;
     li {
-        padding-top: 5px;
+        //padding-top: 5px;
+        margin: 0 5px 0 0;
         &.is-active { 
+            border-bottom: 5px solid $white;
             a {
-                background-color: $almostblack;
+                background-color: lighten($almostblack, 10);
                 color: $white;
+                &:hover {
+                    text-decoration: none;
+                }
             }
         }
         a {
-            
             padding: 5px;
             margin: 0;
-            //float: left;  
-            //background-color: darken($almostblack, 5);
-            border: 1px dashed $almostblack;
             &:hover {
-                background-color: $almostblack;
-            }            
+                background-color: lighten($almostblack, 10);
+            }
         }
     }
 }
@@ -394,21 +383,16 @@ pre, code {
     body > header {
         flex-direction: row;
         justify-content: space-between;
-        > ul.tabs {
-            order: 1;
-            flex-direction: row;
-            align-self: flex-end;
-            width: unset;
-
-        }
+        align-items: center;
         > div.searchwiki {
-            order: 2;
             justify-self: end;
-            width: unset;            
+            flex: 0 5 auto;  
+            width: unset;
         }
         > h1 {
             margin: 0 0.5em;
-            flex: 2 0 auto;
+            flex: 0 0 auto;
+            width: unset;
         }
     }
     .tabs-title {

@@ -1,13 +1,14 @@
 {{ define "title" }}Editing {{ .Wiki.Title }}{{ end }}
+
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/tagdog.css">
-        <ul class="tabs">
-        <li class="tabs-title"><a href="/{{.Wiki.Filename}}">{{svg "file-text2"}} View</a></li>
-        <li class="tabs-title is-active"><a href="#">{{svg "pencil"}} Edit</a></li>
-        <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}">{{svg "history"}} History</a></li>
-        </ul>
 
     <main>
+        <ul class="tabs">
+            <li class="tabs-title"><a href="/{{.Wiki.Filename}}">{{svg "file-text2"}} View</a></li>
+            <li class="tabs-title is-active"><a href="#">{{svg "pencil"}} Edit</a></li>
+            <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}">{{svg "history"}} History</a></li>
+        </ul>    
         <form action="/save/{{.Wiki.Filename}}" method="POST" id="savewiki">
         Title:<input type="text" name="title" value="{{.Wiki.Frontmatter.Title}}"><br>
         {{ if .Wiki.Frontmatter.Favorite }}
