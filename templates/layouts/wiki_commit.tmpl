@@ -1,12 +1,12 @@
 {{ define "title" }}{{ .Wiki.Title }} ({{.Commit}}){{ end }}
+
 {{ define "content" }}
+<main>
   <ul class="tabs">
     <li class="tabs-title is-active"><a href="#">{{ svg "file-text2" }} View</a></li>
-    <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}">{{ svg "pencil" }} Edit</a></li>
+    <li class="tabs-title"><a href="/{{.Wiki.Filename}}">{{ svg "file-text2" }} View page @ HEAD</a></li>
     <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}">{{ svg "history" }} History</a></li>
   </ul>
-
-<main>
   <ul class="preview-tabs">
     <li class="tab-title"><a class="tablinks" onclick="openTab(event, 'Content')" id="defaultOpen">Content</a></li>
     <li class="tab-title"><a class="tablinks" onclick="openTab(event, 'Diff')">Diff</a></li>

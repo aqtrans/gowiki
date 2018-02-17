@@ -1,12 +1,12 @@
 {{ define "title" }}History of {{ .Wiki.Title }}{{ end }}
-{{ define "content" }} 
-    <ul class="tabs">
-    <li class="tabs-title"><a href="/{{.Wiki.Filename}}">{{svg "file-text2"}} View</a></li>
-    <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}">{{svg "pencil"}} Edit</a></li>
-    <li class="tabs-title is-active"><a href="#">{{svg "history"}} History</a></li>
-    </ul>
 
+{{ define "content" }}
     <main>
+        <ul class="tabs">
+            <li class="tabs-title"><a href="/{{.Wiki.Filename}}">{{svg "file-text2"}} View</a></li>
+            <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}">{{svg "pencil"}} Edit</a></li>
+            <li class="tabs-title is-active"><a href="#">{{svg "history"}} History</a></li>
+        </ul>    
         <table>
         <thead>
             <tr>

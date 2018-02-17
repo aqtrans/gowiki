@@ -1,12 +1,13 @@
 {{ define "title" }}Admin Git Panel{{ end }}
+
 {{ define "content" }}
-  <ul class="tabs">
-    <li class="tabs-title"><a href="/admin/">{{ svg "user-tie" }} Main</a></li>
-    <li class="tabs-title"><a href="/admin/users">{{ svg "users" }} Manage Users</a></li>
-    <li class="tabs-title is-active"><a href="#">{{ svg "git-square" }} Manage Git</a></li>
-    <li class="tabs-title"><a href="/admin/config">{{ svg "cog" }} Manage Config</a></li>
-  </ul>
   <main>
+    <ul class="tabs">
+      <li class="tabs-title"><a href="/admin/">{{ svg "user-tie" }} Main</a></li>
+      <li class="tabs-title"><a href="/admin/users">{{ svg "users" }} Manage Users</a></li>
+      <li class="tabs-title is-active"><a href="#">{{ svg "git-square" }} Manage Git</a></li>
+      <li class="tabs-title"><a href="/admin/config">{{ svg "cog" }} Manage Config</a></li>
+    </ul>  
         <h2>Git Status:</h2>
         <p>{{ .GitStatus }}</p>
         <hr>
@@ -33,6 +34,5 @@
         <button type="submit" class="button">Check In</button>
         </form>
         <hr>
-
   </main>
 {{ end }}

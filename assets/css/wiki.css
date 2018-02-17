@@ -77,23 +77,16 @@ body {
 
 body > header {
   grid-area: header;
-  align-self: center;
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
   list-style-type: none;
   flex-direction: column; }
   body > header > h1 {
     margin: 0;
-    flex: 0 0 100%;
-    order: 0; }
+    width: 100%; }
   body > header > div.searchwiki {
-    order: 1;
     width: 100%; }
-  body > header > ul.tabs {
-    order: 2;
-    width: 100%; }
-    body > header > ul.tabs li {
-      margin: 0 10px 0 0; }
 
 .tabs-title {
   font-size: 125%; }
@@ -131,7 +124,6 @@ body > footer {
   font-size: 80%; }
 
 div.searchwiki {
-  align-self: center;
   margin: 0; }
 
 .tabs {
@@ -141,18 +133,22 @@ div.searchwiki {
   align-self: flex-start;
   display: flex;
   flex-wrap: wrap;
-  flex-direction: row; }
+  flex-direction: row;
+  border-bottom: 1px solid #fefefe; }
   .tabs li {
-    padding-top: 5px; }
-    .tabs li.is-active a {
-      background-color: #202020;
-      color: #fefefe; }
+    margin: 0 5px 0 0; }
+    .tabs li.is-active {
+      border-bottom: 5px solid #fefefe; }
+      .tabs li.is-active a {
+        background-color: #3a3a3a;
+        color: #fefefe; }
+        .tabs li.is-active a:hover {
+          text-decoration: none; }
     .tabs li a {
       padding: 5px;
-      margin: 0;
-      border: 1px dashed #202020; }
+      margin: 0; }
       .tabs li a:hover {
-        background-color: #202020; }
+        background-color: #3a3a3a; }
 
 .stat {
   color: #8a8a8a; }
@@ -294,19 +290,16 @@ pre, code {
 
   body > header {
     flex-direction: row;
-    justify-content: space-between; }
-    body > header > ul.tabs {
-      order: 1;
-      flex-direction: row;
-      align-self: flex-end;
-      width: unset; }
+    justify-content: space-between;
+    align-items: center; }
     body > header > div.searchwiki {
-      order: 2;
       justify-self: end;
+      flex: 0 5 auto;
       width: unset; }
     body > header > h1 {
       margin: 0 0.5em;
-      flex: 2 0 auto; }
+      flex: 0 0 auto;
+      width: unset; }
 
   .tabs-title {
     font-size: 100%; }
