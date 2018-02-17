@@ -1,17 +1,19 @@
 {{ define "title" }}Admin Config Panel{{ end }}
+
 {{ define "content" }}
-  <ul class="tabs">
-    <li class="tabs-title"><a href="/admin/">Main</a></li>
-    <li class="tabs-title"><a href="/admin/users">{{ svg "users" }} Manage Users</a></li>
-    <li class="tabs-title"><a href="/admin/git">{{ svg "git-square" }} Manage Git</a></li>
-    <li class="tabs-title is-active"><a href="#">{{ svg "cog" }} Manage Config</a></li>
-  </ul>
+
   <main>
-        <h2>Current config:</h2>
-        <ul>
-        {{range $key, $element := .Config}}
-        <li>{{ $key }}: {{$element}}</li>
-        {{end}}
-        </ul>
+    <ul class="tabs">
+      <li class="tabs-title"><a href="/admin/">Main</a></li>
+      <li class="tabs-title"><a href="/admin/users">{{ svg "users" }} Manage Users</a></li>
+      <li class="tabs-title"><a href="/admin/git">{{ svg "git-square" }} Manage Git</a></li>
+      <li class="tabs-title is-active"><a href="#">{{ svg "cog" }} Manage Config</a></li>
+    </ul>  
+    <h2>Current config:</h2>
+    <ul>
+    {{range $key, $element := .Config}}
+    <li>{{ $key }}: {{$element}}</li>
+    {{end}}
+    </ul>
   </main>
 {{ end }}
