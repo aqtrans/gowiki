@@ -9,12 +9,15 @@
   {{ end }}
 {{ end }}
 
-{{ define "content" }}
+{{ define "header_extra" }}
   <ul class="tabs">
     <li class="tabs-title is-active"><a href="#">{{ svg "file-text2" }} View</a></li>
     <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}">{{svg "pencil"}} Edit</a></li>
     <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}">{{svg "history"}} History</a></li>
   </ul>
+{{ end }}
+
+{{ define "content" }}
 
   <main>
     {{.Rendered | safeHTML}}

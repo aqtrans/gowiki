@@ -9,6 +9,14 @@ $background: $white;
 $foreground: $almostblack;
 $foreground-font: $white;
 
+/*
+@import "node_modules/spectre.css/src/mixins";
+@import "node_modules/spectre.css/src/variables";
+@import "node_modules/spectre.css/src/buttons";
+@import "node_modules/spectre.css/src/breadcrumbs";
+@import "node_modules/spectre.css/src/tabs";
+*/
+
 /* Font Awesome 4.7.0 */
 //@import "font-awesome/font-awesome";
 
@@ -90,21 +98,41 @@ body {
     grid-row-gap: 0;
     grid-template-areas: 
         "header"
-        "tabs"
         "content"
         "nav"
-        "search"
         "footer";
 }
 
 body > header {
     grid-area: header;
-    max-height: 3.5rem;
-    min-height: 3.5rem;
+    //max-height: 3.5rem;
+    //min-height: 3.5rem;
     align-self: center;
     > h1 {
-        margin: 0 0.5rem;
+        margin: 0;
+        flex: 0 0 100%;
+        order: 0;
     }
+    > div.searchwiki {
+        order: 1;
+        width: 100%;
+    }
+    > ul.tabs {
+        order: 2;
+        width: 100%;
+        li {
+            margin: 0 10px 0 0;
+        }        
+    }
+    display: flex;
+    flex-wrap: wrap;
+    list-style-type: none;
+    flex-direction: column;
+
+}
+
+.tabs-title {
+    font-size: 125%;
 }
 
 body > main {
@@ -150,18 +178,18 @@ body > footer {
 }
 
 div.searchwiki {
-    grid-area: search;
+    //grid-area: search;
     align-self: center;
-    margin: 0 0.5rem;
+    margin: 0;
 }
 
 .tabs {
-    grid-area: tabs;
+    //grid-area: tabs;
     //margin: 5px 0 0 0;
     margin: 0;
     padding: 0;
     list-style-type: none;
-    align-self: end;
+    align-self: flex-start;
     display: flex;
     flex-wrap: wrap;
     flex-direction: row;
@@ -357,21 +385,34 @@ pre, code {
     body {
         font-size: 1em;
         grid-template-areas: 
-            "header header  search"
-            "nav    tabs    tabs"
-            "nav    content content"
-            "nav    footer  footer";
+            "header header"
+            "nav    content"
+            "nav    footer";
             grid-template-columns: 240px 10fr;
-            grid-template-rows: 50px 24px auto minmax(10px, 50px);
+            grid-template-rows: 50px auto minmax(10px, 50px);
     }
-    div.searchwiki {
-        justify-self: end;
-    }
-    .tabs {
+    body > header {
         flex-direction: row;
-        li {
-            margin: 0 10px 0 0;
-            }
+        justify-content: space-between;
+        > ul.tabs {
+            order: 1;
+            flex-direction: row;
+            align-self: flex-end;
+            width: unset;
+
+        }
+        > div.searchwiki {
+            order: 2;
+            justify-self: end;
+            width: unset;            
+        }
+        > h1 {
+            margin: 0 0.5em;
+            flex: 2 0 auto;
+        }
+    }
+    .tabs-title {
+        font-size: 100%;
     }
     body > main {
         align-self: start;
