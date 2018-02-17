@@ -67,7 +67,7 @@ a {
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   margin: 0;
-  font-size: 0.85em;
+  font-size: 125%;
   line-height: 1.5;
   background-color: #fefefe;
   display: grid;
@@ -87,9 +87,6 @@ body > header {
     width: 100%; }
   body > header > div.searchwiki {
     width: 100%; }
-
-.tabs-title {
-  font-size: 125%; }
 
 body > main {
   grid-area: content;
@@ -283,7 +280,7 @@ pre, code {
 
 @media (min-width: 768px) {
   body {
-    font-size: 1em;
+    font-size: 100%;
     grid-template-areas: "header header" "nav    content" "nav    footer";
     grid-template-columns: 240px 10fr;
     grid-template-rows: 50px auto minmax(10px, 50px); }
@@ -300,9 +297,6 @@ pre, code {
       margin: 0 0.5em;
       flex: 0 0 auto;
       width: unset; }
-
-  .tabs-title {
-    font-size: 100%; }
 
   body > main {
     align-self: start; }
