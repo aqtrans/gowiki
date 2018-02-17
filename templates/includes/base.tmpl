@@ -17,16 +17,18 @@
     {{ .FlashMsg }}
   <header>
     <h1>{{ template "header_title" . }}</h1>
+    {{ block "header_extra" .}}{{ end }}
+    <div class="searchwiki">
+      <form method="POST" action="/search" id="searchwiki">
+        <div class="input-wrapper">
+            <input type="text" placeholder="Search" id="searchwiki" name="searchwiki">
+            {{.Token}}
+            <button type="submit">{{ svg "search" }}</button>
+        </div>
+      </form> 
+    </div>    
   </header>
-  <div class="searchwiki">
-    <form method="POST" action="/search" id="searchwiki">
-      <div class="input-wrapper">
-          <input type="text" placeholder="Search" id="searchwiki" name="searchwiki">
-          {{.Token}}
-          <button type="submit">{{ svg "search" }}</button>
-      </div>
-    </form>   
-  </div>
+
   {{ template "content" . }}
 {{ end }}
 {{ define "footer" }}
