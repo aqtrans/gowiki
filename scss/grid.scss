@@ -90,7 +90,7 @@ a {
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     margin: 0;
-    font-size: 0.85em;
+    font-size: 125%;
     line-height: 1.5;    
     background-color: $background;
     display: grid;
@@ -118,10 +118,6 @@ body > header {
     list-style-type: none;
     flex-direction: column;
 
-}
-
-.tabs-title {
-    font-size: 125%;
 }
 
 body > main {
@@ -372,7 +368,7 @@ pre, code {
 
 @media (min-width: 768px) {
     body {
-        font-size: 1em;
+        font-size: 100%;
         grid-template-areas: 
             "header header"
             "nav    content"
@@ -394,9 +390,6 @@ pre, code {
             flex: 0 0 auto;
             width: unset;
         }
-    }
-    .tabs-title {
-        font-size: 100%;
     }
     body > main {
         align-self: start;
