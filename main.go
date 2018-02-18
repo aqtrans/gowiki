@@ -1110,7 +1110,7 @@ func loadPage(env *wikiEnv, r *http.Request, p chan<- page) {
 		UserInfo: userInfo{
 			Username:   user.GetName(),
 			IsAdmin:    user.IsAdmin(),
-			IsLoggedIn: user.IsLoggedIn(),
+			IsLoggedIn: auth.IsLoggedIn(r.Context()),
 		},
 		Token:     token,
 		FlashMsg:  message,
@@ -1313,7 +1313,7 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 			//log.Println("pubic", v.Filename)
 			list = append(list, v)
 		}
-		if user.IsLoggedIn() {
+		if auth.IsLoggedIn(r.Context()) {
 			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
 				list = append(list, v)
@@ -1843,7 +1843,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 			//log.Println("pubic", v.Filename)
 			filelist = append(filelist, v.Filename)
 		}
-		if user.IsLoggedIn() {
+		if auth.IsLoggedIn(r.Context()) {
 			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
 				filelist = append(filelist, v.Filename)
@@ -2811,7 +2811,7 @@ func (env *wikiEnv) search(w http.ResponseWriter, r *http.Request) {
 	var fileList string
 
 	for _, v := range env.cache.Cache {
-		if user.IsLoggedIn() {
+		if auth.IsLoggedIn(r.Context()) {
 			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
 				fileList = fileList + " " + `"` + v.Filename + `"`
@@ -3095,7 +3095,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		ctx := newWikiExistsContext(nameCtx, pageExists)
 		r = r.WithContext(ctx)
 
-		if wikiRejected(name, pageExists, user.IsAdmin(), user.IsLoggedIn()) {
+		if wikiRejected(name, pageExists, user.IsAdmin(), auth.IsLoggedIn(r.Context())) {
 			mitigateWiki(true, env, r, w)
 		} else {
 			next.ServeHTTP(w, r.WithContext(ctx))
