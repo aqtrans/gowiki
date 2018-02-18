@@ -3222,12 +3222,9 @@ func router(env *wikiEnv) http.Handler {
 	admin.POST("/git/checkin", env.authState.AuthAdminMiddle(gitCheckinPostHandler))
 	admin.POST("/git/pull", env.authState.AuthAdminMiddle(gitPullPostHandler))
 	admin.GET("/users", env.authState.AuthAdminMiddle(env.adminUsersHandler))
-	admin.POST("/users", env.authState.AuthAdminMiddle(env.authState.UserSignupPostHandler))
 	admin.POST("/user", env.authState.AuthAdminMiddle(adminUserPostHandler))
 	admin.GET("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
 	admin.POST("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
-	admin.POST("/user/password_change", env.authState.AuthAdminMiddle(env.authState.AdminUserPassChangePostHandler))
-	admin.POST("/user/delete", env.authState.AuthAdminMiddle(env.authState.AdminUserDeletePostHandler))
 
 	a := r.NewContextGroup("/auth")
 	a.POST("/login", env.authState.LoginPostHandler)
