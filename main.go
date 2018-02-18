@@ -286,6 +286,7 @@ func init() {
 
 	if viper.GetBool("Debug") {
 		httputils.Debug = true
+		auth.Debug = true
 	}
 	// Setting these last; they do not need to be set manually:
 
