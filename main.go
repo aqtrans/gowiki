@@ -2673,6 +2673,7 @@ func svg(iconName string) template.HTML {
 	iconFile, err := ioutil.ReadFile("assets/icons/" + iconName + ".svg")
 	if err != nil {
 		log.Println("Error loading assets/icons/", iconName, err)
+		return template.HTML("")
 	}
 	return template.HTML(`<div class="svg-icon">` + string(iconFile) + `</div>`)
 }
@@ -2683,6 +2684,7 @@ func svgByte(iconName string) []byte {
 	iconFile, err := ioutil.ReadFile("assets/icons/" + iconName + ".svg")
 	if err != nil {
 		log.Println("Error loading assets/icons/", iconName, err)
+		return []byte("")
 	}
 	return []byte(`<div class="svg-icon">` + string(iconFile) + `</div>`)
 }
