@@ -181,7 +181,20 @@ div.searchwiki {
             &:hover {
                 background-color: lighten($almostblack, 10);
                 text-decoration: none;
+                border-bottom: 0.3125rem solid $white;
             }
+        }
+    }
+    &.sub {
+        background: lighten($almostblack, 25);
+        padding: 0.5rem 0.2rem 0 0.5rem;
+        li a {
+            color: $foreground-font;
+            cursor: pointer;
+            &.is-active { 
+                //border-bottom: 0.125rem solid white;
+                background: darken($almostblack, 15);
+            }            
         }
     }
 }
@@ -288,6 +301,7 @@ pre, code {
     }
 }
 
+/*
 // Tab definition
 .preview-tabs {
     background: lighten($almostblack, 25);
@@ -299,7 +313,8 @@ pre, code {
     flex-wrap: wrap;
     flex-direction: row;
     li {
-        padding-top: 0.3rem;
+        margin-left: 1rem;
+        padding-top: 0.5rem;
         a {
             display: inline-block;
             position: relative;
@@ -324,6 +339,7 @@ pre, code {
 
     }
 }
+*/
 
 .tabcontent {
     display: none;
