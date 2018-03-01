@@ -1,13 +1,20 @@
+# This is meant to go in /etc/systemd/system/golang@.service
+# For use in systemd versions <=232, for the ProtectSystem=true option
+## This is specifically for CentOS 7, which has systemd user sessions disabled entirely
+
 [Unit]
 Description=Golang %i daemon
 After=systemd-user-sessions.service network-online.target nginx.service
 Requires=network-online.target
 
 [Service]
+ProtectSystem=true
+ReadWriteDirectories=/home/golang
 WorkingDirectory=/home/golang/%i
-ExecStart=/bin/bash -c '/home/golang/%i/%i'
+ExecStart=/bin/bash -c '/home/golang/%i/%i --DataDir=/home/golang/data/%i'
 User=golang
 Restart=on-failure
+RestartSec=1min
 
 [Install]
 WantedBy=default.target
