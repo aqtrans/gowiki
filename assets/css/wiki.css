@@ -134,7 +134,16 @@ div.searchwiki {
       margin: 0; }
       .tabs li a:hover {
         background-color: #3a3a3a;
-        text-decoration: none; }
+        text-decoration: none;
+        border-bottom: 0.3125rem solid #fefefe; }
+  .tabs.sub {
+    background: #606060;
+    padding: 0.5rem 0.2rem 0 0.5rem; }
+    .tabs.sub li a {
+      color: #fefefe;
+      cursor: pointer; }
+      .tabs.sub li a.is-active {
+        background: black; }
 
 .stat {
   color: #8a8a8a; }
@@ -218,35 +227,45 @@ pre, code {
     width: 100%;
     min-width: 0.4rem; }
 
+/*
+// Tab definition
 .preview-tabs {
-  background: #606060;
-  margin: 0;
-  padding: 0;
-  list-style-type: none;
-  align-self: end;
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: row; }
-  .preview-tabs li {
-    padding-top: 0.3rem; }
-    .preview-tabs li a {
-      display: inline-block;
-      position: relative;
-      border: none;
-      outline: none;
-      vertical-align: bottom;
-      cursor: pointer;
-      background: #606060;
-      color: #fefefe;
-      text-decoration: none;
-      padding: 0.3rem;
-      margin: 0; }
-      .preview-tabs li a:hover {
-        background-color: #202020; }
-      .preview-tabs li a.is-active {
-        border-bottom: 0.125rem solid white;
-        background: black; }
+    background: lighten($almostblack, 25);
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    align-self: end;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    li {
+        margin-left: 1rem;
+        padding-top: 0.5rem;
+        a {
+            display: inline-block;
+            position: relative;
+            border: none;
+            outline: none;
+            vertical-align: bottom;
+            cursor: pointer;
+            background: lighten($almostblack, 25);
+            color: $foreground-font;
+            text-decoration: none;            
+            padding: 0.3rem;
+            margin: 0;
+            &:hover {
+                background-color: $almostblack;
+            }  
+            &.is-active { 
+                border-bottom: 0.125rem solid white;
+                background: darken($almostblack, 15);             
 
+            }
+        }
+
+    }
+}
+*/
 .tabcontent {
   display: none; }
 
