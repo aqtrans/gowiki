@@ -2784,7 +2784,6 @@ func initWikiDir() {
 		err = os.Mkdir(wikiDir, 0755)
 		if err != nil {
 			log.Println("Error creating wikiDir", wikiDir, err)
-			raven.CaptureErrorAndWait(err, nil)
 			panic(err)
 		}
 	}
@@ -2795,17 +2794,19 @@ func initWikiDir() {
 			if viper.GetString("RemoteGitRepo") != "" {
 				log.Println("--InitWikiRepo flag is given. Cloning " + viper.GetString("RemoteGitRepo") + " into " + wikiDir + "...")
 				err = gitClone(viper.GetString("RemoteGitRepo"))
-				raven.CaptureErrorAndWait(err, nil)
-				panic(err)
+				if err != nil {
+					panic(err)
+				}
+
 			} else {
 				log.Println("No RemoteGitRepo defined. Creating a new git repo at", wikiDir)
 				err = gitInit()
-				raven.CaptureErrorAndWait(err, nil)
-				panic(err)
+				if err != nil {
+					panic(err)
+				}
 			}
 		} else {
 			repoNotExistErr := errors.New("clone/move your existing repo to " + wikiDir + ", change the configured wikiDir, or run with --InitWikiRepo to clone a specified remote repo")
-			raven.CaptureErrorAndWait(err, nil)
 			panic(repoNotExistErr)
 		}
 	}
