@@ -58,6 +58,8 @@ import (
 
 	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
 
+	raven "github.com/getsentry/raven-go"
+
 	"github.com/spf13/pflag"
 	yaml "gopkg.in/yaml.v2"
 
@@ -295,6 +297,8 @@ func init() {
 	//viper.SetDefault("AuthLocation", filepath.Join(dataDir, "auth.db"))
 	//viper.SetDefault("InitWikiRepo", *initFlag)
 
+	raven.SetDSN("https://5ab2f68b0f524799b1d0b324350cc2ae:e01dbad12f8e4fd0bce97681a772a072@sentry.io/94753")
+
 }
 
 func markdownRender(input []byte) string {
@@ -346,6 +350,7 @@ func check(err error) {
 		if ok && details != nil {
 			//log.Fatalln(line, " Func: ", details.Name(), " Err: ", err)
 			log.Printf("[error] in %s[%s:%d] %v", details.Name(), fn, line, err)
+			raven.CaptureError(err, nil)
 		}
 	}
 }
@@ -968,6 +973,7 @@ func gitSearch(searchTerm, fileSpec string) []result {
 	cmd.Dir = filepath.Join(dataDir, "wikidata")
 	o, err := cmd.CombinedOutput()
 	if err != nil {
+		raven.CaptureError(err, nil)
 		log.Println("ERROR gitSearch:", err)
 		log.Println(string(o))
 		return nil
@@ -1151,6 +1157,7 @@ func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
 
 	history, err := gitGetFileLog(name)
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	hp := &historyPage{
@@ -1186,26 +1193,30 @@ func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, co
 
 	body, err := gitGetFileCommit(name, commit)
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	ctime, err := gitGetCtime(name)
 	if err != nil && err != errNotInGit {
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	mtime, err := gitGetFileCommitMtime(commit)
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	diff, err := gitGetFileCommitDiff(name, commit)
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
 	// Read YAML frontmatter into fm
 	reader := bytes.NewReader(body)
 	fm, content := readWikiPage(reader)
-	check(err)
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -1270,6 +1281,7 @@ func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 		split = strings.Split(strings.TrimSpace(v), " ")
 		date, err := strconv.ParseInt(split[0], 0, 64)
 		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
 			panic(err)
 		}
 
@@ -1342,6 +1354,7 @@ func readFileAndFront(filename string) (frontmatter, []byte) {
 	//checkErr("readFileAndFront()/Open", err)
 	if err != nil {
 		httputils.Debugln("Error in readFileAndFront:", err)
+		raven.CaptureError(err, nil)
 		f.Close()
 		return frontmatter{}, []byte("")
 	}
@@ -1382,6 +1395,7 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 			if grabPage {
 				_, err := bufs[1].WriteString(scanner.Text() + "\n")
 				if err != nil {
+					raven.CaptureError(err, nil)
 					log.Println("Error writing page data:", err)
 				}
 			} else {
@@ -1393,6 +1407,7 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 			if scanner.Text() != yamlSeparator || scanner.Text() != yamlSeparator2 {
 				_, err := bufs[0].WriteString(scanner.Text() + "\n")
 				if err != nil {
+					raven.CaptureError(err, nil)
 					log.Println("Error writing page data:", err)
 				}
 			}
@@ -1416,6 +1431,7 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 				if grabPage {
 					_, err := bufs[1].WriteString(scanner.Text() + "\n")
 					if err != nil {
+						raven.CaptureError(err, nil)
 						log.Println("Error writing page data:", err)
 					}
 
@@ -1440,10 +1456,12 @@ func scanWikiPageB(reader io.Reader, bufs ...*bytes.Buffer) {
 			if grabPage {
 				_, err := bufs[1].Write(scanner.Bytes())
 				if err != nil {
+					raven.CaptureError(err, nil)
 					log.Println("Error writing page data:", err)
 				}
 				err = bufs[1].WriteByte('\n')
 				if err != nil {
+					raven.CaptureError(err, nil)
 					log.Println("Error writing page data:", err)
 				}
 			} else {
@@ -1455,10 +1473,12 @@ func scanWikiPageB(reader io.Reader, bufs ...*bytes.Buffer) {
 			if !bytes.Equal(scanner.Bytes(), []byte(yamlSeparator)) || !bytes.Equal(scanner.Bytes(), []byte(yamlSeparator2)) {
 				_, err := bufs[0].Write(scanner.Bytes())
 				if err != nil {
+					raven.CaptureError(err, nil)
 					log.Println("Error writing page data:", err)
 				}
 				err = bufs[0].WriteByte('\n')
 				if err != nil {
+					raven.CaptureError(err, nil)
 					log.Println("Error writing page data:", err)
 				}
 			}
@@ -1482,10 +1502,12 @@ func scanWikiPageB(reader io.Reader, bufs ...*bytes.Buffer) {
 				if grabPage {
 					_, err := bufs[1].Write(scanner.Bytes())
 					if err != nil {
+						raven.CaptureError(err, nil)
 						log.Println("Error writing page data:", err)
 					}
 					err = bufs[1].WriteByte('\n')
 					if err != nil {
+						raven.CaptureError(err, nil)
 						log.Println("Error writing page data:", err)
 					}
 				}
@@ -1560,6 +1582,7 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 		log.Println("renderTemplate error:")
 		log.Println(err)
 		bufpool.Put(buf)
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -1572,6 +1595,7 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 		log.Println("renderTemplate error:")
 		log.Println(err)
 		bufpool.Put(buf)
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -1580,6 +1604,7 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 		log.Println("renderTemplate error:")
 		log.Println(err)
 		bufpool.Put(buf)
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	buf.WriteTo(w)
@@ -1619,6 +1644,7 @@ func doesPageExist(name string) (bool, error) {
 			exists = false
 		} else {
 			log.Println("doesPageExist, unhandled error:", err)
+			raven.CaptureError(err, nil)
 			exists = false
 			finError = err
 		}
@@ -1894,6 +1920,7 @@ func isWiki(filename string) bool {
 	var isWiki bool
 	file, err := os.Open(filepath.Join(dataDir, "wikidata", filename))
 	if err != nil {
+		raven.CaptureError(err, nil)
 		log.Println(err)
 		isWiki = false
 	}
@@ -1902,6 +1929,7 @@ func isWiki(filename string) bool {
 	buff := make([]byte, 512)
 	_, err = file.Read(buff)
 	if err != nil {
+		raven.CaptureError(err, nil)
 		log.Println(err)
 		isWiki = false
 	}
@@ -1940,6 +1968,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
+		raven.CaptureError(err, nil)
 		log.Println("Error parsing form ", err)
 	}
 	content := r.FormValue("editor")
@@ -1989,6 +2018,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = thewiki.save(&env.mutex)
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -1996,6 +2026,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 	if viper.GetBool("PushOnSave") {
 		err := gitPush()
 		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
 			panic(err)
 		}
 	}
@@ -2108,6 +2139,7 @@ func (wiki *wiki) save(mutex *sync.Mutex) error {
 		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
 			err := os.MkdirAll(dirpath, 0755)
 			if err != nil {
+				raven.CaptureError(err, nil)
 				mutex.Unlock()
 				return err
 			}
@@ -2123,6 +2155,7 @@ func (wiki *wiki) save(mutex *sync.Mutex) error {
 	var err error
 	f, err = os.OpenFile(fullfilename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
+		raven.CaptureError(err, nil)
 		mutex.Unlock()
 		return err
 	}
@@ -2132,42 +2165,49 @@ func (wiki *wiki) save(mutex *sync.Mutex) error {
 
 	_, err = wb.WriteString("---\n")
 	if err != nil {
+		raven.CaptureError(err, nil)
 		mutex.Unlock()
 		return err
 	}
 
 	yamlBuffer, err := yaml.Marshal(wiki.Frontmatter)
 	if err != nil {
+		raven.CaptureError(err, nil)
 		mutex.Unlock()
 		return err
 	}
 
 	_, err = wb.Write(yamlBuffer)
 	if err != nil {
+		raven.CaptureError(err, nil)
 		mutex.Unlock()
 		return err
 	}
 
 	_, err = wb.WriteString("---\n")
 	if err != nil {
+		raven.CaptureError(err, nil)
 		mutex.Unlock()
 		return err
 	}
 
 	_, err = wb.Write(wiki.Content)
 	if err != nil {
+		raven.CaptureError(err, nil)
 		mutex.Unlock()
 		return err
 	}
 
 	err = wb.Flush()
 	if err != nil {
+		raven.CaptureError(err, nil)
 		mutex.Unlock()
 		return err
 	}
 
 	err = f.Close()
 	if err != nil {
+		raven.CaptureError(err, nil)
 		mutex.Unlock()
 		return err
 	}
@@ -2195,6 +2235,7 @@ func (wiki *wiki) save(mutex *sync.Mutex) error {
 
 	err = gitAddFilepath(gitfilename)
 	if err != nil {
+		raven.CaptureError(err, nil)
 		mutex.Unlock()
 		return err
 	}
@@ -2202,6 +2243,7 @@ func (wiki *wiki) save(mutex *sync.Mutex) error {
 	// FIXME: add a message box to edit page, check for it here
 	err = gitCommitEmpty()
 	if err != nil {
+		raven.CaptureError(err, nil)
 		mutex.Unlock()
 		return err
 	}
@@ -2249,6 +2291,7 @@ func (env *wikiEnv) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 	userlist, err := env.authState.Userlist()
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -2278,6 +2321,7 @@ func (env *wikiEnv) adminUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	userlist, err := env.authState.Userlist()
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -2393,10 +2437,12 @@ func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := gitAddFilepath(path)
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	err = gitCommitEmpty()
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	if path != "." {
@@ -2412,6 +2458,7 @@ func gitPushPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := gitPush()
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -2424,6 +2471,7 @@ func gitPullPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := gitPull()
 	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -2731,9 +2779,14 @@ func initWikiDir() {
 	//Check for wikiDir directory + git repo existence
 	wikiDir := filepath.Join(dataDir, "wikidata")
 	_, err = os.Stat(wikiDir)
-	if err != nil {
+	if err != nil && os.IsNotExist(err) {
 		log.Println(wikiDir + " does not exist, creating it.")
-		os.Mkdir(wikiDir, 0755)
+		err = os.Mkdir(wikiDir, 0755)
+		if err != nil {
+			log.Println("Error creating wikiDir", wikiDir, err)
+			raven.CaptureErrorAndWait(err, nil)
+			panic(err)
+		}
 	}
 	_, err = os.Stat(filepath.Join(wikiDir, ".git"))
 	if err != nil {
@@ -2742,15 +2795,17 @@ func initWikiDir() {
 			if viper.GetString("RemoteGitRepo") != "" {
 				log.Println("--InitWikiRepo flag is given. Cloning " + viper.GetString("RemoteGitRepo") + " into " + wikiDir + "...")
 				err = gitClone(viper.GetString("RemoteGitRepo"))
-				check(err)
+				raven.CaptureErrorAndWait(err, nil)
+				panic(err)
 			} else {
 				log.Println("No RemoteGitRepo defined. Creating a new git repo at", wikiDir)
 				err = gitInit()
-				check(err)
+				raven.CaptureErrorAndWait(err, nil)
+				panic(err)
 			}
 		} else {
-			repoNotExistErr := errors.New("clone/move your existing repo here, change the config, or run with --InitWikiRepo to clone a specified remote repo")
-			//log.Fatalln("Clone/move your existing repo here, change the config, or run with -init to clone a specified remote repo.")
+			repoNotExistErr := errors.New("clone/move your existing repo to " + wikiDir + ", change the configured wikiDir, or run with --InitWikiRepo to clone a specified remote repo")
+			raven.CaptureErrorAndWait(err, nil)
 			panic(repoNotExistErr)
 		}
 	}
@@ -3000,6 +3055,7 @@ func headHash() string {
 	output, err := gitCommand("rev-parse", "HEAD").CombinedOutput()
 	if err != nil {
 		log.Println("Error retrieving SHA1 of wikidata:", err)
+		raven.CaptureError(err, nil)
 		return ""
 	}
 	return string(output)
@@ -3031,6 +3087,7 @@ func wikiRejected(wikiName string, wikiExists, isAdmin, isLoggedIn bool) bool {
 		// If err, reject, and log that error
 		f, err := os.Open(fullfilename)
 		if err != nil {
+			raven.CaptureError(err, nil)
 			log.Println("wikiRejected: Error reading", fullfilename, err)
 			return true
 		}
@@ -3157,12 +3214,14 @@ func (env *wikiEnv) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err := gitRmFilepath(name)
 	if err != nil {
+		raven.CaptureError(err, nil)
 		log.Println("Error deleting file from git repo,", name, err)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 
 	err = gitCommitWithMessage(name + " has been removed from git repo.")
 	if err != nil {
+		raven.CaptureError(err, nil)
 		log.Println("Error commiting to git repo,", name, err)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
@@ -3179,9 +3238,11 @@ func dataDirCheck() {
 			log.Println(viper.GetString("DataDir"), "does not exist; creating it.")
 			err = os.Mkdir(viper.GetString("DataDir"), 0755)
 			if err != nil {
+				raven.CaptureErrorAndWait(err, nil)
 				log.Fatalln(err)
 			}
 		} else {
+			raven.CaptureErrorAndWait(err, nil)
 			log.Fatalln(err)
 		}
 	} else if !dir.IsDir() {
