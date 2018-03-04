@@ -3324,22 +3324,16 @@ func main() {
 	initWikiDir()
 	dataDirCheck()
 
-	// Bring up authState
-	anAuthState, err := auth.NewAuthState(filepath.Join(dataDir, "auth.db"))
-	check(err)
-
-	theCache := loadCache()
-
 	env := &wikiEnv{
-		authState: *anAuthState,
-		cache:     theCache,
+		authState: *auth.NewAuthState(filepath.Join(dataDir, "auth.db")),
+		cache:     loadCache(),
 		templates: make(map[string]*template.Template),
 		mutex:     sync.Mutex{},
 	}
 	env.favs.List = env.cache.Favs
 	env.tags.List = env.cache.Tags
 
-	err = tmplInit(env)
+	err := tmplInit(env)
 	if err != nil {
 		log.Fatalln(err)
 	}
