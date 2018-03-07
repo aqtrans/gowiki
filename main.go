@@ -973,9 +973,12 @@ func gitSearch(searchTerm, fileSpec string) []result {
 	cmd.Dir = filepath.Join(dataDir, "wikidata")
 	o, err := cmd.CombinedOutput()
 	if err != nil {
+		/* Seems like git grep returns exit status 1 on no results,
+			so don't worry about errors for now
 		raven.CaptureError(err, nil)
 		log.Println("ERROR gitSearch:", err)
 		log.Println(string(o))
+		*/
 		return nil
 	}
 
