@@ -113,7 +113,7 @@ func testEnv(t *testing.T, authState *auth.State) *wikiEnv {
 func testEnvInit(t *testing.T) (string, *wikiEnv) {
 	tmpdb := tempfile()
 	//defer os.Remove(tmpdb)
-	authState := auth.NewAuthState(tmpdb)
+	authState := auth.NewBoltAuthState(tmpdb)
 	e := testEnv(t, authState)
 	err := tmplInit(e)
 	checkT(err, t)
@@ -123,7 +123,7 @@ func testEnvInit(t *testing.T) (string, *wikiEnv) {
 func TestAuthInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
-	authState := auth.NewAuthState(tmpdb)
+	authState := auth.NewBoltAuthState(tmpdb)
 	_, err := authState.Userlist()
 	checkT(err, t)
 }
@@ -131,7 +131,7 @@ func TestAuthInit(t *testing.T) {
 func TestTmplInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
-	authState := auth.NewAuthState(tmpdb)
+	authState := auth.NewBoltAuthState(tmpdb)
 	e := testEnv(t, authState)
 	err := tmplInit(e)
 	checkT(err, t)
