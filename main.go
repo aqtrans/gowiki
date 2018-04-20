@@ -1850,9 +1850,14 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	// If this is a commit, pass along the SHA1 to that function
 	if r.URL.Query().Get("commit") != "" {
-		commit := r.URL.Query().Get("commit")
-		//utils.Debugln(r.URL.Query().Get("commit"))
-		env.viewCommitHandler(w, r, commit, name)
+		// Only allow logged in users to view past pages, in case information had to be redacted on a now-public page
+		if auth.IsLoggedIn(r.Context()) {
+			commit := r.URL.Query().Get("commit")
+			//utils.Debugln(r.URL.Query().Get("commit"))
+			env.viewCommitHandler(w, r, commit, name)
+			return
+		}
+		mitigateWiki(true, env, r, w)
 		return
 	}
 
@@ -3328,7 +3333,7 @@ func main() {
 	dataDirCheck()
 
 	env := &wikiEnv{
-		authState: *auth.NewAuthState(filepath.Join(dataDir, "auth.db")),
+		authState: *auth.NewBoltAuthState(filepath.Join(dataDir, "auth.db")),
 		cache:     loadCache(),
 		templates: make(map[string]*template.Template),
 		mutex:     sync.Mutex{},
