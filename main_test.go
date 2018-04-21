@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
@@ -103,7 +102,7 @@ func testEnv(t *testing.T, authState *auth.State) *wikiEnv {
 			Tags: make(map[string][]string),
 			Favs: make(map[string]struct{}),
 		},
-		templates: make(map[string]*template.Template),
+		templates: tmplInit(),
 		mutex:     sync.Mutex{},
 		tags:      newTagsMap(),
 		favs:      newFavsMap(),
@@ -115,8 +114,6 @@ func testEnvInit(t *testing.T) (string, *wikiEnv) {
 	//defer os.Remove(tmpdb)
 	authState := auth.NewBoltAuthState(tmpdb)
 	e := testEnv(t, authState)
-	err := tmplInit(e)
-	checkT(err, t)
 	return tmpdb, e
 }
 
@@ -132,9 +129,7 @@ func TestTmplInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
 	authState := auth.NewBoltAuthState(tmpdb)
-	e := testEnv(t, authState)
-	err := tmplInit(e)
-	checkT(err, t)
+	testEnv(t, authState)
 }
 
 func TestWikiInit(t *testing.T) {
