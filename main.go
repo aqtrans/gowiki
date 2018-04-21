@@ -2745,15 +2745,17 @@ func svgByte(iconName string) []byte {
 	return []byte(`<div class="svg-icon">` + string(iconFile) + `</div>`)
 }
 
-func tmplInit(env *wikiEnv) error {
+func tmplInit() map[string]*template.Template {
+	templates := make(map[string]*template.Template)
+
 	templatesDir := "./templates/"
 	layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 	includes, err := filepath.Glob(templatesDir + "includes/*.tmpl")
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	funcMap := template.FuncMap{"svg": svg, "typeIcon": typeIcon, "prettyDate": httputils.PrettyDate, "safeHTML": httputils.SafeHTML, "imgClass": httputils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
@@ -2762,9 +2764,9 @@ func tmplInit(env *wikiEnv) error {
 		files := append(includes, layout)
 		//DEBUG TEMPLATE LOADING
 		//httputils.Debugln(files)
-		env.templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFiles(files...))
+		templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFiles(files...))
 	}
-	return nil
+	return templates
 }
 
 func initWikiDir() {
@@ -3335,20 +3337,15 @@ func main() {
 	env := &wikiEnv{
 		authState: *auth.NewBoltAuthState(filepath.Join(dataDir, "auth.db")),
 		cache:     loadCache(),
-		templates: make(map[string]*template.Template),
+		templates: tmplInit(),
 		mutex:     sync.Mutex{},
 	}
 	env.favs.List = env.cache.Favs
 	env.tags.List = env.cache.Tags
 
-	err := tmplInit(env)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	// Check for unclean Git dir on startup
 	if !gitIsEmpty() {
-		err = gitIsCleanStartup()
+		err := gitIsCleanStartup()
 		if err != nil {
 			log.Fatalln("There was an issue with the git repo:", err)
 		}
