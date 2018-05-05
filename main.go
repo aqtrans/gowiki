@@ -193,6 +193,12 @@ type genPage struct {
 	Title string
 }
 
+type signupPage struct {
+	page
+	Title    string
+	UserRole string
+}
+
 type gitPage struct {
 	page
 	Title     string
@@ -211,7 +217,7 @@ type gitDirList struct {
 // Env wrapper to hold app-specific configs, to pass to handlers
 // cache is a pointer here since it's pretty large itself, and holds a mutex
 type wikiEnv struct {
-	authState auth.State
+	authState auth.DB
 	cache     *wikiCache
 	templates map[string]*template.Template
 	mutex     sync.Mutex
@@ -2279,15 +2285,26 @@ func (env *wikiEnv) loginPageHandler(w http.ResponseWriter, r *http.Request) {
 func (env *wikiEnv) signupPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "signupPageHandler")
 
-	title := "signup"
-	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	givenToken := r.FormValue("token")
+	isValid, _ := env.authState.ValidateRegisterToken(givenToken)
+	if isValid {
+		env.authState.SetRegisterKey(givenToken, w)
 
-	gp := &genPage{
-		<-p,
-		title,
+		title := "signup"
+		p := make(chan page, 1)
+		go loadPage(env, r, p)
+
+		gp := &genPage{
+			<-p,
+			title,
+		}
+		renderTemplate(r.Context(), env, w, "signup.tmpl", gp)
+		return
+	} else {
+		env.authState.SetFlash("Invalid registration token.", w)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
 	}
-	renderTemplate(r.Context(), env, w, "signup.tmpl", gp)
 }
 
 func (env *wikiEnv) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
@@ -3182,7 +3199,7 @@ func mitigateWiki(redirect bool, env *wikiEnv, r *http.Request, w http.ResponseW
 	env.authState.SetFlash("Unable to view that.", w)
 	if redirect {
 		// Use auth.Redirect to redirect while storing the current URL for future use
-		auth.Redirect(&env.authState, w, r)
+		auth.Redirect(&env.authState.State, w, r)
 	} else {
 		http.Redirect(w, r, "/index", http.StatusFound)
 	}
@@ -3282,7 +3299,7 @@ func router(env *wikiEnv) http.Handler {
 
 	r.GET("/login", env.loginPageHandler)
 	r.GET("/logout", env.authState.LogoutHandler)
-	//r.GET("/signup", signupPageHandler)
+	r.GET("/signup", env.signupPageHandler)
 	r.GET("/list", env.listHandler)
 	r.GET("/search/*name", env.search)
 	r.POST("/search", env.search)
@@ -3305,7 +3322,7 @@ func router(env *wikiEnv) http.Handler {
 	a.POST("/login", env.authState.LoginPostHandler)
 	a.POST("/logout", env.authState.LogoutHandler)
 	a.GET("/logout", env.authState.LogoutHandler)
-	//a.POST("/signup", auth.SignupPostHandler)
+	a.POST("/signup", env.authState.UserSignupPostHandler)
 
 	r.POST("/gitadd", env.authState.AuthMiddle(gitCheckinPostHandler))
 	r.GET("/gitadd", env.authState.AuthMiddle(env.gitCheckinHandler))
