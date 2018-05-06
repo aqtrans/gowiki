@@ -26,5 +26,15 @@
         {{.Token}}
         <button type="submit" class="button">Add User</button>
         </form>
+        <h2>Generate registration token:</h2>
+        <form method="post" action="/admin/user/generate" id="generate">
+        Role:
+        <select name="role">
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+        </select>
+        {{.Token}}
+        <button type="submit" class="button">Add User</button>
+        </form>        
   </main>
 {{ end }}
