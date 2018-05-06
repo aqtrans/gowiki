@@ -217,7 +217,7 @@ type gitDirList struct {
 // Env wrapper to hold app-specific configs, to pass to handlers
 // cache is a pointer here since it's pretty large itself, and holds a mutex
 type wikiEnv struct {
-	authState auth.DB
+	authState auth.State
 	cache     *wikiCache
 	templates map[string]*template.Template
 	mutex     sync.Mutex
@@ -2285,26 +2285,16 @@ func (env *wikiEnv) loginPageHandler(w http.ResponseWriter, r *http.Request) {
 func (env *wikiEnv) signupPageHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "signupPageHandler")
 
-	givenToken := r.FormValue("token")
-	isValid, _ := env.authState.ValidateRegisterToken(givenToken)
-	if isValid {
-		env.authState.SetRegisterKey(givenToken, w)
+	title := "signup"
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
 
-		title := "signup"
-		p := make(chan page, 1)
-		go loadPage(env, r, p)
-
-		gp := &genPage{
-			<-p,
-			title,
-		}
-		renderTemplate(r.Context(), env, w, "signup.tmpl", gp)
-		return
-	} else {
-		env.authState.SetFlash("Invalid registration token.", w)
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
+	gp := &genPage{
+		<-p,
+		title,
 	}
+	renderTemplate(r.Context(), env, w, "signup.tmpl", gp)
+
 }
 
 func (env *wikiEnv) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
@@ -2377,6 +2367,39 @@ func adminUserPostHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	selectedUser := r.FormValue("user")
 	http.Redirect(w, r, "/admin/user/"+selectedUser, http.StatusSeeOther)
+}
+
+// Function to take a <select><option> value and redirect to a URL based on it
+func (env *wikiEnv) adminGeneratePostHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	selectedRole := r.FormValue("role")
+	registerToken := env.authState.GenerateRegisterToken(selectedRole)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	data := struct {
+		RegistrationToken string
+		SelectedRole      string
+	}{
+		registerToken,
+		selectedRole,
+	}
+
+	newTokenTmpl := `
+	<html>
+		<head>
+			<title>Registration Token</title>
+			<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		</head>	
+		<body> 
+			<p>Registration token: {{ .RegistrationToken }}</p>
+			<p>Role: {{ .SelectedRole }}</p>
+		</body>
+	</html>`
+
+	tpl := template.Must(template.New("NewTokenPage").Parse(newTokenTmpl))
+	tpl.Execute(w, data)
+	//http.Redirect(w, r, "/admin/user/generate", http.StatusSeeOther)
 }
 
 func (env *wikiEnv) adminMainHandler(w http.ResponseWriter, r *http.Request) {
@@ -3199,7 +3222,7 @@ func mitigateWiki(redirect bool, env *wikiEnv, r *http.Request, w http.ResponseW
 	env.authState.SetFlash("Unable to view that.", w)
 	if redirect {
 		// Use auth.Redirect to redirect while storing the current URL for future use
-		auth.Redirect(&env.authState.State, w, r)
+		auth.Redirect(&env.authState, w, r)
 	} else {
 		http.Redirect(w, r, "/index", http.StatusFound)
 	}
@@ -3317,6 +3340,7 @@ func router(env *wikiEnv) http.Handler {
 	admin.POST("/user", env.authState.AuthAdminMiddle(adminUserPostHandler))
 	admin.GET("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
 	admin.POST("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
+	admin.POST("/user/generate", env.authState.AuthAdminMiddle(env.adminGeneratePostHandler))
 
 	a := r.NewContextGroup("/auth")
 	a.POST("/login", env.authState.LoginPostHandler)
@@ -3352,7 +3376,7 @@ func main() {
 	dataDirCheck()
 
 	env := &wikiEnv{
-		authState: *auth.NewBoltAuthState(filepath.Join(dataDir, "auth.db")),
+		authState: *auth.NewAuthState(filepath.Join(dataDir, "auth.db")),
 		cache:     loadCache(),
 		templates: tmplInit(),
 		mutex:     sync.Mutex{},
