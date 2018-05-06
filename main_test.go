@@ -112,7 +112,7 @@ func testEnv(t *testing.T, authState *auth.State) *wikiEnv {
 func testEnvInit(t *testing.T) (string, *wikiEnv) {
 	tmpdb := tempfile()
 	//defer os.Remove(tmpdb)
-	authState := auth.NewBoltAuthState(tmpdb)
+	authState := auth.NewAuthState(tmpdb)
 	e := testEnv(t, authState)
 	return tmpdb, e
 }
@@ -120,7 +120,7 @@ func testEnvInit(t *testing.T) (string, *wikiEnv) {
 func TestAuthInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
-	authState := auth.NewBoltAuthState(tmpdb)
+	authState := auth.NewAuthState(tmpdb)
 	_, err := authState.Userlist()
 	checkT(err, t)
 }
@@ -128,7 +128,7 @@ func TestAuthInit(t *testing.T) {
 func TestTmplInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
-	authState := auth.NewBoltAuthState(tmpdb)
+	authState := auth.NewAuthState(tmpdb)
 	testEnv(t, authState)
 }
 
@@ -165,7 +165,7 @@ func TestNewWikiPage(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 	r = r.WithContext(ctx)
 
 	router(e).ServeHTTP(w, r)
@@ -242,7 +242,7 @@ func TestNewHandler(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 	req = req.WithContext(ctx)
 
 	router(e).ServeHTTP(rr, req)
@@ -269,7 +269,7 @@ func TestIndexPage(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 
 	req = req.WithContext(ctx)
 
@@ -296,7 +296,7 @@ func TestIndexHistoryPage(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 
 	req = req.WithContext(ctx)
 
@@ -333,7 +333,7 @@ func TestIndexEditPage(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 
 	req = req.WithContext(ctx)
 
@@ -365,7 +365,7 @@ func TestDirBaseHandler(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 	req = req.WithContext(ctx)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
@@ -416,7 +416,7 @@ func TestRecentsPage(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
@@ -457,7 +457,7 @@ func TestListPage(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
@@ -560,7 +560,7 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 	ctx = context.WithValue(ctx, wikiNameKey, "sites.page")
 	ctx = context.WithValue(ctx, wikiExistsKey, true)
 	/*
@@ -608,7 +608,7 @@ func TestSearchPage(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 	/*
 		params := make(map[string]string)
 		params["name"] = "omg"
@@ -654,7 +654,7 @@ func TestDotGit(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 
 	req = req.WithContext(ctx)
 
@@ -689,7 +689,7 @@ func TestWikiDirEscape(t *testing.T) {
 	checkT(err, t)
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 	req = req.WithContext(ctx)
 
 	router(e).ServeHTTP(rr, req)
@@ -718,7 +718,7 @@ func TestWikiHistoryNonExistent(t *testing.T) {
 	checkT(err, t)
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 	r = r.WithContext(ctx)
 
 	w := httptest.NewRecorder()
@@ -754,7 +754,7 @@ func TestWikiDirIndex(t *testing.T) {
 	checkT(err, t)
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, auth.UserKey, e.authState.GetUserInfo("admin"))
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 	r = r.WithContext(ctx)
 
 	w := httptest.NewRecorder()
