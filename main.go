@@ -1872,7 +1872,6 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httputils.Debugln("Yay proper wiki page!")
 	// Get Wiki
 	p := loadWikiPage(env, r, name)
 
@@ -3209,7 +3208,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		if wikiRejected(name, pageExists, user.IsAdmin(), auth.IsLoggedIn(r.Context())) {
 			mitigateWiki(true, env, r, w)
 		} else {
-			next.ServeHTTP(w, r.WithContext(ctx))
+			next.ServeHTTP(w, r)
 			return
 		}
 
@@ -3353,7 +3352,7 @@ func router(env *wikiEnv) http.Handler {
 
 	r.POST("/md_render", markdownPreview)
 
-	r.GET("/uploads/*", treeMuxWrapper(http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads")))))
+	r.Handler("GET", "/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
 
 	// Wiki page handlers
 	r.GET(`/fav/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.setFavoriteHandler)))
@@ -3362,6 +3361,17 @@ func router(env *wikiEnv) http.Handler {
 	r.GET(`/history/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.historyHandler)))
 	r.POST(`/delete/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.deleteHandler)))
 	r.GET(`/*name`, env.wikiMiddle(env.viewHandler))
+
+	r.Handler("GET", "/debug/vars", expvar.Handler())
+	r.GET("/debug/pprof/", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Index)))
+	r.GET("/debug/pprof/cmdline", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Cmdline)))
+	r.GET("/debug/pprof/profile", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Profile)))
+	r.GET("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
+	r.GET("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
+	r.GET("/robots.txt", httputils.Robots)
+	r.GET("/favicon.ico", httputils.FaviconICO)
+	r.GET("/favicon.png", httputils.FaviconPNG)
+	r.Handler("GET", "/assets/*", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
 
 	return s.Then(r)
 }
@@ -3392,18 +3402,20 @@ func main() {
 		}
 	}
 
-	mux := http.NewServeMux()
-	mux.Handle("/debug/vars", expvar.Handler())
-	mux.Handle("/debug/pprof/", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Index)))
-	mux.Handle("/debug/pprof/cmdline", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Cmdline)))
-	mux.Handle("/debug/pprof/profile", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Profile)))
-	mux.Handle("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
-	mux.Handle("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
-	mux.HandleFunc("/robots.txt", httputils.Robots)
-	mux.HandleFunc("/favicon.ico", httputils.FaviconICO)
-	mux.HandleFunc("/favicon.png", httputils.FaviconPNG)
-	mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
-	mux.Handle("/", router(env))
+	/*
+		mux := http.NewServeMux()
+		mux.Handle("/debug/vars", expvar.Handler())
+		mux.Handle("/debug/pprof/", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Index)))
+		mux.Handle("/debug/pprof/cmdline", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Cmdline)))
+		mux.Handle("/debug/pprof/profile", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Profile)))
+		mux.Handle("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
+		mux.Handle("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
+		mux.HandleFunc("/robots.txt", httputils.Robots)
+		mux.HandleFunc("/favicon.ico", httputils.FaviconICO)
+		mux.HandleFunc("/favicon.png", httputils.FaviconPNG)
+		mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
+		mux.Handle("/", router(env))
+	*/
 
 	httputils.Logfile = filepath.Join(dataDir, "http.log")
 
@@ -3411,7 +3423,10 @@ func main() {
 
 	srv := &http.Server{
 		Addr:    "127.0.0.1:" + viper.GetString("Port"),
-		Handler: mux,
+		Handler: router(env),
+		// Good practice: enforce timeouts for servers you create!
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
 	}
 
 	go func() {
