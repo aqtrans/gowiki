@@ -1,0 +1,1060 @@
+package main
+
+import (
+	"bytes"
+	"errors"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"path"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/dimfeld/httptreemux"
+	raven "github.com/getsentry/raven-go"
+	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
+	"github.com/spf13/viper"
+	"jba.io/go/auth"
+	"jba.io/go/httputils"
+)
+
+func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "setFavoriteHandler")
+	name := nameFromContext(r.Context())
+	if !wikiExistsFromContext(r.Context()) {
+		http.Redirect(w, r, "/"+name, http.StatusFound)
+		return
+	}
+	p := loadWikiPage(env, r, name)
+	if p.Wiki.Frontmatter.Favorite {
+		p.Wiki.Frontmatter.Favorite = false
+		env.authState.SetFlash(name+" has been un-favorited.", w)
+		log.Println(name + " page un-favorited!")
+	} else {
+		p.Wiki.Frontmatter.Favorite = true
+		env.authState.SetFlash(name+" has been favorited.", w)
+		log.Println(name + " page favorited!")
+	}
+
+	err := p.Wiki.save(&env.mutex)
+	if err != nil {
+		log.Println(err)
+	}
+
+	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
+
+}
+
+func (env *wikiEnv) deleteHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "deleteHandler")
+	name := nameFromContext(r.Context())
+	if !wikiExistsFromContext(r.Context()) {
+		http.Redirect(w, r, "/"+name, http.StatusFound)
+		return
+	}
+	err := gitRmFilepath(name)
+	if err != nil {
+		raven.CaptureError(err, nil)
+		log.Println("Error deleting file from git repo,", name, err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+
+	err = gitCommitWithMessage(name + " has been removed from git repo.")
+	if err != nil {
+		raven.CaptureError(err, nil)
+		log.Println("Error commiting to git repo,", name, err)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+
+	env.authState.SetFlash(name+" page successfully deleted.", w)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+
+}
+
+type result struct {
+	Name   string
+	Result string
+}
+
+type searchPage struct {
+	page
+	Results []result
+}
+
+func (env *wikiEnv) searchHandler(w http.ResponseWriter, r *http.Request) {
+	params := httptreemux.ContextParams(r.Context())
+	name := params["name"]
+
+	// If this is a POST request, and searchwiki form is not blank,
+	//  redirect to /search/$(searchform)
+	if r.Method == "POST" {
+		r.ParseForm()
+		if r.PostFormValue("searchwiki") != "" {
+			http.Redirect(w, r, "/search/"+r.PostFormValue("searchwiki"), http.StatusSeeOther)
+			return
+			//name = r.PostFormValue("searchwiki")
+		}
+	}
+
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	user := auth.GetUserState(r.Context())
+
+	var fileList string
+
+	for _, v := range env.cache.Cache {
+		if auth.IsLoggedIn(r.Context()) {
+			if v.Permission == privatePermission {
+				//log.Println("priv", v.Filename)
+				fileList = fileList + " " + `"` + v.Filename + `"`
+			}
+			if user.IsAdmin() {
+				if v.Permission == adminPermission {
+					//log.Println("admin", v.Filename)
+					fileList = fileList + " " + `"` + v.Filename + `"`
+				}
+			}
+		}
+
+		if v.Permission == publicPermission {
+			//log.Println("pubic", v.Filename)
+			fileList = fileList + " " + `"` + v.Filename + `"`
+		}
+	}
+
+	//log.Println(fileList)
+
+	results := gitSearch(name, strings.TrimSpace(fileList))
+
+	s := &searchPage{
+		page:    <-p,
+		Results: results,
+	}
+	renderTemplate(r.Context(), env, w, "search_results.tmpl", s)
+}
+
+func (env *wikiEnv) loginPageHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "loginPageHandler")
+
+	title := "login"
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	gp := &genPage{
+		<-p,
+		title,
+	}
+	renderTemplate(r.Context(), env, w, "login.tmpl", gp)
+}
+
+func (env *wikiEnv) signupPageHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "signupPageHandler")
+
+	title := "signup"
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	gp := &genPage{
+		<-p,
+		title,
+	}
+	renderTemplate(r.Context(), env, w, "signup.tmpl", gp)
+
+}
+
+func (env *wikiEnv) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "adminUsersHandler")
+
+	title := "admin-users"
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	userlist, err := env.authState.Userlist()
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		panic(err)
+	}
+
+	data := struct {
+		page
+		Title string
+		Users []string
+	}{
+		<-p,
+		title,
+		userlist,
+	}
+	/*gp := &genPage{
+		p,
+		title,
+	}*/
+	renderTemplate(r.Context(), env, w, "admin_users.tmpl", data)
+
+}
+
+func (env *wikiEnv) adminUserHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "adminUserHandler")
+
+	title := "admin-user"
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	userlist, err := env.authState.Userlist()
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		panic(err)
+	}
+
+	//ctx := r.Context()
+	params := httptreemux.ContextParams(r.Context())
+	selectedUser := params["username"]
+
+	data := struct {
+		page
+		Title string
+		Users []string
+		User  string
+	}{
+		<-p,
+		title,
+		userlist,
+		selectedUser,
+	}
+	/*gp := &genPage{
+		p,
+		title,
+	}*/
+	renderTemplate(r.Context(), env, w, "admin_user.tmpl", data)
+}
+
+// Function to take a <select><option> value and redirect to a URL based on it
+func adminUserPostHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	selectedUser := r.FormValue("user")
+	http.Redirect(w, r, "/admin/user/"+selectedUser, http.StatusSeeOther)
+}
+
+// Function to take a <select><option> value and redirect to a URL based on it
+func (env *wikiEnv) adminGeneratePostHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseForm()
+	selectedRole := r.FormValue("role")
+	registerToken := env.authState.GenerateRegisterToken(selectedRole)
+
+	/*
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+		data := struct {
+			RegistrationToken string
+			SelectedRole      string
+		}{
+			registerToken,
+			selectedRole,
+		}
+
+		newTokenTmpl := `
+		<html>
+			<head>
+				<title>Registration Token</title>
+				<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+			</head>
+			<body>
+				<p>Registration token: {{ .RegistrationToken }}</p>
+				<p>Role: {{ .SelectedRole }}</p>
+			</body>
+		</html>`
+
+		tpl := template.Must(template.New("NewTokenPage").Parse(newTokenTmpl))
+		tpl.Execute(w, data)
+	*/
+	env.authState.SetFlash("Token:"+registerToken+" |Role: "+selectedRole, w)
+	http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
+}
+
+func (env *wikiEnv) adminMainHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "adminMainHandler")
+
+	title := "admin-main"
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	gp := &genPage{
+		<-p,
+		title,
+	}
+	renderTemplate(r.Context(), env, w, "admin_main.tmpl", gp)
+}
+
+func (env *wikiEnv) adminConfigHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "adminConfigHandler")
+
+	// To save config to toml:
+	viperMap := viper.AllSettings()
+
+	title := "admin-config"
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	data := struct {
+		page
+		Title  string
+		Config map[string]interface{}
+	}{
+		<-p,
+		title,
+		viperMap,
+	}
+	renderTemplate(r.Context(), env, w, "admin_config.tmpl", data)
+}
+
+func (env *wikiEnv) gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "gitCheckinHandler")
+
+	title := "Git Checkin"
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	var s string
+
+	if r.URL.Query().Get("file") != "" {
+		file := r.URL.Query().Get("file")
+		s = file
+	} else {
+		err := gitIsClean()
+		s = err.Error()
+		/*
+			if err != nil && err != ErrGitDirty {
+				panic(err)
+			}
+		*/
+		//owithnewlines = bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
+	}
+
+	gp := &gitPage{
+		<-p,
+		title,
+		s,
+		viper.GetString("RemoteGitRepo"),
+	}
+	renderTemplate(r.Context(), env, w, "git_checkin.tmpl", gp)
+}
+
+func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "gitCheckinPostHandler")
+
+	var path string
+
+	if r.URL.Query().Get("file") != "" {
+		//file := r.URL.Query().Get("file")
+		//log.Println(action)
+		path = r.URL.Query().Get("file")
+	} else {
+		path = "."
+	}
+
+	err := gitAddFilepath(path)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		panic(err)
+	}
+	err = gitCommitEmpty()
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		panic(err)
+	}
+	if path != "." {
+		http.Redirect(w, r, "/"+path, http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	}
+
+}
+
+func gitPushPostHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "gitPushPostHandler")
+
+	err := gitPush()
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		panic(err)
+	}
+
+	http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
+
+}
+
+func gitPullPostHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "gitPullPostHandler")
+
+	err := gitPull()
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		panic(err)
+	}
+
+	http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
+
+}
+
+func (env *wikiEnv) adminGitHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "adminGitHandler")
+
+	title := "Git Management"
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	//var owithnewlines []byte
+
+	err := gitIsClean()
+	if err == nil {
+		err = errors.New("Git repo is clean")
+	}
+
+	/*
+		if err != nil && err != ErrGitDirty {
+			panic(err)
+		}
+
+		owithnewlines = bytes.Replace(o, []byte{0}, []byte(" <br>"), -1)
+	*/
+
+	gp := &gitPage{
+		<-p,
+		title,
+		err.Error(),
+		viper.GetString("RemoteGitRepo"),
+	}
+	renderTemplate(r.Context(), env, w, "admin_git.tmpl", gp)
+}
+
+type tagMapPage struct {
+	page
+	TagKeys map[string][]string
+}
+
+func (env *wikiEnv) tagMapHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "tagMapHandler")
+
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	list := env.tags.GetAll()
+
+	tagpage := &tagMapPage{
+		page:    <-p,
+		TagKeys: list,
+	}
+
+	renderTemplate(r.Context(), env, w, "tag_list.tmpl", tagpage)
+}
+
+type tagPage struct {
+	page
+	TagName string
+	Results []string
+}
+
+func (env *wikiEnv) tagHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "tagHandler")
+
+	params := httptreemux.ContextParams(r.Context())
+	name := params["name"]
+
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	results := env.tags.GetOne(name)
+
+	tagpage := &tagPage{
+		page:    <-p,
+		TagName: name,
+		Results: results,
+	}
+	renderTemplate(r.Context(), env, w, "tag_view.tmpl", tagpage)
+}
+
+func (env *wikiEnv) createWiki(w http.ResponseWriter, r *http.Request, name string) {
+
+	w.WriteHeader(404)
+	//title := "Create " + name + "?"
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	wp := &wikiPage{
+		page: <-p,
+		Wiki: wiki{
+			Title:    name,
+			Filename: name,
+			Frontmatter: frontmatter{
+				Title: name,
+			},
+		},
+	}
+	renderTemplate(r.Context(), env, w, "wiki_create.tmpl", wp)
+	return
+
+}
+
+func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	// A very simple health check.
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+
+	// In the future we could report back on the status of our DB, or our cache
+	// (e.g. Redis) by performing a simple PING, and include them in the response.
+	io.WriteString(w, `{"alive": true}`)
+}
+
+func (env *wikiEnv) editHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "editHandler")
+	name := nameFromContext(r.Context())
+	p := loadWikiPage(env, r, name)
+	renderTemplate(r.Context(), env, w, "wiki_edit.tmpl", p)
+}
+
+func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "saveHandler")
+
+	name := nameFromContext(r.Context())
+
+	err := r.ParseForm()
+	if err != nil {
+		raven.CaptureError(err, nil)
+		log.Println("Error parsing form ", err)
+	}
+	content := r.FormValue("editor")
+
+	// Strip out CRLF here,
+	// as I cannot figure out if it's the browser or what inserting them...
+	if strings.Contains(content, "\r\n") {
+		log.Println("crlf detected in saveHandler; replacing with just newlines.")
+		content = strings.Replace(content, "\r\n", "\n", -1)
+		//log.Println(strings.Contains(content, "\r\n"))
+	}
+
+	// Check for and install required YAML frontmatter
+	title := r.FormValue("title")
+	// This is the separate input that tagdog.js throws new tags into
+	tags := r.FormValue("tags_all")
+	favorite := r.FormValue("favorite")
+	permission := r.FormValue("permission")
+
+	favoritebool := false
+	if favorite == "on" {
+		favoritebool = true
+	}
+
+	if title == "" {
+		title = name
+	}
+
+	var tagsA []string
+	if tags != "" {
+		tagsA = strings.Split(tags, ",")
+	}
+
+	fm := frontmatter{
+		Title:      title,
+		Tags:       tagsA,
+		Favorite:   favoritebool,
+		Permission: permission,
+	}
+
+	thewiki := &wiki{
+		Title:       title,
+		Filename:    name,
+		Frontmatter: fm,
+		Content:     []byte(content),
+	}
+
+	err = thewiki.save(&env.mutex)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		panic(err)
+	}
+
+	// If PushOnSave is enabled, push to remote repo after save
+	if viper.GetBool("PushOnSave") {
+		err := gitPush()
+		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
+			panic(err)
+		}
+	}
+
+	go env.refreshStuff()
+
+	env.authState.SetFlash("Wiki page successfully saved.", w)
+	http.Redirect(w, r, "/"+name, http.StatusFound)
+	log.Println(name + " page saved!")
+}
+
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "indexHandler")
+
+	http.Redirect(w, r, "/index", http.StatusFound)
+	//viewHandler(w, r, "index")
+}
+
+func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "viewHandler")
+
+	name := nameFromContext(r.Context())
+	/*
+		nameStat, err := os.Stat(filepath.Join(dataDir, "wikidata", name))
+		if err != nil {
+			log.Println("viewHandler error reading", name, err)
+		}
+		if err == nil {
+			if nameStat.IsDir() {
+				// Check if name/index exists, and if it does, serve it
+				_, err := os.Stat(filepath.Join(dataDir, "wikidata", name, "index"))
+				if err == nil {
+					http.Redirect(w, r, "/"+filepath.Join(name, "index"), http.StatusFound)
+					return
+				}
+				if os.IsNotExist(err) {
+					// TODO: List directory
+					log.Println("TODO: List directory")
+				}
+			}
+		}
+	*/
+
+	wikiExists := wikiExistsFromContext(r.Context())
+	if !wikiExists {
+		httputils.Debugln("wikiExists false: No such file...creating one.")
+		//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
+		env.createWiki(w, r, name)
+		return
+	}
+
+	// If this is a commit, pass along the SHA1 to that function
+	if r.URL.Query().Get("commit") != "" {
+		// Only allow logged in users to view past pages, in case information had to be redacted on a now-public page
+		if auth.IsLoggedIn(r.Context()) {
+			commit := r.URL.Query().Get("commit")
+			//utils.Debugln(r.URL.Query().Get("commit"))
+			env.viewCommitHandler(w, r, commit, name)
+			return
+		}
+		mitigateWiki(true, env, r, w)
+		return
+	}
+
+	if !isWiki(name) {
+		http.ServeFile(w, r, filepath.Join(dataDir, "wikidata", name))
+		return
+	}
+
+	// Get Wiki
+	p := loadWikiPage(env, r, name)
+
+	// Build a list of filenames to be fed to closestmatch, for similarity matching
+	var filelist []string
+	user := auth.GetUserState(r.Context())
+	for _, v := range env.cache.Cache {
+		if v.Permission == publicPermission {
+			//log.Println("pubic", v.Filename)
+			filelist = append(filelist, v.Filename)
+		}
+		if auth.IsLoggedIn(r.Context()) {
+			if v.Permission == privatePermission {
+				//log.Println("priv", v.Filename)
+				filelist = append(filelist, v.Filename)
+			}
+		}
+		if user.IsAdmin() {
+			if v.Permission == adminPermission {
+				//log.Println("admin", v.Filename)
+				filelist = append(filelist, v.Filename)
+			}
+		}
+	}
+	// Check for similar filenames
+	/*
+		var similarPages []string
+		for _, match := range fuzzy.Find(name, filelist) {
+			similarPages = append(similarPages, match.Str)
+		}
+	*/
+
+	similarPages := fuzzy2.FindFold(name, filelist)
+	p.SimilarPages = similarPages
+
+	renderTemplate(r.Context(), env, w, "wiki_view.tmpl", p)
+	return
+
+	/*
+		var html template.HTML
+		if strings.Contains(fileType, "image") {
+			html = template.HTML(`<img src="/` + name + `">`)
+		}
+		p := loadPage(env, r)
+		data := struct {
+			*page
+			Title   string
+			TheHTML template.HTML
+		}{
+			p,
+			name,
+			html,
+		}
+		renderTemplate(r.Context(), env, w, "file_view.tmpl", data)
+	*/
+}
+
+type historyPage struct {
+	page
+	Wiki        wiki
+	Filename    string
+	FileHistory []commitLog
+}
+
+func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
+	name := nameFromContext(r.Context())
+
+	if !wikiExistsFromContext(r.Context()) {
+		http.Redirect(w, r, "/"+name, http.StatusFound)
+		return
+	}
+
+	wikip := loadWikiPage(env, r, name)
+
+	history, err := gitGetFileLog(name)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		panic(err)
+	}
+	hp := &historyPage{
+		wikip.page,
+		wikip.Wiki,
+		name,
+		history,
+	}
+	renderTemplate(r.Context(), env, w, "wiki_history.tmpl", hp)
+}
+
+// Need to get content of the file at specified commit
+// > git show [commit sha1]:[filename]
+// As well as the date
+// > git log -1 --format=%at [commit sha1]
+// TODO: need to find a way to detect sha1s
+type commitPage struct {
+	page
+	Wiki     wiki
+	Commit   string
+	Rendered string
+	Diff     string
+}
+
+func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, commit, name string) {
+	var fm frontmatter
+	var pageContent string
+
+	//commit := vars["commit"]
+
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	body, err := gitGetFileCommit(name, commit)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		panic(err)
+	}
+	ctime, err := gitGetCtime(name)
+	if err != nil && err != errNotInGit {
+		raven.CaptureErrorAndWait(err, nil)
+		panic(err)
+	}
+	mtime, err := gitGetFileCommitMtime(commit)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		panic(err)
+	}
+	diff, err := gitGetFileCommitDiff(name, commit)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		panic(err)
+	}
+
+	// Read YAML frontmatter into fm
+	reader := bytes.NewReader(body)
+	fm, content := readWikiPage(reader)
+	if err != nil {
+		raven.CaptureErrorAndWait(err, nil)
+		panic(err)
+	}
+
+	// Render remaining content after frontmatter
+	md := markdownRender(content)
+	//md := commonmarkRender(content)
+
+	pagetitle := setPageTitle(fm.Title, name)
+
+	diffstring := string(diff)
+
+	pageContent = md
+
+	cp := &commitPage{
+		page: <-p,
+		Wiki: wiki{
+			Title:       pagetitle,
+			Filename:    name,
+			Frontmatter: fm,
+			Content:     content,
+			CreateTime:  ctime,
+			ModTime:     mtime,
+		},
+		Commit:   commit,
+		Rendered: pageContent,
+		Diff:     diffstring,
+	}
+
+	renderTemplate(r.Context(), env, w, "wiki_commit.tmpl", cp)
+
+}
+
+type recent struct {
+	Date      int64
+	Commit    string
+	Filenames []string
+}
+
+type recentsPage struct {
+	page
+	Recents []recent
+}
+
+// TODO: Fix this
+func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
+
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	gh, err := gitHistory()
+	check(err)
+
+	/*
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(200)
+	*/
+	var split []string
+	var split2 []string
+	var recents []recent
+
+	for _, v := range gh {
+		split = strings.Split(strings.TrimSpace(v), " ")
+		date, err := strconv.ParseInt(split[0], 0, 64)
+		if err != nil {
+			raven.CaptureErrorAndWait(err, nil)
+			panic(err)
+		}
+
+		// If there is a filename (initial one will not have it)...
+		split2 = strings.Split(split[1], "\n")
+		if len(split2) >= 2 {
+
+			r := recent{
+				Date:      date,
+				Commit:    split2[0],
+				Filenames: strings.Split(split2[1], "\n"),
+			}
+			//w.Write([]byte(v + "<br>"))
+			recents = append(recents, r)
+		}
+	}
+
+	s := recentsPage{
+		page:    <-p,
+		Recents: recents,
+	}
+	renderTemplate(r.Context(), env, w, "recents.tmpl", s)
+
+}
+
+type listPage struct {
+	page
+	Wikis []gitDirList
+}
+
+func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
+
+	p := make(chan page, 1)
+	go loadPage(env, r, p)
+
+	var list []gitDirList
+
+	user := auth.GetUserState(r.Context())
+
+	for _, v := range env.cache.Cache {
+		if v.Permission == publicPermission {
+			//log.Println("pubic", v.Filename)
+			list = append(list, v)
+		}
+		if auth.IsLoggedIn(r.Context()) {
+			if v.Permission == privatePermission {
+				//log.Println("priv", v.Filename)
+				list = append(list, v)
+			}
+		}
+		if user.IsAdmin() {
+			if v.Permission == adminPermission {
+				//log.Println("admin", v.Filename)
+				list = append(list, v)
+			}
+		}
+	}
+
+	l := listPage{
+		page:  <-p,
+		Wikis: list,
+	}
+	renderTemplate(r.Context(), env, w, "list.tmpl", l)
+}
+
+func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		params := httptreemux.ContextParams(r.Context())
+		name := params["name"]
+		user := auth.GetUserState(r.Context())
+		pageExists, relErr := checkName(&name)
+		//wikiDir := filepath.Join(dataDir, "wikidata")
+		//fullfilename := filepath.Join(wikiDir, name)
+
+		if relErr != nil {
+			if relErr == errBaseNotDir {
+				http.Error(w, "Cannot create subdir of a file.", 500)
+				return
+			}
+
+			// If the given name is a directory, and URL is just /name/, check for /name/index
+			//    If name/index exists, redirect to it
+			if relErr == errIsDir && r.URL.Path[:len("/"+name)] == "/"+name {
+				// Check if name/index exists, and if it does, serve it
+				_, err := os.Stat(filepath.Join(dataDir, "wikidata", name, "index"))
+				if err == nil {
+					http.Redirect(w, r, "/"+path.Join(name, "index"), http.StatusFound)
+					return
+				}
+			}
+			httpErrorHandler(w, r, relErr)
+			return
+		}
+
+		nameCtx := newNameContext(r.Context(), name)
+		ctx := newWikiExistsContext(nameCtx, pageExists)
+		r = r.WithContext(ctx)
+
+		if wikiRejected(name, pageExists, user.IsAdmin(), auth.IsLoggedIn(r.Context())) {
+			mitigateWiki(true, env, r, w)
+		} else {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+	})
+}
+
+/*
+// wikiHandler wraps around all wiki page handlers
+// Currently it retrieves the page name from params, checks for file existence, and checks for private pages
+func wikiHandler(fn wHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Here we will extract the page title from the Request,
+		// and call the provided handler 'fn'
+
+		params := httptreemux.ContextParams(r.Context())
+		name := params["name"]
+		username, isAdmin := auth.GetUsername(r.Context())
+
+		// Check if file exists before doing anything else
+		name, feErr := checkName(name)
+		fullname := filepath.Join(viper.GetString("WikiDir"), name)
+
+		isWikiPage(fullname)
+
+		if name != "" && feErr == errNoFile {
+			//log.Println(r.URL.RequestURI())
+
+			// If editing or saving, bypass create page
+			if r.URL.RequestURI() == "/edit/"+name {
+				fn(w, r, name)
+				return
+			}
+			if r.URL.RequestURI() == "/save/"+name {
+				fn(w, r, name)
+				return
+			}
+			createWiki(w, r, name)
+			return
+		} else if feErr != nil {
+			httpErrorHandler(w, r, feErr)
+			return
+		}
+
+		// Detect filetypes
+
+		//	filetype := checkFiletype(fullname)
+		//	if filetype != "text/plain; charset=utf-8" {
+
+		//		http.ServeFile(w, r, fullname)
+		//	}
+
+
+		// Read YAML frontmatter into fm
+		// If err, just return, as file should not contain frontmatter
+		f, err := os.Open(fullname)
+		checkErr("wikiHandler()/Open", err)
+		defer f.Close()
+
+		fm, fmberr := readFront(f)
+		checkErr("wikiHandler()/readFront", fmberr)
+
+		// If user is logged in, check if wiki git repo is clean, then continue
+		//if username != "" {
+		if auth.IsLoggedIn(r.Context()) {
+			err := gitIsClean()
+			if err != nil {
+				log.Println(err)
+				auth.SetFlash(err.Error(), w, r)
+				http.Redirect(w, r, "/admin/git", http.StatusSeeOther)
+			}
+			fn(w, r, name)
+			return
+		}
+
+		// If this is a public page, just serve it
+		if fm.Public {
+			fn(w, r, name)
+			return
+		}
+		// If this is an admin page, check if user is admin before serving
+		if fm.Admin && !isAdmin {
+			log.Println(username + " attempting to access restricted URL.")
+			auth.SetFlash("Sorry, you are not allowed to see that.", w, r)
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+
+		// If not logged in, mitigate, as the page is presumed private
+		if !auth.IsLoggedIn(r.Context()) {
+			rurl := r.URL.String()
+			httputils.Debugln("wikiHandler mitigating: " + r.Host + rurl)
+			//w.Write([]byte("OMG"))
+
+			// Detect if we're in an endless loop, if so, just panic
+			if strings.HasPrefix(rurl, "login?url=/login") {
+				panic("AuthMiddle is in an endless redirect loop")
+			}
+			auth.SetFlash("Please login to view that page.", w, r)
+			http.Redirect(w, r, "http://"+r.Host+"/login"+"?url="+rurl, http.StatusSeeOther)
+			return
+		}
+
+	}
+}
+*/
