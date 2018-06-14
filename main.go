@@ -47,6 +47,7 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"runtime"
 	"runtime/debug"
@@ -860,6 +861,13 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 
 	// Set the header and write the buffer to w
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	// Attempt to change the value of page.responseTime via reflection:
+	dataType := reflect.ValueOf(data)
+	pageType := dataType.FieldByName("page")
+	if pageType.IsValid() {
+		log.Println("page found!")
+	}
 
 	// Squeeze in our response time here
 	err = tmpl.ExecuteTemplate(buf, "footer", httputils.GetRenderTime(c))
