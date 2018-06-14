@@ -29,15 +29,10 @@
   </header>
 
   {{ template "content" . }}
-{{ end }}
 
-{{ define "footer" }}
-    <footer>
-    Render time: {{.}}
-    </footer>
-{{ end }}
-
-{{ define "bottom" }}
+  <footer>
+  Render time: {{.RenderTime}}
+  </footer>  
   <script type="text/javascript" charset="utf-8">
   function notif() {
     document.getElementById('notification').classList.remove("active");

@@ -47,7 +47,6 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
-	"reflect"
 	"regexp"
 	"runtime"
 	"runtime/debug"
@@ -155,12 +154,13 @@ type renderer struct {
 
 //Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
 type page struct {
-	SiteName  string
-	Favs      []string
-	UserInfo  userInfo
-	Token     template.HTML
-	FlashMsg  template.HTML
-	GitStatus template.HTML
+	SiteName   string
+	Favs       []string
+	UserInfo   userInfo
+	Token      template.HTML
+	FlashMsg   template.HTML
+	GitStatus  template.HTML
+	RenderTime string
 }
 
 type userInfo struct {
@@ -614,9 +614,10 @@ func loadPage(env *wikiEnv, r *http.Request, p chan<- page) {
 			IsAdmin:    user.IsAdmin(),
 			IsLoggedIn: auth.IsLoggedIn(r.Context()),
 		},
-		Token:     token,
-		FlashMsg:  message,
-		GitStatus: gitHTML,
+		Token:      token,
+		FlashMsg:   message,
+		GitStatus:  gitHTML,
+		RenderTime: httputils.GetRenderTime(r.Context()),
 	}
 }
 
@@ -862,31 +863,40 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 	// Set the header and write the buffer to w
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
+	/* THIS BREAKS WITH: reflect: reflect.Value.SetString using unaddressable value
 	// Attempt to change the value of page.responseTime via reflection:
 	dataType := reflect.ValueOf(data)
 	pageType := dataType.FieldByName("page")
 	if pageType.IsValid() {
 		log.Println("page found!")
+		renderTime := pageType.FieldByName("RenderTime")
+		if renderTime.IsValid() {
+			renderTime.SetString(httputils.GetRenderTime(c))
+		}
 	}
+	*/
+	log.Println(httputils.GetRenderTime(c))
 
-	// Squeeze in our response time here
-	err = tmpl.ExecuteTemplate(buf, "footer", httputils.GetRenderTime(c))
-	if err != nil {
-		log.Println("renderTemplate error:")
-		log.Println(err)
-		bufpool.Put(buf)
-		raven.CaptureErrorAndWait(err, nil)
-		panic(err)
-	}
+	/*
+		// Squeeze in our response time here
+		err = tmpl.ExecuteTemplate(buf, "footer", httputils.GetRenderTime(c))
+		if err != nil {
+			log.Println("renderTemplate error:")
+			log.Println(err)
+			bufpool.Put(buf)
+			raven.CaptureErrorAndWait(err, nil)
+			panic(err)
+		}
 
-	err = tmpl.ExecuteTemplate(buf, "bottom", data)
-	if err != nil {
-		log.Println("renderTemplate error:")
-		log.Println(err)
-		bufpool.Put(buf)
-		raven.CaptureErrorAndWait(err, nil)
-		panic(err)
-	}
+		err = tmpl.ExecuteTemplate(buf, "bottom", data)
+		if err != nil {
+			log.Println("renderTemplate error:")
+			log.Println(err)
+			bufpool.Put(buf)
+			raven.CaptureErrorAndWait(err, nil)
+			panic(err)
+		}
+	*/
 	buf.WriteTo(w)
 	bufpool.Put(buf)
 }
