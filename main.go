@@ -1388,7 +1388,7 @@ func tmplInit() map[string]*template.Template {
 	return templates
 }
 
-func initWikiDir() {
+func initWikiDir() error {
 	// Check for root DataDir existence first
 	dir, err := os.Stat(viper.GetString("DataDir"))
 	if err != nil {
@@ -1396,13 +1396,13 @@ func initWikiDir() {
 			log.Println(viper.GetString("DataDir"), "does not exist; creating it.")
 			err = os.Mkdir(viper.GetString("DataDir"), 0755)
 			if err != nil {
-				log.Fatalln(err)
+				return err
 			}
 		} else {
-			log.Fatalln(err)
+			return err
 		}
 	} else if !dir.IsDir() {
-		log.Fatalln(viper.GetString("DataDir"), "is not a directory. This is where wiki data is stored.")
+		return errors.New(viper.GetString("DataDir") + "is not a directory. This is where wiki data is stored.")
 	}
 
 	//Check for wikiDir directory + git repo existence
@@ -1412,33 +1412,15 @@ func initWikiDir() {
 		log.Println(wikiDir + " does not exist, creating it.")
 		err = os.Mkdir(wikiDir, 0755)
 		if err != nil {
-			log.Println("Error creating wikiDir", wikiDir, err)
-			panic(err)
+			return fmt.Errorf("Error creating wikiDir at %s: %v", wikiDir, err)
 		}
 	}
 	_, err = os.Stat(filepath.Join(wikiDir, ".git"))
 	if err != nil {
 		log.Println(wikiDir + " is not a git repo!")
-		if viper.GetBool("InitWikiRepo") {
-			if viper.GetString("RemoteGitRepo") != "" {
-				log.Println("--InitWikiRepo flag is given. Cloning " + viper.GetString("RemoteGitRepo") + " into " + wikiDir + "...")
-				err = gitClone(viper.GetString("RemoteGitRepo"))
-				if err != nil {
-					panic(err)
-				}
-
-			} else {
-				log.Println("No RemoteGitRepo defined. Creating a new git repo at", wikiDir)
-				err = gitInit()
-				if err != nil {
-					panic(err)
-				}
-			}
-		} else {
-			repoNotExistErr := errors.New("clone/move your existing repo to " + wikiDir + ", change the configured wikiDir, or run with --InitWikiRepo to clone a specified remote repo")
-			panic(repoNotExistErr)
-		}
+		return fmt.Errorf("Clone/move your existing repo to " + wikiDir + ", or change the configured wikiDir.")
 	}
+	return nil
 }
 
 func setPageTitle(frontmatterTitle, filename string) string {
