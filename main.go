@@ -1409,11 +1409,7 @@ func initWikiDir() error {
 	wikiDir := filepath.Join(dataDir, "wikidata")
 	_, err = os.Stat(wikiDir)
 	if err != nil && os.IsNotExist(err) {
-		log.Println(wikiDir + " does not exist, creating it.")
-		err = os.Mkdir(wikiDir, 0755)
-		if err != nil {
-			return fmt.Errorf("Error creating wikiDir at %s: %v", wikiDir, err)
-		}
+		return fmt.Errorf("wikiDir does not exist at %s: %v", wikiDir, err)
 	}
 	_, err = os.Stat(filepath.Join(wikiDir, ".git"))
 	if err != nil {
