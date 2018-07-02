@@ -27,6 +27,7 @@ func gitCommand(args ...string) *exec.Cmd {
 	return c
 }
 
+/*
 // Execute `git init {directory}` in the current workingDirectory
 func gitInit() error {
 	//wd, err := os.Getwd()
@@ -48,6 +49,7 @@ func gitClone(repo string) error {
 	}
 	return nil
 }
+*/
 
 // Execute `git status -s` in directory
 // If there is output, the directory has is dirty
