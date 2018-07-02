@@ -55,7 +55,7 @@ test-my-project:
   script:
     - go get -d 
     # Clone gowiki-testdata
-    - mkdir tests/data/wikidata
+    - mkdir -p tests/data/wikidata
     - git clone git@git.jba.io:aqtrans/gowiki-testdata.git tests/data/wikidata
     - go test -v
     - go test -race
