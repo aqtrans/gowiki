@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -53,6 +52,7 @@ func testGitCommand(args ...string) *exec.Cmd {
 	return c
 }
 
+/*
 // Execute `git clone [repo]` in the current workingDirectory
 func gitCloneTest() error {
 	err := os.RemoveAll("./tests/gowiki-testdata/")
@@ -65,6 +65,7 @@ func gitCloneTest() error {
 	}
 	return nil
 }
+*/
 
 // tempfile returns a temporary file path.
 func tempfile() string {
@@ -137,8 +138,6 @@ func TestWikiInit(t *testing.T) {
 
 // TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
 func TestNewWikiPage(t *testing.T) {
-	err := gitCloneTest()
-	checkT(err, t)
 
 	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
@@ -165,8 +164,6 @@ func TestNewWikiPage(t *testing.T) {
 
 // TestNewWikiPageNotLoggedIn tests if viewing a non-existent article, while not logged in redirects to a vague login page
 func TestNewWikiPageNotLoggedIn(t *testing.T) {
-	err := gitCloneTest()
-	checkT(err, t)
 
 	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
@@ -691,8 +688,6 @@ func TestWikiDirEscape(t *testing.T) {
 
 // TestWikiHistoryNonExistent tests if trying to view /history/random properly redirects to /random
 func TestWikiHistoryNonExistent(t *testing.T) {
-	err := gitCloneTest()
-	checkT(err, t)
 
 	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
@@ -729,8 +724,6 @@ func TestWikiHistoryNonExistent(t *testing.T) {
 
 // TestWikiDirIndex tests if trying to view /dir/ properly redirects to /dir/index when it exists
 func TestWikiDirIndex(t *testing.T) {
-	err := gitCloneTest()
-	checkT(err, t)
 
 	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
