@@ -11,7 +11,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"sync"
 	"testing"
 
@@ -132,19 +131,8 @@ func TestTmplInit(t *testing.T) {
 }
 
 func TestWikiInit(t *testing.T) {
-	wikiDir := filepath.Join(dataDir, "wikidata")
-	_, err := os.Stat(wikiDir)
-	if err != nil {
-		os.Mkdir(wikiDir, 0755)
-	}
-	_, err = os.Stat(filepath.Join(wikiDir, ".git"))
-	if err != nil {
-		err = gitClone(viper.GetString("RemoteGitRepo"))
-		if err != nil {
-			log.Println(err)
-		}
-	}
-	initWikiDir()
+	err := initWikiDir()
+	checkT(err, t)
 }
 
 // TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
