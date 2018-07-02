@@ -36,7 +36,6 @@ func init() {
 	dataDir = "./tests/data/"
 	viper.Set("DataDir", "./tests/data/")
 	viper.Set("Domain", "wiki.example.com")
-	viper.Set("RemoteGitRepo", "git@jba.io:aqtrans/gowiki-testdata.git")
 	viper.Set("InitWikiRepo", true)
 	httputils.Debug = testing.Verbose()
 	auth.Debug = testing.Verbose()
