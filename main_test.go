@@ -982,7 +982,7 @@ func BenchmarkMarkdownRender(b *testing.B) {
 }
 
 func BenchmarkReadFront(b *testing.B) {
-	f, err := os.Open("./tests/gowiki-testdata/index")
+	f, err := os.Open("./tests/data/wikidata/index")
 	if err != nil {
 		log.Println(err)
 	}
@@ -996,7 +996,7 @@ func BenchmarkReadFront(b *testing.B) {
 }
 
 func BenchmarkReadFront2(b *testing.B) {
-	f, err := os.Open("./tests/gowiki-testdata/index")
+	f, err := os.Open("./tests/data/wikidata/index")
 	if err != nil {
 		log.Println(err)
 	}
@@ -1010,6 +1010,23 @@ func BenchmarkReadFront2(b *testing.B) {
 }
 
 func BenchmarkWholeWiki(b *testing.B) {
+
+	tmpdb := tempfile()
+	//defer os.Remove(tmpdb)
+	authState := auth.NewAuthState(tmpdb)
+	env := &wikiEnv{
+		authState: *authState,
+		cache: &wikiCache{
+			Tags: make(map[string][]string),
+			Favs: make(map[string]struct{}),
+		},
+		templates: tmplInit(),
+		mutex:     sync.Mutex{},
+		tags:      newTagsMap(),
+		favs:      newFavsMap(),
+	}
+	defer os.Remove(tmpdb)
+
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
 		b.Fatal(err)
@@ -1026,7 +1043,7 @@ func BenchmarkWholeWiki(b *testing.B) {
 	//router.DefaultContext = ctx
 
 	for n := 0; n < b.N; n++ {
-		router(nil).ServeHTTP(rr, req)
+		router(env).ServeHTTP(rr, req)
 	}
 }
 
