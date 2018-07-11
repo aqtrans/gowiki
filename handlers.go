@@ -581,7 +581,14 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 		err := gitPush()
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
-			panic(err)
+			//panic(err)
+			log.Println("Error pushing to remote git repo:", err)
+			env.authState.SetFlash("Wiki page successfully saved, but error pushing to remote git repo.", w)
+			http.Redirect(w, r, "/"+name, http.StatusFound)
+			log.Println(name + " page saved!")
+
+			go env.refreshStuff()
+			return
 		}
 	}
 
