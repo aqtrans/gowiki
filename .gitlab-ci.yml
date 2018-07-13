@@ -46,8 +46,8 @@ build-my-project:
     expire_in: 1 day
     paths:
       - wiki
-      - assets/css/wiki.css
-      - assets/css/wiki.css.map
+      - assets/
+      - templates/
 
 test-my-project:
   stage: test
