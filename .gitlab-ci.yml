@@ -68,7 +68,7 @@ deploy_staging:
     DEPLOY_HOST: 'golang@rick.jba.io'
     SERVICE_MANAGER: 'systemctl --user'
   script:
-    #- ssh $DEPLY_HOST ./helper.sh helper -app "wiki" -branch $CI_COMMIT_REF_NAME -id $CI_PROJECT_ID -token "iY7YnDC3FPRbi_TLYDVx" -url "https://git.jba.io"
+    - ssh $DEPLY_HOST ./helper.sh helper -app "wiki" -branch $CI_COMMIT_REF_NAME -id $CI_PROJECT_ID -token "iY7YnDC3FPRbi_TLYDVx" -url "https://git.jba.io"
     # curl --header "JOB-TOKEN: $CI_JOB_TOKEN" "https://gitlab.example.com/api/v4/projects/1/jobs/artifacts/master/download?job=test"
     # scp to fresh folder
     #- scp -r ./ $DEPLOY_HOST:$CI_PROJECT_NAME.$CI_COMMIT_SHA
