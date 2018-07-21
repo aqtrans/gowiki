@@ -70,7 +70,7 @@ deploy_staging:
   script:
     - tar -cf $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar wiki assets/ templates/
     - scp $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar $DEPLOY_HOST:$CI_PROJECT_NAME.$CI_COMMIT_SHA.tar
-    - ssh $DEPLOY_HOST ./helper -app wiki -tar $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar
+    - ssh $DEPLOY_HOST ./helper -app wiki -tar $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar -svc "golang@wiki"
     #- ssh $DEPLY_HOST ./helper.sh helper -app "wiki" -branch $CI_COMMIT_REF_NAME -id $CI_PROJECT_ID -token "iY7YnDC3FPRbi_TLYDVx" -url "https://git.jba.io"
     # curl --header "JOB-TOKEN: $CI_JOB_TOKEN" "https://gitlab.example.com/api/v4/projects/1/jobs/artifacts/master/download?job=test"
     # scp to fresh folder
@@ -101,7 +101,7 @@ deploy_prod:
   script:
     - tar -cf $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar wiki assets/ templates/
     - scp $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar $DEPLOY_HOST:$CI_PROJECT_NAME.$CI_COMMIT_SHA.tar
-    - ssh $DEPLOY_HOST ./helper -app wiki -tar $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar    
+    - ssh $DEPLOY_HOST ./helper -app wiki -tar $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar -svc "golang@wiki" -sudo true
     # scp to fresh folder
     #- scp -r ./ $DEPLOY_HOST:$CI_PROJECT_NAME.$CI_COMMIT_SHA
     # Stop app, to release DB locks
