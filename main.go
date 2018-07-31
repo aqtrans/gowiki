@@ -1,3 +1,4 @@
+//go:generate go run tmpl_gen.go
 package main
 
 // Credits:
