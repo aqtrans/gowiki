@@ -1,9 +1,10 @@
 // +build dev
 
-package vfs
+package templates
 
 import (
 	"html/template"
+	"jba.io/go/httputils"
 	"log"
 	"path/filepath"
 )
