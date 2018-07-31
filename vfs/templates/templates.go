@@ -1,6 +1,6 @@
 // +build !dev
 
-package vfs
+package templates
 
 import (
 	"github.com/shurcooL/httpfs/html/vfstemplate"

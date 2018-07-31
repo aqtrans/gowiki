@@ -39,7 +39,7 @@ import (
 	"html/template"
 	"io"
 	"io/ioutil"
-	"jba.io/go/wiki/vfs"
+	"jba.io/go/wiki/vfs/templates"
 	"log"
 	"net/http"
 	"net/http/pprof"
@@ -1776,7 +1776,7 @@ func main() {
 	env := &wikiEnv{
 		authState: *auth.NewAuthState(filepath.Join(dataDir, "auth.db")),
 		cache:     loadCache(),
-		templates: vfs.TmplInit(),
+		templates: templates.TmplInit(),
 		mutex:     sync.Mutex{},
 	}
 	env.favs.List = env.cache.Favs
