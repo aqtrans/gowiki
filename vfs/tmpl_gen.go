@@ -10,7 +10,7 @@ import (
 func main() {
 	var fs http.FileSystem = http.Dir("../templates")
 	err := vfsgen.Generate(fs, vfsgen.Options{
-		PackageName:  "vfs",
+		PackageName:  "templates",
 		BuildTags:    "!dev",
 		VariableName: "Templates",
 	})
