@@ -1,4 +1,4 @@
-package vfs
+package templates
 
 import (
 	"html/template"
