@@ -5,6 +5,8 @@ package assets
 import (
 	"html/template"
 	"log"
+	"net/http"
+	"time"
 
 	"github.com/shurcooL/httpfs/vfsutil"
 )
@@ -29,4 +31,30 @@ func SvgByte(iconName string) []byte {
 		return []byte("")
 	}
 	return []byte(`<div class="svg-icon">` + string(iconFile) + `</div>`)
+}
+
+func serve(name string, w http.ResponseWriter, r *http.Request) {
+	file, err := Assets.Open(name)
+	if err != nil {
+		log.Println("Error opening", name)
+		w.Write([]byte(""))
+		return
+	}
+	http.ServeContent(w, r, name, time.Now(), file)
+	return
+}
+
+func Robots(w http.ResponseWriter, r *http.Request) {
+	serve("robots.txt", w, r)
+	return
+}
+
+func FaviconICO(w http.ResponseWriter, r *http.Request) {
+	serve("favicon.ico", w, r)
+	return
+}
+
+func FaviconPNG(w http.ResponseWriter, r *http.Request) {
+	serve("favicon.png", w, r)
+	return
 }
