@@ -49,8 +49,8 @@ build-my-project:
     expire_in: 1 day
     paths:
       - wiki
-      - assets/
-      - templates/
+      - vfs/templates/templates_vfsdata.go
+      - vfs/assets/assets_vfsdata.go
 
 test-my-project:
   stage: test
