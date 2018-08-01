@@ -1,29 +1,26 @@
-// +build dev
+// +build !dev
 
 package templates
 
 import (
 	"html/template"
 	"log"
-	"net/http"
 	"path/filepath"
 
+	"github.com/shurcooL/httpfs/html/vfstemplate"
+	"github.com/shurcooL/httpfs/path/vfspath"
 	"jba.io/go/httputils"
 	"jba.io/go/wiki/vfs/assets"
 )
 
-var Templates http.FileSystem = http.Dir("templates")
-
-// TmplInit() initializes a map of templates, in this case using local FS
 func TmplInit() map[string]*template.Template {
 	templates := make(map[string]*template.Template)
 
-	templatesDir := "./templates/"
-	layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
+	layouts, err := vfspath.Glob(Templates, "layouts/*.tmpl")
 	if err != nil {
 		log.Fatalln(err)
 	}
-	includes, err := filepath.Glob(templatesDir + "includes/*.tmpl")
+	includes, err := vfspath.Glob(Templates, "includes/*.tmpl")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -34,7 +31,11 @@ func TmplInit() map[string]*template.Template {
 		files := append(includes, layout)
 		//DEBUG TEMPLATE LOADING
 		//httputils.Debugln(files)
-		templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFiles(files...))
+		tmpl, err := vfstemplate.ParseFiles(Templates, template.New("templates").Funcs(funcMap), files...)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		templates[filepath.Base(layout)] = tmpl
 	}
 	return templates
 }
