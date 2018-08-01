@@ -1,21 +1,18 @@
-// +build dev
+// +build !dev
 
 package assets
 
 import (
 	"html/template"
-	"io/ioutil"
 	"log"
-	"net/http"
-)
 
-// Assets contains project assets.
-var Assets http.FileSystem = http.Dir("assets")
+	"github.com/shurcooL/httpfs/vfsutil"
+)
 
 func Svg(iconName string) template.HTML {
 	// MAJOR TODO:
 	// Check for file existence before trying to read the file; if non-existent return ""
-	iconFile, err := ioutil.ReadFile("assets/icons/" + iconName + ".svg")
+	iconFile, err := vfsutil.ReadFile(Assets, "icons/"+iconName+".svg")
 	if err != nil {
 		log.Println("Error loading assets/icons/", iconName, err)
 		return template.HTML("")
@@ -26,7 +23,7 @@ func Svg(iconName string) template.HTML {
 func SvgByte(iconName string) []byte {
 	// MAJOR TODO:
 	// Check for file existence before trying to read the file; if non-existent return ""
-	iconFile, err := ioutil.ReadFile("assets/icons/" + iconName + ".svg")
+	iconFile, err := vfsutil.ReadFile(Assets, "icons/"+iconName+".svg")
 	if err != nil {
 		log.Println("Error loading assets/icons/", iconName, err)
 		return []byte("")
