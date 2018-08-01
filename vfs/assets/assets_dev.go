@@ -33,3 +33,18 @@ func SvgByte(iconName string) []byte {
 	}
 	return []byte(`<div class="svg-icon">` + string(iconFile) + `</div>`)
 }
+
+func Robots(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./assets/robots.txt")
+	return
+}
+
+func FaviconICO(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./assets/favicon.ico")
+	return
+}
+
+func FaviconPNG(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./assets/favicon.png")
+	return
+}
