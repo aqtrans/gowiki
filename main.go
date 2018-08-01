@@ -1734,9 +1734,9 @@ func router(env *wikiEnv) http.Handler {
 	r.GET("/debug/pprof/profile", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Profile)))
 	r.GET("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
 	r.GET("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
-	r.GET("/robots.txt", httputils.Robots)
-	r.GET("/favicon.ico", httputils.FaviconICO)
-	r.GET("/favicon.png", httputils.FaviconPNG)
+	r.GET("/robots.txt", assets.Robots)
+	r.GET("/favicon.ico", assets.FaviconICO)
+	r.GET("/favicon.png", assets.FaviconPNG)
 	r.Handler("GET", "/assets/*", http.StripPrefix("/assets/", http.FileServer(assets.Assets)))
 
 	return s.Then(r)
