@@ -72,7 +72,7 @@ deploy_staging:
     DEPLOY_HOST: 'golang@rick.jba.io'
     SERVICE_MANAGER: 'systemctl --user'
   script:
-    - tar -cf $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar wiki assets/ templates/
+    - tar -cf $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar wiki
     - scp $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar $DEPLOY_HOST:$CI_PROJECT_NAME.$CI_COMMIT_SHA.tar
     - ssh $DEPLOY_HOST ./helper -app wiki -tar $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar -svc "golang@wiki"
     #- ssh $DEPLY_HOST ./helper.sh helper -app "wiki" -branch $CI_COMMIT_REF_NAME -id $CI_PROJECT_ID -token "iY7YnDC3FPRbi_TLYDVx" -url "https://git.jba.io"
@@ -103,7 +103,7 @@ deploy_prod:
     # using sudo due to no systemctl --user on CentOS 7 (https://bugs.centos.org/view.php?id=8767)
     SERVICE_MANAGER: 'sudo systemctl'
   script:
-    - tar -cf $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar wiki assets/ templates/
+    - tar -cf $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar wiki
     - scp $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar $DEPLOY_HOST:$CI_PROJECT_NAME.$CI_COMMIT_SHA.tar
     - ssh $DEPLOY_HOST ./helper -app wiki -tar $CI_PROJECT_NAME.$CI_COMMIT_SHA.tar -svc "golang@wiki" -sudo true
     # scp to fresh folder
