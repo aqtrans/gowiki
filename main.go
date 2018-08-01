@@ -1783,14 +1783,6 @@ func main() {
 		mux.Handle("/", router(env))
 	*/
 
-	// **VFSGEN troubleshooting**
-	gif, err := assets.Assets.Open("blank.gif")
-	if err != nil {
-		log.Fatalln("Assets aren't in place.")
-	}
-	log.Println(gif, err)
-	// ------------------------------
-
 	httputils.Logfile = filepath.Join(dataDir, "http.log")
 
 	log.Println("Listening on 127.0.0.1:" + viper.GetString("Port"))
