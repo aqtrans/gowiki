@@ -1,15 +1,18 @@
+// +build ignore
+
 package main
 
 import (
 	"log"
-//	"net/http"
-        "jba.io/go/wiki/vfs/templates"
+	"net/http"
+
 	"github.com/shurcooL/vfsgen"
 )
 
 func main() {
-	err := vfsgen.Generate(templates.Templates, vfsgen.Options{
-		PackageName:  "main",
+	var Templates http.FileSystem = http.Dir("../../templates")
+	err := vfsgen.Generate(Templates, vfsgen.Options{
+		PackageName:  "templates",
 		BuildTags:    "!dev",
 		VariableName: "Templates",
 	})
