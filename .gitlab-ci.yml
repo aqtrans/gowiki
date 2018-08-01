@@ -42,6 +42,7 @@ build-my-project:
     - ./dep ensure
     - cd vfs/assets && go get -d && cd ../../
     - cd vfs/templates && go get -d && cd ../../
+    - go get -d github.com/shurcooL/vfsgen
     - go get -d
     - go generate ./...
     - go build -o ./wiki
