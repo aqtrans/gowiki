@@ -1,4 +1,3 @@
-//go:generate go run tmpl_gen.go
 package main
 
 // Credits:
@@ -39,8 +38,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
-	"jba.io/go/wiki/vfs/templates"
 	"log"
 	"net/http"
 	"net/http/pprof"
@@ -75,6 +72,8 @@ import (
 
 	"jba.io/go/auth"
 	"jba.io/go/httputils"
+	"jba.io/go/wiki/vfs/assets"
+	"jba.io/go/wiki/vfs/templates"
 )
 
 type key int
@@ -325,9 +324,9 @@ func (r *renderer) ListItem(out *bytes.Buffer, text []byte, flags int) {
 	switch {
 	case bytes.HasPrefix(text, []byte("[ ] ")):
 
-		text = append(svgByte("checkbox-unchecked"), text[3:]...)
+		text = append(assets.SvgByte("checkbox-unchecked"), text[3:]...)
 	case bytes.HasPrefix(text, []byte("[x] ")) || bytes.HasPrefix(text, []byte("[X] ")):
-		text = append(svgByte("checkbox-checked"), text[3:]...)
+		text = append(assets.SvgByte("checkbox-checked"), text[3:]...)
 	}
 	r.Html.ListItem(out, text, flags)
 }
@@ -1336,34 +1335,12 @@ func (wiki *wiki) save(mutex *sync.Mutex) error {
 func typeIcon(gitType string) template.HTML {
 	var html template.HTML
 	if gitType == "blob" {
-		html = svg("file-text")
+		html = assets.Svg("file-text")
 	}
 	if gitType == "tree" {
-		html = svg("folder-open")
+		html = assets.Svg("folder-open")
 	}
 	return html
-}
-
-func svg(iconName string) template.HTML {
-	// MAJOR TODO:
-	// Check for file existence before trying to read the file; if non-existent return ""
-	iconFile, err := ioutil.ReadFile("assets/icons/" + iconName + ".svg")
-	if err != nil {
-		log.Println("Error loading assets/icons/", iconName, err)
-		return template.HTML("")
-	}
-	return template.HTML(`<div class="svg-icon">` + string(iconFile) + `</div>`)
-}
-
-func svgByte(iconName string) []byte {
-	// MAJOR TODO:
-	// Check for file existence before trying to read the file; if non-existent return ""
-	iconFile, err := ioutil.ReadFile("assets/icons/" + iconName + ".svg")
-	if err != nil {
-		log.Println("Error loading assets/icons/", iconName, err)
-		return []byte("")
-	}
-	return []byte(`<div class="svg-icon">` + string(iconFile) + `</div>`)
 }
 
 func tmplInit() map[string]*template.Template {
@@ -1379,7 +1356,7 @@ func tmplInit() map[string]*template.Template {
 		log.Fatalln(err)
 	}
 
-	funcMap := template.FuncMap{"svg": svg, "typeIcon": typeIcon, "prettyDate": httputils.PrettyDate, "safeHTML": httputils.SafeHTML, "imgClass": httputils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
+	funcMap := template.FuncMap{"svg": assets.Svg, "typeIcon": typeIcon, "prettyDate": httputils.PrettyDate, "safeHTML": httputils.SafeHTML, "imgClass": httputils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
 
 	for _, layout := range layouts {
 		files := append(includes, layout)
@@ -1760,7 +1737,7 @@ func router(env *wikiEnv) http.Handler {
 	r.GET("/robots.txt", httputils.Robots)
 	r.GET("/favicon.ico", httputils.FaviconICO)
 	r.GET("/favicon.png", httputils.FaviconPNG)
-	r.Handler("GET", "/assets/*", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
+	r.Handler("GET", "/assets/*", http.StripPrefix("/assets/", http.FileServer(assets.Assets)))
 
 	return s.Then(r)
 }
@@ -1805,6 +1782,14 @@ func main() {
 		mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
 		mux.Handle("/", router(env))
 	*/
+
+	// **VFSGEN troubleshooting**
+	gif, err := assets.Assets.Open("blank.gif")
+	if err != nil {
+		log.Fatalln("Assets aren't in place.")
+	}
+	log.Println(gif, err)
+	// ------------------------------
 
 	httputils.Logfile = filepath.Join(dataDir, "http.log")
 
