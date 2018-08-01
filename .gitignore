@@ -13,3 +13,4 @@ scss/node_modules/**
 vendor/*/
 .sass-cache/*
 tests/data/**
+*_vfsdata.go
