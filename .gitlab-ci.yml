@@ -41,6 +41,7 @@ build-my-project:
     - chmod +x dep
     - ./dep ensure
     - go get -d
+    - go generate ./...
     - go build -o ./wiki
   artifacts:
     expire_in: 1 day
