@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/certifi/gocertifi"
+  packages = ["."]
+  revision = "deb3ae2ef2610fde3330947281941c562861188b"
+  version = "2018.01.18"
+
+[[projects]]
   name = "github.com/dimfeld/httptreemux"
   packages = ["."]
   revision = "8cc36ee10f84b82d0742ffcab770815c7d3f9ad7"
@@ -12,6 +18,12 @@
   packages = ["."]
   revision = "629574ca2a5df945712d3079857300b5e4da0236"
   version = "v1.4.2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/getsentry/raven-go"
+  packages = ["."]
+  revision = "7535a8fa2ace0ffb684b19f28d00655459ea2dae"
 
 [[projects]]
   name = "github.com/gorilla/context"
@@ -108,22 +120,38 @@
   version = "v0.8.0"
 
 [[projects]]
+  name = "github.com/renstrom/fuzzysearch"
+  packages = ["fuzzy"]
+  revision = "b18e754edff4833912ef4dce9eaca885bd3f0de1"
+  version = "v1.0.1"
+
+[[projects]]
   name = "github.com/russross/blackfriday"
   packages = ["."]
   revision = "4048872b16cc0fc2c5fd9eacf0ed2c2fedaa0c8c"
   version = "v1.5"
 
 [[projects]]
-  name = "github.com/sahilm/fuzzy"
-  packages = ["."]
-  revision = "0e1c4a4e1f632f936a5c0fa6176076eea01c054b"
-  version = "v0.0.3"
-
-[[projects]]
   name = "github.com/sergi/go-diff"
   packages = ["diffmatchpatch"]
   revision = "1744e2970ca51c86172c8190fadad617561ed6e7"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/shurcooL/httpfs"
+  packages = [
+    "html/vfstemplate",
+    "path/vfspath",
+    "vfsutil"
+  ]
+  revision = "809beceb23714880abc4a382a00c05f89d13b1cc"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/shurcooL/vfsgen"
+  packages = ["."]
+  revision = "62bca832be04bd2bcaabd3b68a6b19a7ec044411"
 
 [[projects]]
   name = "github.com/spf13/afero"
@@ -309,6 +337,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "24d1e0ac970e5d5a1b7fa1adcccbac3707750fb554a923be6ba8ca4b3535ba5a"
+  inputs-digest = "b7e1ed65092131dafc882671370c000c938e20f97360e4748a1ebec3603f34d8"
   solver-name = "gps-cdcl"
   solver-version = 1
