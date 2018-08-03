@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"jba.io/go/httputils"
-	"jba.io/go/wiki/vfs/assets"
+	"git.jba.io/go/httputils"
+	"git.jba.io/go/wiki/vfs/assets"
 )
 
 var Templates http.FileSystem = http.Dir("templates")
