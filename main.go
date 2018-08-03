@@ -70,10 +70,10 @@ import (
 	"github.com/spf13/viper"
 	_ "github.com/tevjef/go-runtime-metrics/expvar"
 
-	"jba.io/go/auth"
-	"jba.io/go/httputils"
-	"jba.io/go/wiki/vfs/assets"
-	"jba.io/go/wiki/vfs/templates"
+	"git.jba.io/go/auth"
+	"git.jba.io/go/httputils"
+	"git.jba.io/go/wiki/vfs/assets"
+	"git.jba.io/go/wiki/vfs/templates"
 )
 
 type key int

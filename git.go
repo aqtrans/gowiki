@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"git.jba.io/go/httputils"
 	"github.com/spf13/viper"
-	"jba.io/go/httputils"
 )
 
 // CUSTOM GIT WRAPPERS
