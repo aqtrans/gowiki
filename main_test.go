@@ -13,9 +13,9 @@ import (
 	"sync"
 	"testing"
 
+	"git.jba.io/go/auth"
+	"git.jba.io/go/httputils"
 	"github.com/spf13/viper"
-	"jba.io/go/auth"
-	"jba.io/go/httputils"
 )
 
 const UserKey key = 1

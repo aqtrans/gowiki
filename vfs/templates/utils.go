@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"strings"
 
-	"jba.io/go/wiki/vfs/assets"
+	"git.jba.io/go/wiki/vfs/assets"
 )
 
 func typeIcon(gitType string) template.HTML {
