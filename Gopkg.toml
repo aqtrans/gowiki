@@ -20,7 +20,7 @@
 #  name = "github.com/x/y"
 #  version = "2.4.0"
 
-ignored = ["jba.io/go/auth", "jba.io/go/httputils"]
+ignored = ["git.jba.io/go/auth", "git.jba.io/go/httputils"]
 
 [[constraint]]
   name = "github.com/dimfeld/httptreemux"
