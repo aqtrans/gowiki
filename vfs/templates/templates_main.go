@@ -7,10 +7,10 @@ import (
 	"log"
 	"path/filepath"
 
+	"git.jba.io/go/httputils"
+	"git.jba.io/go/wiki/vfs/assets"
 	"github.com/shurcooL/httpfs/html/vfstemplate"
 	"github.com/shurcooL/httpfs/path/vfspath"
-	"jba.io/go/httputils"
-	"jba.io/go/wiki/vfs/assets"
 )
 
 func TmplInit() map[string]*template.Template {

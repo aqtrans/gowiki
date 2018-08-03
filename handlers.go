@@ -13,12 +13,12 @@ import (
 	"strings"
 	"time"
 
+	"git.jba.io/go/auth"
+	"git.jba.io/go/httputils"
 	"github.com/dimfeld/httptreemux"
 	raven "github.com/getsentry/raven-go"
 	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
 	"github.com/spf13/viper"
-	"jba.io/go/auth"
-	"jba.io/go/httputils"
 )
 
 func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
