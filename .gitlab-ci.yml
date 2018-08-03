@@ -40,9 +40,10 @@ build-my-project:
     - curl -o dep -sL https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64
     - chmod +x dep
     - ./dep ensure
+    - go get -d github.com/shurcooL/vfsgen
+    - go get -d -v git.jba.io/go/httputils    
     - cd vfs/assets && go get -d && cd ../../
     - cd vfs/templates && go get -d && cd ../../
-    - go get -d github.com/shurcooL/vfsgen
     - go get -d
     - go generate ./...
     - go build -o ./wiki
