@@ -163,6 +163,10 @@ type page struct {
 	GitStatus template.HTML
 }
 
+type p interface {
+	HTML(wikiEnv, string) template.HTML
+}
+
 type userInfo struct {
 	Username   string
 	IsAdmin    bool
@@ -1161,6 +1165,21 @@ type wikiPage struct {
 	Wiki         wiki
 	Rendered     string
 	SimilarPages []string
+}
+
+func (w wikiPage) HTML(env *wikiEnv, name string) template.HTML {
+	tmpl, ok := env.templates[name]
+	if !ok {
+		log.Println(fmt.Errorf("The template %s does not exist", name))
+		panic(fmt.Errorf("The template %s does not exist", name))
+	}
+	var buf bytes.Buffer
+	err := tmpl.Execute(&buf, w)
+	if err != nil {
+		log.Println("Error executing wikiPage template:", err)
+		return template.HTML("")
+	}
+	return template.HTML(buf.String())
 }
 
 func loadWikiPage(env *wikiEnv, r *http.Request, name string) wikiPage {
