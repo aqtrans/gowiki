@@ -65,6 +65,7 @@ import (
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
+
 	//"github.com/microcosm-cc/bluemonday"
 
 	"github.com/spf13/viper"
@@ -577,7 +578,7 @@ func loadPage(env *wikiEnv, r *http.Request, p chan<- page) {
 	if msg != "" {
 		message = template.HTML(`
 			<div class="notification anim active" id="notification">
-			<p>` + msg + `
+			<p>` + template.HTMLEscapeString(msg) + `
 			<button class="close-button" type="button" onclick="notif()">
 			<div class="svg-icon"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
 			<title>cross</title>
@@ -1642,7 +1643,7 @@ func mitigateWiki(redirect bool, env *wikiEnv, r *http.Request, w http.ResponseW
 		// Use auth.Redirect to redirect while storing the current URL for future use
 		auth.Redirect(&env.authState, w, r)
 	} else {
-		http.Redirect(w, r, "/index", http.StatusFound)
+		http.Redirect(w, r, "/index", http.StatusSeeOther)
 	}
 
 }
