@@ -584,7 +584,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 			//panic(err)
 			log.Println("Error pushing to remote git repo:", err)
 			env.authState.SetFlash("Wiki page successfully saved, but error pushing to remote git repo.", w)
-			http.Redirect(w, r, "/"+name, http.StatusFound)
+			http.Redirect(w, r, "/"+name, http.StatusSeeOther)
 			log.Println(name + " page saved!")
 
 			go env.refreshStuff()
@@ -595,14 +595,14 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 	go env.refreshStuff()
 
 	env.authState.SetFlash("Wiki page successfully saved.", w)
-	http.Redirect(w, r, "/"+name, http.StatusFound)
+	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
 	log.Println(name + " page saved!")
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "indexHandler")
 
-	http.Redirect(w, r, "/index", http.StatusFound)
+	http.Redirect(w, r, "/index", http.StatusSeeOther)
 	//viewHandler(w, r, "index")
 }
 
@@ -725,7 +725,7 @@ func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
 	name := nameFromContext(r.Context())
 
 	if !wikiExistsFromContext(r.Context()) {
-		http.Redirect(w, r, "/"+name, http.StatusFound)
+		http.Redirect(w, r, "/"+name, http.StatusSeeOther)
 		return
 	}
 
