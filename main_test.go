@@ -259,9 +259,9 @@ func TestIndexPage(t *testing.T) {
 
 	router(e).ServeHTTP(rr, req)
 
-	if status := rr.Code; status != http.StatusFound {
+	if status := rr.Code; status != http.StatusSeeOther {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusFound)
+			status, http.StatusSeeOther)
 	}
 }
 
@@ -707,9 +707,9 @@ func TestWikiHistoryNonExistent(t *testing.T) {
 
 	router(e).ServeHTTP(w, r)
 
-	if status := w.Code; status != http.StatusFound {
+	if status := w.Code; status != http.StatusSeeOther {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusFound)
+			status, http.StatusSeeOther)
 	}
 
 	// Transform/normalize the randPage name
