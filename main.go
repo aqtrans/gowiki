@@ -571,7 +571,7 @@ func loadPage(env *wikiEnv, r *http.Request, p chan<- page) {
 	user := auth.GetUserState(r.Context())
 	msg := auth.GetFlash(r.Context())
 	//token := auth.GetToken(r.Context())
-	token := env.authState.CSRFTemplateField(r)
+	token := auth.CSRFTemplateField(r)
 
 	var message template.HTML
 	if msg != "" {
