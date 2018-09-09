@@ -61,7 +61,6 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/dimfeld/httptreemux"
-	"github.com/gorilla/csrf"
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
@@ -572,7 +571,7 @@ func loadPage(env *wikiEnv, r *http.Request, p chan<- page) {
 	user := auth.GetUserState(r.Context())
 	msg := auth.GetFlash(r.Context())
 	//token := auth.GetToken(r.Context())
-	token := csrf.TemplateField(r)
+	token := env.authState.CSRFTemplateField(r)
 
 	var message template.HTML
 	if msg != "" {
@@ -1675,7 +1674,7 @@ func router(env *wikiEnv) http.Handler {
 	}
 
 	// HTTP stuff from here on out
-	s := alice.New(httputils.Logger, env.authState.UserEnvMiddle, csrf.Protect([]byte("c379bf3ac76ee306cf72270cf6c5a612e8351dcb"), csrf.Secure(csrfSecure)))
+	s := alice.New(httputils.Logger, env.authState.UserEnvMiddle, env.authState.CSRFProtect(csrfSecure))
 
 	r := httptreemux.NewContextMux()
 
