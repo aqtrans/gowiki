@@ -1750,7 +1750,10 @@ func main() {
 	stopChan := make(chan os.Signal)
 	signal.Notify(stopChan, os.Interrupt)
 
-	initWikiDir()
+	err := initWikiDir()
+	if err != nil {
+		log.Fatalln(err)
+	}
 	dataDirCheck()
 
 	env := &wikiEnv{
