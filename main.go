@@ -280,11 +280,13 @@ func init() {
 	viper.SetDefault("Dev", false)
 	viper.SetDefault("Debug", false)
 	viper.SetDefault("CacheEnabled", true)
+	viper.SetDefault("RavenDSN", "")
 	viper.SetEnvPrefix("gowiki")
 	viper.AutomaticEnv()
 
-	viper.SetConfigName("conf")
+	viper.SetConfigName("gowiki")
 	viper.AddConfigPath(viper.GetString("DataDir"))
+	viper.AddConfigPath("/etc/")
 	err = viper.ReadInConfig() // Find and read the config file
 	if err != nil {            // Handle errors reading the config file
 		//panic(fmt.Errorf("Fatal error config file: %s \n", err))
@@ -302,7 +304,7 @@ func init() {
 	//viper.SetDefault("AuthLocation", filepath.Join(dataDir, "auth.db"))
 	//viper.SetDefault("InitWikiRepo", *initFlag)
 
-	raven.SetDSN("https://5ab2f68b0f524799b1d0b324350cc2ae:e01dbad12f8e4fd0bce97681a772a072@sentry.io/94753")
+	raven.SetDSN(viper.GetString("RavenDSN"))
 
 }
 
