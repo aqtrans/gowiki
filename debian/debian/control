@@ -1,0 +1,15 @@
+Source: gowiki
+Section: unknown
+Priority: optional
+Maintainer: Jordan Anderson <aqtrans@rick.lan>
+Build-Depends: debhelper (>= 9)
+Standards-Version: 3.9.8
+Homepage: <insert the upstream URL, if relevant>
+#Vcs-Git: https://anonscm.debian.org/collab-maint/gowiki.git
+#Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/gowiki.git
+
+Package: gowiki
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, git
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>

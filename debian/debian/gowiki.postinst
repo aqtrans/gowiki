@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+USER=gowiki
+
+if ! getent passwd "$USER" >/dev/null; then
+ adduser --quiet --system --shell /bin/bash --home /var/lib/gowiki --group "$USER"
+fi
+
+systemctl start gowiki
