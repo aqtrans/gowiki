@@ -14,3 +14,4 @@ vendor/*/
 .sass-cache/*
 tests/data/**
 *_vfsdata.go
+debian/debian/gowiki
