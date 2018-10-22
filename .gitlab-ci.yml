@@ -17,8 +17,9 @@ before_script:
 
 stages:
   - install-environment
-  - build
   - test
+  - build
+  - package
   - deploy  
 
 install-go:
@@ -46,13 +47,20 @@ build-my-project:
     - cd vfs/templates && go get -d && cd ../../
     - go get -d
     - go generate ./...
-    - go build -o ./wiki
+    - go build -o ./wiki   
   artifacts:
     expire_in: 1 day
     paths:
       - wiki
       - vfs/templates/templates_vfsdata.go
       - vfs/assets/assets_vfsdata.go
+
+build-package:
+  stage: package
+  script:
+    - cp wiki debian/gowiki
+    - cd debian/
+    - debuild -us -uc -b  
 
 test-my-project:
   stage: test
