@@ -114,10 +114,12 @@ func gitIsCleanStartup() error {
 		return errors.New("Untracked files: " + string(uo))
 	}
 
-	// Fetch changes from remote
-	err = gitCommand("fetch").Run()
-	if err != nil {
-		return err
+	if viper.GetString("RemoteGitRepo") != "" {
+		// Fetch changes from remote
+		err = gitCommand("fetch").Run()
+		if err != nil {
+			return err
+		}
 	}
 
 	// Now check the status, minus untracked files
