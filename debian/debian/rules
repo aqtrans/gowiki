@@ -15,8 +15,7 @@
 
 
 %:
-	cp gowiki.toml.example gowiki.toml
-	dh $@
+	dh $@ --with=systemd
 
 
 # dh_make generated override targets
