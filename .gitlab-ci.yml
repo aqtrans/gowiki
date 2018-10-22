@@ -17,8 +17,8 @@ before_script:
 
 stages:
   - install-environment
-  - test
   - build
+  - test  
   - package
   - deploy  
 
