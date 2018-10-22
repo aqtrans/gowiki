@@ -58,6 +58,7 @@ build-my-project:
 build-package:
   stage: package
   script:
+    - apt update && apt install -y build-essential devscripts debhelper
     - cp wiki debian/gowiki
     - cd debian/
     - debuild -us -uc -b  
