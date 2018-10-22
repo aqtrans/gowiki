@@ -1,0 +1,12 @@
+[Unit]
+Description=Golang wiki daemon
+
+[Service]
+ProtectSystem=strict
+ReadWritePaths=/etc/gowiki.toml /var/lib/gowiki
+ExecStart=/usr/bin/gowiki --DataDir=/var/lib/gowiki
+Restart=on-failure
+User=gowiki
+
+[Install]
+WantedBy=default.target
