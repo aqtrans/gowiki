@@ -1,9 +1,14 @@
-gowiki (0.1-3) UNRELEASED; urgency=medium
+gowiki (0.1-7) UNRELEASED; urgency=medium
 
   * Properly search /etc/ for config file
   * Hopefully error out properly if directories don't exist
+  * Trying to stop/start services as necessary
+  * try to properly start service in postinst
+  * omg more changes
+  * omg more changes again
+  * Should not fetch when no RemoteGitRepo is declared
 
- -- Jordan Anderson <aqtrans@rick.lan>  Sun, 21 Oct 2018 02:06:23 -0500
+ -- Jordan Anderson <aqtrans@rick.lan>  Sun, 21 Oct 2018 22:02:21 -0500
 
 gowiki (0.1-1) unstable; urgency=medium
 
