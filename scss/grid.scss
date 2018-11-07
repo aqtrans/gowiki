@@ -367,7 +367,7 @@ pre, code {
             "nav    content"
             "nav    footer";
             grid-template-columns: 14rem 10fr;
-            grid-template-rows: 3rem auto minmax(0.5rem, 3rem);
+            //grid-template-rows: 3rem auto minmax(0.5rem, 3rem);
     }
     body > header {
         flex-direction: row;
