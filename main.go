@@ -269,7 +269,6 @@ func init() {
 	viper.BindPFlags(pflag.CommandLine)
 
 	// Viper config.
-	viper.SetDefault("DataDir", "./data/")
 	viper.SetDefault("Port", "5000")
 	viper.SetDefault("Email", "unused@the.moment")
 	viper.SetDefault("Domain", "wiki.example.com")
@@ -285,8 +284,9 @@ func init() {
 	viper.AutomaticEnv()
 
 	viper.SetConfigName("gowiki")
-	viper.AddConfigPath(viper.GetString("DataDir"))
+	viper.AddConfigPath("./data/")
 	viper.AddConfigPath("/etc/")
+	viper.AddConfigPath(dataDir)
 	err = viper.ReadInConfig() // Find and read the config file
 	if err != nil {            // Handle errors reading the config file
 		//panic(fmt.Errorf("Fatal error config file: %s \n", err))
@@ -1371,11 +1371,11 @@ func tmplInit() map[string]*template.Template {
 
 func initWikiDir() error {
 	// Check for root DataDir existence first
-	dir, err := os.Stat(viper.GetString("DataDir"))
+	dir, err := os.Stat(dataDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Println(viper.GetString("DataDir"), "does not exist; creating it.")
-			err = os.Mkdir(viper.GetString("DataDir"), 0755)
+			log.Println(dataDir, "does not exist; creating it.")
+			err = os.Mkdir(dataDir, 0755)
 			if err != nil {
 				return err
 			}
@@ -1383,7 +1383,7 @@ func initWikiDir() error {
 			return err
 		}
 	} else if !dir.IsDir() {
-		return errors.New(viper.GetString("DataDir") + "is not a directory. This is where wiki data is stored.")
+		return errors.New(dataDir + "is not a directory. This is where wiki data is stored.")
 	}
 
 	//Check for wikiDir directory + git repo existence
@@ -1650,11 +1650,11 @@ func mitigateWiki(redirect bool, env *wikiEnv, r *http.Request, w http.ResponseW
 }
 
 func dataDirCheck() {
-	dir, err := os.Stat(viper.GetString("DataDir"))
+	dir, err := os.Stat(dataDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Println(viper.GetString("DataDir"), "does not exist; creating it.")
-			err = os.Mkdir(viper.GetString("DataDir"), 0755)
+			log.Println(dataDir, "does not exist; creating it.")
+			err = os.Mkdir(dataDir, 0755)
 			if err != nil {
 				raven.CaptureErrorAndWait(err, nil)
 				log.Fatalln(err)
@@ -1664,7 +1664,7 @@ func dataDirCheck() {
 			log.Fatalln(err)
 		}
 	} else if !dir.IsDir() {
-		log.Fatalln(viper.GetString("DataDir"), "is not a directory. This is where wiki data is stored.")
+		log.Fatalln(dataDir, "is not a directory. This is where wiki data is stored.")
 	}
 }
 
