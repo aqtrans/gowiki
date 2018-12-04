@@ -32,12 +32,10 @@ var (
 
 func init() {
 	dataDir = "./tests/data/"
-	viper.Set("DataDir", "./tests/data/")
 	viper.Set("Domain", "wiki.example.com")
 	viper.Set("InitWikiRepo", true)
 	httputils.Debug = testing.Verbose()
 	auth.Debug = testing.Verbose()
-	//log.Println(viper.GetString("DataDir"), dataDir)
 }
 
 func checkT(err error, t *testing.T) {
