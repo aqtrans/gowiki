@@ -45,10 +45,10 @@
         </div>
         {{.Token}}
         <hr>
-        <ul class="tabs sub">
-            <li class="tab-title"><a class="tablinks is-active" onclick="openTab(event, 'Edit')" id="defaultOpen">Edit</a></li>
-            <li class="tab-title"><a class="tablinks" onclick="openTab(event, 'Preview')">Preview</a></li>
-            <li class="tab-title"><a class="tablinks" onclick="openTab(event, 'Help')">Help</a></li>
+        <ul class="tabs sub" id="subtabs">
+            <li class="tab-title"><a class="tablinks is-active" id="edit-tab">Edit</a></li>
+            <li class="tab-title"><a class="tablinks" id="preview-tab">Preview</a></li>
+            <li class="tab-title"><a class="tablinks" id="help-tab">Help</a></li>
         </ul>
         <div id="Edit" class="tabcontent">
             <div>
@@ -100,53 +100,8 @@ some code
 
 {{ end }}
 {{ define "extra_scripts" }}
-<script src="/assets/js/jquery.min.js"></script>
+<script src="/assets/js/tabs.js"></script>
+<!--<script src="/assets/js/jquery.min.js"></script>
 <script src="/assets/js/tagdog.min.js"></script>
-<script type="text/javascript" charset="utf-8">
-
-(function() {
-    "use strict";
-    var options = {
-        hiddenFieldSuffix: '_all'
-    }    
-    var tagFields = tagdog('.tag-field', options);
-}).call(this);
-
-function openTab(evt, tabName) {
-    // Declare all variables
-    var i, tabcontent, tablinks;
-
-    // Get all elements with class="tabcontent" and hide them
-    tabcontent = document.getElementsByClassName("tabcontent");
-    for (i = 0; i < tabcontent.length; i++) {
-        tabcontent[i].style.display = "none";
-    }
-
-    // Get all elements with class="tablinks" and remove the class "active"
-    tablinks = document.getElementsByClassName("tablinks");
-    for (i = 0; i < tablinks.length; i++) {
-        tablinks[i].className = tablinks[i].className.replace(" is-active", "");
-    }
-
-    // Show the current tab, and add an "active" class to the button that opened the tab
-    document.getElementById(tabName).style.display = "block";
-    evt.currentTarget.className += " is-active";
-
-    if (tabName == "Preview") {
-        var editortxt = document.getElementsByName("editor")[0].value;
-        var csrf = document.getElementsByName("gorilla.csrf.Token")[0].value;
-        $.ajax({
-            type: "POST",
-            url: "/md_render",
-            data: { md: editortxt, 'gorilla.csrf.Token': csrf },
-            success: function (msg) {
-                document.getElementById("preview_content").innerHTML = msg;
-            },
-            dataType: "html"
-        });
-    }
-}  
-document.getElementById("defaultOpen").click();
-
-</script>
+<script src="/assets/js/tags.js"></script>-->
 {{ end }}

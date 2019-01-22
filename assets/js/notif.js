@@ -3,7 +3,9 @@ function notif() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('close-button')
-      .addEventListener('click', notif);
+    var closebutton = document.getElementById('close-button');
+    if (closebutton){
+        closebutton.addEventListener('click', notif);
+    }
 });
   

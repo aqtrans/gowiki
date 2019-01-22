@@ -38,11 +38,7 @@
 {{ end }}
 
 {{ define "bottom" }}
-  <script type="text/javascript" charset="utf-8">
-  function notif() {
-    document.getElementById('notification').classList.remove("active");
-  }
-  </script>
+  <script src="/assets/js/notif.js"></script>
   {{ block "extra_scripts" . }}{{ end }}
   </body>
   </html>
