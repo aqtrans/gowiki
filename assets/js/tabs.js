@@ -1,5 +1,4 @@
 function openTab(event, tabName) {
-    console.log(event.type);
 
     // Declare all variables
     var i, tabcontent, tablinks;
@@ -23,9 +22,8 @@ function openTab(event, tabName) {
     if (tabName == "Preview") {
         var editortxt = document.getElementsByName("editor")[0].value;
         var csrf = document.getElementsByName("gorilla.csrf.Token")[0].value;
-        var params = "md="+editortxt;
         var xhr = new XMLHttpRequest();
-        xhr.open("POST", '/md_render', true);
+        xhr.open("POST", '/md_render');
 
         //Send the proper header information along with the request
         xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -36,7 +34,7 @@ function openTab(event, tabName) {
                 document.getElementById("preview_content").innerHTML = xhr.responseText;
             }
         }
-        xhr.send(params);
+        xhr.send(encodeURI("md="+editortxt));
         /*
         $.ajax({
             type: "POST",
@@ -52,11 +50,6 @@ function openTab(event, tabName) {
 }  
 
 function doIt(event) {
-    var defaultTab = document.getElementById('subtabs').getElementsByClassName('is-active')[0];
-    if (defaultTab){
-        defaultTab.click();
-    }
-
     var edit = document.getElementById('edit-tab');
     if (edit){
         edit.addEventListener('click', function(event){ 
@@ -86,7 +79,13 @@ function doIt(event) {
         diffTab.addEventListener('click', function(event){
             openTab(event, "Diff"), false
         });
-    }                   
+    }
+    
+    // Click the default tab
+    var defaultTab = document.getElementById('subtabs').getElementsByClassName('is-active')[0];
+    if (defaultTab){
+        defaultTab.click();
+    }    
 }
 
 document.addEventListener('DOMContentLoaded', doIt, false);
