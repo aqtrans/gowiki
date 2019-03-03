@@ -1,0 +1,4 @@
+#!/bin/sh
+
+systemctl disable gowiki.service >/dev/null
+systemctl stop gowiki.service >/dev/null
