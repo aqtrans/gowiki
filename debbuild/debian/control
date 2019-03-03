@@ -1,0 +1,10 @@
+Source: gowiki
+Section: unknown
+Priority: optional
+Maintainer: aqtrans <aqtrans@jba.io>
+Homepage: https://git.jba.io/go/wiki
+
+Package: gowiki
+Architecture: amd64
+Depends: git, libc, adduser
+Description: A simple wiki using git as the storage. Written in Golang.
