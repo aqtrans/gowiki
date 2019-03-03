@@ -15,11 +15,11 @@ set -e
 
 
 case "$1" in
-    install|upgrade)
+    upgrade)
         systemctl stop gowiki
     ;;
 
-    abort-upgrade)
+    install|abort-upgrade)
     ;;
 
     *)
