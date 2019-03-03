@@ -6,5 +6,5 @@ Homepage: https://git.jba.io/go/wiki
 
 Package: gowiki
 Architecture: amd64
-Depends: git, libc, adduser
+Depends: git, libc6, adduser
 Description: A simple wiki using git as the storage. Written in Golang.
