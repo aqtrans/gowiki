@@ -1,3 +1,0 @@
-misc:Depends=init-system-helpers (>= 1.18~)
-shlibs:Depends=libc6 (>= 2.4)
-misc:Pre-Depends=
