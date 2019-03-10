@@ -5,7 +5,7 @@ set -e
 USER=gowiki
 
 if ! getent passwd "$USER" >/dev/null; then
- adduser --quiet --system --shell /bin/bash --home /var/lib/gowiki --group "$USER"
+ adduser --quiet --system --home /var/lib/gowiki "$USER"
 fi
 
 systemctl --system daemon-reload >/dev/null
