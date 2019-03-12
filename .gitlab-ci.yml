@@ -61,7 +61,7 @@ build-package:
     - apt update && apt install -y build-essential devscripts debhelper
     - cp wiki debbuild/gowiki
     - cd debbuild/
-    - dch -M -i "New version from Git" && dch -M -r -D stretch ""
+    - dch -M -v $CI_COMMIT_REF_NAME-$CI_JOB_ID "New version from Git" && dch -M -r -D stretch ""
     - debuild -us -uc -b  
   artifacts:
     expire_in: 1 day
@@ -88,7 +88,6 @@ deploy_to_repo:
   script:
     - scp ./*.deb $DEPLOY_HOST:/home/repo/
     - ssh $DEPLOY_HOST reprepro -b www/debian/ includedeb stretch *.deb
-
 
 #deploy_staging:
 #  stage: deploy
