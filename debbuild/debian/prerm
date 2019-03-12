@@ -1,4 +1,6 @@
 #!/bin/sh
 
-systemctl disable gowiki.service >/dev/null
-systemctl stop gowiki.service >/dev/null
+set -e
+
+deb-systemd-helper disable gowiki.service >/dev/null
+deb-systemd-helper stop gowiki.service >/dev/null

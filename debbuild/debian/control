@@ -1,5 +1,5 @@
 Source: gowiki
-Section: unknown
+Section: web
 Priority: optional
 Maintainer: aqtrans <aqtrans@jba.io>
 Homepage: https://git.jba.io/go/wiki
@@ -7,4 +7,6 @@ Homepage: https://git.jba.io/go/wiki
 Package: gowiki
 Architecture: amd64
 Depends: git, libc6, adduser
-Description: A simple wiki using git as the storage. Written in Golang.
+Description: Simple wiki, using git to record and store the wiki pages. Written in Golang.
+ Gowiki is a simple git-powered wiki, written in Golang. 
+ It's inspired heavily by gitit, storing all wiki pages in a git repo.
