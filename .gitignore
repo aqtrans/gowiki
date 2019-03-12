@@ -14,4 +14,11 @@ vendor/*/
 .sass-cache/*
 tests/data/**
 *_vfsdata.go
-debian/debian/gowiki
+debbuild/gowiki
+debbuild/debian/debhelper-build-stamp
+debbuild/debian/gowiki.debhelper.log
+debbuild/debian/gowiki.postinst.debhelper
+debbuild/debian/gowiki.postrm.debhelper
+debbuild/debian/gowiki.prerm.debhelper
+debbuild/debian/gowiki.substvars
+debbuild/debian/gowiki/**
