@@ -20,7 +20,7 @@ stages:
   - build
   - test  
   - package
-  #- deploy  
+  - deploy  
 
 install-go:
   stage: install-environment
@@ -61,11 +61,12 @@ build-package:
     - apt update && apt install -y build-essential devscripts debhelper
     - cp wiki debbuild/gowiki
     - cd debbuild/
+    - dch -M -i "New version from Git" && dch -M -r -D stretch ""
     - debuild -us -uc -b  
   artifacts:
     expire_in: 1 day
     paths:
-      - gowiki_0.1_amd64.deb
+      - ./*.deb
 
 test-my-project:
   stage: test
@@ -79,6 +80,15 @@ test-my-project:
     - go test -race
     - go test -cover
     - rm -rf tests/data/wikidata
+
+deploy_to_repo:
+  stage: deploy
+  variables:
+    DEPLOY_HOST: 'repo@bob.jba.io'
+  script:
+    - scp ./*.deb $DEPLOY_HOST:
+    - ssh $DEPLOY_HOST reprepro -b www/debian/ includedeb stretch *.deb
+
 
 #deploy_staging:
 #  stage: deploy
