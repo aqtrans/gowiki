@@ -86,7 +86,7 @@ deploy_to_repo:
   variables:
     DEPLOY_HOST: 'repo@bob.jba.io'
   script:
-    - scp ./*.deb $DEPLOY_HOST:
+    - scp ./*.deb $DEPLOY_HOST:/home/repo/
     - ssh $DEPLOY_HOST reprepro -b www/debian/ includedeb stretch *.deb
 
 
