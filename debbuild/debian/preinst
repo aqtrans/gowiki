@@ -16,7 +16,7 @@ set -e
 
 case "$1" in
     upgrade)
-        systemctl stop gowiki
+        deb-systemd-helper stop gowiki >/dev/null 
     ;;
 
     install|abort-upgrade)
