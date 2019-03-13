@@ -59,15 +59,14 @@ build-package:
   stage: package
   script:
     - apt update && apt install -y build-essential devscripts debhelper
-    - cp wiki debbuild/gowiki
-    - cd debbuild/
+    - cp wiki gowiki
     - dch -M -v 1.0-$CI_COMMIT_REF_NAME-$CI_JOB_ID "New version from Git" && dch -M -r -D stretch ""
     - debuild -us -uc -b  
-    - cd ../ && cp gowiki_*.deb gowiki.deb
+    - cd ../ && cp gowiki_*.deb /gowiki.deb
   artifacts:
     expire_in: 1 day
     paths:
-      - gowiki.deb
+      - /gowiki.deb
 
 test-my-project:
   stage: test
@@ -95,7 +94,7 @@ deploy_to_prod:
   variables:
     DEPLOY_HOST: 'deploy@bob.jba.io'
   script:
-    - scp gowiki.deb $DEPLOY_HOST:/home/deploy/
+    - scp /gowiki.deb $DEPLOY_HOST:/home/deploy/
     - ssh $DEPLOY_HOST sudo dpkg -i gowiki.deb
   environment:
     name: production
@@ -108,7 +107,7 @@ deploy_to_staging:
   variables:
     DEPLOY_HOST: 'deploy@rick.jba.io'
   script:
-    - scp gowiki.deb $DEPLOY_HOST:/home/deploy/
+    - scp /gowiki.deb $DEPLOY_HOST:/home/deploy/
     - ssh $DEPLOY_HOST sudo dpkg -i gowiki.deb
   when: manual  
 
