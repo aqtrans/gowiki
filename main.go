@@ -1676,7 +1676,7 @@ func router(env *wikiEnv) http.Handler {
 	}
 
 	// HTTP stuff from here on out
-	s := alice.New(httputils.Logger, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
+	s := alice.New(httputils.Timer, httputils.Logger, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
 
 	r := httptreemux.NewContextMux()
 
