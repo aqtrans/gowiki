@@ -652,7 +652,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !isWiki(name) {
+	if !isWiki(filepath.Join(dataDir, "wikidata", name)) {
 		http.ServeFile(w, r, filepath.Join(dataDir, "wikidata", name))
 		return
 	}
