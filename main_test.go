@@ -15,7 +15,6 @@ import (
 
 	"git.jba.io/go/auth"
 	"git.jba.io/go/httputils"
-	"github.com/spf13/viper"
 )
 
 const UserKey key = 1
@@ -32,8 +31,8 @@ var (
 
 func init() {
 	dataDir = "./tests/data/"
-	viper.Set("Domain", "wiki.example.com")
-	viper.Set("InitWikiRepo", true)
+	//viper.Set("Domain", "wiki.example.com")
+	//viper.Set("InitWikiRepo", true)
 	httputils.Debug = testing.Verbose()
 	auth.Debug = testing.Verbose()
 }
