@@ -27,10 +27,6 @@ ignored = ["git.jba.io/go/auth", "git.jba.io/go/httputils"]
   version = "5.0.0"
 
 [[constraint]]
-  name = "github.com/gorilla/csrf"
-  branch = "master"
-
-[[constraint]]
   branch = "master"
   name = "github.com/justinas/alice"
 
@@ -45,14 +41,6 @@ ignored = ["git.jba.io/go/auth", "git.jba.io/go/httputils"]
 [[constraint]]
   name = "github.com/russross/blackfriday"
   version = "1.5"
-
-[[constraint]]
-  name = "github.com/spf13/pflag"
-  branch = "master"
-
-[[constraint]]
-  name = "github.com/spf13/viper"
-  branch = "master"
 
 [[constraint]]
   branch = "v2"
