@@ -35,7 +35,6 @@ import (
 	"encoding/gob"
 	"errors"
 	"expvar"
-	"flag"
 	"fmt"
 	"html/template"
 	"io"
@@ -57,8 +56,8 @@ import (
 	"time"
 
 	raven "github.com/getsentry/raven-go"
-	"github.com/pelletier/go-toml"
 
+	"github.com/spf13/pflag"
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/dimfeld/httptreemux"
@@ -67,7 +66,8 @@ import (
 	"github.com/russross/blackfriday"
 
 	//"github.com/microcosm-cc/bluemonday"
-	//"github.com/spf13/viper"
+
+	"github.com/spf13/viper"
 	_ "github.com/tevjef/go-runtime-metrics/expvar"
 
 	"git.jba.io/go/auth"
@@ -149,18 +149,6 @@ var (
 	errIsDir       = errors.New("file is a directory")
 )
 
-type configuration struct {
-	Port          string
-	Domain        string
-	RemoteGitRepo string
-	PushOnSave    bool
-	InitWikiRepo  bool
-	Dev           bool
-	Debug         bool
-	Cache         bool
-	RavenDSN      string
-}
-
 type renderer struct {
 	*blackfriday.Html
 }
@@ -228,7 +216,6 @@ type gitDirList struct {
 // Env wrapper to hold app-specific configs, to pass to handlers
 // cache is a pointer here since it's pretty large itself, and holds a mutex
 type wikiEnv struct {
-	cfg       *configuration
 	authState auth.State
 	cache     *wikiCache
 	templates map[string]*template.Template
@@ -274,52 +261,50 @@ func init() {
 		log.Fatalln("git must be installed")
 	}
 
-	/*
-		pflag.StringVar(&dataDir, "DataDir", "./data/", "Path to store permanent data in.")
-		pflag.Bool("InitWikiRepo", false, "Initialize the wiki directory")
-		pflag.Bool("Debug", false, "Turn on debug logging")
-		pflag.Parse()
+	pflag.StringVar(&dataDir, "DataDir", "./data/", "Path to store permanent data in.")
+	pflag.Bool("InitWikiRepo", false, "Initialize the wiki directory")
+	pflag.Bool("Debug", false, "Turn on debug logging")
+	pflag.Parse()
 
-		viper.BindPFlags(pflag.CommandLine)
+	viper.BindPFlags(pflag.CommandLine)
 
-		// Viper config.
-		viper.SetDefault("Port", "5000")
-		viper.SetDefault("Email", "unused@the.moment")
-		viper.SetDefault("Domain", "wiki.example.com")
-		viper.SetDefault("RemoteGitRepo", "")
-		viper.SetDefault("AdminUser", "admin")
-		viper.SetDefault("PushOnSave", false)
-		viper.SetDefault("InitWikiRepo", false)
-		viper.SetDefault("Dev", false)
-		viper.SetDefault("Debug", false)
-		viper.SetDefault("CacheEnabled", true)
-		viper.SetDefault("RavenDSN", "")
-		viper.SetEnvPrefix("gowiki")
-		viper.AutomaticEnv()
+	// Viper config.
+	viper.SetDefault("Port", "5000")
+	viper.SetDefault("Email", "unused@the.moment")
+	viper.SetDefault("Domain", "wiki.example.com")
+	viper.SetDefault("RemoteGitRepo", "")
+	viper.SetDefault("AdminUser", "admin")
+	viper.SetDefault("PushOnSave", false)
+	viper.SetDefault("InitWikiRepo", false)
+	viper.SetDefault("Dev", false)
+	viper.SetDefault("Debug", false)
+	viper.SetDefault("CacheEnabled", true)
+	viper.SetDefault("RavenDSN", "")
+	viper.SetEnvPrefix("gowiki")
+	viper.AutomaticEnv()
 
-		viper.SetConfigName("gowiki")
-		viper.AddConfigPath("./data/")
-		viper.AddConfigPath("/etc/")
-		viper.AddConfigPath(dataDir)
-		err = viper.ReadInConfig() // Find and read the config file
-		if err != nil {            // Handle errors reading the config file
-			//panic(fmt.Errorf("Fatal error config file: %s \n", err))
-			log.Println("No configuration file loaded - using defaults")
-		}
+	viper.SetConfigName("gowiki")
+	viper.AddConfigPath("./data/")
+	viper.AddConfigPath("/etc/")
+	viper.AddConfigPath(dataDir)
+	err = viper.ReadInConfig() // Find and read the config file
+	if err != nil {            // Handle errors reading the config file
+		//panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		log.Println("No configuration file loaded - using defaults")
+	}
 
-		if viper.GetBool("Debug") {
-			httputils.Debug = true
-			auth.Debug = true
-		}
-		// Setting these last; they do not need to be set manually:
+	if viper.GetBool("Debug") {
+		httputils.Debug = true
+		auth.Debug = true
+	}
+	// Setting these last; they do not need to be set manually:
 
-		//viper.SetDefault("WikiDir", filepath.Join(dataDir, "wikidata"))
-		//viper.SetDefault("CacheLocation", filepath.Join(dataDir, "cache.gob"))
-		//viper.SetDefault("AuthLocation", filepath.Join(dataDir, "auth.db"))
-		//viper.SetDefault("InitWikiRepo", *initFlag)
+	//viper.SetDefault("WikiDir", filepath.Join(dataDir, "wikidata"))
+	//viper.SetDefault("CacheLocation", filepath.Join(dataDir, "cache.gob"))
+	//viper.SetDefault("AuthLocation", filepath.Join(dataDir, "auth.db"))
+	//viper.SetDefault("InitWikiRepo", *initFlag)
 
-		raven.SetDSN(viper.GetString("RavenDSN"))
-	*/
+	raven.SetDSN(viper.GetString("RavenDSN"))
 
 }
 
@@ -1428,7 +1413,7 @@ func setPageTitle(frontmatterTitle, filename string) string {
 	return onlyFileName
 }
 
-func buildCache(cfg *configuration) *wikiCache {
+func buildCache() *wikiCache {
 	defer httputils.TimeTrack(time.Now(), "buildCache")
 	cache := new(wikiCache)
 	cache.Tags = make(map[string][]string)
@@ -1532,7 +1517,7 @@ func buildCache(cfg *configuration) *wikiCache {
 
 	cache.Cache = wps
 
-	if cfg.Cache {
+	if viper.GetBool("CacheEnabled") {
 		cacheFile, err := os.Create(filepath.Join(dataDir, "cache.gob"))
 		check(err)
 		cacheEncoder := gob.NewEncoder(cacheFile)
@@ -1545,11 +1530,11 @@ func buildCache(cfg *configuration) *wikiCache {
 	return cache
 }
 
-func loadCache(cfg *configuration) *wikiCache {
+func loadCache() *wikiCache {
 	cache := new(wikiCache)
 	cache.Tags = make(map[string][]string)
 	cache.Favs = make(map[string]struct{})
-	if cfg.Cache {
+	if viper.GetBool("CacheEnabled") {
 		cacheFile, err := os.Open(filepath.Join(dataDir, "cache.gob"))
 		defer cacheFile.Close()
 		if err == nil {
@@ -1559,22 +1544,22 @@ func loadCache(cfg *configuration) *wikiCache {
 			//check(err)
 			if err != nil {
 				log.Println("Error loading cache. Rebuilding it.", err)
-				cache = buildCache(cfg)
+				cache = buildCache()
 			}
 			// Check the cached sha1 versus HEAD sha1, rebuild if they differ
 			if !gitIsEmpty() && cache.SHA1 != headHash() {
 				log.Println("Cache SHA1s do not match. Rebuilding cache.")
-				cache = buildCache(cfg)
+				cache = buildCache()
 			}
 		}
 		// If cache does not exist, build it
 		if os.IsNotExist(err) {
 			log.Println("Cache does not exist, building it...")
-			cache = buildCache(cfg)
+			cache = buildCache()
 		}
 	} else {
 		log.Println("Building cache...")
-		cache = buildCache(cfg)
+		cache = buildCache()
 	}
 
 	return cache
@@ -1592,7 +1577,7 @@ func headHash() string {
 
 // This should be all the stuff we need to be refreshed on startup and when pages are saved
 func (env *wikiEnv) refreshStuff() {
-	env.cache = loadCache(env.cfg)
+	env.cache = loadCache()
 	env.favs.List = env.cache.Favs
 	env.tags.List = env.cache.Tags
 }
@@ -1686,7 +1671,7 @@ func dataDirCheck() {
 func router(env *wikiEnv) http.Handler {
 
 	csrfSecure := true
-	if env.cfg.Dev {
+	if viper.GetBool("Dev") {
 		csrfSecure = false
 	}
 
@@ -1765,28 +1750,15 @@ func main() {
 	stopChan := make(chan os.Signal)
 	signal.Notify(stopChan, os.Interrupt)
 
-	confFile := flag.String("conf", "config.toml", "Path to the TOML config file.")
-	flag.Parse()
-	cfgTree, err := toml.LoadFile(*confFile)
-	if err != nil {
-		log.Fatalln("Error reading", *confFile, err)
-	}
-	var cfg configuration
-	err = cfgTree.Unmarshal(&cfg)
-	if err != nil {
-		log.Fatalln("Error unmarshaling config:", err)
-	}
-
-	err = initWikiDir()
+	err := initWikiDir()
 	if err != nil {
 		log.Fatalln(err)
 	}
 	dataDirCheck()
 
 	env := &wikiEnv{
-		cfg:       &cfg,
 		authState: *auth.NewAuthState(filepath.Join(dataDir, "auth.db")),
-		cache:     loadCache(&cfg),
+		cache:     loadCache(),
 		templates: templates.TmplInit(),
 		mutex:     sync.Mutex{},
 	}
@@ -1800,13 +1772,6 @@ func main() {
 			log.Fatalln("There was an issue with the git repo:", err)
 		}
 	}
-
-	if cfg.Debug {
-		httputils.Debug = true
-		auth.Debug = true
-	}
-
-	raven.SetDSN(cfg.RavenDSN)
 
 	/*
 		mux := http.NewServeMux()
@@ -1825,10 +1790,10 @@ func main() {
 
 	httputils.Logfile = filepath.Join(dataDir, "http.log")
 
-	log.Println("Listening on 127.0.0.1:" + cfg.Port)
+	log.Println("Listening on 127.0.0.1:" + viper.GetString("Port"))
 
 	srv := &http.Server{
-		Addr:    "127.0.0.1:" + cfg.Port,
+		Addr:    "127.0.0.1:" + viper.GetString("Port"),
 		Handler: router(env),
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 15 * time.Second,
