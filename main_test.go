@@ -110,8 +110,6 @@ func testEnvInit(t *testing.T) (string, *wikiEnv) {
 	//defer os.Remove(tmpdb)
 	authState := auth.NewAuthState(tmpdb)
 	e := testEnv(t, authState)
-	e.cfg = new(configuration)
-	e.cfg.Cache = true
 	return tmpdb, e
 }
 
@@ -423,7 +421,7 @@ func TestListPage(t *testing.T) {
 
 	e.authState.NewAdmin("admin", "admin")
 
-	e.cache = buildCache(e.cfg)
+	e.cache = buildCache()
 	err = os.Remove("./tests/data/cache.gob")
 	if err != nil {
 		t.Error(err)
@@ -573,7 +571,7 @@ func TestSearchPage(t *testing.T) {
 	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
 
-	e.cache = buildCache(e.cfg)
+	e.cache = buildCache()
 	if e.cache == nil {
 		t.Error("cache is empty")
 	}
@@ -619,7 +617,7 @@ func TestDotGit(t *testing.T) {
 	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
 
-	e.cache = buildCache(e.cfg)
+	e.cache = buildCache()
 	if e.cache == nil {
 		t.Error("cache is empty")
 	}
@@ -661,7 +659,7 @@ func TestWikiDirEscape(t *testing.T) {
 	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
 
-	e.cache = buildCache(e.cfg)
+	e.cache = buildCache()
 	if e.cache == nil {
 		t.Error("cache is empty")
 	}
@@ -753,15 +751,11 @@ func TestWikiDirIndex(t *testing.T) {
 }
 
 func TestCache(t *testing.T) {
-	cache := buildCache(&configuration{
-		Cache: true,
-	})
+	cache := buildCache()
 	if cache == nil {
 		t.Error("cache is empty")
 	}
-	cache2 := loadCache(&configuration{
-		Cache: true,
-	})
+	cache2 := loadCache()
 	if cache2 == nil {
 		t.Error("cache2 is empty")
 	}
