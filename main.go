@@ -1080,12 +1080,11 @@ func checkDir(dir string) error {
 	return err
 }
 
-func isWiki(filename string) bool {
+func isWiki(fullFilename string) bool {
 	var isWiki bool
-	file, err := os.Open(filepath.Join(dataDir, "wikidata", filename))
+	file, err := os.Open(fullFilename)
 	if err != nil {
 		raven.CaptureError(err, nil)
-		log.Println(err)
 		isWiki = false
 	}
 
@@ -1094,7 +1093,6 @@ func isWiki(filename string) bool {
 	_, err = file.Read(buff)
 	if err != nil {
 		raven.CaptureError(err, nil)
-		log.Println(err)
 		isWiki = false
 	}
 	filetype := http.DetectContentType(buff)
@@ -1105,7 +1103,7 @@ func isWiki(filename string) bool {
 		}
 
 		// Account for .page files from gitit
-		if filepath.Ext(filename) == ".page" || filepath.Ext(filename) == ".md" {
+		if filepath.Ext(fullFilename) == ".page" || filepath.Ext(fullFilename) == ".md" {
 			isWiki = true
 		}
 		// TODO Fixes gitit-created files, until I can figure out a better way
