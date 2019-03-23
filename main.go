@@ -216,6 +216,7 @@ type gitDirList struct {
 // Env wrapper to hold app-specific configs, to pass to handlers
 // cache is a pointer here since it's pretty large itself, and holds a mutex
 type wikiEnv struct {
+	cfg       configuration
 	authState auth.State
 	cache     *wikiCache
 	templates map[string]*template.Template
@@ -241,6 +242,19 @@ type tags struct {
 	List map[string][]string
 }
 
+type configuration struct {
+	DataDir       string
+	ListenAddress string
+	Domain        string
+	RemoteGitRepo string
+	PushOnSave    bool
+	InitWikiRepo  bool
+	Dev           bool
+	Debug         bool
+	Cache         bool
+	RavenDSN      string
+}
+
 // Sorting functions
 type wikiByDate []wiki
 
@@ -262,6 +276,7 @@ func init() {
 	}
 
 	pflag.StringVar(&dataDir, "DataDir", "./data/", "Path to store permanent data in.")
+	//confFile := pflag.String("conf", "config.toml", "Path to config file.")
 	pflag.Bool("InitWikiRepo", false, "Initialize the wiki directory")
 	pflag.Bool("Debug", false, "Turn on debug logging")
 	pflag.Parse()
@@ -931,9 +946,9 @@ func doesPageExist(name string) (bool, error) {
 }
 
 // Check that the given full path is relative to the configured wikidir
-func relativePathCheck(name string) error {
+func relativePathCheck(wikiDir, name string) error {
 	defer httputils.TimeTrack(time.Now(), "relativePathCheck")
-	wikiDir := filepath.Join(dataDir, "wikidata")
+	//wikiDir := filepath.Join(dataDir, "wikidata")
 	fullfilename := filepath.Join(wikiDir, name)
 	dir, _ := filepath.Split(name)
 	if dir != "" {
@@ -954,7 +969,7 @@ func relativePathCheck(name string) error {
 // - If name is trying to escape or otherwise a bad path
 // - If name is a /directory/file combo, but /directory is actually a file
 // - If name contains a .git entry, error out
-func checkName(name *string) (bool, error) {
+func checkName(wikiDir string, name *string) (bool, error) {
 	defer httputils.TimeTrack(time.Now(), "checkName")
 
 	separators := regexp.MustCompile(`[ &_=+:]`)
@@ -984,14 +999,14 @@ func checkName(name *string) (bool, error) {
 
 	// Check that no one is trying to escape out of wikiDir, etc
 	// Very important to check it here, before trying to check if it exists
-	relErr := relativePathCheck(*name)
+	relErr := relativePathCheck(wikiDir, *name)
 	if relErr != nil {
 		return false, relErr
 	}
 
 	// Build the full path
 
-	fullfilename := filepath.Join(dataDir, "wikidata", *name)
+	fullfilename := filepath.Join(wikiDir, *name)
 
 	exists, err := doesPageExist(fullfilename)
 	if err == errIsDir {
@@ -1020,7 +1035,7 @@ func checkName(name *string) (bool, error) {
 		normalName := strings.ToLower(*name)
 		normalName = separators.ReplaceAllString(normalName, "-")
 		normalName = dashes.ReplaceAllString(normalName, "-")
-		fullnewfilename := filepath.Join(dataDir, "wikidata", normalName)
+		fullnewfilename := filepath.Join(wikiDir, normalName)
 		// Only check for the existence of the normalized name if anything changed
 		if normalName != *name {
 			exists, err = doesPageExist(fullnewfilename)
@@ -1755,6 +1770,9 @@ func main() {
 	dataDirCheck()
 
 	env := &wikiEnv{
+		cfg: configuration{
+			DataDir: dataDir,
+		},
 		authState: *auth.NewAuthState(filepath.Join(dataDir, "auth.db")),
 		cache:     loadCache(),
 		templates: templates.TmplInit(),
