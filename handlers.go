@@ -652,8 +652,8 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !isWiki(filepath.Join(dataDir, "wikidata", name)) {
-		http.ServeFile(w, r, filepath.Join(dataDir, "wikidata", name))
+	if !isWiki(filepath.Join(env.cfg.DataDir, "wikidata", name)) {
+		http.ServeFile(w, r, filepath.Join(env.cfg.DataDir, "wikidata", name))
 		return
 	}
 
@@ -928,7 +928,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		params := httptreemux.ContextParams(r.Context())
 		name := params["name"]
 		user := auth.GetUserState(r.Context())
-		pageExists, relErr := checkName(filepath.Join(dataDir, "wikidata"), &name)
+		pageExists, relErr := checkName(filepath.Join(env.cfg.DataDir, "wikidata"), &name)
 		//wikiDir := filepath.Join(dataDir, "wikidata")
 		//fullfilename := filepath.Join(wikiDir, name)
 
@@ -942,7 +942,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			//    If name/index exists, redirect to it
 			if relErr == errIsDir && r.URL.Path[:len("/"+name)] == "/"+name {
 				// Check if name/index exists, and if it does, serve it
-				_, err := os.Stat(filepath.Join(dataDir, "wikidata", name, "index"))
+				_, err := os.Stat(filepath.Join(env.cfg.DataDir, "wikidata", name, "index"))
 				if err == nil {
 					http.Redirect(w, r, "/"+path.Join(name, "index"), http.StatusFound)
 					return
