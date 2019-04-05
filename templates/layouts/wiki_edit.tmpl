@@ -50,16 +50,17 @@
             <li class="tab-title"><a class="tablinks" id="preview-tab">Preview</a></li>
             <li class="tab-title"><a class="tablinks" id="help-tab">Help</a></li>
         </ul>
+        <div id="vueEdit">
         <div id="Edit" class="tabcontent">
-            <div>
-                <textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea>
-            </div>
+                <textarea name="editor" id="wikieditor" @input="update" :value="input">{{printf "%s" .Wiki.Content}}</textarea>
+            <div v-html="compiledMarkdown"></div>
         </div>
         <div id="Preview" class="tabcontent">
             <div>
-                <article class="content" id="preview_content"></article>
+                <!--<article class="content" id="preview_content" v-html="compiledMarkdown"></article>-->
             </div>
-        </div>        
+        </div>
+        </div>    
         <div id="Help" class="tabcontent">
             <div>
             <h2>Markdown Cheatsheet:</h2>
@@ -101,7 +102,8 @@ some code
 {{ end }}
 {{ define "extra_scripts" }}
 <script src="/assets/js/tabs.js"></script>
-<script src="/assets/js/jquery.min.js"></script>
+<script src="/assets/js/prevue.js"></script>
+<!--<script src="/assets/js/jquery.min.js"></script>
 <script src="/assets/js/tagdog.min.js"></script>
-<script src="/assets/js/tags.js"></script>
+<script src="/assets/js/tags.js"></script>-->
 {{ end }}
