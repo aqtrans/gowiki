@@ -43,10 +43,10 @@ function mdPreview(text) {
   //return mdd;
 }
 
-new Vue({
-    el: '#Edit',
+var editVue = new Vue({
+    el: '#tab-content',
     data: {
-        input: 'omg'
+        input: document.getElementById("wikieditor").value
     },
     asyncComputed: {
       compiledMarkdown: {
@@ -102,3 +102,34 @@ new Vue({
       }, 300)
     }
   })
+
+
+  var tabs = [
+    {
+      name: 'Edit', 
+      component: { 
+        template: document.getElementById("Edit")
+      }
+    },
+    {
+      name: 'Preview',
+      component: {
+        template: document.getElementById("Preview")
+      }
+    },
+    {
+      name: 'Help',
+      component: {
+        template: document.getElementById("Help")
+      }
+    }
+]
+
+var tabs = new Vue({
+  delimiters: ['${', '}'],
+  el: '#tabs',
+  data: {
+    tabs: tabs,
+    currentTab: tabs[0]
+  }
+})
