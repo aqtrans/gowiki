@@ -45,22 +45,37 @@
         </div>
         {{.Token}}
         <hr>
-        <ul class="tabs sub" id="subtabs">
+        <!--<ul class="tabs sub" id="subtabs">
             <li class="tab-title"><a class="tablinks is-active" id="edit-tab">Edit</a></li>
             <li class="tab-title"><a class="tablinks" id="preview-tab">Preview</a></li>
             <li class="tab-title"><a class="tablinks" id="help-tab">Help</a></li>
+        </ul>-->
+        <div id="tabs">
+        <ul class="tabs sub">
+        <li class="tab-title"
+            v-for="tab in tabs"
+            v-bind:key="tab.name"
+            v-bind:class="['tab-button', { active: currentTab.name === tab.name }]"
+            v-on:click="currentTab = tab"
+        ><a class="tablinks">${ tab.name }</a></li>
         </ul>
-        <div id="vueEdit">
+
+        <component
+            v-bind:is="currentTab.component"
+            class="tab"
+        ></component>
+        </div>
+
+        <div id="tab-content">
         <div id="Edit" class="tabcontent">
-                <textarea name="editor" id="wikieditor" @input="update" :value="input">{{printf "%s" .Wiki.Content}}</textarea>
-            <div v-html="compiledMarkdown"></div>
+            <textarea name="editor" id="wikieditor" @input="update" :value="input">{{printf "%s" .Wiki.Content}}</textarea>
         </div>
         <div id="Preview" class="tabcontent">
             <div>
+                <div v-html="compiledMarkdown"></div>
                 <!--<article class="content" id="preview_content" v-html="compiledMarkdown"></article>-->
             </div>
         </div>
-        </div>    
         <div id="Help" class="tabcontent">
             <div>
             <h2>Markdown Cheatsheet:</h2>
@@ -101,7 +116,7 @@ some code
 
 {{ end }}
 {{ define "extra_scripts" }}
-<script src="/assets/js/tabs.js"></script>
+<!--<script src="/assets/js/vuetabs.js"></script>-->
 <script src="/assets/js/prevue.js"></script>
 <!--<script src="/assets/js/jquery.min.js"></script>
 <script src="/assets/js/tagdog.min.js"></script>
