@@ -139,6 +139,8 @@ div.searchwiki {
   .tabs.sub {
     background: #606060;
     padding: 0.5rem 0.2rem 0 0.5rem; }
+    .tabs.sub li.active {
+      background: black; }
     .tabs.sub li a {
       color: #fefefe;
       cursor: pointer; }
@@ -286,8 +288,7 @@ pre, code {
   body {
     font-size: 100%;
     grid-template-areas: "header header" "nav    content" "nav    footer";
-    grid-template-columns: 14rem 10fr;
-    grid-template-rows: 3rem auto minmax(0.5rem, 3rem); }
+    grid-template-columns: 14rem 10fr; }
 
   body > header {
     flex-direction: row;
@@ -309,5 +310,12 @@ pre, code {
   .frontmatter {
     display: flex;
     flex-direction: row; } }
+@media (min-width: 80rem) {
+  #Edit {
+    display: flex; }
+    #Edit a {
+      display: block; }
+    #Edit div#preview_content, #Edit textarea {
+      flex: 1; } }
 
 /*# sourceMappingURL=wiki.css.map */
