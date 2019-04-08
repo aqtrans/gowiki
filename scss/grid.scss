@@ -120,12 +120,14 @@ body > main {
             list-style-type: none;
         }
     }
-    > nav {
-        float: right;
-        background-color: darken($almostblack, 15);
-        ul {
-            margin: 0 1rem;
-            list-style-type: upper-roman;
+    div.content {
+        > nav {
+            float: right;
+            background-color: darken($almostblack, 15);
+            ul {
+                margin: 0 1rem;
+                list-style-type: upper-roman;
+            }
         }
     }
 }
@@ -401,13 +403,13 @@ pre, code {
 
 // Make Edit and Preview side-by-side if screen is large enough
 @media (min-width: 80rem) {
-    #Edit {
-        a {
-            display: block;
-        }
+    #Edit div {
         display: flex;
-        div#preview_content, textarea {
+        > div, > textarea {
             flex: 1;           
+        }
+        > div > div#preview_content {
+            display: block;
         }
     }
 }
