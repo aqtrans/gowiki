@@ -53,9 +53,13 @@
         <div id="tabs">
         <tabs>
         <tab name="Edit" id="Edit" :selected=true>
-            <a id="preview-button" v-on:click="previewEnabled = !previewEnabled">{{svg "eye"}}</a>
-            <textarea name="editor" id="wikieditor" @input="update" :value="input">{{printf "%s" .Wiki.Content}}</textarea>
-            <div class="content" id="preview_content" v-show="previewEnabled" v-html="compiledMarkdown"></div>
+            <a id="preview-button" v-on:click="previewEnabled = !previewEnabled">Toggle side-by-side preview</a>
+            <div>
+                <textarea name="editor" id="wikieditor" @input="update" :value="input">{{printf "%s" .Wiki.Content}}</textarea>
+                <div v-show="previewEnabled">
+                    <div class="content" id="preview_content"  v-html="compiledMarkdown"></div>
+                </div>
+            </div>
         </tab>
         <tab name="Preview" id="Preview">
             <div> 
