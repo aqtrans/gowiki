@@ -46,7 +46,8 @@ function mdPreview(text) {
 var editVue = new Vue({
     el: '#tabs',
     data: {
-        input: document.getElementById("wikieditor").value
+        input: document.getElementById("wikieditor").value,
+        previewEnabled: false,
     },
     asyncComputed: {
       compiledMarkdown: {
