@@ -398,3 +398,16 @@ pre, code {
         flex-direction: row;
     }
 }
+
+// Make Edit and Preview side-by-side if screen is large enough
+@media (min-width: 80rem) {
+    #Edit {
+        a {
+            display: block;
+        }
+        display: flex;
+        div#preview_content, textarea {
+            flex: 1;           
+        }
+    }
+}
