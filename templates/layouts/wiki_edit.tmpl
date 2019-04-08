@@ -53,9 +53,7 @@
         <div id="tabs">
         <tabs>
         <tab name="Edit" id="Edit" :selected=true>
-            <div>
             <textarea name="editor" id="wikieditor" @input="update" :value="input">{{printf "%s" .Wiki.Content}}</textarea>
-            </div>
         </tab>
         <tab name="Preview" id="Preview">
             <div>
@@ -93,6 +91,7 @@ some code
             </div>
         </tab>
         </tabs>
+        </div>
         </div>        
         <button type="submit" class="success button">Save</button>
         </form>
