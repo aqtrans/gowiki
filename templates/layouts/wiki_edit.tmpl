@@ -51,32 +51,19 @@
             <li class="tab-title"><a class="tablinks" id="help-tab">Help</a></li>
         </ul>-->
         <div id="tabs">
-        <ul class="tabs sub">
-        <li class="tab-title"
-            v-for="tab in tabs"
-            v-bind:key="tab.name"
-            v-bind:class="['tab-button', { active: currentTab.name === tab.name }]"
-            v-on:click="currentTab = tab"
-        ><a class="tablinks">${ tab.name }</a></li>
-        </ul>
-
-        <component
-            v-bind:is="currentTab.component"
-            class="tab"
-        ></component>
-        </div>
-
-        <div id="tab-content">
-        <div id="Edit" class="tabcontent">
+        <tabs>
+        <tab name="Edit" id="Edit" :selected=true>
+            <div>
             <textarea name="editor" id="wikieditor" @input="update" :value="input">{{printf "%s" .Wiki.Content}}</textarea>
-        </div>
-        <div id="Preview" class="tabcontent">
+            </div>
+        </tab>
+        <tab name="Preview" id="Preview">
             <div>
                 <div v-html="compiledMarkdown"></div>
                 <!--<article class="content" id="preview_content" v-html="compiledMarkdown"></article>-->
             </div>
-        </div>
-        <div id="Help" class="tabcontent">
+        </tab>
+        <tab name="Help" id="Help">
             <div>
             <h2>Markdown Cheatsheet:</h2>
 <pre><code>
@@ -104,6 +91,8 @@ some code
 ` one-line-code `
 </code></pre>
             </div>
+        </tab>
+        </tabs>
         </div>        
         <button type="submit" class="success button">Save</button>
         </form>
