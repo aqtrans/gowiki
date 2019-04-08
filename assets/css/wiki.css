@@ -86,10 +86,10 @@ body > main {
     font-size: 75%; }
     body > main > footer > ul {
       list-style-type: none; }
-  body > main > nav {
+  body > main div.content > nav {
     float: right;
     background-color: black; }
-    body > main > nav ul {
+    body > main div.content > nav ul {
       margin: 0 1rem;
       list-style-type: upper-roman; }
 
@@ -311,11 +311,11 @@ pre, code {
     display: flex;
     flex-direction: row; } }
 @media (min-width: 80rem) {
-  #Edit {
+  #Edit div {
     display: flex; }
-    #Edit a {
-      display: block; }
-    #Edit div#preview_content, #Edit textarea {
-      flex: 1; } }
+    #Edit div > div, #Edit div > textarea {
+      flex: 1; }
+    #Edit div > div > div#preview_content {
+      display: block; } }
 
 /*# sourceMappingURL=wiki.css.map */
