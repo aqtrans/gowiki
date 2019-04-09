@@ -33,6 +33,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"expvar"
 	"fmt"
@@ -1580,9 +1581,19 @@ func (env *wikiEnv) refreshStuff() {
 	env.tags.List = env.cache.Tags
 }
 
-func markdownPreview(w http.ResponseWriter, r *http.Request) {
+type mdPreviewJSON struct {
+	MD string `json:"md"`
+}
 
-	w.Write([]byte(markdownRender([]byte(r.PostFormValue("md")))))
+func markdownPreview(w http.ResponseWriter, r *http.Request) {
+	dec := json.NewDecoder(r.Body)
+	var md mdPreviewJSON
+	err := dec.Decode(&md)
+	if err != nil {
+		log.Println("[markdownPreview] error decoding JSON:", err)
+		w.Write([]byte(""))
+	}
+	w.Write([]byte(markdownRender([]byte(md.MD))))
 }
 
 // return false if request should be allowed
