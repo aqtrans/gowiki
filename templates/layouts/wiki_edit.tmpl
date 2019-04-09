@@ -53,7 +53,7 @@
         <div id="tabs">
         <tabs>
         <tab name="Edit" id="Edit" :selected=true>
-            <a id="preview-button" v-on:click="previewEnabled = !previewEnabled">Toggle side-by-side preview</a>
+            <a id="preview-button" v-on:click="previewEnabled = !previewEnabled">Toggle in-line preview</a>
             <div>
                 <textarea name="editor" id="wikieditor" @input="update" :value="input">{{printf "%s" .Wiki.Content}}</textarea>
                 <div v-show="previewEnabled">
@@ -110,7 +110,11 @@ some code
 
 {{ end }}
 {{ define "extra_scripts" }}
-<!--<script src="/assets/js/vuetabs.js"></script>-->
+<script src="/assets/js/lodash.min.js"></script>
+<script src="/assets/js/vue.min.js"></script>
+<!--<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>-->
+<script src="/assets/js/vue-async-computed.js"></script>
+<script src="/assets/js/vue-tabs.js"></script>
 <script src="/assets/js/prevue.js"></script>
 <!--<script src="/assets/js/jquery.min.js"></script>
 <script src="/assets/js/tagdog.min.js"></script>
