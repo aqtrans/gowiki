@@ -8,11 +8,11 @@ var editVue = new Vue({
       compiledMarkdown: {
         get() {
           var url = '/md_render';
-          var data = encodeURI("md="+this.input);
+          var data = {md: this.input};
           
           return fetch(url, {
             method: 'POST', // or 'PUT'
-            body: data, // data can be `string` or {object}!
+            body: JSON.stringify(data), // data can be `string` or {object}!
             headers:{
               'Content-Type': 'application/x-www-form-urlencoded',
               'X-CSRF-Token': document.querySelector("input[name='gorilla.csrf.Token']").value,
