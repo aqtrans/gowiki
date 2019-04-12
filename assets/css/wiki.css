@@ -86,10 +86,10 @@ body > main {
     font-size: 75%; }
     body > main > footer > ul {
       list-style-type: none; }
-  body > main div.content > nav {
+  body > main > nav {
     float: right;
     background-color: black; }
-    body > main div.content > nav ul {
+    body > main > nav ul {
       margin: 0 1rem;
       list-style-type: upper-roman; }
 
@@ -139,8 +139,6 @@ div.searchwiki {
   .tabs.sub {
     background: #606060;
     padding: 0.5rem 0.2rem 0 0.5rem; }
-    .tabs.sub li.active {
-      background: black; }
     .tabs.sub li a {
       color: #fefefe;
       cursor: pointer; }
@@ -288,7 +286,8 @@ pre, code {
   body {
     font-size: 100%;
     grid-template-areas: "header header" "nav    content" "nav    footer";
-    grid-template-columns: 14rem 10fr; }
+    grid-template-columns: 14rem 10fr;
+    grid-template-rows: 3rem auto minmax(0.5rem, 3rem); }
 
   body > header {
     flex-direction: row;
@@ -310,12 +309,5 @@ pre, code {
   .frontmatter {
     display: flex;
     flex-direction: row; } }
-@media (min-width: 80rem) {
-  #Edit div {
-    display: flex; }
-    #Edit div > div, #Edit div > textarea {
-      flex: 1; }
-    #Edit div > div > div#preview_content {
-      display: block; } }
 
 /*# sourceMappingURL=wiki.css.map */
