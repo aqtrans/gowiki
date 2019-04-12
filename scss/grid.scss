@@ -120,14 +120,12 @@ body > main {
             list-style-type: none;
         }
     }
-    div.content {
-        > nav {
-            float: right;
-            background-color: darken($almostblack, 15);
-            ul {
-                margin: 0 1rem;
-                list-style-type: upper-roman;
-            }
+    > nav {
+        float: right;
+        background-color: darken($almostblack, 15);
+        ul {
+            margin: 0 1rem;
+            list-style-type: upper-roman;
         }
     }
 }
@@ -190,11 +188,6 @@ div.searchwiki {
     &.sub {
         background: lighten($almostblack, 25);
         padding: 0.5rem 0.2rem 0 0.5rem;
-        li {
-            &.active{
-                background: darken($almostblack, 15);
-            }
-        }
         li a {
             color: $foreground-font;
             cursor: pointer;
@@ -255,11 +248,11 @@ table {
 }
 
 #notification.anim {
-    -webkit-transition: top 1s ease-out;  
-    -moz-transition: top 1s ease-out;
-    -ms-transition: top 1s ease-out;
-    -o-transition: top 1s ease-out;
-    transition: top 1s ease-out;
+    -webkit-transition: top 0.6s ease-out;  
+    -moz-transition: top 0.6s ease-out;
+    -ms-transition: top 0.6s ease-out;
+    -o-transition: top 0.6s ease-out;
+    transition: top 0.6s ease-out;
 }
 
 #notification.active {
@@ -398,18 +391,5 @@ pre, code {
     .frontmatter {
         display: flex;
         flex-direction: row;
-    }
-}
-
-// Make Edit and Preview side-by-side if screen is large enough
-@media (min-width: 80rem) {
-    #Edit div {
-        display: flex;
-        > div, > textarea {
-            flex: 1;           
-        }
-        > div > div#preview_content {
-            display: block;
-        }
     }
 }

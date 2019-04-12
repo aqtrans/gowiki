@@ -45,29 +45,22 @@
         </div>
         {{.Token}}
         <hr>
-        <!--<ul class="tabs sub" id="subtabs">
+        <ul class="tabs sub" id="subtabs">
             <li class="tab-title"><a class="tablinks is-active" id="edit-tab">Edit</a></li>
             <li class="tab-title"><a class="tablinks" id="preview-tab">Preview</a></li>
             <li class="tab-title"><a class="tablinks" id="help-tab">Help</a></li>
-        </ul>-->
-        <div id="tabs">
-        <tabs>
-        <tab name="Edit" id="Edit" :selected=true>
-            <a id="preview-button" v-on:click="previewEnabled = !previewEnabled">Toggle in-line preview</a>
+        </ul>
+        <div id="Edit" class="tabcontent">
             <div>
-                <textarea name="editor" id="wikieditor" @input="update" :value="input">{{printf "%s" .Wiki.Content}}</textarea>
-                <div v-show="previewEnabled">
-                    <div class="content" id="preview_content"  v-html="compiledMarkdown"></div>
-                </div>
+                <textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea>
             </div>
-        </tab>
-        <tab name="Preview" id="Preview">
-            <div> 
-                <div class="content" v-html="compiledMarkdown"></div>
-                <!--<article class="content" id="preview_content" v-html="compiledMarkdown"></article>-->
+        </div>
+        <div id="Preview" class="tabcontent">
+            <div>
+                <article class="content" id="preview_content"></article>
             </div>
-        </tab>
-        <tab name="Help" id="Help">
+        </div>        
+        <div id="Help" class="tabcontent">
             <div>
             <h2>Markdown Cheatsheet:</h2>
 <pre><code>
@@ -95,9 +88,6 @@ some code
 ` one-line-code `
 </code></pre>
             </div>
-        </tab>
-        </tabs>
-        </div>
         </div>        
         <button type="submit" class="success button">Save</button>
         </form>
@@ -110,13 +100,8 @@ some code
 
 {{ end }}
 {{ define "extra_scripts" }}
-<script src="/assets/js/lodash.min.js"></script>
-<script src="/assets/js/vue.min.js"></script>
-<!--<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>-->
-<script src="/assets/js/vue-async-computed.js"></script>
-<script src="/assets/js/vue-tabs.js"></script>
-<script src="/assets/js/prevue.js"></script>
-<!--<script src="/assets/js/jquery.min.js"></script>
+<script src="/assets/js/tabs.js"></script>
+<script src="/assets/js/jquery.min.js"></script>
 <script src="/assets/js/tagdog.min.js"></script>
-<script src="/assets/js/tags.js"></script>-->
+<script src="/assets/js/tags.js"></script>
 {{ end }}

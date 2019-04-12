@@ -18,9 +18,7 @@
       <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}">{{svg "pencil"}} Edit</a></li>
       <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}">{{svg "history"}} History</a></li>
     </ul>
-    <div class="content">
-      {{.Rendered | safeHTML}}
-    </div>
+    {{.Rendered | safeHTML}}
     <hr>
     <footer>
       {{ if .SimilarPages }}
