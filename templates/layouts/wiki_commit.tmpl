@@ -7,19 +7,19 @@
     <li class="tabs-title"><a href="/{{.Wiki.Filename}}">{{ svg "file-text2" }} View page @ HEAD</a></li>
     <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}">{{ svg "history" }} History</a></li>
   </ul>
-  <div id="tabs">
-    <tabs>
-      <tab name="Content" id="Content" :selected=true>
-        <div>
-          {{.Rendered | safeHTML}}
-        </div>
-      </tab>
-      <tab name="Diff" id="Diff">
-        <div>
-          <pre><code>{{.Diff}}</code></pre>
-        </div>
-      </tab>
-    </tabs>
+  <ul class="tabs sub" id="subtabs">
+    <li class="tab-title"><a class="tablinks is-active" id="content-tab">Content</a></li>
+    <li class="tab-title"><a class="tablinks" id="diff-tab">Diff</a></li>
+  </ul>
+  <div id="Content" class="tabcontent">
+    <div>
+      {{.Rendered | safeHTML}}
+    </div>
+  </div>
+  <div id="Diff" class="tabcontent">
+    <div>
+      <pre><code>{{.Diff}}</code></pre>
+    </div>
   </div>
   <footer>
     <ul class="frontmatter">
@@ -46,10 +46,5 @@
 </main>
 {{ end }}
 {{ define "extra_scripts" }}
-<script src="/assets/js/lodash.min.js"></script>
-<script src="/assets/js/vue.min.js"></script>
-<!--<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>-->
-<script src="/assets/js/vue-async-computed.js"></script>
-<script src="/assets/js/vue-tabs.js"></script>
-<script src="/assets/js/vue-commit.js"></script>
+<script src="/assets/js/tabs.js"></script>
 {{ end }}

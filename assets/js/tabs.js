@@ -20,7 +20,6 @@ function openTab(event, tabName) {
     event.currentTarget.className += " is-active";
 
     if (tabName == "Preview") {
-        /*
         var editortxt = document.getElementsByName("editor")[0].value;
         var csrf = document.getElementsByName("gorilla.csrf.Token")[0].value;
         var xhr = new XMLHttpRequest();
@@ -36,7 +35,6 @@ function openTab(event, tabName) {
             }
         }
         xhr.send(encodeURI("md="+editortxt));
-        */
         /*
         $.ajax({
             type: "POST",

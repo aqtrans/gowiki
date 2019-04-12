@@ -1,9 +1,5 @@
 function notif() {
-    const notificationBar = document.getElementById('notification');
-    notificationBar.classList.remove("active");
-    notificationBar.addEventListener('transitionend', () => {
-        notificationBar.remove();
-    })
+    document.getElementById('notification').classList.remove("active");
 }
 
 document.addEventListener('DOMContentLoaded', function () {
