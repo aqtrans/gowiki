@@ -44,9 +44,41 @@
             <input type="text" id="tags" name="tags" placeholder="Separate tags with commas" value="{{ .Wiki.Frontmatter.Tags|jsTags }}" />
         </div>
         {{.Token}}
-        <hr>
-        <ul class="tabs sub" id="subtabs">
-            <li class="tab-title"><a class="tablinks is-active" id="edit-tab">Edit</a></li>
+
+        <fancy-tabs background>
+            <a slot="title" selected>Edit</a>
+            <a slot="title" id="preview">Preview</a>
+            <a slot="title">Help</a>
+            <section><textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea></section>
+            <section><article class="content" id="preview_content"></article></section>
+            <section><h2>Markdown Cheatsheet:</h2>
+<pre><code>
+Headings:
+# Header
+## Subheader
+
+Text:
+*italics*
+**bold**
+~~strikeout~~
+super^script^
+sub~script~
+> quotation
+
+Links:
+[Title](http://google.com)
+[Local Wiki Page]()
+[/Local Wiki Page]()
+
+Code:
+```
+some code
+```
+` one-line-code `
+</code></pre></section>
+        </fancy-tabs>        
+        <!--<ul class="tabs sub" id="subtabs">
+            <li class="tab-title is-active"><a class="tablinks" id="edit-tab">Edit</a></li>
             <li class="tab-title"><a class="tablinks" id="preview-tab">Preview</a></li>
             <li class="tab-title"><a class="tablinks" id="help-tab">Help</a></li>
         </ul>
@@ -88,7 +120,7 @@ some code
 ` one-line-code `
 </code></pre>
             </div>
-        </div>        
+        </div>-->
         <button type="submit" class="success button">Save</button>
         </form>
         <br>
@@ -100,8 +132,9 @@ some code
 
 {{ end }}
 {{ define "extra_scripts" }}
+<!--<script src="/assets/js/md-preview.js"></script>-->
 <script src="/assets/js/tabs.js"></script>
-<script src="/assets/js/jquery.min.js"></script>
+<!--<script src="/assets/js/jquery.min.js"></script>
 <script src="/assets/js/tagdog.min.js"></script>
-<script src="/assets/js/tags.js"></script>
+<script src="/assets/js/tags.js"></script>-->
 {{ end }}
