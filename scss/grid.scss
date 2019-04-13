@@ -190,9 +190,17 @@ div.searchwiki {
     &.sub {
         background: lighten($almostblack, 25);
         padding: 0.5rem 0.2rem 0 0.5rem;
+        margin-top: 0.5rem;
         li a {
             color: $foreground-font;
-            cursor: pointer;          
+            cursor: pointer;     
+            &[role="tab"][aria-selected="true"] {
+                background-color: $almostblack;
+            }     
+            &:hover {
+                background-color: $almostblack;
+                border: 0;
+            }
         }
     }
 }
@@ -339,9 +347,11 @@ pre, code {
 }
 */
 
+/*
 .tabcontent {
     display: none;
 }
+*/
 
 .button {
     background-color: #4CAF50; /* Green */
