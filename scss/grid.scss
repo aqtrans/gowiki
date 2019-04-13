@@ -120,12 +120,14 @@ body > main {
             list-style-type: none;
         }
     }
-    > nav {
-        float: right;
-        background-color: darken($almostblack, 15);
-        ul {
-            margin: 0 1rem;
-            list-style-type: upper-roman;
+    div.content {
+        > nav {
+            float: right;
+            background-color: darken($almostblack, 15);
+            ul {
+                margin: 0 1rem;
+                list-style-type: upper-roman;
+            }
         }
     }
 }

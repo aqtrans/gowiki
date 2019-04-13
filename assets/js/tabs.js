@@ -23,11 +23,9 @@ function mdPreview() {
         throw new Error('Network response was not ok.');
     })
     .then((md) => {
-        document.querySelector('#preview_content').innerHTML = md;
+        document.querySelector('#previewcontent').innerHTML = md;
     })
     .catch(error => console.error('Error:', error));
-
-    //document.body.appendChild(md);
 }
 
 let selected_ = null;
