@@ -51,14 +51,10 @@
             <li class="tab-title"><a class="tablinks" id="help-tab" href="#help">Help</a></li>
         </ul>
         <div id="edit" class="tabcontent">
-            <div>
-                <textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea>
-            </div>
+            <textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea>
         </div>
         <div id="preview" class="tabcontent">
-            <div>
-                <article class="content" id="previewcontent"></article>
-            </div>
+            <div class="content" id="previewcontent"></div>
         </div>        
         <div id="help" class="tabcontent">
             <div>
