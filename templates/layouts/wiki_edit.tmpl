@@ -45,54 +45,22 @@
         </div>
         {{.Token}}
 
-        <fancy-tabs background>
-            <a slot="title" selected>Edit</a>
-            <a slot="title" id="preview">Preview</a>
-            <a slot="title">Help</a>
-            <section><textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea></section>
-            <section><div class="content" id="previewcontent"></div></section>
-            <section><h2>Markdown Cheatsheet:</h2>
-<pre><code>
-Headings:
-# Header
-## Subheader
-
-Text:
-*italics*
-**bold**
-~~strikeout~~
-super^script^
-sub~script~
-> quotation
-
-Links:
-[Title](http://google.com)
-[Local Wiki Page]()
-[/Local Wiki Page]()
-
-Code:
-```
-some code
-```
-` one-line-code `
-</code></pre></section>
-        </fancy-tabs>        
-        <!--<ul class="tabs sub" id="subtabs">
-            <li class="tab-title is-active"><a class="tablinks" id="edit-tab">Edit</a></li>
-            <li class="tab-title"><a class="tablinks" id="preview-tab">Preview</a></li>
-            <li class="tab-title"><a class="tablinks" id="help-tab">Help</a></li>
+        <ul data-tabs class="tabs sub" id="subtabs">
+            <li class="tab-title"><a data-tabby-default class="tablinks" id="edit-tab" href="#edit">Edit</a></li>
+            <li class="tab-title"><a class="tablinks" id="preview-tab" href="#preview">Preview</a></li>
+            <li class="tab-title"><a class="tablinks" id="help-tab" href="#help">Help</a></li>
         </ul>
-        <div id="Edit" class="tabcontent">
+        <div id="edit" class="tabcontent">
             <div>
                 <textarea name="editor" id="wikieditor">{{printf "%s" .Wiki.Content}}</textarea>
             </div>
         </div>
-        <div id="Preview" class="tabcontent">
+        <div id="preview" class="tabcontent">
             <div>
-                <article class="content" id="preview_content"></article>
+                <article class="content" id="previewcontent"></article>
             </div>
         </div>        
-        <div id="Help" class="tabcontent">
+        <div id="help" class="tabcontent">
             <div>
             <h2>Markdown Cheatsheet:</h2>
 <pre><code>
@@ -120,7 +88,7 @@ some code
 ` one-line-code `
 </code></pre>
             </div>
-        </div>-->
+        </div>
         <button type="submit" class="success button">Save</button>
         </form>
         <br>
@@ -133,7 +101,8 @@ some code
 {{ end }}
 {{ define "extra_scripts" }}
 <!--<script src="/assets/js/md-preview.js"></script>-->
-<script src="/assets/js/tabs.js"></script>
+<script src="/assets/js/tabby.polyfills.min.js"></script>
+<script src="/assets/js/tabby-preview.js"></script>
 <!--<script src="/assets/js/jquery.min.js"></script>
 <script src="/assets/js/tagdog.min.js"></script>
 <script src="/assets/js/tags.js"></script>-->
