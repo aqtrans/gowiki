@@ -190,11 +190,7 @@ div.searchwiki {
         padding: 0.5rem 0.2rem 0 0.5rem;
         li a {
             color: $foreground-font;
-            cursor: pointer;
-            &.is-active { 
-                //border-bottom: 0.125rem solid white;
-                background: darken($almostblack, 15);
-            }            
+            cursor: pointer;          
         }
     }
 }
@@ -248,11 +244,11 @@ table {
 }
 
 #notification.anim {
-    -webkit-transition: top 0.6s ease-out;  
-    -moz-transition: top 0.6s ease-out;
-    -ms-transition: top 0.6s ease-out;
-    -o-transition: top 0.6s ease-out;
-    transition: top 0.6s ease-out;
+    -webkit-transition: top 1s ease-out;  
+    -moz-transition: top 1s ease-out;
+    -ms-transition: top 1s ease-out;
+    -o-transition: top 1s ease-out;
+    transition: top 1s ease-out;
 }
 
 #notification.active {
