@@ -39,7 +39,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"log"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -55,6 +54,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	raven "github.com/getsentry/raven-go"
 
@@ -73,6 +74,7 @@ import (
 
 	"git.jba.io/go/auth"
 	"git.jba.io/go/httputils"
+
 	"git.jba.io/go/wiki/vfs/assets"
 	"git.jba.io/go/wiki/vfs/templates"
 )
@@ -297,6 +299,7 @@ func init() {
 	if viper.GetBool("Debug") {
 		httputils.Debug = true
 		auth.Debug = true
+		log.SetLevel(log.DebugLevel)
 	}
 	// Setting these last; they do not need to be set manually:
 
@@ -441,7 +444,7 @@ func timeNewContext(c context.Context, t time.Time) context.Context {
 func timeFromContext(c context.Context) time.Time {
 	t, ok := c.Value(timerKey).(time.Time)
 	if !ok {
-		httputils.Debugln("No startTime in context.")
+		log.Debugln("No startTime in context.")
 		t = time.Now()
 	}
 	return t
@@ -454,7 +457,7 @@ func newNameContext(c context.Context, t string) context.Context {
 func nameFromContext(c context.Context) string {
 	t, ok := c.Value(wikiNameKey).(string)
 	if !ok {
-		httputils.Debugln("No wikiName in context.")
+		log.Debugln("No wikiName in context.")
 		return ""
 	}
 	return t
@@ -467,7 +470,7 @@ func newWikiExistsContext(c context.Context, t bool) context.Context {
 func wikiExistsFromContext(c context.Context) bool {
 	t, ok := c.Value(wikiExistsKey).(bool)
 	if !ok {
-		httputils.Debugln("No wikiExists in context.")
+		log.Debugln("No wikiExists in context.")
 		return false
 	}
 	return t
@@ -480,7 +483,7 @@ func newWikiContext(c context.Context, w *wiki) context.Context {
 func wikiFromContext(c context.Context) *wiki {
 	w, ok := c.Value(wikiKey).(*wiki)
 	if !ok {
-		httputils.Debugln("No wiki in context.")
+		log.Debugln("No wiki in context.")
 		return &wiki{}
 	}
 	return w
@@ -515,7 +518,7 @@ func jsTags(tagS []string) string {
 func (f *favs) LoadOrStore(s string) {
 	f.Lock()
 	if _, ok := f.List[s]; !ok {
-		httputils.Debugln("favs.LoadOrStore: " + s + " is not already a favorite.")
+		log.Debugln("favs.LoadOrStore: " + s + " is not already a favorite.")
 		f.List[s] = struct{}{}
 	}
 	f.Unlock()
@@ -629,7 +632,7 @@ func readFileAndFront(filename string) (frontmatter, []byte) {
 	f, err := os.Open(filename)
 	//checkErr("readFileAndFront()/Open", err)
 	if err != nil {
-		httputils.Debugln("Error in readFileAndFront:", err)
+		log.Debugln("Error in readFileAndFront:", err)
 		raven.CaptureError(err, nil)
 		f.Close()
 		return frontmatter{}, []byte("")
@@ -866,7 +869,7 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 	// Squeeze in our response time here
-	err = tmpl.ExecuteTemplate(buf, "footer", httputils.GetRenderTime(c))
+	err = tmpl.ExecuteTemplate(buf, "footer", getRenderTime(c))
 	if err != nil {
 		log.Println("renderTemplate error:")
 		log.Println(err)
@@ -926,7 +929,7 @@ func doesPageExist(name string) (bool, error) {
 		}
 	}
 
-	httputils.Debugln("doesPageExist", name, exists)
+	log.Debugln("doesPageExist", name, exists)
 
 	return exists, finError
 }
@@ -1007,7 +1010,7 @@ func checkName(name *string) (bool, error) {
 				existsWithExt, _ := doesPageExist(fullfilename + ext)
 				if existsWithExt {
 					*name = *name + ext
-					httputils.Debugln(*name + " found!")
+					log.Debugln(*name + " found!")
 					exists = true
 					break
 				}
@@ -1484,7 +1487,7 @@ func buildCache() *wikiCache {
 				if fm.Favorite {
 					//cache.Favs.LoadOrStore(file.Filename)
 					if _, ok := cache.Favs[file.Filename]; !ok {
-						httputils.Debugln("buildCache.favs: " + file.Filename + " is not already a favorite.")
+						log.Debugln("buildCache.favs: " + file.Filename + " is not already a favorite.")
 						cache.Favs[file.Filename] = struct{}{}
 					}
 				}
@@ -1600,7 +1603,7 @@ func markdownPreview(w http.ResponseWriter, r *http.Request) {
 // return true if request should be rejected
 func wikiRejected(wikiName string, wikiExists, isAdmin, isLoggedIn bool) bool {
 
-	httputils.Debugln("wikiRejected name", wikiName)
+	log.Debugln("wikiRejected name", wikiName)
 
 	// if wikiExists, read the frontmatter and reject/accept based on frontmatter.Permission
 	if wikiExists {
@@ -1647,7 +1650,7 @@ func wikiRejected(wikiName string, wikiExists, isAdmin, isLoggedIn bool) bool {
 
 // mitigateWiki is a general redirect handler; redirect should be set to true for login mitigations
 func mitigateWiki(redirect bool, env *wikiEnv, r *http.Request, w http.ResponseWriter) {
-	httputils.Debugln("mitigateWiki: " + r.Host + r.URL.Path)
+	log.Debugln("mitigateWiki: " + r.Host + r.URL.Path)
 	env.authState.SetFlash("Unable to view that.", w)
 	if redirect {
 		// Use auth.Redirect to redirect while storing the current URL for future use
@@ -1677,6 +1680,25 @@ func dataDirCheck() {
 	}
 }
 
+// getRenderTime calculates the time an HTTP request took, if the Logger middleware was used
+func getRenderTime(c context.Context) string {
+	startTime, ok := c.Value(timerKey).(time.Time)
+	if !ok {
+		log.Debugln("Error: Logger middleware is not used; no startTime found in context.")
+		startTime = time.Now()
+	}
+	elapsed := time.Since(startTime)
+	return elapsed.String()
+}
+
+func timer(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Throw current time in now, to be fetched by GetRenderTime
+		newTime := timeNewContext(r.Context(), time.Now())
+		next.ServeHTTP(w, r.WithContext(newTime))
+	})
+}
+
 func router(env *wikiEnv) http.Handler {
 
 	csrfSecure := true
@@ -1685,7 +1707,8 @@ func router(env *wikiEnv) http.Handler {
 	}
 
 	// HTTP stuff from here on out
-	s := alice.New(httputils.Timer, httputils.Logger, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
+	//s := alice.New(httputils.Timer, httputils.Logger, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
+	s := alice.New(timer, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
 
 	r := httptreemux.NewContextMux()
 
