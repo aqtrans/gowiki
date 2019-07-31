@@ -6,7 +6,7 @@ cache:
     - vendor/
 
 before_script:
-  - echo deb http://deb.debian.org/debian/ stretch main > /etc/apt/sources.list
+  - echo deb http://deb.debian.org/debian/ stable main > /etc/apt/sources.list
   - ln -s /builds /go/src/git.jba.io
   - cd /go/src/git.jba.io/go/wiki
   #- 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
@@ -38,7 +38,7 @@ build-my-project:
     - sassc -t compressed scss/grid.scss assets/css/wiki.css
     #- go get -u github.com/kardianos/govendor
     #- govendor sync
-    - curl -o dep -sL https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64
+    - curl -o dep -sL https://github.com/golang/dep/releases/download/v0.5.4/dep-linux-amd64
     - chmod +x dep
     - ./dep ensure
     - go get -d github.com/shurcooL/vfsgen
