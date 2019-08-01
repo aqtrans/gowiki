@@ -1056,9 +1056,8 @@ func BenchmarkGitMtime(b *testing.B) {
 	}
 }
 
-/*
 func TestMultipleWrites(t *testing.T) {
-	err := gitCloneTest()
+	err := gitPull()
 	checkT(err, t)
 	var mutex = &sync.Mutex{}
 
@@ -1081,7 +1080,7 @@ func TestMultipleWrites(t *testing.T) {
 
 				favoritebool := false
 
-				fm := &frontmatter{
+				fm := frontmatter{
 					Title:      title,
 					Tags:       tags,
 					Favorite:   favoritebool,
@@ -1106,28 +1105,21 @@ func TestMultipleWrites(t *testing.T) {
 	wg.Wait()
 }
 
+/*
 func TestMultipleMapReads(t *testing.T) {
-	err := gitCloneTest()
+	err := gitPull()
 	checkT(err, t)
-	tmpdb := tempfile()
+	tmpdb, e := testEnvInit(t)
 	defer os.Remove(tmpdb)
-	authState, err := auth.NewAuthState(tmpdb, "admin")
-	checkT(err, t)
 
 	viper.Set("CacheEnabled", false)
 	viper.Set("Debug", false)
 	httputils.Debug = false
 
-	e := testEnv(t, authState)
-	e.cache = buildCache()
-
-	err = tmplInit(e)
-	checkT(err, t)
-
 	var wg sync.WaitGroup
+	wg.Add(100)
 
 	for w := 0; w < 50; w++ {
-		wg.Add(1)
 		t.Log(w)
 		go func() {
 			for k, v := range e.cache.Tags {
@@ -1141,7 +1133,6 @@ func TestMultipleMapReads(t *testing.T) {
 		}()
 	}
 	for x := 0; x < 50; x++ {
-		wg.Add(1)
 		t.Log(x)
 		go func() {
 			e.cache.Favs["omg"] = struct{}{}
