@@ -8,22 +8,20 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
 	"git.jba.io/go/httputils"
-	"github.com/spf13/viper"
 )
 
 // CUSTOM GIT WRAPPERS
 // Construct an *exec.Cmd for `git {args}` with a workingDirectory
-func gitCommand(args ...string) *exec.Cmd {
-	c := exec.Command(gitPath, args...)
+func (env *wikiEnv) gitCommand(args ...string) *exec.Cmd {
+	c := exec.Command(env.cfg.GitPath, args...)
 	c.Env = os.Environ()
-	c.Env = append(c.Env, `GIT_COMMITTER_NAME="Golang Wiki"`, `GIT_COMMITTER_EMAIL="golangwiki@jba.io"`)
-	c.Dir = filepath.Join(dataDir, "wikidata")
+	c.Env = append(c.Env, `GIT_COMMITTER_NAME="`+env.cfg.GitCommitName+`"`, `GIT_COMMITTER_EMAIL="`+env.cfg.GitCommitEmail+`"`)
+	c.Dir = env.cfg.WikiDir
 	return c
 }
 
@@ -53,13 +51,13 @@ func gitClone(repo string) error {
 
 // Execute `git status -s` in directory
 // If there is output, the directory has is dirty
-func gitIsClean() error {
+func (env *wikiEnv) gitIsClean() error {
 	gitBehind := []byte("Your branch is behind")
 	gitAhead := []byte("Your branch is ahead")
 	gitDiverged := []byte("have diverged")
 
 	// Check for untracked files first
-	u := gitCommand("ls-files", "--exclude-standard", "--others")
+	u := env.gitCommand("ls-files", "--exclude-standard", "--others")
 	uo, err := u.Output()
 	if len(uo) != 0 {
 		return errors.New(string(uo))
@@ -75,7 +73,7 @@ func gitIsClean() error {
 	*/
 
 	// Now check the status, minus untracked files
-	c := gitCommand("status", "-uno")
+	c := env.gitCommand("status", "-uno")
 
 	o, err := c.Output()
 	if err != nil {
@@ -102,28 +100,28 @@ func gitIsClean() error {
 	return nil
 }
 
-func gitIsCleanStartup() error {
+func (env *wikiEnv) gitIsCleanStartup() error {
 	gitBehind := []byte("Your branch is behind")
 	gitAhead := []byte("Your branch is ahead")
 	gitDiverged := []byte("have diverged")
 
 	// Check for untracked files first
-	u := gitCommand("ls-files", "--exclude-standard", "--others")
+	u := env.gitCommand("ls-files", "--exclude-standard", "--others")
 	uo, err := u.Output()
 	if len(uo) != 0 {
 		return errors.New("Untracked files: " + string(uo))
 	}
 
-	if viper.GetString("RemoteGitRepo") != "" {
+	if env.cfg.RemoteGitRepo != "" {
 		// Fetch changes from remote
-		err = gitCommand("fetch").Run()
+		err = env.gitCommand("fetch").Run()
 		if err != nil {
 			return err
 		}
 	}
 
 	// Now check the status, minus untracked files
-	c := gitCommand("status", "-uno")
+	c := env.gitCommand("status", "-uno")
 
 	o, err := c.Output()
 	if err != nil {
@@ -132,15 +130,15 @@ func gitIsCleanStartup() error {
 
 	if bytes.Contains(o, gitBehind) {
 		httputils.Debugln("gitIsCleanStartup: Pulling git repo...")
-		return gitPull()
+		return env.gitPull()
 		//return errors.New(string(o))
 		//return ErrGitBehind
 	}
 
 	if bytes.Contains(o, gitAhead) {
-		if viper.GetBool("PushOnSave") {
+		if env.cfg.PushOnSave {
 			httputils.Debugln("gitIsCleanStartup: Pushing git repo...")
-			return gitPush()
+			return env.gitPush()
 		}
 		return nil
 		//return errors.New(string(o))
@@ -156,8 +154,8 @@ func gitIsCleanStartup() error {
 }
 
 // Execute `git add {filepath}` in workingDirectory
-func gitAddFilepath(filepath string) error {
-	o, err := gitCommand("add", filepath).CombinedOutput()
+func (env *wikiEnv) gitAddFilepath(filepath string) error {
+	o, err := env.gitCommand("add", filepath).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error during `git add`: %s\n%s", err.Error(), string(o))
 	}
@@ -165,8 +163,8 @@ func gitAddFilepath(filepath string) error {
 }
 
 // Execute `git rm {filepath}` in workingDirectory
-func gitRmFilepath(filepath string) error {
-	o, err := gitCommand("rm", filepath).CombinedOutput()
+func (env *wikiEnv) gitRmFilepath(filepath string) error {
+	o, err := env.gitCommand("rm", filepath).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error during `git rm`: %s\n%s", err.Error(), string(o))
 	}
@@ -174,8 +172,8 @@ func gitRmFilepath(filepath string) error {
 }
 
 // Execute `git commit -m {msg}` in workingDirectory
-func gitCommitWithMessage(msg string) error {
-	o, err := gitCommand("commit", "--author", "'Golang Wiki <golangwiki@jba.io>'", "-m", msg).CombinedOutput()
+func (env *wikiEnv) gitCommitWithMessage(msg string) error {
+	o, err := env.gitCommand("commit", "--author", "'Golang Wiki <golangwiki@jba.io>'", "-m", msg).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error during `git commit`: %s\n%s", err.Error(), string(o))
 	}
@@ -184,8 +182,8 @@ func gitCommitWithMessage(msg string) error {
 }
 
 // Execute `git commit -m "commit from GoWiki"` in workingDirectory
-func gitCommitEmpty() error {
-	o, err := gitCommand("commit", "--author", "'Golang Wiki <golangwiki@jba.io>'", "-m", "commit from GoWiki").CombinedOutput()
+func (env *wikiEnv) gitCommitEmpty() error {
+	o, err := env.gitCommand("commit", "--author", "'Golang Wiki <golangwiki@jba.io>'", "-m", "commit from GoWiki").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error during `git commit`: %s\n%s", err.Error(), string(o))
 	}
@@ -194,8 +192,8 @@ func gitCommitEmpty() error {
 }
 
 // Execute `git push` in workingDirectory
-func gitPush() error {
-	o, err := gitCommand("push", "-u", "origin", "master").CombinedOutput()
+func (env *wikiEnv) gitPush() error {
+	o, err := env.gitCommand("push", "-u", "origin", "master").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error during `git push`: %s\n%s", err.Error(), string(o))
 	}
@@ -204,8 +202,8 @@ func gitPush() error {
 }
 
 // Execute `git push` in workingDirectory
-func gitPull() error {
-	o, err := gitCommand("pull").CombinedOutput()
+func (env *wikiEnv) gitPull() error {
+	o, err := env.gitCommand("pull").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("error during `git pull`: %s\n%s", err.Error(), string(o))
 	}
@@ -215,10 +213,10 @@ func gitPull() error {
 
 // File creation time, output to UNIX time
 // git log --diff-filter=A --follow --format=%at -1 -- [filename]
-func gitGetCtime(filename string) (int64, error) {
+func (env *wikiEnv) gitGetCtime(filename string) (int64, error) {
 	defer httputils.TimeTrack(time.Now(), "gitGetCtime")
 	//var ctime int64
-	o, err := gitCommand("log", "--diff-filter=A", "--follow", "--format=%at", "-1", "--", filename).Output()
+	o, err := env.gitCommand("log", "--diff-filter=A", "--follow", "--format=%at", "-1", "--", filename).Output()
 	if err != nil {
 		return 0, fmt.Errorf("error during `git log --diff-filter=A --follow --format=at -1 --`: %s\n%s", err.Error(), string(o))
 	}
@@ -236,10 +234,10 @@ func gitGetCtime(filename string) (int64, error) {
 
 // File modification time, output to UNIX time
 // git log -1 --format=%at -- [filename]
-func gitGetMtime(filename string) (int64, error) {
+func (env *wikiEnv) gitGetMtime(filename string) (int64, error) {
 	defer httputils.TimeTrack(time.Now(), "gitGetMtime")
 	//var mtime int64
-	o, err := gitCommand("log", "--format=%at", "-1", "--", filename).Output()
+	o, err := env.gitCommand("log", "--format=%at", "-1", "--", filename).Output()
 	if err != nil {
 		return 0, fmt.Errorf("error during `git log -1 --format=at --`: %s\n%s", err.Error(), string(o))
 	}
@@ -265,8 +263,8 @@ type commitLog struct {
 // File history
 // git log --pretty=format:"commit:%H date:%at message:%s" [filename]
 // git log --pretty=format:"%H,%at,%s" [filename]
-func gitGetFileLog(filename string) ([]commitLog, error) {
-	o, err := gitCommand("log", "--pretty=format:%H,%at,%s", filename).Output()
+func (env *wikiEnv) gitGetFileLog(filename string) ([]commitLog, error) {
+	o, err := env.gitCommand("log", "--pretty=format:%H,%at,%s", filename).Output()
 	if err != nil {
 		return nil, fmt.Errorf("error during `git log`: %s\n%s", err.Error(), string(o))
 	}
@@ -300,10 +298,10 @@ func gitGetFileLog(filename string) ([]commitLog, error) {
 
 // Get file as it existed at specific commit
 // git show [commit sha1]:[filename]
-func gitGetFileCommit(filename, commit string) ([]byte, error) {
+func (env *wikiEnv) gitGetFileCommit(filename, commit string) ([]byte, error) {
 	// Combine these into one
 	fullcommit := commit + ":" + filename
-	o, err := gitCommand("show", fullcommit).CombinedOutput()
+	o, err := env.gitCommand("show", fullcommit).CombinedOutput()
 	if err != nil {
 		return []byte{}, fmt.Errorf("error during `git show`: %s\n%s", err.Error(), string(o))
 	}
@@ -312,8 +310,8 @@ func gitGetFileCommit(filename, commit string) ([]byte, error) {
 
 // Get diff for entire commit
 // git show [commit sha1]
-func gitGetFileCommitDiff(filename, commit string) ([]byte, error) {
-	o, err := gitCommand("show", commit).CombinedOutput()
+func (env *wikiEnv) gitGetFileCommitDiff(filename, commit string) ([]byte, error) {
+	o, err := env.gitCommand("show", commit).CombinedOutput()
 	if err != nil {
 		return []byte{}, fmt.Errorf("error during `git show`: %s\n%s", err.Error(), string(o))
 	}
@@ -322,9 +320,9 @@ func gitGetFileCommitDiff(filename, commit string) ([]byte, error) {
 
 // File modification time for specific commit, output to UNIX time
 // git log -1 --format=%at [commit sha1]
-func gitGetFileCommitMtime(commit string) (int64, error) {
+func (env *wikiEnv) gitGetFileCommitMtime(commit string) (int64, error) {
 	//var mtime int64
-	o, err := gitCommand("log", "--format=%at", "-1", commit).Output()
+	o, err := env.gitCommand("log", "--format=%at", "-1", commit).Output()
 	if err != nil {
 		return 0, fmt.Errorf("error during `git log -1 --format=at --`: %s\n%s", err.Error(), string(o))
 	}
@@ -336,8 +334,8 @@ func gitGetFileCommitMtime(commit string) (int64, error) {
 }
 
 // git ls-files
-func gitLs() ([]string, error) {
-	o, err := gitCommand("ls-files", "-z").Output()
+func (env *wikiEnv) gitLs() ([]string, error) {
+	o, err := env.gitCommand("ls-files", "-z").Output()
 	if err != nil {
 		return nil, fmt.Errorf("error during `git ls-files`: %s\n%s", err.Error(), string(o))
 	}
@@ -348,8 +346,8 @@ func gitLs() ([]string, error) {
 }
 
 // git ls-tree -r -t HEAD
-func gitLsTree() ([]*gitDirList, error) {
-	o, err := gitCommand("ls-tree", "-r", "-t", "-z", "HEAD").Output()
+func (env *wikiEnv) gitLsTree() ([]*gitDirList, error) {
+	o, err := env.gitCommand("ls-tree", "-r", "-t", "-z", "HEAD").Output()
 	if err != nil {
 		return nil, fmt.Errorf("error during `git ls-files`: %s\n%s", err.Error(), string(o))
 	}
@@ -371,8 +369,8 @@ func gitLsTree() ([]*gitDirList, error) {
 }
 
 // git ls-tree HEAD:[dirname]
-func gitLsTreeDir(dir string) ([]*gitDirList, error) {
-	o, err := gitCommand("ls-tree", "-z", "HEAD:"+dir).Output()
+func (env *wikiEnv) gitLsTreeDir(dir string) ([]*gitDirList, error) {
+	o, err := env.gitCommand("ls-tree", "-z", "HEAD:"+dir).Output()
 	if err != nil {
 		return nil, fmt.Errorf("error during `git ls-files`: %s\n%s", err.Error(), string(o))
 	}
@@ -393,8 +391,8 @@ func gitLsTreeDir(dir string) ([]*gitDirList, error) {
 }
 
 // git log --name-only --pretty=format:"%at %H" -z HEAD
-func gitHistory() ([]string, error) {
-	o, err := gitCommand("log", "--name-only", "--pretty=format:_END %at %H", "-z", "HEAD").Output()
+func (env *wikiEnv) gitHistory() ([]string, error) {
+	o, err := env.gitCommand("log", "--name-only", "--pretty=format:_END %at %H", "-z", "HEAD").Output()
 	if err != nil {
 		return nil, fmt.Errorf("error during `git history`: %s\n%s", err.Error(), string(o))
 	}
@@ -419,11 +417,11 @@ func gitHistory() ([]string, error) {
 // git log --diff-filter=A --follow --format=%at -1 -- [filename]
 // File modification time, output to UNIX time
 // git log -1 --format=%at -- [filename]
-func gitGetTimes(filename string, ctime, mtime chan<- int64) {
+func (env *wikiEnv) gitGetTimes(filename string, ctime, mtime chan<- int64) {
 	defer httputils.TimeTrack(time.Now(), "gitGetTimes")
 
 	go func() {
-		co, err := gitCommand("log", "--diff-filter=A", "--follow", "--format=%at", "-1", "--", filename).Output()
+		co, err := env.gitCommand("log", "--diff-filter=A", "--follow", "--format=%at", "-1", "--", filename).Output()
 		if err != nil {
 			log.Println(filename, err)
 			ctime <- 0
@@ -446,7 +444,7 @@ func gitGetTimes(filename string, ctime, mtime chan<- int64) {
 	}()
 
 	go func() {
-		mo, err := gitCommand("log", "--format=%at", "-1", "--", filename).Output()
+		mo, err := env.gitCommand("log", "--format=%at", "-1", "--", filename).Output()
 		if err != nil {
 			log.Println(filename, err)
 			mtime <- 0
@@ -470,10 +468,10 @@ func gitGetTimes(filename string, ctime, mtime chan<- int64) {
 
 }
 
-func gitIsEmpty() bool {
+func (env *wikiEnv) gitIsEmpty() bool {
 	// Run git rev-parse HEAD on the repo
 	// If it errors out, should mean it's empty
-	err := gitCommand("rev-parse", "HEAD").Run()
+	err := env.gitCommand("rev-parse", "HEAD").Run()
 	if err != nil {
 		return true
 	}
@@ -482,12 +480,12 @@ func gitIsEmpty() bool {
 
 // Search results, via git
 // git grep --break 'searchTerm'
-func gitSearch(searchTerm, fileSpec string) []result {
+func (env *wikiEnv) gitSearch(searchTerm, fileSpec string) []result {
 	var results []result
 	quotedSearchTerm := `'` + searchTerm + `'`
-	cmd := exec.Command("/bin/sh", "-c", gitPath+" grep "+quotedSearchTerm+" -- "+fileSpec)
+	cmd := exec.Command("/bin/sh", "-c", env.cfg.GitPath+" grep "+quotedSearchTerm+" -- "+fileSpec)
 	//o := gitCommand("grep", "omg -- 'index'")
-	cmd.Dir = filepath.Join(dataDir, "wikidata")
+	cmd.Dir = env.cfg.WikiDir
 	o, err := cmd.CombinedOutput()
 	if err != nil {
 		/* Seems like git grep returns exit status 1 on no results,
@@ -534,8 +532,8 @@ func gitSearch(searchTerm, fileSpec string) []result {
 	return results
 }
 
-func gitIsCleanURLs(token template.HTML) template.HTML {
-	switch gitIsClean() {
+func (env *wikiEnv) gitIsCleanURLs(token template.HTML) template.HTML {
+	switch env.gitIsClean() {
 	case errGitAhead:
 		return template.HTML(`<form method="post" action="/admin/git/push" id="git_push">` + token + `<i class="fa fa-cloud-upload" aria-hidden="true"></i><button type="submit" class="button">Push git</button></form>`)
 	case errGitBehind:
