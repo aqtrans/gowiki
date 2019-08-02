@@ -58,6 +58,7 @@ import (
 	"time"
 
 	raven "github.com/getsentry/raven-go"
+	"github.com/pelletier/go-toml"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
 
@@ -284,16 +285,33 @@ func init() {
 }
 
 func loadConfig(confFile string) config {
-	cfgBytes, err := ioutil.ReadFile(confFile)
-	if err != nil {
-		log.Fatalln("Error reading", confFile, err)
-	}
 	var cfg config
-	err = yaml.Unmarshal(cfgBytes, &cfg)
-	if err != nil {
-		log.Fatalln("Cannot unmarshal config:", err)
+
+	ext := filepath.Ext(confFile)
+	switch ext {
+	case ".toml":
+		cfgTree, err := toml.LoadFile(confFile)
+		if err != nil {
+			log.Fatalln("Error reading", confFile, err)
+		}
+		err = cfgTree.Unmarshal(&cfg)
+		if err != nil {
+			log.Fatalln("Error unmarshaling config:", err)
+		}
+	case ".yaml":
+		cfgBytes, err := ioutil.ReadFile(confFile)
+		if err != nil {
+			log.Fatalln("Error reading", confFile, err)
+		}
+		err = yaml.Unmarshal(cfgBytes, &cfg)
+		if err != nil {
+			log.Fatalln("Error unmarshaling config:", err)
+		}
+	default:
+		log.Fatalln("Only able to load TOML and YAML files currently. Unable to load", confFile)
 	}
 
+	// Set defaults
 	if cfg.DataDir == "" {
 		cfg.DataDir = "./data/"
 	}
@@ -304,9 +322,12 @@ func loadConfig(confFile string) config {
 
 	// Look for git, if GitPath is not defined in the config file
 	if cfg.GitPath == "" {
-		cfg.GitPath, err = exec.LookPath("git")
+		gitPath, err := exec.LookPath("git")
 		if err != nil {
 			log.Fatalln("Git executable was not found in PATH. Git must be installed. Install Git or define it as GitPath in", confFile)
+		}
+		if err == nil {
+			cfg.GitPath = gitPath
 		}
 	}
 
@@ -320,12 +341,11 @@ func loadConfig(confFile string) config {
 
 	// Setup RavenDSN if set
 	if cfg.RavenDSN != "" {
-		err = raven.SetDSN(cfg.RavenDSN)
+		err := raven.SetDSN(cfg.RavenDSN)
 		if err != nil {
 			log.Println("Error setting Sentry.io DSN:", err)
 		}
 	}
-
 	return cfg
 }
 
