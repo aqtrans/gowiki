@@ -4,7 +4,7 @@ Description=Golang wiki daemon
 [Service]
 ProtectSystem=strict
 ReadWritePaths=/etc/gowiki.toml /var/lib/gowiki
-ExecStart=/usr/bin/gowiki --DataDir=/var/lib/gowiki
+ExecStart=/usr/bin/gowiki -conf /etc/gowiki.toml
 Restart=on-failure
 User=gowiki
 
