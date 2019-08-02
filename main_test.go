@@ -1102,40 +1102,38 @@ func TestMultipleWrites(t *testing.T) {
 
 	for w := 0; w < 50; w++ {
 		go func() {
-			for {
-				name := "index"
-				randContent, err := httputils.RandKey(32)
-				checkT(err, t)
-				content := randContent
+			name := "index"
+			randContent, err := httputils.RandKey(32)
+			checkT(err, t)
+			content := randContent
 
-				// Check for and install required YAML frontmatter
-				title := "index"
-				// This is the separate input that tagdog.js throws new tags into
-				tags := []string{"yeah"}
-				permission := "public"
+			// Check for and install required YAML frontmatter
+			title := "index"
+			// This is the separate input that tagdog.js throws new tags into
+			tags := []string{"yeah"}
+			permission := "public"
 
-				favoritebool := false
+			favoritebool := false
 
-				fm := frontmatter{
-					Title:      title,
-					Tags:       tags,
-					Favorite:   favoritebool,
-					Permission: permission,
-				}
-
-				thewiki := &wiki{
-					Title:       title,
-					Filename:    name,
-					Frontmatter: fm,
-					Content:     []byte(content),
-				}
-
-				err = thewiki.save(e)
-				if err != nil {
-					checkT(err, t)
-				}
-				wg.Done()
+			fm := frontmatter{
+				Title:      title,
+				Tags:       tags,
+				Favorite:   favoritebool,
+				Permission: permission,
 			}
+
+			thewiki := &wiki{
+				Title:       title,
+				Filename:    name,
+				Frontmatter: fm,
+				Content:     []byte(content),
+			}
+
+			err = thewiki.save(e)
+			if err != nil {
+				checkT(err, t)
+			}
+			wg.Done()
 		}()
 	}
 	wg.Wait()
