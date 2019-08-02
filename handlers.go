@@ -931,7 +931,6 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		name := params["name"]
 		user := auth.GetUserState(r.Context())
 		fullfilename := filepath.Join(env.cfg.WikiDir, name)
-		log.Println(fullfilename)
 		pageExists, relErr := env.checkName(&name)
 		//wikiDir := filepath.Join(dataDir, "wikidata")
 
