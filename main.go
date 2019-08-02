@@ -1734,7 +1734,6 @@ func router(env *wikiEnv) http.Handler {
 
 	admin := r.NewContextGroup("/admin")
 	admin.GET("/", env.authState.AuthAdminMiddle(env.adminMainHandler))
-	admin.GET("/config", env.authState.AuthAdminMiddle(env.adminConfigHandler))
 	admin.GET("/git", env.authState.AuthAdminMiddle(env.adminGitHandler))
 	admin.POST("/git/push", env.authState.AuthAdminMiddle(env.gitPushPostHandler))
 	admin.POST("/git/checkin", env.authState.AuthAdminMiddle(env.gitCheckinPostHandler))
