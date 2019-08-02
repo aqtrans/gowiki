@@ -5,7 +5,6 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -15,6 +14,7 @@ import (
 
 	"git.jba.io/go/auth"
 	"git.jba.io/go/httputils"
+	log "github.com/sirupsen/logrus"
 )
 
 const UserKey key = 1
@@ -34,6 +34,7 @@ func init() {
 	//viper.Set("InitWikiRepo", true)
 	httputils.Debug = testing.Verbose()
 	auth.Debug = testing.Verbose()
+	log.SetLevel(log.DebugLevel)
 }
 
 func checkT(err error, t *testing.T) {
