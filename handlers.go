@@ -28,7 +28,7 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/"+name, http.StatusFound)
 		return
 	}
-	p := loadWikiPage(env, r, name)
+	p := env.loadWikiPage(r, name)
 	if p.Wiki.Frontmatter.Favorite {
 		p.Wiki.Frontmatter.Favorite = false
 		env.authState.SetFlash(name+" has been un-favorited.", w)
@@ -39,7 +39,7 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(name + " page favorited!")
 	}
 
-	err := p.Wiki.save(&env.mutex)
+	err := p.Wiki.save(env)
 	if err != nil {
 		log.Println(err)
 	}
@@ -55,14 +55,14 @@ func (env *wikiEnv) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/"+name, http.StatusFound)
 		return
 	}
-	err := gitRmFilepath(name)
+	err := env.gitRmFilepath(name)
 	if err != nil {
 		raven.CaptureError(err, nil)
 		log.Println("Error deleting file from git repo,", name, err)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 
-	err = gitCommitWithMessage(name + " has been removed from git repo.")
+	err = env.gitCommitWithMessage(name + " has been removed from git repo.")
 	if err != nil {
 		raven.CaptureError(err, nil)
 		log.Println("Error commiting to git repo,", name, err)
@@ -100,7 +100,7 @@ func (env *wikiEnv) searchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
 	user := auth.GetUserState(r.Context())
 
@@ -128,7 +128,7 @@ func (env *wikiEnv) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	//log.Println(fileList)
 
-	results := gitSearch(name, strings.TrimSpace(fileList))
+	results := env.gitSearch(name, strings.TrimSpace(fileList))
 
 	s := &searchPage{
 		page:    <-p,
@@ -142,7 +142,7 @@ func (env *wikiEnv) loginPageHandler(w http.ResponseWriter, r *http.Request) {
 
 	title := "login"
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
 	gp := &genPage{
 		<-p,
@@ -156,7 +156,7 @@ func (env *wikiEnv) signupPageHandler(w http.ResponseWriter, r *http.Request) {
 
 	title := "signup"
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
 	gp := &genPage{
 		<-p,
@@ -171,7 +171,7 @@ func (env *wikiEnv) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 	title := "admin-users"
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
 	userlist, err := env.authState.Userlist()
 	if err != nil {
@@ -201,7 +201,7 @@ func (env *wikiEnv) adminUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	title := "admin-user"
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
 	userlist, err := env.authState.Userlist()
 	if err != nil {
@@ -279,7 +279,7 @@ func (env *wikiEnv) adminMainHandler(w http.ResponseWriter, r *http.Request) {
 
 	title := "admin-main"
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
 	gp := &genPage{
 		<-p,
@@ -296,7 +296,7 @@ func (env *wikiEnv) adminConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 	title := "admin-config"
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
 	data := struct {
 		page
@@ -315,7 +315,7 @@ func (env *wikiEnv) gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 
 	title := "Git Checkin"
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
 	var s string
 
@@ -323,7 +323,7 @@ func (env *wikiEnv) gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 		file := r.URL.Query().Get("file")
 		s = file
 	} else {
-		err := gitIsClean()
+		err := env.gitIsClean()
 		s = err.Error()
 		/*
 			if err != nil && err != ErrGitDirty {
@@ -337,12 +337,12 @@ func (env *wikiEnv) gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 		<-p,
 		title,
 		s,
-		viper.GetString("RemoteGitRepo"),
+		env.cfg.RemoteGitRepo,
 	}
 	renderTemplate(r.Context(), env, w, "git_checkin.tmpl", gp)
 }
 
-func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "gitCheckinPostHandler")
 
 	var path string
@@ -355,12 +355,12 @@ func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
 		path = "."
 	}
 
-	err := gitAddFilepath(path)
+	err := env.gitAddFilepath(path)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
-	err = gitCommitEmpty()
+	err = env.gitCommitEmpty()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
@@ -373,10 +373,10 @@ func gitCheckinPostHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func gitPushPostHandler(w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) gitPushPostHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "gitPushPostHandler")
 
-	err := gitPush()
+	err := env.gitPush()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
@@ -386,10 +386,10 @@ func gitPushPostHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func gitPullPostHandler(w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) gitPullPostHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "gitPullPostHandler")
 
-	err := gitPull()
+	err := env.gitPull()
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
@@ -404,11 +404,11 @@ func (env *wikiEnv) adminGitHandler(w http.ResponseWriter, r *http.Request) {
 
 	title := "Git Management"
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
 	//var owithnewlines []byte
 
-	err := gitIsClean()
+	err := env.gitIsClean()
 	if err == nil {
 		err = errors.New("Git repo is clean")
 	}
@@ -439,7 +439,7 @@ func (env *wikiEnv) tagMapHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "tagMapHandler")
 
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
 	list := env.tags.GetAll()
 
@@ -464,7 +464,7 @@ func (env *wikiEnv) tagHandler(w http.ResponseWriter, r *http.Request) {
 	name := params["name"]
 
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
 	results := env.tags.GetOne(name)
 
@@ -481,7 +481,7 @@ func (env *wikiEnv) createWiki(w http.ResponseWriter, r *http.Request, name stri
 	w.WriteHeader(404)
 	//title := "Create " + name + "?"
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
 	wp := &wikiPage{
 		page: <-p,
@@ -511,7 +511,7 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 func (env *wikiEnv) editHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "editHandler")
 	name := nameFromContext(r.Context())
-	p := loadWikiPage(env, r, name)
+	p := env.loadWikiPage(r, name)
 	renderTemplate(r.Context(), env, w, "wiki_edit.tmpl", p)
 }
 
@@ -572,15 +572,15 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 		Content:     []byte(content),
 	}
 
-	err = thewiki.save(&env.mutex)
+	err = thewiki.save(env)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
 	// If PushOnSave is enabled, push to remote repo after save
-	if viper.GetBool("PushOnSave") {
-		err := gitPush()
+	if env.cfg.PushOnSave {
+		err := env.gitPush()
 		if err != nil {
 			raven.CaptureErrorAndWait(err, nil)
 			//panic(err)
@@ -654,13 +654,13 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !isWiki(filepath.Join(dataDir, "wikidata", name)) {
-		http.ServeFile(w, r, filepath.Join(dataDir, "wikidata", name))
+	if !isWiki(filepath.Join(env.cfg.WikiDir, name)) {
+		http.ServeFile(w, r, filepath.Join(env.cfg.WikiDir, name))
 		return
 	}
 
 	// Get Wiki
-	p := loadWikiPage(env, r, name)
+	p := env.loadWikiPage(r, name)
 
 	// Build a list of filenames to be fed to closestmatch, for similarity matching
 	var filelist []string
@@ -731,9 +731,9 @@ func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wikip := loadWikiPage(env, r, name)
+	wikip := env.loadWikiPage(r, name)
 
-	history, err := gitGetFileLog(name)
+	history, err := env.gitGetFileLog(name)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
@@ -767,24 +767,24 @@ func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, co
 	//commit := vars["commit"]
 
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
-	body, err := gitGetFileCommit(name, commit)
+	body, err := env.gitGetFileCommit(name, commit)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
-	ctime, err := gitGetCtime(name)
+	ctime, err := env.gitGetCtime(name)
 	if err != nil && err != errNotInGit {
 		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
-	mtime, err := gitGetFileCommitMtime(commit)
+	mtime, err := env.gitGetFileCommitMtime(commit)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
-	diff, err := gitGetFileCommitDiff(name, commit)
+	diff, err := env.gitGetFileCommitDiff(name, commit)
 	if err != nil {
 		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
@@ -842,9 +842,9 @@ type recentsPage struct {
 func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
-	gh, err := gitHistory()
+	gh, err := env.gitHistory()
 	check(err)
 
 	/*
@@ -893,7 +893,7 @@ type listPage struct {
 func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := make(chan page, 1)
-	go loadPage(env, r, p)
+	go env.loadPage(r, p)
 
 	var list []gitDirList
 
@@ -930,9 +930,10 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		params := httptreemux.ContextParams(r.Context())
 		name := params["name"]
 		user := auth.GetUserState(r.Context())
-		pageExists, relErr := checkName(&name)
+		fullfilename := filepath.Join(env.cfg.WikiDir, name)
+		log.Println(fullfilename)
+		pageExists, relErr := checkName(env.cfg.WikiDir, &name)
 		//wikiDir := filepath.Join(dataDir, "wikidata")
-		//fullfilename := filepath.Join(wikiDir, name)
 
 		if relErr != nil {
 			if relErr == errBaseNotDir {
@@ -944,7 +945,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 			//    If name/index exists, redirect to it
 			if relErr == errIsDir && r.URL.Path[:len("/"+name)] == "/"+name {
 				// Check if name/index exists, and if it does, serve it
-				_, err := os.Stat(filepath.Join(dataDir, "wikidata", name, "index"))
+				_, err := os.Stat(filepath.Join(env.cfg.WikiDir, name, "index"))
 				if err == nil {
 					http.Redirect(w, r, "/"+path.Join(name, "index"), http.StatusFound)
 					return
@@ -958,7 +959,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		ctx := newWikiExistsContext(nameCtx, pageExists)
 		r = r.WithContext(ctx)
 
-		if wikiRejected(name, pageExists, user.IsAdmin(), auth.IsLoggedIn(r.Context())) {
+		if wikiRejected(fullfilename, pageExists, user.IsAdmin(), auth.IsLoggedIn(r.Context())) {
 			mitigateWiki(true, env, r, w)
 		} else {
 			next.ServeHTTP(w, r)
