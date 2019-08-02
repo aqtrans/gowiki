@@ -951,6 +951,22 @@ func doesPageExist(name string) (bool, error) {
 	return exists, finError
 }
 
+// Check that the given full path is relative to the configured wikidir
+func (env *wikiEnv) relativePathCheck(name string) error {
+	defer httputils.TimeTrack(time.Now(), "relativePathCheck")
+	fullfilename := filepath.Join(env.cfg.WikiDir, name)
+	dir, _ := filepath.Split(name)
+	if dir != "" {
+		dirErr := env.checkDir(dir)
+		if dirErr != nil {
+			return dirErr
+		}
+	}
+
+	_, err := filepath.Rel(env.cfg.WikiDir, fullfilename)
+	return err
+}
+
 // This does various checks to see if an existing page exists or not
 // Also checks for and returns an error on some edge cases
 // So we only proceed if this returns false AND nil
@@ -958,11 +974,8 @@ func doesPageExist(name string) (bool, error) {
 // - If name is trying to escape or otherwise a bad path
 // - If name is a /directory/file combo, but /directory is actually a file
 // - If name contains a .git entry, error out
-func checkName(wikiDir string, name *string) (bool, error) {
+func (env *wikiEnv) checkName(name *string) (bool, error) {
 	defer httputils.TimeTrack(time.Now(), "checkName")
-
-	// Build the full path
-	fullfilename := filepath.Join(wikiDir, *name)
 
 	separators := regexp.MustCompile(`[ &_=+:]`)
 	dashes := regexp.MustCompile(`[\-]+`)
@@ -991,18 +1004,14 @@ func checkName(wikiDir string, name *string) (bool, error) {
 
 	// Check that no one is trying to escape out of wikiDir, etc
 	// Very important to check it here, before trying to check if it exists
-	dir, _ := filepath.Split(*name)
-	if dir != "" {
-		dirErr := checkDir(wikiDir, dir)
-		if dirErr != nil {
-			return false, dirErr
-		}
-	}
-
-	_, relErr := filepath.Rel(wikiDir, fullfilename)
+	relErr := env.relativePathCheck(*name)
 	if relErr != nil {
 		return false, relErr
 	}
+
+	// Build the full path
+
+	fullfilename := filepath.Join(env.cfg.WikiDir, *name)
 
 	exists, err := doesPageExist(fullfilename)
 	if err == errIsDir {
@@ -1031,7 +1040,7 @@ func checkName(wikiDir string, name *string) (bool, error) {
 		normalName := strings.ToLower(*name)
 		normalName = separators.ReplaceAllString(normalName, "-")
 		normalName = dashes.ReplaceAllString(normalName, "-")
-		fullnewfilename := filepath.Join(wikiDir, normalName)
+		fullnewfilename := filepath.Join(env.cfg.WikiDir, normalName)
 		// Only check for the existence of the normalized name if anything changed
 		if normalName != *name {
 			exists, err = doesPageExist(fullnewfilename)
@@ -1048,7 +1057,7 @@ func checkName(wikiDir string, name *string) (bool, error) {
 
 // checkDir should perform a recursive check over all directory elements of a given path,
 //  and check that we're not trying to overwrite a file with a directory
-func checkDir(wikiDir, dir string) error {
+func (env *wikiEnv) checkDir(dir string) error {
 	defer httputils.TimeTrack(time.Now(), "checkDir")
 
 	dirs := strings.Split(dir, "/")
@@ -1058,7 +1067,7 @@ func checkDir(wikiDir, dir string) error {
 		// relpath progressively builds up the /path/to/file, element by element
 		relpath = filepath.Join(relpath, v)
 		// We combine that with the configured WikiDir to get the fullpath
-		fullpath := filepath.Join(wikiDir, relpath)
+		fullpath := filepath.Join(env.cfg.WikiDir, relpath)
 		// Then try and open the fullpath to the element in question
 		file, fileOpenErr := os.Open(fullpath)
 		// If it doesn't exist, move on

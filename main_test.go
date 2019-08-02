@@ -34,7 +34,9 @@ func init() {
 	//viper.Set("InitWikiRepo", true)
 	httputils.Debug = testing.Verbose()
 	auth.Debug = testing.Verbose()
-	log.SetLevel(log.DebugLevel)
+	if testing.Verbose() {
+		log.SetLevel(log.DebugLevel)
+	}
 }
 
 func checkT(err error, t *testing.T) {
@@ -733,7 +735,7 @@ func TestWikiHistoryNonExistent(t *testing.T) {
 	}
 
 	// Transform/normalize the randPage name
-	checkName(e.cfg.WikiDir, &randPage)
+	e.checkName(&randPage)
 
 	expected := `/` + randPage
 	if w.Header().Get("Location") != expected {
