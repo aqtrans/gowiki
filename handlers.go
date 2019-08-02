@@ -18,7 +18,6 @@ import (
 	"github.com/dimfeld/httptreemux"
 	raven "github.com/getsentry/raven-go"
 	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
-	"github.com/spf13/viper"
 )
 
 func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
@@ -288,28 +287,6 @@ func (env *wikiEnv) adminMainHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(r.Context(), env, w, "admin_main.tmpl", gp)
 }
 
-func (env *wikiEnv) adminConfigHandler(w http.ResponseWriter, r *http.Request) {
-	defer httputils.TimeTrack(time.Now(), "adminConfigHandler")
-
-	// To save config to toml:
-	viperMap := viper.AllSettings()
-
-	title := "admin-config"
-	p := make(chan page, 1)
-	go env.loadPage(r, p)
-
-	data := struct {
-		page
-		Title  string
-		Config map[string]interface{}
-	}{
-		<-p,
-		title,
-		viperMap,
-	}
-	renderTemplate(r.Context(), env, w, "admin_config.tmpl", data)
-}
-
 func (env *wikiEnv) gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "gitCheckinHandler")
 
@@ -425,7 +402,7 @@ func (env *wikiEnv) adminGitHandler(w http.ResponseWriter, r *http.Request) {
 		<-p,
 		title,
 		err.Error(),
-		viper.GetString("RemoteGitRepo"),
+		env.cfg.RemoteGitRepo,
 	}
 	renderTemplate(r.Context(), env, w, "admin_git.tmpl", gp)
 }
