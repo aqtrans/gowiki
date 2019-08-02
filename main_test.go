@@ -30,7 +30,6 @@ var (
 )
 
 func init() {
-	dataDir = "./tests/data/"
 	//viper.Set("Domain", "wiki.example.com")
 	//viper.Set("InitWikiRepo", true)
 	httputils.Debug = testing.Verbose()
@@ -44,6 +43,10 @@ func checkT(err error, t *testing.T) {
 }
 
 func testGitCommand(args ...string) *exec.Cmd {
+	gitPath, err := exec.LookPath("git")
+	if err != nil {
+		log.Fatalln("git must be installed")
+	}
 	c := exec.Command(gitPath, args...)
 	//c.Dir = viper.GetString("WikiDir")
 	return c
@@ -91,8 +94,21 @@ func newState() *auth.AuthState {
 }
 */
 
-func testEnv(t *testing.T, authState *auth.State) *wikiEnv {
+func testEnv(authState *auth.State) *wikiEnv {
+	gitPath, err := exec.LookPath("git")
+	if err != nil {
+		log.Fatalln("Git executable was not found in PATH. Git must be installed.")
+	}
+
 	return &wikiEnv{
+		cfg: config{
+			DataDir:        "./tests/data/",
+			WikiDir:        "./tests/data/wikidata/",
+			GitPath:        gitPath,
+			CacheEnabled:   true,
+			GitCommitEmail: "test@test.com",
+			GitCommitName:  "gowiki-tests",
+		},
 		authState: *authState,
 		cache: &wikiCache{
 			Tags: make(map[string][]string),
@@ -105,11 +121,11 @@ func testEnv(t *testing.T, authState *auth.State) *wikiEnv {
 	}
 }
 
-func testEnvInit(t *testing.T) (string, *wikiEnv) {
+func testEnvInit() (string, *wikiEnv) {
 	tmpdb := tempfile()
 	//defer os.Remove(tmpdb)
 	authState := auth.NewAuthState(tmpdb)
-	e := testEnv(t, authState)
+	e := testEnv(authState)
 	return tmpdb, e
 }
 
@@ -125,18 +141,23 @@ func TestTmplInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
 	authState := auth.NewAuthState(tmpdb)
-	testEnv(t, authState)
+	testEnv(authState)
 }
 
 func TestWikiInit(t *testing.T) {
-	err := initWikiDir()
+	tmpdb := tempfile()
+	defer os.Remove(tmpdb)
+	authState := auth.NewAuthState(tmpdb)
+	e := testEnv(authState)
+
+	err := initWikiDir(e.cfg)
 	checkT(err, t)
 }
 
 // TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
 func TestNewWikiPage(t *testing.T) {
 
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	e.authState.NewAdmin("admin", "admin")
@@ -162,7 +183,7 @@ func TestNewWikiPage(t *testing.T) {
 // TestNewWikiPageNotLoggedIn tests if viewing a non-existent article, while not logged in redirects to a vague login page
 func TestNewWikiPageNotLoggedIn(t *testing.T) {
 
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	randPage, err := httputils.RandKey(8)
@@ -191,7 +212,7 @@ func TestHealthCheckHandler(t *testing.T) {
 	checkT(err, t)
 	rr := httptest.NewRecorder()
 
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	router(e).ServeHTTP(rr, req)
@@ -209,11 +230,11 @@ func TestHealthCheckHandler(t *testing.T) {
 }
 
 func TestNewHandler(t *testing.T) {
-	err := gitPull()
-	checkT(err, t)
-
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
+
+	err := e.gitPull()
+	checkT(err, t)
 
 	e.authState.NewAdmin("admin", "admin")
 
@@ -237,11 +258,11 @@ func TestNewHandler(t *testing.T) {
 
 // TestIndex tests if viewing the index page, as a logged in user, properly returns a 200
 func TestIndexPage(t *testing.T) {
-	err := gitPull()
-	checkT(err, t)
-
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
+
+	err := e.gitPull()
+	checkT(err, t)
 
 	e.authState.NewAdmin("admin", "admin")
 
@@ -264,11 +285,11 @@ func TestIndexPage(t *testing.T) {
 
 // TestIndexHistoryPage tests if viewing the history of the index page, as a logged in user, properly returns a 200
 func TestIndexHistoryPage(t *testing.T) {
-	err := gitPull()
-	checkT(err, t)
-
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
+
+	err := e.gitPull()
+	checkT(err, t)
 
 	e.authState.NewAdmin("admin", "admin")
 
@@ -291,11 +312,11 @@ func TestIndexHistoryPage(t *testing.T) {
 
 // TestIndexEditPage tests if trying to edit the index page, as a logged in user, properly returns a 200
 func TestIndexEditPage(t *testing.T) {
-	err := gitPull()
-	checkT(err, t)
-
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
+
+	err := e.gitPull()
+	checkT(err, t)
 	/*
 		tmpdb := tempfile()
 		defer os.Remove(tmpdb)
@@ -329,15 +350,16 @@ func TestIndexEditPage(t *testing.T) {
 
 // TestDirBaseHandler tests if trying to create a file 'inside' a file fails
 func TestDirBaseHandler(t *testing.T) {
-	err := gitPull()
-	checkT(err, t)
 	//setup()
 	// Create a request to pass to our handler.
 	req, err := http.NewRequest("GET", "/index/what/omg", nil)
 	checkT(err, t)
 
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
+
+	err = e.gitPull()
+	checkT(err, t)
 
 	e.authState.NewAdmin("admin", "admin")
 
@@ -378,11 +400,11 @@ func TestDirBaseHandler(t *testing.T) {
 }
 
 func TestRecentsPage(t *testing.T) {
-	err := gitPull()
-	checkT(err, t)
-
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
+
+	err := e.gitPull()
+	checkT(err, t)
 
 	e.authState.NewAdmin("admin", "admin")
 
@@ -413,15 +435,15 @@ func TestRecentsPage(t *testing.T) {
 }
 
 func TestListPage(t *testing.T) {
-	err := gitPull()
-	checkT(err, t)
-
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
+
+	err := e.gitPull()
+	checkT(err, t)
 
 	e.authState.NewAdmin("admin", "admin")
 
-	e.cache = buildCache()
+	e.buildCache()
 	err = os.Remove("./tests/data/cache.gob")
 	if err != nil {
 		t.Error(err)
@@ -481,11 +503,11 @@ func TestServer(t *testing.T) {
 */
 
 func TestPrivatePageNotLoggedIn(t *testing.T) {
-	err := gitPull()
-	checkT(err, t)
-
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
+
+	err := e.gitPull()
+	checkT(err, t)
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -522,11 +544,11 @@ func TestPrivatePageNotLoggedIn(t *testing.T) {
 }
 
 func TestPrivatePageLoggedIn(t *testing.T) {
-	err := gitPull()
-	checkT(err, t)
-
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
+
+	err := e.gitPull()
+	checkT(err, t)
 
 	e.authState.NewAdmin("admin", "admin")
 
@@ -565,13 +587,13 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 }
 
 func TestSearchPage(t *testing.T) {
-	err := gitPull()
-	checkT(err, t)
-
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
-	e.cache = buildCache()
+	err := e.gitPull()
+	checkT(err, t)
+
+	e.buildCache()
 	if e.cache == nil {
 		t.Error("cache is empty")
 	}
@@ -611,13 +633,13 @@ func TestSearchPage(t *testing.T) {
 
 // Test that we are unable to access Git repo data (wikidata/.git)
 func TestDotGit(t *testing.T) {
-	err := gitPull()
-	checkT(err, t)
-
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
-	e.cache = buildCache()
+	err := e.gitPull()
+	checkT(err, t)
+
+	e.buildCache()
 	if e.cache == nil {
 		t.Error("cache is empty")
 	}
@@ -653,13 +675,13 @@ func TestDotGit(t *testing.T) {
 
 // Test that we are unable to access stuff outside the wikidir
 func TestWikiDirEscape(t *testing.T) {
-	err := gitPull()
-	checkT(err, t)
-
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
-	e.cache = buildCache()
+	err := e.gitPull()
+	checkT(err, t)
+
+	e.buildCache()
 	if e.cache == nil {
 		t.Error("cache is empty")
 	}
@@ -677,7 +699,7 @@ func TestWikiDirEscape(t *testing.T) {
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusNotFound {
-		//t.Log(rr.Body.String(), req.Context())
+		t.Log(rr.Header())
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusNotFound)
 	}
@@ -686,7 +708,7 @@ func TestWikiDirEscape(t *testing.T) {
 // TestWikiHistoryNonExistent tests if trying to view /history/random properly redirects to /random
 func TestWikiHistoryNonExistent(t *testing.T) {
 
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	e.authState.NewAdmin("admin", "admin")
@@ -710,7 +732,7 @@ func TestWikiHistoryNonExistent(t *testing.T) {
 	}
 
 	// Transform/normalize the randPage name
-	checkName(&randPage)
+	checkName(e.cfg.WikiDir, &randPage)
 
 	expected := `/` + randPage
 	if w.Header().Get("Location") != expected {
@@ -722,7 +744,7 @@ func TestWikiHistoryNonExistent(t *testing.T) {
 // TestWikiDirIndex tests if trying to view /dir/ properly redirects to /dir/index when it exists
 func TestWikiDirIndex(t *testing.T) {
 
-	tmpdb, e := testEnvInit(t)
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	e.authState.NewAdmin("admin", "admin")
@@ -751,13 +773,16 @@ func TestWikiDirIndex(t *testing.T) {
 }
 
 func TestCache(t *testing.T) {
-	cache := buildCache()
-	if cache == nil {
+	tmpdb, e := testEnvInit()
+	defer os.Remove(tmpdb)
+
+	e.buildCache()
+	if e.cache == nil {
 		t.Error("cache is empty")
 	}
-	cache2 := loadCache()
-	if cache2 == nil {
-		t.Error("cache2 is empty")
+	e.loadCache()
+	if e.cache == nil {
+		t.Error("cache is empty after loadCache()")
 	}
 	err := os.Remove("./tests/data/cache.gob")
 	if err != nil {
@@ -1045,21 +1070,29 @@ func BenchmarkWholeWiki(b *testing.B) {
 }
 
 func BenchmarkGitCtime(b *testing.B) {
+	tmpdb, e := testEnvInit()
+	defer os.Remove(tmpdb)
+
 	for i := 0; i < b.N; i++ {
-		gitGetCtime("index")
+		e.gitGetCtime("index")
 	}
 }
 
 func BenchmarkGitMtime(b *testing.B) {
+	tmpdb, e := testEnvInit()
+	defer os.Remove(tmpdb)
+
 	for i := 0; i < b.N; i++ {
-		gitGetMtime("index")
+		e.gitGetMtime("index")
 	}
 }
 
 func TestMultipleWrites(t *testing.T) {
-	err := gitPull()
+	tmpdb, e := testEnvInit()
+	defer os.Remove(tmpdb)
+
+	err := e.gitPull()
 	checkT(err, t)
-	var mutex = &sync.Mutex{}
 
 	var wg sync.WaitGroup
 	wg.Add(50)
@@ -1094,7 +1127,7 @@ func TestMultipleWrites(t *testing.T) {
 					Content:     []byte(content),
 				}
 
-				err = thewiki.save(mutex)
+				err = thewiki.save(e)
 				if err != nil {
 					checkT(err, t)
 				}
