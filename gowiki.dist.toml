@@ -1,8 +1,13 @@
+#GitPath = /usr/bin/git
+#GitCommitEmail = "wiki@example.com"
+#GitCommitName = "Golang Wiki"
 Domain = "wiki.example.com"
 Port = "8000"
-Email = "unused@the.moment"
+DataDir = "/var/lib/gowiki/"
 WikiDir = "/var/lib/gowiki/wikidata/"
 RemoteGitRepo = ""
 PushOnSave = true
-Debug = true
-Dev = true
+DevMode = false
+InitWikiRepo = false
+CacheEnabled = true
+#RavenDSN = "sentry.io/"
