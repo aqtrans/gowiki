@@ -1786,7 +1786,6 @@ func main() {
 
 	confFile := flag.String("conf", "config.toml", "Path to the TOML config file.")
 	debug := flag.Bool("debug", false, "Toggle debug logging.")
-	//devMode := flag.Bool("dev", false, "Toggle dev/localhost mode, bypassing CSRF security.")
 	flag.Parse()
 
 	if *debug {
