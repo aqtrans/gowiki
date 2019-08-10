@@ -24,7 +24,7 @@ ignored = ["git.jba.io/go/auth", "git.jba.io/go/httputils"]
 
 [[constraint]]
   name = "github.com/dimfeld/httptreemux"
-  version = "5.0.0"
+  version = "~5.0"
 
 [[constraint]]
   branch = "master"
@@ -40,7 +40,7 @@ ignored = ["git.jba.io/go/auth", "git.jba.io/go/httputils"]
 
 [[constraint]]
   name = "github.com/russross/blackfriday"
-  version = "1.5"
+  version = "~1.5"
 
 [[constraint]]
   branch = "v2"
