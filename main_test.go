@@ -29,6 +29,7 @@ var (
 	//rr        *httptest.ResponseRecorder
 )
 
+/*
 func init() {
 	//viper.Set("Domain", "wiki.example.com")
 	//viper.Set("InitWikiRepo", true)
@@ -38,6 +39,7 @@ func init() {
 		log.SetLevel(log.DebugLevel)
 	}
 }
+*/
 
 func checkT(err error, t *testing.T) {
 	if err != nil {
