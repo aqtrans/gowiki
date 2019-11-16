@@ -1784,6 +1784,11 @@ func main() {
 	stopChan := make(chan os.Signal)
 	signal.Notify(stopChan, os.Interrupt)
 
+	formatter := new(log.TextFormatter)
+	formatter.TimestampFormat = "01-02-2006 03:04:05pm"
+	formatter.FullTimestamp = true
+	log.SetFormatter(formatter)
+
 	confFile := flag.String("conf", "config.toml", "Path to the TOML config file.")
 	debug := flag.Bool("debug", false, "Toggle debug logging.")
 	flag.Parse()
