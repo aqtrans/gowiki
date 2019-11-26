@@ -3,8 +3,10 @@ module git.jba.io/go/wiki
 go 1.12
 
 require (
-	git.jba.io/go/auth v1.0.3
+	git.jba.io/go/auth v1.0.4
 	git.jba.io/go/httputils v0.0.0-20190322205649-639279c6da32
+	git.jba.io/go/wiki/vfs/assets v0.0.0-00010101000000-000000000000
+	git.jba.io/go/wiki/vfs/templates v0.0.0-00010101000000-000000000000
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
@@ -27,7 +29,6 @@ require (
 	github.com/renstrom/fuzzysearch v1.0.1
 	github.com/russross/blackfriday v0.0.0-20170728175326-4048872b16cc
 	github.com/sergi/go-diff v1.0.0 // indirect
-	github.com/shurcooL/httpfs v0.0.0-20171119174359-809beceb2371
 	github.com/sirupsen/logrus v1.4.2
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/tevjef/go-runtime-metrics v0.0.0-20170326170900-527a54029307
@@ -39,4 +40,10 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.1.0
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.0.0-20170812160011-eb3733d160e7
+)
+
+replace (
+	git.jba.io/go/wiki/vfs => ./vfs
+	git.jba.io/go/wiki/vfs/assets => ./vfs/assets
+	git.jba.io/go/wiki/vfs/templates => ./vfs/templates
 )
