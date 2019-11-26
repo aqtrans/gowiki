@@ -483,7 +483,7 @@ func (env *wikiEnv) gitIsEmpty() bool {
 func (env *wikiEnv) gitSearch(searchTerm, fileSpec string) []result {
 	var results []result
 	quotedSearchTerm := `'` + searchTerm + `'`
-	cmd := exec.Command("/bin/sh", "-c", env.cfg.GitPath+" grep "+quotedSearchTerm+" -- "+fileSpec)
+	cmd := exec.Command("/bin/sh", "-c", env.cfg.GitPath+" grep -i "+quotedSearchTerm+" -- "+fileSpec)
 	//o := gitCommand("grep", "omg -- 'index'")
 	cmd.Dir = env.cfg.WikiDir
 	o, err := cmd.CombinedOutput()
