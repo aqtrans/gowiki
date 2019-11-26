@@ -5,7 +5,7 @@ go 1.12
 require (
 	git.jba.io/go/auth v1.0.4
 	git.jba.io/go/httputils v0.0.0-20190322205649-639279c6da32
-	git.jba.io/go/wiki/vfs/assets v0.0.0-00010101000000-000000000000
+	git.jba.io/go/wiki/vfs/assets v0.0.0-20191126203517-54f939e50406
 	git.jba.io/go/wiki/vfs/templates v0.0.0-00010101000000-000000000000
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
