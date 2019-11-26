@@ -1,0 +1,9 @@
+git.jba.io/go/httputils v0.0.0-20190322205649-639279c6da32 h1:9U4APB2n5HBUU5db+gaH7PDFqHfGrvO29SUX7HREhM4=
+git.jba.io/go/httputils v0.0.0-20190322205649-639279c6da32/go.mod h1:m/ZyF4y/giEln4zQNcc9dSE4MlPIZNy8Fy6St3S3p7w=
+git.jba.io/go/wiki v0.0.0-20191126203517-54f939e50406 h1:MWjYMAZEIiEBGUDqW2GhpKnQVy1dogHIWQaCIMkxhlE=
+git.jba.io/go/wiki/vfs/assets v0.0.0-20191126203517-54f939e50406 h1:+0CyjsPiOPud/urQh09X8uy73xlkmCqSawywYOWci8M=
+git.jba.io/go/wiki/vfs/assets v0.0.0-20191126203517-54f939e50406/go.mod h1:72vXbsrUPoREUDZfxpqyv5Tlx8fErRJzgTRrb7YjLF0=
+github.com/shurcooL/httpfs v0.0.0-20171119174359-809beceb2371 h1:SWV2fHctRpRrp49VXJ6UZja7gU9QLHwRpIPBN89SKEo=
+github.com/shurcooL/httpfs v0.0.0-20171119174359-809beceb2371/go.mod h1:ZY1cvUeJuFPAdZ/B6v7RHavJWZn2YPVFQ1OSXhCGOkg=
+github.com/shurcooL/vfsgen v0.0.0-20180711163814-62bca832be04 h1:y0cMJ0qjii33BnD6tMGcF/+gHYsoKQ6tbwQpy233OII=
+github.com/shurcooL/vfsgen v0.0.0-20180711163814-62bca832be04/go.mod h1:TrYk7fJVaAttu97ZZKrO9UbRa8izdowaMIZcxYMbVaw=

@@ -38,13 +38,13 @@ build-my-project:
     - sassc -t compressed scss/grid.scss assets/css/wiki.css
     #- go get -u github.com/kardianos/govendor
     #- govendor sync
-    - curl -o dep -sL https://github.com/golang/dep/releases/download/v0.5.4/dep-linux-amd64
-    - chmod +x dep
-    - ./dep ensure
+    #- curl -o dep -sL https://github.com/golang/dep/releases/download/v0.5.4/dep-linux-amd64
+    #- chmod +x dep
+    #- ./dep ensure
     - go get -d github.com/shurcooL/vfsgen
     - go get -d -v git.jba.io/go/httputils    
-    - cd vfs/assets && go get -d && cd ../../
-    - cd vfs/templates && go get -d && cd ../../
+    - cd vfs/assets && go get -d && go generate && cd ../../
+    - cd vfs/templates && go get -d && go generate && cd ../../
     - go get -d
     - go generate ./...
     - go build -o ./wiki   
