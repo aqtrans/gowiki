@@ -12,7 +12,7 @@ steps:
   - echo "$SSH_KEY" > $HOME/.ssh/id_ed25519
   - cat $HOME/.ssh/id_ed25519
   - chmod 600 $HOME/.ssh/id_ed25519
-  - apk add --no-cache openssh
+  - apk add --no-cache openssh git
   - ssh-keyscan -H bob.jba.io > $HOME/.ssh/known_hosts  
   - ssh-keyscan -H git.jba.io >> $HOME/.ssh/known_hosts 
   - mkdir -p tests/data/wikidata
