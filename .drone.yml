@@ -2,22 +2,6 @@ kind: pipeline
 name: wiki
 
 steps:
-- name: clone test data
-  image: alpine
-  environment:
-    SSH_KEY:
-      from_secret: ssh_key
-  commands:      
-  - mkdir $HOME/.ssh
-  - echo "$SSH_KEY" > $HOME/.ssh/id_ed25519
-  - cat $HOME/.ssh/id_ed25519
-  - chmod 600 $HOME/.ssh/id_ed25519
-  - apk add --no-cache openssh git
-  - ssh-keyscan -H bob.jba.io > $HOME/.ssh/known_hosts  
-  - ssh-keyscan -H git.jba.io >> $HOME/.ssh/known_hosts 
-  - mkdir -p tests/data/wikidata
-  - git clone git@git.jba.io:aqtrans/gowiki-testdata.git tests/data/wikidata  
-
 - name: get deps
   image: golang
   volumes:
@@ -34,7 +18,17 @@ steps:
   volumes:
     - name: deps
       path: /go
-  commands:
+  environment:
+    SSH_KEY:
+      from_secret: ssh_key
+  commands:      
+    - mkdir $HOME/.ssh
+    - echo "$SSH_KEY" > $HOME/.ssh/id_ed25519
+    - chmod 600 $HOME/.ssh/id_ed25519
+    - ssh-keyscan -H bob.jba.io > $HOME/.ssh/known_hosts  
+    - ssh-keyscan -H git.jba.io >> $HOME/.ssh/known_hosts 
+    - mkdir -p tests/data/wikidata
+    - git clone git@git.jba.io:aqtrans/gowiki-testdata.git tests/data/wikidata
     - go test
     - go test -race
     - go test -cover
@@ -73,7 +67,6 @@ steps:
   commands:      
   - mkdir $HOME/.ssh
   - echo "$SSH_KEY" > $HOME/.ssh/id_ed25519
-  - cat $HOME/.ssh/id_ed25519
   - chmod 600 $HOME/.ssh/id_ed25519
   - apk add --no-cache openssh
   - ssh-keyscan -H bob.jba.io > $HOME/.ssh/known_hosts  
