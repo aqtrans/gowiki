@@ -2,7 +2,7 @@ kind: pipeline
 name: wiki
 
 steps:
-- name: add ssh key
+- name: clone test data
   image: alpine
   environment:
     SSH_KEY:
@@ -15,6 +15,8 @@ steps:
   - apk add --no-cache openssh
   - ssh-keyscan -H bob.jba.io > $HOME/.ssh/known_hosts  
   - ssh-keyscan -H git.jba.io >> $HOME/.ssh/known_hosts 
+  - mkdir -p tests/data/wikidata
+  - git clone git@git.jba.io:aqtrans/gowiki-testdata.git tests/data/wikidata  
 
 - name: get deps
   image: golang
@@ -33,8 +35,6 @@ steps:
     - name: deps
       path: /go
   commands:
-    - mkdir -p tests/data/wikidata
-    - git clone git@git.jba.io:aqtrans/gowiki-testdata.git tests/data/wikidata    
     - go test
     - go test -race
     - go test -cover
@@ -68,8 +68,16 @@ steps:
   image: alpine
   environment:
     DEPLOY_HOST: 'deploy@bob.jba.io'
-  commands:
+    SSH_KEY:
+      from_secret: ssh_key
+  commands:      
+  - mkdir $HOME/.ssh
+  - echo "$SSH_KEY" > $HOME/.ssh/id_ed25519
+  - cat $HOME/.ssh/id_ed25519
+  - chmod 600 $HOME/.ssh/id_ed25519
   - apk add --no-cache openssh
+  - ssh-keyscan -H bob.jba.io > $HOME/.ssh/known_hosts  
+  - ssh-keyscan -H git.jba.io >> $HOME/.ssh/known_hosts 
   - scp esg.deb $DEPLOY_HOST:/home/deploy/
   - ssh $DEPLOY_HOST sudo dpkg -i esg.deb
 
