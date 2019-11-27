@@ -1,0 +1,87 @@
+kind: pipeline
+name: wiki
+
+steps:
+- name: add ssh key
+  image: alpine
+  environment:
+    SSH_KEY:
+      from_secret: ssh_key
+  commands:      
+  - mkdir $HOME/.ssh
+  - echo "$SSH_KEY" > $HOME/.ssh/id_ed25519
+  - cat $HOME/.ssh/id_ed25519
+  - chmod 600 $HOME/.ssh/id_ed25519
+  - apk add --no-cache openssh
+  - ssh-keyscan -H bob.jba.io > $HOME/.ssh/known_hosts  
+
+- name: get deps
+  image: golang
+  volumes:
+    - name: deps
+      path: /go
+  commands:
+    - go get -d
+    - cd vfs/assets && go get -d && go generate && cd ../../
+    - cd vfs/templates && go get -d && go generate && cd ../../
+    - go generate ./...
+
+- name: test
+  image: golang
+  volumes:
+    - name: deps
+      path: /go
+  commands:
+    - mkdir -p tests/data/wikidata
+    - git clone git@git.jba.io:aqtrans/gowiki-testdata.git tests/data/wikidata    
+    - go test
+    - go test -race
+    - go test -cover
+    - go test -bench=.
+    - rm -rf tests/data/wikidata
+
+- name: build
+  image: golang
+  volumes:
+    - name: deps
+      path: /go
+  commands:
+    - go build
+
+- name: build-css
+  image: alpine
+  commands: 
+    - apk add --no-cache sassc
+    - sassc -t compressed scss/grid.scss assets/css/wiki.css
+
+- name: package
+  pull: never
+  image: deb-pkg
+  commands: 
+    - cp wiki gowiki
+    - dch -M -v 1.0-$DRONE_COMMIT_BRANCH-$DRONE_BUILD_NUMBER "New version from Git" && dch -M -r -D buster ""
+    - debuild -us -uc -b  
+    - mv ../gowiki_*.deb gowiki.deb
+
+- name: deploy
+  image: alpine
+  environment:
+    DEPLOY_HOST: 'deploy@bob.jba.io'
+  commands:
+  - apk add --no-cache openssh
+  - scp esg.deb $DEPLOY_HOST:/home/deploy/
+  - ssh $DEPLOY_HOST sudo dpkg -i esg.deb
+
+- name: notify
+  image: plugins/matrix
+  settings:
+    homeserver: https://squanch.space
+    roomid: WJRHcFjDqYlolDerNY:squanch.space
+    username:
+      from_secret: matrix_username
+    password:
+      from_secret: matrix_password
+
+volumes:
+  - name: deps
+    temp: {}  
