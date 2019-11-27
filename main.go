@@ -1443,9 +1443,11 @@ func setPageTitle(frontmatterTitle, filename string) string {
 
 func (env *wikiEnv) buildCache() {
 	defer httputils.TimeTrack(time.Now(), "buildCache")
-	cache := new(wikiCache)
-	cache.Tags = make(map[string][]string)
-	cache.Favs = make(map[string]struct{})
+	/*
+		cache := new(wikiCache)
+		cache.Tags = make(map[string][]string)
+		cache.Favs = make(map[string]struct{})
+	*/
 	var wps []gitDirList
 
 	if !env.gitIsEmpty() {
@@ -1511,15 +1513,15 @@ func (env *wikiEnv) buildCache() {
 				// Replacing readFavs and readTags
 				if fm.Favorite {
 					//cache.Favs.LoadOrStore(file.Filename)
-					if _, ok := cache.Favs[file.Filename]; !ok {
+					if _, ok := env.cache.Favs[file.Filename]; !ok {
 						log.Debugln("buildCache.favs: " + file.Filename + " is not already a favorite.")
-						cache.Favs[file.Filename] = struct{}{}
+						env.cache.Favs[file.Filename] = struct{}{}
 					}
 				}
 				if fm.Tags != nil {
 					//cache.Tags.LoadOrStore(fm.Tags, file.Filename)
 					for _, tag := range fm.Tags {
-						cache.Tags[tag] = append(cache.Tags[tag], file.Filename)
+						env.cache.Tags[tag] = append(env.cache.Tags[tag], file.Filename)
 					}
 				}
 				/*
@@ -1539,42 +1541,37 @@ func (env *wikiEnv) buildCache() {
 				wps = append(wps, wp)
 			}
 		}
-		cache.SHA1 = env.headHash()
+		env.cache.SHA1 = env.headHash()
 	}
 
-	cache.Cache = wps
+	env.cache.Cache = wps
 
 	if env.cfg.CacheEnabled {
 		cacheFile, err := os.Create(filepath.Join(env.cfg.DataDir, "cache.gob"))
 		check(err)
 		cacheEncoder := gob.NewEncoder(cacheFile)
-		err = cacheEncoder.Encode(cache)
+		err = cacheEncoder.Encode(env.cache)
 		check(err)
 		err = cacheFile.Close()
 		check(err)
 	}
-
-	env.cache = cache
 }
 
 func (env *wikiEnv) loadCache() {
-	cache := new(wikiCache)
-	cache.Tags = make(map[string][]string)
-	cache.Favs = make(map[string]struct{})
 	if env.cfg.CacheEnabled {
 		cacheFile, err := os.Open(filepath.Join(env.cfg.DataDir, "cache.gob"))
 		defer cacheFile.Close()
 		if err == nil {
 			log.Println("Loading cache from gob.")
 			cacheDecoder := gob.NewDecoder(cacheFile)
-			err = cacheDecoder.Decode(&cache)
+			err = cacheDecoder.Decode(&env.cache)
 			//check(err)
 			if err != nil {
 				log.Println("Error loading cache. Rebuilding it.", err)
 				env.buildCache()
 			}
 			// Check the cached sha1 versus HEAD sha1, rebuild if they differ
-			if !env.gitIsEmpty() && cache.SHA1 != env.headHash() {
+			if !env.gitIsEmpty() && env.cache.SHA1 != env.headHash() {
 				log.Println("Cache SHA1s do not match. Rebuilding cache.")
 				env.buildCache()
 			}
@@ -1588,8 +1585,6 @@ func (env *wikiEnv) loadCache() {
 		log.Println("Building cache...")
 		env.buildCache()
 	}
-
-	env.cache = cache
 }
 
 func (env *wikiEnv) headHash() string {
@@ -1811,8 +1806,12 @@ func main() {
 		authState: *auth.NewAuthState(filepath.Join(serverCfg.DataDir, "auth.db")),
 		templates: templates.TmplInit(),
 		mutex:     sync.Mutex{},
+		cache:     new(wikiCache),
 	}
-	env.buildCache()
+	env.cache.Tags = make(map[string][]string)
+	env.cache.Favs = make(map[string]struct{})
+
+	env.loadCache()
 	env.favs.List = env.cache.Favs
 	env.tags.List = env.cache.Tags
 
