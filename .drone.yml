@@ -71,8 +71,8 @@ steps:
   - apk add --no-cache openssh
   - ssh-keyscan -H bob.jba.io > $HOME/.ssh/known_hosts  
   - ssh-keyscan -H git.jba.io >> $HOME/.ssh/known_hosts 
-  - scp esg.deb $DEPLOY_HOST:/home/deploy/
-  - ssh $DEPLOY_HOST sudo dpkg -i esg.deb
+  - scp gowiki.deb $DEPLOY_HOST:/home/deploy/
+  - ssh $DEPLOY_HOST sudo dpkg -i gowiki.deb
 
 - name: notify
   image: plugins/matrix
