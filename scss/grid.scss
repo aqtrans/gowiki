@@ -294,7 +294,7 @@ ul.tags {
 pre, code {
     white-space:pre-wrap;
     background: $solarized;
-
+    user-select: all;
 }
 
 .input-wrapper {
