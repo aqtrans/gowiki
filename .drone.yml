@@ -75,14 +75,16 @@ steps:
   - ssh $DEPLOY_HOST sudo dpkg -i gowiki.deb
 
 - name: notify
-  image: plugins/matrix
+  image: plugins/pushover
   settings:
-    homeserver: https://squanch.space
-    roomid: WJRHcFjDqYlolDerNY:squanch.space
-    username:
-      from_secret: matrix_username
-    password:
-      from_secret: matrix_password
+    user:
+      from_secret: pushover_user
+    token:
+      from_secret: pushover_token
+  when:
+    status:
+    - success
+    - failure
 
 volumes:
   - name: deps
