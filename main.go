@@ -620,7 +620,7 @@ func (env *wikiEnv) loadPage(r *http.Request, p chan<- page) {
 	if msg != "" {
 		message = template.HTML(`
 			<div class="notification anim active" id="notification">
-			<p>` + template.HTMLEscapeString(msg) + `
+			<p>` + msg + `
 			<button class="close-button" type="button" id="close-button">
 			<div class="svg-icon"><svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
 			<title>cross</title>
