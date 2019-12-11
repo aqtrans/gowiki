@@ -1782,6 +1782,7 @@ func main() {
 	formatter := new(log.TextFormatter)
 	formatter.TimestampFormat = "01-02-2006 03:04:05pm"
 	formatter.FullTimestamp = true
+	formatter.DisableLevelTruncation = true
 	log.SetFormatter(formatter)
 
 	confFile := flag.String("conf", "config.toml", "Path to the TOML config file.")
