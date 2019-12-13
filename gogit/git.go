@@ -21,12 +21,12 @@ func goGitIsClean() error {
 	repo := goGitOpen()
 	workTree, err := repo.Worktree()
 	if err != nil {
-		check(err)
+		log.Println(err)
 		return err
 	}
 	status, err := workTree.Status()
 	if err != nil {
-		check(err)
+		log.Println(err)
 		return err
 	}
 	if !status.IsClean() {
@@ -38,7 +38,7 @@ func goGitIsClean() error {
 func goGitOpen() *git.Repository {
 	repo, err := git.PlainOpen(filepath.Join(dataDir, "wikidata"))
 	if err != nil {
-		check(err)
+		log.Println(err)
 		log.Fatalln("Error opening repo:", err)
 	}
 	return repo
@@ -47,13 +47,13 @@ func goGitOpen() *git.Repository {
 func goGitAddFilepath(repo *git.Repository, path string) error {
 	workTree, err := repo.Worktree()
 	if err != nil {
-		check(err)
+		log.Println(err)
 		return err
 	}
 
 	_, err = workTree.Add(path)
 	if err != nil {
-		check(err)
+		log.Println(err)
 		return err
 	}
 
@@ -63,7 +63,7 @@ func goGitAddFilepath(repo *git.Repository, path string) error {
 func goGitCommitEmpty(repo *git.Repository) error {
 	workTree, err := repo.Worktree()
 	if err != nil {
-		check(err)
+		log.Println(err)
 		return err
 	}
 
@@ -75,7 +75,7 @@ func goGitCommitEmpty(repo *git.Repository) error {
 		},
 	})
 	if err != nil {
-		check(err)
+		log.Println(err)
 		return err
 	}
 
@@ -85,7 +85,7 @@ func goGitCommitEmpty(repo *git.Repository) error {
 func goGitCommitWithMessage(repo *git.Repository, msg string) error {
 	workTree, err := repo.Worktree()
 	if err != nil {
-		check(err)
+		log.Println(err)
 		return err
 	}
 
@@ -97,11 +97,11 @@ func goGitCommitWithMessage(repo *git.Repository, msg string) error {
 		},
 	})
 	if err != nil {
-		check(err)
+		log.Println(err)
 		return err
 	}
 
 	return nil
 }
 
-func goGitFilelog(repo *git.Repository) 
+func goGitFilelog(repo *git.Repository)
