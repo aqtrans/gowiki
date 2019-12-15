@@ -10,10 +10,8 @@ require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
-	github.com/certifi/gocertifi v0.0.0-20180118203423-deb3ae2ef261 // indirect
 	github.com/dimfeld/httptreemux v5.0.0+incompatible
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
-	github.com/getsentry/raven-go v0.2.0
 	github.com/gliderlabs/ssh v0.2.2 // indirect
 	github.com/google/go-cmp v0.3.0 // indirect
 	github.com/gorilla/csrf v1.6.2 // indirect

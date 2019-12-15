@@ -227,7 +227,9 @@ func (env *wikiEnv) gitGetCtime(filename string) (int64, error) {
 		return 0, errNotInGit
 	}
 	ctime, err := strconv.ParseInt(ostring, 10, 64)
-	check(err)
+	if err != nil {
+		panic(err)
+	}
 
 	return ctime, err
 }
@@ -248,7 +250,9 @@ func (env *wikiEnv) gitGetMtime(filename string) (int64, error) {
 		return 0, nil
 	}
 	mtime, err := strconv.ParseInt(ostring, 10, 64)
-	check(err)
+	if err != nil {
+		panic(err)
+	}
 
 	return mtime, err
 }
@@ -328,7 +332,9 @@ func (env *wikiEnv) gitGetFileCommitMtime(commit string) (int64, error) {
 	}
 	ostring := strings.TrimSpace(string(o))
 	mtime, err := strconv.ParseInt(ostring, 10, 64)
-	check(err)
+	if err != nil {
+		panic(err)
+	}
 
 	return mtime, err
 }
@@ -435,7 +441,6 @@ func (env *wikiEnv) gitGetTimes(filename string, ctime, mtime chan<- int64) {
 			return
 		}
 		ctimeI, err := strconv.ParseInt(costring, 10, 64)
-		check(err)
 		if err != nil {
 			ctime <- 0
 			return
@@ -458,7 +463,6 @@ func (env *wikiEnv) gitGetTimes(filename string, ctime, mtime chan<- int64) {
 			return
 		}
 		mtimeI, err := strconv.ParseInt(mostring, 10, 64)
-		check(err)
 		if err != nil {
 			mtime <- 0
 			return
@@ -488,12 +492,6 @@ func (env *wikiEnv) gitSearch(searchTerm, fileSpec string) []result {
 	cmd.Dir = env.cfg.WikiDir
 	o, err := cmd.CombinedOutput()
 	if err != nil {
-		/* Seems like git grep returns exit status 1 on no results,
-			so don't worry about errors for now
-		raven.CaptureError(err, nil)
-		log.Println("ERROR gitSearch:", err)
-		log.Println(string(o))
-		*/
 		return nil
 	}
 

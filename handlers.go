@@ -16,7 +16,6 @@ import (
 	"git.jba.io/go/auth"
 	"git.jba.io/go/httputils"
 	"github.com/dimfeld/httptreemux"
-	raven "github.com/getsentry/raven-go"
 	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
 )
 
@@ -56,14 +55,12 @@ func (env *wikiEnv) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err := env.gitRmFilepath(name)
 	if err != nil {
-		raven.CaptureError(err, nil)
 		log.Println("Error deleting file from git repo,", name, err)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 
 	err = env.gitCommitWithMessage(name + " has been removed from git repo.")
 	if err != nil {
-		raven.CaptureError(err, nil)
 		log.Println("Error commiting to git repo,", name, err)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
@@ -174,7 +171,6 @@ func (env *wikiEnv) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 
 	userlist, err := env.authState.Userlist()
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -204,7 +200,6 @@ func (env *wikiEnv) adminUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	userlist, err := env.authState.Userlist()
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -334,12 +329,10 @@ func (env *wikiEnv) gitCheckinPostHandler(w http.ResponseWriter, r *http.Request
 
 	err := env.gitAddFilepath(path)
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	err = env.gitCommitEmpty()
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	if path != "." {
@@ -355,7 +348,6 @@ func (env *wikiEnv) gitPushPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := env.gitPush()
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -368,7 +360,6 @@ func (env *wikiEnv) gitPullPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := env.gitPull()
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -499,7 +490,6 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		raven.CaptureError(err, nil)
 		log.Println("Error parsing form ", err)
 	}
 	content := r.FormValue("editor")
@@ -551,7 +541,6 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = thewiki.save(env)
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -559,7 +548,6 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 	if env.cfg.PushOnSave {
 		err := env.gitPush()
 		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
 			//panic(err)
 			log.Println("Error pushing to remote git repo:", err)
 			env.authState.SetFlash("Wiki page successfully saved, but error pushing to remote git repo.", w)
@@ -712,7 +700,6 @@ func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
 
 	history, err := env.gitGetFileLog(name)
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	hp := &historyPage{
@@ -748,22 +735,18 @@ func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, co
 
 	body, err := env.gitGetFileCommit(name, commit)
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	ctime, err := env.gitGetCtime(name)
 	if err != nil && err != errNotInGit {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	mtime, err := env.gitGetFileCommitMtime(commit)
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	diff, err := env.gitGetFileCommitDiff(name, commit)
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -771,7 +754,6 @@ func (env *wikiEnv) viewCommitHandler(w http.ResponseWriter, r *http.Request, co
 	reader := bytes.NewReader(body)
 	fm, content := readWikiPage(reader)
 	if err != nil {
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -822,7 +804,11 @@ func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 	go env.loadPage(r, p)
 
 	gh, err := env.gitHistory()
-	check(err)
+	if err != nil {
+		log.Println("Error getting git history:", err)
+		http.Error(w, "Unable to fetch git history", 500)
+		return
+	}
 
 	/*
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -836,7 +822,6 @@ func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 		split = strings.Split(strings.TrimSpace(v), " ")
 		date, err := strconv.ParseInt(split[0], 0, 64)
 		if err != nil {
-			raven.CaptureErrorAndWait(err, nil)
 			panic(err)
 		}
 
