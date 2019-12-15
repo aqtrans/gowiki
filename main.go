@@ -57,8 +57,8 @@ import (
 	"sync"
 	"time"
 
-	raven "github.com/getsentry/raven-go"
 	"github.com/pelletier/go-toml"
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
 
@@ -66,14 +66,10 @@ import (
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
-
-	//"github.com/microcosm-cc/bluemonday"
-
 	_ "github.com/tevjef/go-runtime-metrics/expvar"
 
 	"git.jba.io/go/auth"
 	"git.jba.io/go/httputils"
-
 	"git.jba.io/go/wiki/vfs/assets"
 	"git.jba.io/go/wiki/vfs/templates"
 )
@@ -228,7 +224,6 @@ type config struct {
 	InitWikiRepo   bool   `yaml:"InitWikiRepo,omitempty"`
 	CacheEnabled   bool   `yaml:"CacheEnabled,omitempty"`
 	DevMode        bool   `yaml:"DevMode,omitempty"`
-	RavenDSN       string `yaml:"RavenDSN,omitempty"`
 }
 
 // Env wrapper to hold app-specific configs, to pass to handlers
@@ -339,13 +334,6 @@ func loadConfig(confFile string) config {
 		cfg.GitCommitName = "Golang Wiki"
 	}
 
-	// Setup RavenDSN if set
-	if cfg.RavenDSN != "" {
-		err := raven.SetDSN(cfg.RavenDSN)
-		if err != nil {
-			log.Println("Error setting Sentry.io DSN:", err)
-		}
-	}
 	return cfg
 }
 
@@ -389,18 +377,6 @@ func (r *renderer) NormalText(out *bytes.Buffer, text []byte) {
 	}
 	r.Html.NormalText(out, text)
 
-}
-
-func check(err error) {
-	if err != nil {
-		pc, fn, line, ok := runtime.Caller(1)
-		details := runtime.FuncForPC(pc)
-		if ok && details != nil {
-			//log.Fatalln(line, " Func: ", details.Name(), " Err: ", err)
-			log.Printf("[error] in %s[%s:%d] %v", details.Name(), fn, line, err)
-			raven.CaptureError(err, nil)
-		}
-	}
 }
 
 func appendIfMissing(slice []string, s string) []string {
@@ -670,7 +646,6 @@ func readFileAndFront(filename string) (frontmatter, []byte) {
 	//checkErr("readFileAndFront()/Open", err)
 	if err != nil {
 		log.Debugln("Error in readFileAndFront:", err)
-		raven.CaptureError(err, nil)
 		f.Close()
 		return frontmatter{}, []byte("")
 	}
@@ -711,7 +686,6 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 			if grabPage {
 				_, err := bufs[1].WriteString(scanner.Text() + "\n")
 				if err != nil {
-					raven.CaptureError(err, nil)
 					log.Println("Error writing page data:", err)
 				}
 			} else {
@@ -723,7 +697,6 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 			if scanner.Text() != yamlSeparator || scanner.Text() != yamlSeparator2 {
 				_, err := bufs[0].WriteString(scanner.Text() + "\n")
 				if err != nil {
-					raven.CaptureError(err, nil)
 					log.Println("Error writing page data:", err)
 				}
 			}
@@ -747,7 +720,6 @@ func scanWikiPage(reader io.Reader, bufs ...*bytes.Buffer) {
 				if grabPage {
 					_, err := bufs[1].WriteString(scanner.Text() + "\n")
 					if err != nil {
-						raven.CaptureError(err, nil)
 						log.Println("Error writing page data:", err)
 					}
 
@@ -772,12 +744,10 @@ func scanWikiPageB(reader io.Reader, bufs ...*bytes.Buffer) {
 			if grabPage {
 				_, err := bufs[1].Write(scanner.Bytes())
 				if err != nil {
-					raven.CaptureError(err, nil)
 					log.Println("Error writing page data:", err)
 				}
 				err = bufs[1].WriteByte('\n')
 				if err != nil {
-					raven.CaptureError(err, nil)
 					log.Println("Error writing page data:", err)
 				}
 			} else {
@@ -789,12 +759,10 @@ func scanWikiPageB(reader io.Reader, bufs ...*bytes.Buffer) {
 			if !bytes.Equal(scanner.Bytes(), []byte(yamlSeparator)) || !bytes.Equal(scanner.Bytes(), []byte(yamlSeparator2)) {
 				_, err := bufs[0].Write(scanner.Bytes())
 				if err != nil {
-					raven.CaptureError(err, nil)
 					log.Println("Error writing page data:", err)
 				}
 				err = bufs[0].WriteByte('\n')
 				if err != nil {
-					raven.CaptureError(err, nil)
 					log.Println("Error writing page data:", err)
 				}
 			}
@@ -818,12 +786,10 @@ func scanWikiPageB(reader io.Reader, bufs ...*bytes.Buffer) {
 				if grabPage {
 					_, err := bufs[1].Write(scanner.Bytes())
 					if err != nil {
-						raven.CaptureError(err, nil)
 						log.Println("Error writing page data:", err)
 					}
 					err = bufs[1].WriteByte('\n')
 					if err != nil {
-						raven.CaptureError(err, nil)
 						log.Println("Error writing page data:", err)
 					}
 				}
@@ -898,7 +864,6 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 		log.Println("renderTemplate error:")
 		log.Println(err)
 		bufpool.Put(buf)
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -911,7 +876,6 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 		log.Println("renderTemplate error:")
 		log.Println(err)
 		bufpool.Put(buf)
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 
@@ -920,7 +884,6 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 		log.Println("renderTemplate error:")
 		log.Println(err)
 		bufpool.Put(buf)
-		raven.CaptureErrorAndWait(err, nil)
 		panic(err)
 	}
 	buf.WriteTo(w)
@@ -960,7 +923,6 @@ func doesPageExist(name string) (bool, error) {
 			exists = false
 		} else {
 			log.Println("doesPageExist, unhandled error:", err)
-			raven.CaptureError(err, nil)
 			exists = false
 			finError = err
 		}
@@ -1124,7 +1086,6 @@ func isWiki(fullFilename string) bool {
 	var isWiki bool
 	file, err := os.Open(fullFilename)
 	if err != nil {
-		raven.CaptureError(err, nil)
 		isWiki = false
 	}
 
@@ -1132,7 +1093,6 @@ func isWiki(fullFilename string) bool {
 	buff := make([]byte, 512)
 	_, err = file.Read(buff)
 	if err != nil {
-		raven.CaptureError(err, nil)
 		isWiki = false
 	}
 	filetype := http.DetectContentType(buff)
@@ -1248,7 +1208,6 @@ func (wiki *wiki) save(env *wikiEnv) error {
 		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
 			err := os.MkdirAll(dirpath, 0755)
 			if err != nil {
-				raven.CaptureError(err, nil)
 				env.mutex.Unlock()
 				return err
 			}
@@ -1264,7 +1223,6 @@ func (wiki *wiki) save(env *wikiEnv) error {
 	var err error
 	f, err = os.OpenFile(fullfilename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		raven.CaptureError(err, nil)
 		env.mutex.Unlock()
 		return err
 	}
@@ -1274,49 +1232,42 @@ func (wiki *wiki) save(env *wikiEnv) error {
 
 	_, err = wb.WriteString("---\n")
 	if err != nil {
-		raven.CaptureError(err, nil)
 		env.mutex.Unlock()
 		return err
 	}
 
 	yamlBuffer, err := yaml.Marshal(wiki.Frontmatter)
 	if err != nil {
-		raven.CaptureError(err, nil)
 		env.mutex.Unlock()
 		return err
 	}
 
 	_, err = wb.Write(yamlBuffer)
 	if err != nil {
-		raven.CaptureError(err, nil)
 		env.mutex.Unlock()
 		return err
 	}
 
 	_, err = wb.WriteString("---\n")
 	if err != nil {
-		raven.CaptureError(err, nil)
 		env.mutex.Unlock()
 		return err
 	}
 
 	_, err = wb.Write(wiki.Content)
 	if err != nil {
-		raven.CaptureError(err, nil)
 		env.mutex.Unlock()
 		return err
 	}
 
 	err = wb.Flush()
 	if err != nil {
-		raven.CaptureError(err, nil)
 		env.mutex.Unlock()
 		return err
 	}
 
 	err = f.Close()
 	if err != nil {
-		raven.CaptureError(err, nil)
 		env.mutex.Unlock()
 		return err
 	}
@@ -1344,7 +1295,6 @@ func (wiki *wiki) save(env *wikiEnv) error {
 
 	err = env.gitAddFilepath(gitfilename)
 	if err != nil {
-		raven.CaptureError(err, nil)
 		env.mutex.Unlock()
 		return err
 	}
@@ -1352,7 +1302,6 @@ func (wiki *wiki) save(env *wikiEnv) error {
 	// FIXME: add a message box to edit page, check for it here
 	err = env.gitCommitEmpty()
 	if err != nil {
-		raven.CaptureError(err, nil)
 		env.mutex.Unlock()
 		return err
 	}
@@ -1453,7 +1402,12 @@ func (env *wikiEnv) buildCache() {
 	if !env.gitIsEmpty() {
 
 		fileList, err := env.gitLsTree()
-		check(err)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"error": err,
+			}).Errorln("Error loading file list from git")
+			return
+		}
 
 		for _, file := range fileList {
 
@@ -1489,7 +1443,13 @@ func (env *wikiEnv) buildCache() {
 
 				// Read YAML frontmatter into fm
 				f, err := os.Open(fullname)
-				check(err)
+				if err != nil {
+					log.WithFields(logrus.Fields{
+						"error": err,
+						"file":  f.Name(),
+					}).Errorln("Error opening file")
+					return
+				}
 
 				fm := readFront(f)
 				//fm, content := readWikiPage(f)
@@ -1548,12 +1508,27 @@ func (env *wikiEnv) buildCache() {
 
 	if env.cfg.CacheEnabled {
 		cacheFile, err := os.Create(filepath.Join(env.cfg.DataDir, "cache.gob"))
-		check(err)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"error": err,
+			}).Errorln("Error creating cache file")
+			return
+		}
 		cacheEncoder := gob.NewEncoder(cacheFile)
 		err = cacheEncoder.Encode(env.cache)
-		check(err)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"error": err,
+			}).Errorln("Error encoding cache in gob")
+			return
+		}
 		err = cacheFile.Close()
-		check(err)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"error": err,
+			}).Errorln("Error closing cache file")
+			return
+		}
 	}
 }
 
@@ -1591,7 +1566,6 @@ func (env *wikiEnv) headHash() string {
 	output, err := env.gitCommand("rev-parse", "HEAD").CombinedOutput()
 	if err != nil {
 		log.Println("Error retrieving SHA1 of wikidata:", err)
-		raven.CaptureError(err, nil)
 		return ""
 	}
 	return string(output)
@@ -1631,7 +1605,6 @@ func wikiRejected(fullPath string, wikiExists, isAdmin, isLoggedIn bool) bool {
 		// If err, reject, and log that error
 		f, err := os.Open(fullPath)
 		if err != nil {
-			raven.CaptureError(err, nil)
 			log.Println("wikiRejected: Error reading", fullPath, err)
 			return true
 		}
