@@ -5,14 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"log"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
-	"time"
 
-	"git.jba.io/go/httputils"
+	log "github.com/sirupsen/logrus"
 )
 
 // CUSTOM GIT WRAPPERS
@@ -129,7 +127,7 @@ func (env *wikiEnv) gitIsCleanStartup() error {
 	}
 
 	if bytes.Contains(o, gitBehind) {
-		httputils.Debugln("gitIsCleanStartup: Pulling git repo...")
+		log.Debugln("gitIsCleanStartup: Pulling git repo...")
 		return env.gitPull()
 		//return errors.New(string(o))
 		//return ErrGitBehind
@@ -137,7 +135,7 @@ func (env *wikiEnv) gitIsCleanStartup() error {
 
 	if bytes.Contains(o, gitAhead) {
 		if env.cfg.PushOnSave {
-			httputils.Debugln("gitIsCleanStartup: Pushing git repo...")
+			log.Debugln("gitIsCleanStartup: Pushing git repo...")
 			return env.gitPush()
 		}
 		return nil
@@ -214,7 +212,6 @@ func (env *wikiEnv) gitPull() error {
 // File creation time, output to UNIX time
 // git log --diff-filter=A --follow --format=%at -1 -- [filename]
 func (env *wikiEnv) gitGetCtime(filename string) (int64, error) {
-	defer httputils.TimeTrack(time.Now(), "gitGetCtime")
 	//var ctime int64
 	o, err := env.gitCommand("log", "--diff-filter=A", "--follow", "--format=%at", "-1", "--", filename).Output()
 	if err != nil {
@@ -237,7 +234,6 @@ func (env *wikiEnv) gitGetCtime(filename string) (int64, error) {
 // File modification time, output to UNIX time
 // git log -1 --format=%at -- [filename]
 func (env *wikiEnv) gitGetMtime(filename string) (int64, error) {
-	defer httputils.TimeTrack(time.Now(), "gitGetMtime")
 	//var mtime int64
 	o, err := env.gitCommand("log", "--format=%at", "-1", "--", filename).Output()
 	if err != nil {
@@ -424,7 +420,6 @@ func (env *wikiEnv) gitHistory() ([]string, error) {
 // File modification time, output to UNIX time
 // git log -1 --format=%at -- [filename]
 func (env *wikiEnv) gitGetTimes(filename string, ctime, mtime chan<- int64) {
-	defer httputils.TimeTrack(time.Now(), "gitGetTimes")
 
 	go func() {
 		co, err := env.gitCommand("log", "--diff-filter=A", "--follow", "--format=%at", "-1", "--", filename).Output()
