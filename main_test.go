@@ -12,9 +12,10 @@ import (
 	"sync"
 	"testing"
 
-	"git.jba.io/go/auth"
 	"git.jba.io/go/httputils"
 	log "github.com/sirupsen/logrus"
+	"github.com/xyproto/permissionbolt"
+	"github.com/xyproto/pinterface"
 )
 
 const UserKey key = 1
@@ -99,7 +100,7 @@ func newState() *auth.AuthState {
 }
 */
 
-func testEnv(authState *auth.State) *wikiEnv {
+func testEnv(authState pinterface.IUserState) *wikiEnv {
 	gitPath, err := exec.LookPath("git")
 	if err != nil {
 		log.Fatalln("Git executable was not found in PATH. Git must be installed.")
@@ -114,7 +115,7 @@ func testEnv(authState *auth.State) *wikiEnv {
 			GitCommitEmail: "test@test.com",
 			GitCommitName:  "gowiki-tests",
 		},
-		authState: *authState,
+		authState: authState,
 		cache: &wikiCache{
 			Tags: make(map[string][]string),
 			Favs: make(map[string]struct{}),
@@ -126,34 +127,43 @@ func testEnv(authState *auth.State) *wikiEnv {
 	}
 }
 
+func testState(path string) pinterface.IPermissions {
+	perms, err := permissionbolt.NewWithConf(path)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	perms.Clear()
+	return perms
+}
+
 func testEnvInit() (string, *wikiEnv) {
 	tmpdb := tempfile()
 	//defer os.Remove(tmpdb)
-	authState := auth.NewAuthState(tmpdb)
-	e := testEnv(authState)
+	authState := testState(tmpdb)
+	e := testEnv(authState.UserState())
 	return tmpdb, e
 }
 
 func TestAuthInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
-	authState := auth.NewAuthState(tmpdb)
-	_, err := authState.Userlist()
+	authState := testState(tmpdb)
+	_, err := authState.UserState().Users().All()
 	checkT(err, t)
 }
 
 func TestTmplInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
-	authState := auth.NewAuthState(tmpdb)
-	testEnv(authState)
+	authState := testState(tmpdb)
+	testEnv(authState.UserState())
 }
 
 func TestWikiInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
-	authState := auth.NewAuthState(tmpdb)
-	e := testEnv(authState)
+	authState := testState(tmpdb)
+	e := testEnv(authState.UserState())
 
 	err := initWikiDir(e.cfg)
 	checkT(err, t)
@@ -165,7 +175,9 @@ func TestNewWikiPage(t *testing.T) {
 	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	randPage, err := httputils.RandKey(8)
 	checkT(err, t)
@@ -173,9 +185,6 @@ func TestNewWikiPage(t *testing.T) {
 	checkT(err, t)
 
 	w := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
-	r = r.WithContext(ctx)
 
 	router(e).ServeHTTP(w, r)
 
@@ -241,16 +250,14 @@ func TestNewHandler(t *testing.T) {
 	err := e.gitPull()
 	checkT(err, t)
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	req, err := http.NewRequest("GET", "/afefwdwdef/dwwafefe/fegegrgr", reader)
 	checkT(err, t)
 
 	rr := httptest.NewRecorder()
-
-	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
-	req = req.WithContext(ctx)
 
 	router(e).ServeHTTP(rr, req)
 
@@ -269,16 +276,14 @@ func TestIndexPage(t *testing.T) {
 	err := e.gitPull()
 	checkT(err, t)
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	req, err := http.NewRequest("GET", "/", nil)
 	checkT(err, t)
 
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
-
-	req = req.WithContext(ctx)
 
 	router(e).ServeHTTP(rr, req)
 
@@ -296,16 +301,14 @@ func TestIndexHistoryPage(t *testing.T) {
 	err := e.gitPull()
 	checkT(err, t)
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	req, err := http.NewRequest("GET", "/history/index", nil)
 	checkT(err, t)
 
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
-
-	req = req.WithContext(ctx)
 
 	router(e).ServeHTTP(rr, req)
 
@@ -333,16 +336,14 @@ func TestIndexEditPage(t *testing.T) {
 		checkT(err, t)
 	*/
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	req, err := http.NewRequest("GET", "/edit/index", nil)
 	checkT(err, t)
 
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
-
-	req = req.WithContext(ctx)
 
 	router(e).ServeHTTP(rr, req)
 
@@ -366,15 +367,13 @@ func TestDirBaseHandler(t *testing.T) {
 	err = e.gitPull()
 	checkT(err, t)
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	//req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	rr := httptest.NewRecorder()
-
-	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
-	req = req.WithContext(ctx)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	//router := httptreemux.NewContextMux()
@@ -411,7 +410,9 @@ func TestRecentsPage(t *testing.T) {
 	err := e.gitPull()
 	checkT(err, t)
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -423,9 +424,6 @@ func TestRecentsPage(t *testing.T) {
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
-	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
@@ -446,7 +444,9 @@ func TestListPage(t *testing.T) {
 	err := e.gitPull()
 	checkT(err, t)
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	e.buildCache()
 	err = os.Remove("./tests/data/cache.gob")
@@ -464,9 +464,6 @@ func TestListPage(t *testing.T) {
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
-	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
@@ -555,7 +552,9 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 	err := e.gitPull()
 	checkT(err, t)
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -568,7 +567,7 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
+	//ctx = e.authState.NewUserInContext(ctx, "admin")
 	ctx = context.WithValue(ctx, wikiNameKey, "sites.page")
 	ctx = context.WithValue(ctx, wikiExistsKey, true)
 	/*
@@ -603,7 +602,9 @@ func TestSearchPage(t *testing.T) {
 		t.Error("cache is empty")
 	}
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -615,14 +616,6 @@ func TestSearchPage(t *testing.T) {
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
-	/*
-		params := make(map[string]string)
-		params["name"] = "omg"
-		ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
-	*/
-	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
@@ -649,7 +642,9 @@ func TestDotGit(t *testing.T) {
 		t.Error("cache is empty")
 	}
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -661,10 +656,6 @@ func TestDotGit(t *testing.T) {
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
-
-	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
@@ -691,14 +682,13 @@ func TestWikiDirEscape(t *testing.T) {
 		t.Error("cache is empty")
 	}
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	req, err := http.NewRequest("GET", "/../../test.md", nil)
 	checkT(err, t)
 	rr := httptest.NewRecorder()
-	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
-	req = req.WithContext(ctx)
 
 	router(e).ServeHTTP(rr, req)
 
@@ -716,16 +706,14 @@ func TestWikiHistoryNonExistent(t *testing.T) {
 	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	randPage, err := httputils.RandKey(8)
 	checkT(err, t)
 	r, err := http.NewRequest("GET", "/history/"+randPage, nil)
 	checkT(err, t)
-
-	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
-	r = r.WithContext(ctx)
 
 	w := httptest.NewRecorder()
 
@@ -752,14 +740,12 @@ func TestWikiDirIndex(t *testing.T) {
 	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
-	e.authState.NewAdmin("admin", "admin")
+	e.authState.AddUser("admin", "admin", "")
+	e.authState.Confirm("admin")
+	e.authState.SetAdminStatus("admin")
 
 	r, err := http.NewRequest("GET", "/work", nil)
 	checkT(err, t)
-
-	ctx := context.Background()
-	ctx = e.authState.NewUserInContext(ctx, "admin")
-	r = r.WithContext(ctx)
 
 	w := httptest.NewRecorder()
 
@@ -1040,9 +1026,9 @@ func BenchmarkWholeWiki(b *testing.B) {
 
 	tmpdb := tempfile()
 	//defer os.Remove(tmpdb)
-	authState := auth.NewAuthState(tmpdb)
+	authState := testState(tmpdb)
 	env := &wikiEnv{
-		authState: *authState,
+		authState: authState.UserState(),
 		cache: &wikiCache{
 			Tags: make(map[string][]string),
 			Favs: make(map[string]struct{}),
