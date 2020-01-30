@@ -1794,7 +1794,19 @@ func (env *wikiEnv) getRedirect(r *http.Request) string {
 	return ""
 }
 
-func router(env *wikiEnv) http.Handler {
+type permissionHandler struct {
+	// perm is a Permissions structure that can be used to deny requests
+	// and acquire the UserState. By using `pinterface.IPermissions` instead
+	// of `*permissionbolt.Permissions`, the code is compatible with not only
+	// `permissionbolt`, but also other modules that uses other database
+	// backends, like `permissions2` which uses Redis.
+	perm pinterface.IPermissions
+
+	// The HTTP multiplexer
+	mux *httptreemux.ContextMux
+}
+
+func router(env *wikiEnv, perms pinterface.IPermissions) http.Handler {
 
 	/*
 		csrfSecure := true
@@ -1869,7 +1881,25 @@ func router(env *wikiEnv) http.Handler {
 	r.GET("/favicon.png", assets.FaviconPNG)
 	r.Handler("GET", "/assets/*", http.StripPrefix("/assets/", http.FileServer(assets.Assets)))
 
-	return s.Then(r)
+	p := &permissionHandler{
+		perm: perms,
+		mux:  r,
+	}
+
+	return s.Then(p)
+}
+
+// Implement the ServeHTTP method to make a permissionHandler a http.Handler
+func (ph *permissionHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// Check if the user has the right admin/user rights
+	if ph.perm.Rejected(w, req) {
+		// Let the user know, by calling the custom "permission denied" function
+		ph.perm.DenyFunction()(w, req)
+		// Reject the request by not calling the next handler below
+		return
+	}
+	// Serve the requested page if permissions were granted
+	ph.mux.ServeHTTP(w, req)
 }
 
 func main() {
@@ -1949,7 +1979,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:    "127.0.0.1:" + serverCfg.Port,
-		Handler: router(env),
+		Handler: router(env, perms),
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
