@@ -1756,14 +1756,15 @@ func (env *wikiEnv) register(w http.ResponseWriter, r *http.Request) {
 	// TODO: When git email is made configurable, add and use email field here
 	env.authState.AddUser(username, password, "")
 	// If this is the first user, confirm and make them an admin
-	allUsers, err := env.authState.Users().All()
+	allUsers, err := env.authState.AllUsernames()
 	if err != nil {
 		log.Println("Error fetching user list:", err)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	if len(allUsers) == 0 {
-		log.Println("no users found, making", username, "an admin")
+
+	if len(allUsers) == 1 {
+		log.Println("no existing users found, making", username, "an admin")
 		env.authState.Confirm(username)
 		env.authState.SetAdminStatus(username)
 	}
