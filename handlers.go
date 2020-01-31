@@ -606,7 +606,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	wikiExists := wikiExistsFromContext(r.Context())
 	if !wikiExists {
-		httputils.Debugln("wikiExists false: No such file...creating one.")
+		log.Debugln("wikiExists false: No such file...creating one.")
 		//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
 		env.createWiki(w, r, name)
 		return
@@ -904,6 +904,8 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		fullfilename := filepath.Join(env.cfg.WikiDir, name)
 		pageExists, relErr := env.checkName(&name)
 		//wikiDir := filepath.Join(dataDir, "wikidata")
+
+		log.Debugln("wikimiddle user:", user)
 
 		if relErr != nil {
 			if relErr == errBaseNotDir {
