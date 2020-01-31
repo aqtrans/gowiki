@@ -99,7 +99,7 @@ func (env *wikiEnv) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	var fileList string
 
-	username := env.authState.Username(r)
+	username := getUser(env.authState, r)
 
 	for _, v := range env.cache.Cache {
 		if username != "" {
@@ -615,7 +615,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	// If this is a commit, pass along the SHA1 to that function
 	if r.URL.Query().Get("commit") != "" {
 		// Only allow logged in users to view past pages, in case information had to be redacted on a now-public page
-		if env.authState.Username(r) != "" {
+		if getUser(env.authState, r) != "" {
 			commit := r.URL.Query().Get("commit")
 			//utils.Debugln(r.URL.Query().Get("commit"))
 			env.viewCommitHandler(w, r, commit, name)
@@ -637,7 +637,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Build a list of filenames to be fed to closestmatch, for similarity matching
 	var filelist []string
-	user := env.authState.Username(r)
+	user := getUser(env.authState, r)
 
 	for _, v := range env.cache.Cache {
 		if v.Permission == publicPermission {
@@ -868,7 +868,7 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 
 	var list []gitDirList
 
-	user := env.authState.Username(r)
+	user := getUser(env.authState, r)
 
 	for _, v := range env.cache.Cache {
 		if v.Permission == publicPermission {
@@ -900,7 +900,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		params := httptreemux.ContextParams(r.Context())
 		name := params["name"]
-		user := env.authState.Username(r)
+		user := getUser(env.authState, r)
 		fullfilename := filepath.Join(env.cfg.WikiDir, name)
 		pageExists, relErr := env.checkName(&name)
 		//wikiDir := filepath.Join(dataDir, "wikidata")
@@ -938,10 +938,10 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		if wikiRejected(fullfilename, pageExists, env.authState.IsAdmin(user), isLoggedIn) {
 			env.setRedirect(r.URL.Path, w, r)
 			return
-		} else {
-			next.ServeHTTP(w, r)
-			return
 		}
+
+		next.ServeHTTP(w, r)
+		return
 
 	})
 }
