@@ -1710,6 +1710,7 @@ func (env *wikiEnv) logout(w http.ResponseWriter, r *http.Request) {
 	username := env.authState.Username(r)
 	if username != "" {
 		env.authState.Logout(username)
+		env.authState.ClearCookie(w)
 		message := fmt.Sprint(username, "successfully logged out")
 		env.setFlash(message, w)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -1732,6 +1733,7 @@ func (env *wikiEnv) login(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
+		env.authState.SetLoggedIn(username)
 		log.Debugln(username, "successfully logged in")
 		message := fmt.Sprint(username, "successfully logged in")
 		env.setFlash(message, w)
@@ -1773,6 +1775,7 @@ func (env *wikiEnv) register(w http.ResponseWriter, r *http.Request) {
 func (env *wikiEnv) setFlash(msg string, w http.ResponseWriter) {
 	// TODO: Replace with cookie-based flash messages from gorilla/sessions
 	//w.Write([]byte(msg))
+	log.Println(msg)
 }
 
 func (env *wikiEnv) getFlash(r *http.Request) string {
@@ -1783,6 +1786,7 @@ func (env *wikiEnv) getFlash(r *http.Request) string {
 func (env *wikiEnv) setRedirect(url string, w http.ResponseWriter, r *http.Request) {
 	// TODO: Store redirect URL into a gorilla/session cookie, redirect to login screen
 	// Store here
+	log.Println("setRedirect Path:", r.URL.Path)
 
 	// Redirect
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
