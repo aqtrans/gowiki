@@ -593,7 +593,7 @@ func (env *wikiEnv) loadPage(r *http.Request, p chan<- page) {
 		//token := auth.GetToken(r.Context())
 		token := auth.CSRFTemplateField(r)
 	*/
-	user := env.authState.Username(r)
+	user := getUser(env.authState, r)
 	msg := env.getFlash(r)
 	var token template.HTML = ""
 
