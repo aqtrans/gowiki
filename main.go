@@ -58,6 +58,8 @@ import (
 	"time"
 
 	"github.com/dimfeld/httptreemux"
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/pelletier/go-toml"
@@ -234,15 +236,18 @@ type wikiEnv struct {
 	cache     *wikiCache
 	templates map[string]*template.Template
 	mutex     sync.Mutex
+	session   *sessions.CookieStore
 	favs
 	tags
 }
 
 type wikiCache struct {
-	SHA1  string
-	Cache []gitDirList
-	Tags  map[string][]string
-	Favs  map[string]struct{}
+	CookieAuthKey []byte
+	CookieEncKey  []byte
+	SHA1          string
+	Cache         []gitDirList
+	Tags          map[string][]string
+	Favs          map[string]struct{}
 }
 
 type favs struct {
@@ -1397,6 +1402,7 @@ func setPageTitle(frontmatterTitle, filename string) string {
 
 func (env *wikiEnv) buildCache() {
 	defer httputils.TimeTrack(time.Now(), "buildCache")
+
 	/*
 		cache := new(wikiCache)
 		cache.Tags = make(map[string][]string)
@@ -1509,6 +1515,15 @@ func (env *wikiEnv) buildCache() {
 		env.cache.SHA1 = env.headHash()
 	}
 
+	if env.cache.CookieAuthKey == nil {
+		log.Debugln("generating new cookie auth key...")
+		env.cache.CookieAuthKey = securecookie.GenerateRandomKey(64)
+	}
+	if env.cache.CookieEncKey == nil {
+		log.Debugln("generating new cookie encryption key...")
+		env.cache.CookieEncKey = securecookie.GenerateRandomKey(32)
+	}
+
 	env.cache.Cache = wps
 
 	if env.cfg.CacheEnabled {
@@ -1553,6 +1568,15 @@ func (env *wikiEnv) loadCache() {
 			// Check the cached sha1 versus HEAD sha1, rebuild if they differ
 			if !env.gitIsEmpty() && env.cache.SHA1 != env.headHash() {
 				log.Println("Cache SHA1s do not match. Rebuilding cache.")
+				env.buildCache()
+			}
+			// Check if cookie keys exist in existing gob
+			if env.cache.CookieAuthKey == nil {
+				log.Debugln("rebuilding cache to generate cookie auth key")
+				env.buildCache()
+			}
+			if env.cache.CookieEncKey == nil {
+				log.Debugln("rebuilding cache to generate cookie encryption key")
 				env.buildCache()
 			}
 		}
