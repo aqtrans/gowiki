@@ -353,6 +353,9 @@ func (env *wikiEnv) gitLsTree() ([]*gitDirList, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error during `git ls-files`: %s\n%s", err.Error(), string(o))
 	}
+	if len(o) == 0 {
+		return []*gitDirList{}, nil
+	}
 	nul := bytes.Replace(o, []byte("\x00"), []byte("\n"), -1)
 	// split each commit onto it's own line
 	ostring := strings.TrimSpace(string(nul))
