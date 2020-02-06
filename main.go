@@ -57,20 +57,20 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pelletier/go-toml"
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/dimfeld/httptreemux"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
-	"github.com/pelletier/go-toml"
 	"github.com/russross/blackfriday"
-	"github.com/sirupsen/logrus"
-	log "github.com/sirupsen/logrus"
 	_ "github.com/tevjef/go-runtime-metrics/expvar"
-	"github.com/xyproto/permissionbolt"
-	"github.com/xyproto/pinterface"
-	yaml "gopkg.in/yaml.v2"
 
+	"git.jba.io/go/auth"
 	"git.jba.io/go/httputils"
 	"git.jba.io/go/wiki/vfs/assets"
 	"git.jba.io/go/wiki/vfs/templates"
@@ -232,7 +232,7 @@ type config struct {
 // cache is a pointer here since it's pretty large itself, and holds a mutex
 type wikiEnv struct {
 	cfg       config
-	authState pinterface.IUserState
+	authState auth.State
 	cache     *wikiCache
 	templates map[string]*template.Template
 	mutex     sync.Mutex
@@ -592,15 +592,10 @@ func (env *wikiEnv) loadPage(r *http.Request, p chan<- page) {
 	//timer.Step("loadpageFunc")
 
 	// Auth lib middlewares should load the user and tokens into context for reading
-	/*
-		user := auth.GetUserState(r.Context())
-		msg := auth.GetFlash(r.Context())
-		//token := auth.GetToken(r.Context())
-		token := auth.CSRFTemplateField(r)
-	*/
-	user := getUser(env.authState, r)
-	msg := env.getFlash(r)
-	var token template.HTML = ""
+	user := auth.GetUserState(r.Context())
+	msg := auth.GetFlash(r.Context())
+	//token := auth.GetToken(r.Context())
+	token := auth.CSRFTemplateField(r)
 
 	var message template.HTML
 	if msg != "" {
@@ -639,9 +634,9 @@ func (env *wikiEnv) loadPage(r *http.Request, p chan<- page) {
 		SiteName: "GoWiki",
 		Favs:     env.favs.GetAll(),
 		UserInfo: userInfo{
-			Username:   user,
-			IsAdmin:    env.authState.IsAdmin(user),
-			IsLoggedIn: env.authState.IsLoggedIn(user),
+			Username:   user.GetName(),
+			IsAdmin:    user.IsAdmin(),
+			IsLoggedIn: auth.IsLoggedIn(r.Context()),
 		},
 		Token:     token,
 		FlashMsg:  message,
@@ -1668,22 +1663,18 @@ func wikiRejected(fullPath string, wikiExists, isAdmin, isLoggedIn bool) bool {
 
 }
 
-/*
 // mitigateWiki is a general redirect handler; redirect should be set to true for login mitigations
 func mitigateWiki(redirect bool, env *wikiEnv, r *http.Request, w http.ResponseWriter) {
 	log.Debugln("mitigateWiki: " + r.Host + r.URL.Path)
-	//env.authState.SetFlash("Unable to view that.", w)
+	env.authState.SetFlash("Unable to view that.", w)
 	if redirect {
 		// Use auth.Redirect to redirect while storing the current URL for future use
-		//auth.Redirect(&env.authState, w, r)
-		env.setRedirect(r.URL.Path, w, r)
-		return
+		auth.Redirect(&env.authState, w, r)
 	} else {
 		http.Redirect(w, r, "/index", http.StatusSeeOther)
-		return
 	}
+
 }
-*/
 
 // getRenderTime calculates the time an HTTP request took, if the Logger middleware was used
 func getRenderTime(c context.Context) string {
@@ -1704,137 +1695,16 @@ func timer(next http.Handler) http.Handler {
 	})
 }
 
-func (env *wikiEnv) adminOnly(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Check if the user has the right admin rights
-		if env.authState.AdminRights(r) {
-			// Serve the requested page
-			next.ServeHTTP(w, r)
-			return
-		}
-		env.setFlash("Unable to view that", w)
-		return
-	})
-}
+func router(env *wikiEnv) http.Handler {
 
-func (env *wikiEnv) userOnly(next http.HandlerFunc) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Check if the user has the right user rights
-		if env.authState.UserRights(r) {
-			// Serve the requested page
-			next.ServeHTTP(w, r)
-			return
-		}
-		env.setFlash("Unable to view that", w)
-		return
-	})
-}
-
-func (env *wikiEnv) logout(w http.ResponseWriter, r *http.Request) {
-	username := env.authState.Username(r)
-	if username != "" {
-		env.authState.Logout(username)
-		env.authState.ClearCookie(w)
-		message := fmt.Sprint(username, "successfully logged out")
-		env.setFlash(message, w)
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
+	csrfSecure := true
+	if env.cfg.DevMode {
+		csrfSecure = false
 	}
-
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-	return
-}
-
-func (env *wikiEnv) login(w http.ResponseWriter, r *http.Request) {
-	username := r.FormValue("username")
-	password := r.FormValue("password")
-	if env.authState.CorrectPassword(username, password) {
-		err := env.authState.SetUsernameCookie(w, username)
-		if err != nil {
-			log.Debugln(username, "failed to set cookie:", err)
-			message := fmt.Sprint(username, "failed to login")
-			env.setFlash(message, w)
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
-		env.authState.SetLoggedIn(username)
-		log.Debugln(username, "successfully logged in")
-		message := fmt.Sprint(username, "successfully logged in")
-		env.setFlash(message, w)
-		redirURL := "/"
-		if env.getRedirect(r) != "" {
-			redirURL = env.getRedirect(r)
-		}
-		http.Redirect(w, r, redirURL, http.StatusSeeOther)
-		return
-	}
-	log.Debugln(username, "failed to login")
-	message := fmt.Sprint(username, "failed to login")
-	env.setFlash(message, w)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
-func (env *wikiEnv) register(w http.ResponseWriter, r *http.Request) {
-	username := r.FormValue("username")
-	password := r.FormValue("password")
-	// TODO: When git email is made configurable, add and use email field here
-	env.authState.AddUser(username, password, "")
-	// If this is the first user, confirm and make them an admin
-	allUsers, err := env.authState.AllUsernames()
-	if err != nil {
-		log.Println("Error fetching user list:", err)
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-
-	if len(allUsers) == 1 {
-		log.Println("no existing users found, making", username, "an admin")
-		env.authState.Confirm(username)
-		env.authState.SetAdminStatus(username)
-	}
-	env.setFlash("User successfully registered", w)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-	return
-}
-
-func (env *wikiEnv) setFlash(msg string, w http.ResponseWriter) {
-	// TODO: Replace with cookie-based flash messages from gorilla/sessions
-	//w.Write([]byte(msg))
-	log.Println(msg)
-}
-
-func (env *wikiEnv) getFlash(r *http.Request) string {
-	// TODO: Replace with cookie-based flash messages from gorilla/sessions
-	return ""
-}
-
-func (env *wikiEnv) setRedirect(url string, w http.ResponseWriter, r *http.Request) {
-	// TODO: Store redirect URL into a gorilla/session cookie, redirect to login screen
-	// Store here
-	log.Println("setRedirect Path:", r.URL.Path)
-
-	// Redirect
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
-	return
-}
-
-func (env *wikiEnv) getRedirect(r *http.Request) string {
-	// TODO: Get redirect URL into a gorilla/session cookie, delete it once read
-	return ""
-}
-
-func router(env *wikiEnv, perms pinterface.IPermissions) http.Handler {
-
-	/*
-		csrfSecure := true
-		if env.cfg.DevMode {
-			csrfSecure = false
-		}
-	*/
 
 	// HTTP stuff from here on out
 	//s := alice.New(httputils.Timer, httputils.Logger, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
-	s := alice.New(timer)
+	s := alice.New(timer, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
 
 	r := httptreemux.NewContextMux()
 
@@ -1842,57 +1712,57 @@ func router(env *wikiEnv, perms pinterface.IPermissions) http.Handler {
 
 	r.GET("/", indexHandler)
 
-	r.GET("/tags", env.userOnly(env.tagMapHandler))
-	r.GET("/tag/*name", env.userOnly(env.tagHandler))
+	r.GET("/tags", env.authState.AuthMiddle(env.tagMapHandler))
+	r.GET("/tag/*name", env.authState.AuthMiddle(env.tagHandler))
 
 	r.GET("/login", env.loginPageHandler)
-	r.GET("/logout", env.logout)
+	r.GET("/logout", env.authState.LogoutHandler)
 	r.GET("/signup", env.signupPageHandler)
 	r.GET("/list", env.listHandler)
 	r.GET("/search/*name", env.searchHandler)
 	r.POST("/search", env.searchHandler)
-	r.GET("/recent", env.userOnly(env.recentHandler))
+	r.GET("/recent", env.authState.AuthMiddle(env.recentHandler))
 	r.GET("/health", healthCheckHandler)
 
 	admin := r.NewContextGroup("/admin")
-	admin.GET("/", env.adminOnly(env.adminMainHandler))
-	admin.GET("/git", env.adminOnly(env.adminGitHandler))
-	admin.POST("/git/push", env.adminOnly(env.gitPushPostHandler))
-	admin.POST("/git/checkin", env.adminOnly(env.gitCheckinPostHandler))
-	admin.POST("/git/pull", env.adminOnly(env.gitPullPostHandler))
-	admin.GET("/users", env.adminOnly(env.adminUsersHandler))
-	admin.POST("/user", env.adminOnly(adminUserPostHandler))
-	admin.GET("/user/:username", env.adminOnly(env.adminUserHandler))
-	admin.POST("/user/:username", env.adminOnly(env.adminUserHandler))
-	admin.POST("/user/generate", env.adminOnly(env.adminGeneratePostHandler))
+	admin.GET("/", env.authState.AuthAdminMiddle(env.adminMainHandler))
+	admin.GET("/git", env.authState.AuthAdminMiddle(env.adminGitHandler))
+	admin.POST("/git/push", env.authState.AuthAdminMiddle(env.gitPushPostHandler))
+	admin.POST("/git/checkin", env.authState.AuthAdminMiddle(env.gitCheckinPostHandler))
+	admin.POST("/git/pull", env.authState.AuthAdminMiddle(env.gitPullPostHandler))
+	admin.GET("/users", env.authState.AuthAdminMiddle(env.adminUsersHandler))
+	admin.POST("/user", env.authState.AuthAdminMiddle(adminUserPostHandler))
+	admin.GET("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
+	admin.POST("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
+	admin.POST("/user/generate", env.authState.AuthAdminMiddle(env.adminGeneratePostHandler))
 
 	a := r.NewContextGroup("/auth")
-	a.POST("/login", env.login)
-	a.POST("/logout", env.logout)
-	a.GET("/logout", env.logout)
-	a.POST("/signup", env.register)
+	a.POST("/login", env.authState.LoginPostHandler)
+	a.POST("/logout", env.authState.LogoutHandler)
+	a.GET("/logout", env.authState.LogoutHandler)
+	a.POST("/signup", env.authState.UserSignupPostHandler)
 
-	r.POST("/gitadd", env.userOnly(env.gitCheckinPostHandler))
-	r.GET("/gitadd", env.userOnly(env.gitCheckinHandler))
+	r.POST("/gitadd", env.authState.AuthMiddle(env.gitCheckinPostHandler))
+	r.GET("/gitadd", env.authState.AuthMiddle(env.gitCheckinHandler))
 
 	r.POST("/md_render", markdownPreview)
 
 	r.Handler("GET", "/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
 
 	// Wiki page handlers
-	r.GET(`/fav/*name`, env.userOnly(env.wikiMiddle(env.setFavoriteHandler)))
-	r.GET(`/edit/*name`, env.userOnly(env.wikiMiddle(env.editHandler)))
-	r.POST(`/save/*name`, env.userOnly(env.wikiMiddle(env.saveHandler)))
-	r.GET(`/history/*name`, env.userOnly(env.wikiMiddle(env.historyHandler)))
-	r.POST(`/delete/*name`, env.userOnly(env.wikiMiddle(env.deleteHandler)))
+	r.GET(`/fav/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.setFavoriteHandler)))
+	r.GET(`/edit/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.editHandler)))
+	r.POST(`/save/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.saveHandler)))
+	r.GET(`/history/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.historyHandler)))
+	r.POST(`/delete/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.deleteHandler)))
 	r.GET(`/*name`, env.wikiMiddle(env.viewHandler))
 
 	r.Handler("GET", "/debug/vars", expvar.Handler())
-	r.GET("/debug/pprof/", env.adminOnly(http.HandlerFunc(pprof.Index)))
-	r.GET("/debug/pprof/cmdline", env.adminOnly(http.HandlerFunc(pprof.Cmdline)))
-	r.GET("/debug/pprof/profile", env.adminOnly(http.HandlerFunc(pprof.Profile)))
-	r.GET("/debug/pprof/symbol", env.adminOnly(http.HandlerFunc(pprof.Symbol)))
-	r.GET("/debug/pprof/trace", env.adminOnly(http.HandlerFunc(pprof.Trace)))
+	r.GET("/debug/pprof/", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Index)))
+	r.GET("/debug/pprof/cmdline", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Cmdline)))
+	r.GET("/debug/pprof/profile", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Profile)))
+	r.GET("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
+	r.GET("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
 	r.GET("/robots.txt", assets.Robots)
 	r.GET("/favicon.ico", assets.FaviconICO)
 	r.GET("/favicon.png", assets.FaviconPNG)
@@ -1918,7 +1788,7 @@ func main() {
 
 	if *debug {
 		httputils.Debug = true
-		//auth.Debug = true
+		auth.Debug = true
 		log.SetLevel(log.DebugLevel)
 	}
 
@@ -1929,15 +1799,9 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	perms, err := permissionbolt.NewWithConf(filepath.Join(serverCfg.DataDir, "auth.db"))
-	if err != nil {
-		log.Fatalln(err)
-	}
-	perms.Clear()
-
 	env := &wikiEnv{
 		cfg:       serverCfg,
-		authState: perms.UserState(),
+		authState: *auth.NewAuthState(filepath.Join(serverCfg.DataDir, "auth.db")),
 		templates: templates.TmplInit(),
 		mutex:     sync.Mutex{},
 		cache:     new(wikiCache),
@@ -1978,7 +1842,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:    "127.0.0.1:" + serverCfg.Port,
-		Handler: router(env, perms),
+		Handler: router(env),
 		// Good practice: enforce timeouts for servers you create!
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,

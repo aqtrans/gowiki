@@ -12,10 +12,9 @@ import (
 	"sync"
 	"testing"
 
+	"git.jba.io/go/auth"
 	"git.jba.io/go/httputils"
 	log "github.com/sirupsen/logrus"
-	"github.com/xyproto/permissionbolt"
-	"github.com/xyproto/pinterface"
 )
 
 const UserKey key = 1
@@ -29,10 +28,6 @@ var (
 	//req       *http.Request
 	//rr        *httptest.ResponseRecorder
 )
-
-func init() {
-	log.SetLevel(log.DebugLevel)
-}
 
 /*
 func init() {
@@ -104,7 +99,7 @@ func newState() *auth.AuthState {
 }
 */
 
-func testEnv(authState pinterface.IUserState) *wikiEnv {
+func testEnv(authState *auth.State) *wikiEnv {
 	gitPath, err := exec.LookPath("git")
 	if err != nil {
 		log.Fatalln("Git executable was not found in PATH. Git must be installed.")
@@ -119,7 +114,7 @@ func testEnv(authState pinterface.IUserState) *wikiEnv {
 			GitCommitEmail: "test@test.com",
 			GitCommitName:  "gowiki-tests",
 		},
-		authState: authState,
+		authState: *authState,
 		cache: &wikiCache{
 			Tags: make(map[string][]string),
 			Favs: make(map[string]struct{}),
@@ -131,43 +126,34 @@ func testEnv(authState pinterface.IUserState) *wikiEnv {
 	}
 }
 
-func testState(path string) pinterface.IPermissions {
-	perms, err := permissionbolt.NewWithConf(path)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	perms.Clear()
-	return perms
-}
-
-func testEnvInit() (string, *wikiEnv, pinterface.IPermissions) {
+func testEnvInit() (string, *wikiEnv) {
 	tmpdb := tempfile()
 	//defer os.Remove(tmpdb)
-	authState := testState(tmpdb)
-	e := testEnv(authState.UserState())
-	return tmpdb, e, authState
+	authState := auth.NewAuthState(tmpdb)
+	e := testEnv(authState)
+	return tmpdb, e
 }
 
 func TestAuthInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
-	authState := testState(tmpdb)
-	_, err := authState.UserState().Users().All()
+	authState := auth.NewAuthState(tmpdb)
+	_, err := authState.Userlist()
 	checkT(err, t)
 }
 
 func TestTmplInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
-	authState := testState(tmpdb)
-	testEnv(authState.UserState())
+	authState := auth.NewAuthState(tmpdb)
+	testEnv(authState)
 }
 
 func TestWikiInit(t *testing.T) {
 	tmpdb := tempfile()
 	defer os.Remove(tmpdb)
-	authState := testState(tmpdb)
-	e := testEnv(authState.UserState())
+	authState := auth.NewAuthState(tmpdb)
+	e := testEnv(authState)
 
 	err := initWikiDir(e.cfg)
 	checkT(err, t)
@@ -176,12 +162,10 @@ func TestWikiInit(t *testing.T) {
 // TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
 func TestNewWikiPage(t *testing.T) {
 
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	randPage, err := httputils.RandKey(8)
 	checkT(err, t)
@@ -189,15 +173,11 @@ func TestNewWikiPage(t *testing.T) {
 	checkT(err, t)
 
 	w := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = e.authState.NewUserInContext(ctx, "admin")
+	r = r.WithContext(ctx)
 
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(w, "admin")
-	checkT(err, t)
-
-	// Copy cookie from response to request
-	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
-
-	router(e, p).ServeHTTP(w, r)
+	router(e).ServeHTTP(w, r)
 
 	if status := w.Code; status != http.StatusNotFound {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -208,7 +188,7 @@ func TestNewWikiPage(t *testing.T) {
 // TestNewWikiPageNotLoggedIn tests if viewing a non-existent article, while not logged in redirects to a vague login page
 func TestNewWikiPageNotLoggedIn(t *testing.T) {
 
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	randPage, err := httputils.RandKey(8)
@@ -218,7 +198,7 @@ func TestNewWikiPageNotLoggedIn(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	router(e, p).ServeHTTP(w, r)
+	router(e).ServeHTTP(w, r)
 
 	if status := w.Code; status != http.StatusSeeOther {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -237,10 +217,10 @@ func TestHealthCheckHandler(t *testing.T) {
 	checkT(err, t)
 	rr := httptest.NewRecorder()
 
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
-	router(e, p).ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -255,29 +235,24 @@ func TestHealthCheckHandler(t *testing.T) {
 }
 
 func TestNewHandler(t *testing.T) {
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	err := e.gitPull()
 	checkT(err, t)
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	req, err := http.NewRequest("GET", "/afefwdwdef/dwwafefe/fegegrgr", reader)
 	checkT(err, t)
 
 	rr := httptest.NewRecorder()
 
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(rr, "admin")
-	checkT(err, t)
+	ctx := context.Background()
+	ctx = e.authState.NewUserInContext(ctx, "admin")
+	req = req.WithContext(ctx)
 
-	// Copy cookie from response to request
-	req.Header = http.Header{"Cookie": rr.HeaderMap["Set-Cookie"]}
-
-	router(e, p).ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusNotFound {
 		t.Log(rr.Body.String())
@@ -288,29 +263,24 @@ func TestNewHandler(t *testing.T) {
 
 // TestIndex tests if viewing the index page, as a logged in user, properly returns a 200
 func TestIndexPage(t *testing.T) {
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	err := e.gitPull()
 	checkT(err, t)
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	req, err := http.NewRequest("GET", "/", nil)
 	checkT(err, t)
 
 	rr := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(rr, "admin")
-	checkT(err, t)
+	req = req.WithContext(ctx)
 
-	// Copy cookie from response to request
-	req.Header = http.Header{"Cookie": rr.HeaderMap["Set-Cookie"]}
-
-	router(e, p).ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusSeeOther {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -320,29 +290,24 @@ func TestIndexPage(t *testing.T) {
 
 // TestIndexHistoryPage tests if viewing the history of the index page, as a logged in user, properly returns a 200
 func TestIndexHistoryPage(t *testing.T) {
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	err := e.gitPull()
 	checkT(err, t)
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	req, err := http.NewRequest("GET", "/history/index", nil)
 	checkT(err, t)
 
 	rr := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(rr, "admin")
-	checkT(err, t)
+	req = req.WithContext(ctx)
 
-	// Copy cookie from response to request
-	req.Header = http.Header{"Cookie": rr.HeaderMap["Set-Cookie"]}
-
-	router(e, p).ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -352,7 +317,7 @@ func TestIndexHistoryPage(t *testing.T) {
 
 // TestIndexEditPage tests if trying to edit the index page, as a logged in user, properly returns a 200
 func TestIndexEditPage(t *testing.T) {
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	err := e.gitPull()
@@ -368,23 +333,18 @@ func TestIndexEditPage(t *testing.T) {
 		checkT(err, t)
 	*/
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	req, err := http.NewRequest("GET", "/edit/index", nil)
 	checkT(err, t)
 
 	rr := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(rr, "admin")
-	checkT(err, t)
+	req = req.WithContext(ctx)
 
-	// Copy cookie from response to request
-	req.Header = http.Header{"Cookie": rr.HeaderMap["Set-Cookie"]}
-
-	router(e, p).ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -400,26 +360,21 @@ func TestDirBaseHandler(t *testing.T) {
 	req, err := http.NewRequest("GET", "/index/what/omg", nil)
 	checkT(err, t)
 
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	err = e.gitPull()
 	checkT(err, t)
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	//req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	rr := httptest.NewRecorder()
 
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(rr, "admin")
-	checkT(err, t)
-
-	// Copy cookie from response to request
-	req.Header = http.Header{"Cookie": rr.HeaderMap["Set-Cookie"]}
+	ctx := context.Background()
+	ctx = e.authState.NewUserInContext(ctx, "admin")
+	req = req.WithContext(ctx)
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	//router := httptreemux.NewContextMux()
@@ -428,7 +383,7 @@ func TestDirBaseHandler(t *testing.T) {
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
 	//router.DefaultContext = ctx
-	router(e, p).ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusInternalServerError {
@@ -450,15 +405,13 @@ func TestDirBaseHandler(t *testing.T) {
 }
 
 func TestRecentsPage(t *testing.T) {
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	err := e.gitPull()
 	checkT(err, t)
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -470,18 +423,14 @@ func TestRecentsPage(t *testing.T) {
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
-
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(rr, "admin")
-	checkT(err, t)
-
-	// Copy cookie from response to request
-	req.Header = http.Header{"Cookie": rr.HeaderMap["Set-Cookie"]}
+	ctx := context.Background()
+	ctx = e.authState.NewUserInContext(ctx, "admin")
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
 	//router.DefaultContext = ctx
-	router(e, p).ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusOK {
@@ -491,15 +440,13 @@ func TestRecentsPage(t *testing.T) {
 }
 
 func TestListPage(t *testing.T) {
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	err := e.gitPull()
 	checkT(err, t)
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	e.buildCache()
 	err = os.Remove("./tests/data/cache.gob")
@@ -517,18 +464,14 @@ func TestListPage(t *testing.T) {
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
-
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(rr, "admin")
-	checkT(err, t)
-
-	// Copy cookie from response to request
-	req.Header = http.Header{"Cookie": rr.HeaderMap["Set-Cookie"]}
+	ctx := context.Background()
+	ctx = e.authState.NewUserInContext(ctx, "admin")
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
 	//router.DefaultContext = ctx
-	router(e, p).ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusOK {
@@ -565,7 +508,7 @@ func TestServer(t *testing.T) {
 */
 
 func TestPrivatePageNotLoggedIn(t *testing.T) {
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	err := e.gitPull()
@@ -589,7 +532,7 @@ func TestPrivatePageNotLoggedIn(t *testing.T) {
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
 	//router.DefaultContext = ctx
-	router(e, p).ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 	//t.Log(rr.Body.String())
 
 	// Check the status code is what we expect.
@@ -606,15 +549,13 @@ func TestPrivatePageNotLoggedIn(t *testing.T) {
 }
 
 func TestPrivatePageLoggedIn(t *testing.T) {
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	err := e.gitPull()
 	checkT(err, t)
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -627,7 +568,7 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
-	//ctx = e.authState.NewUserInContext(ctx, "admin")
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 	ctx = context.WithValue(ctx, wikiNameKey, "sites.page")
 	ctx = context.WithValue(ctx, wikiExistsKey, true)
 	/*
@@ -637,17 +578,10 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 	*/
 	req = req.WithContext(ctx)
 
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(rr, "admin")
-	checkT(err, t)
-
-	// Copy cookie from response to request
-	req.Header = http.Header{"Cookie": rr.HeaderMap["Set-Cookie"]}
-
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
 	//router.DefaultContext = ctx
-	router(e, p).ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 	//t.Log(rr.Body.String())
 
 	// Check the status code is what we expect.
@@ -658,7 +592,7 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 }
 
 func TestSearchPage(t *testing.T) {
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	err := e.gitPull()
@@ -669,9 +603,7 @@ func TestSearchPage(t *testing.T) {
 		t.Error("cache is empty")
 	}
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -683,18 +615,19 @@ func TestSearchPage(t *testing.T) {
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
-
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(rr, "admin")
-	checkT(err, t)
-
-	// Copy cookie from response to request
-	req.Header = http.Header{"Cookie": rr.HeaderMap["Set-Cookie"]}
+	ctx := context.Background()
+	ctx = e.authState.NewUserInContext(ctx, "admin")
+	/*
+		params := make(map[string]string)
+		params["name"] = "omg"
+		ctx = context.WithValue(ctx, httptreemux.ParamsContextKey, params)
+	*/
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
 	//router.DefaultContext = ctx
-	router(e, p).ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusOK {
@@ -705,7 +638,7 @@ func TestSearchPage(t *testing.T) {
 
 // Test that we are unable to access Git repo data (wikidata/.git)
 func TestDotGit(t *testing.T) {
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	err := e.gitPull()
@@ -716,9 +649,7 @@ func TestDotGit(t *testing.T) {
 		t.Error("cache is empty")
 	}
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
@@ -730,18 +661,15 @@ func TestDotGit(t *testing.T) {
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = e.authState.NewUserInContext(ctx, "admin")
 
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(rr, "admin")
-	checkT(err, t)
-
-	// Copy cookie from response to request
-	req.Header = http.Header{"Cookie": rr.HeaderMap["Set-Cookie"]}
+	req = req.WithContext(ctx)
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
 	//router.DefaultContext = ctx
-	router(e, p).ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusInternalServerError {
@@ -752,7 +680,7 @@ func TestDotGit(t *testing.T) {
 
 // Test that we are unable to access stuff outside the wikidir
 func TestWikiDirEscape(t *testing.T) {
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	err := e.gitPull()
@@ -763,22 +691,16 @@ func TestWikiDirEscape(t *testing.T) {
 		t.Error("cache is empty")
 	}
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	req, err := http.NewRequest("GET", "/../../test.md", nil)
 	checkT(err, t)
 	rr := httptest.NewRecorder()
+	ctx := context.Background()
+	ctx = e.authState.NewUserInContext(ctx, "admin")
+	req = req.WithContext(ctx)
 
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(rr, "admin")
-	checkT(err, t)
-
-	// Copy cookie from response to request
-	req.Header = http.Header{"Cookie": rr.HeaderMap["Set-Cookie"]}
-
-	router(e, p).ServeHTTP(rr, req)
+	router(e).ServeHTTP(rr, req)
 
 	// Check the status code is what we expect.
 	if status := rr.Code; status != http.StatusNotFound {
@@ -791,28 +713,23 @@ func TestWikiDirEscape(t *testing.T) {
 // TestWikiHistoryNonExistent tests if trying to view /history/random properly redirects to /random
 func TestWikiHistoryNonExistent(t *testing.T) {
 
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	randPage, err := httputils.RandKey(8)
 	checkT(err, t)
 	r, err := http.NewRequest("GET", "/history/"+randPage, nil)
 	checkT(err, t)
 
+	ctx := context.Background()
+	ctx = e.authState.NewUserInContext(ctx, "admin")
+	r = r.WithContext(ctx)
+
 	w := httptest.NewRecorder()
 
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(w, "admin")
-	checkT(err, t)
-
-	// Copy cookie from response to request
-	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
-
-	router(e, p).ServeHTTP(w, r)
+	router(e).ServeHTTP(w, r)
 
 	if status := w.Code; status != http.StatusSeeOther {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -832,26 +749,21 @@ func TestWikiHistoryNonExistent(t *testing.T) {
 // TestWikiDirIndex tests if trying to view /dir/ properly redirects to /dir/index when it exists
 func TestWikiDirIndex(t *testing.T) {
 
-	tmpdb, e, p := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
-	e.authState.AddUser("admin", "admin", "")
-	e.authState.Confirm("admin")
-	e.authState.SetAdminStatus("admin")
+	e.authState.NewAdmin("admin", "admin")
 
 	r, err := http.NewRequest("GET", "/work", nil)
 	checkT(err, t)
 
+	ctx := context.Background()
+	ctx = e.authState.NewUserInContext(ctx, "admin")
+	r = r.WithContext(ctx)
+
 	w := httptest.NewRecorder()
 
-	e.authState.SetLoggedIn("admin")
-	err = e.authState.SetUsernameCookie(w, "admin")
-	checkT(err, t)
-
-	// Copy cookie from response to request
-	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
-
-	router(e, p).ServeHTTP(w, r)
+	router(e).ServeHTTP(w, r)
 
 	if status := w.Code; status != http.StatusFound {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -866,7 +778,7 @@ func TestWikiDirIndex(t *testing.T) {
 }
 
 func TestCache(t *testing.T) {
-	tmpdb, e, _ := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	e.buildCache()
@@ -1128,9 +1040,9 @@ func BenchmarkWholeWiki(b *testing.B) {
 
 	tmpdb := tempfile()
 	//defer os.Remove(tmpdb)
-	authState := testState(tmpdb)
+	authState := auth.NewAuthState(tmpdb)
 	env := &wikiEnv{
-		authState: authState.UserState(),
+		authState: *authState,
 		cache: &wikiCache{
 			Tags: make(map[string][]string),
 			Favs: make(map[string]struct{}),
@@ -1158,12 +1070,12 @@ func BenchmarkWholeWiki(b *testing.B) {
 	//router.DefaultContext = ctx
 
 	for n := 0; n < b.N; n++ {
-		router(env, authState).ServeHTTP(rr, req)
+		router(env).ServeHTTP(rr, req)
 	}
 }
 
 func BenchmarkGitCtime(b *testing.B) {
-	tmpdb, e, _ := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	for i := 0; i < b.N; i++ {
@@ -1172,7 +1084,7 @@ func BenchmarkGitCtime(b *testing.B) {
 }
 
 func BenchmarkGitMtime(b *testing.B) {
-	tmpdb, e, _ := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	for i := 0; i < b.N; i++ {
@@ -1181,7 +1093,7 @@ func BenchmarkGitMtime(b *testing.B) {
 }
 
 func TestMultipleWrites(t *testing.T) {
-	tmpdb, e, _ := testEnvInit()
+	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
 	err := e.gitPull()
