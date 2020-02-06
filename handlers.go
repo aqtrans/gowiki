@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path"
@@ -12,10 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"git.jba.io/go/auth"
 	"git.jba.io/go/httputils"
 	"github.com/dimfeld/httptreemux"
 	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
-	log "github.com/sirupsen/logrus"
 )
 
 func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
@@ -28,11 +29,11 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 	p := env.loadWikiPage(r, name)
 	if p.Wiki.Frontmatter.Favorite {
 		p.Wiki.Frontmatter.Favorite = false
-		env.setFlash(name+" has been un-favorited.", w)
+		env.authState.SetFlash(name+" has been un-favorited.", w)
 		log.Println(name + " page un-favorited!")
 	} else {
 		p.Wiki.Frontmatter.Favorite = true
-		env.setFlash(name+" has been favorited.", w)
+		env.authState.SetFlash(name+" has been favorited.", w)
 		log.Println(name + " page favorited!")
 	}
 
@@ -64,7 +65,7 @@ func (env *wikiEnv) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 
-	env.setFlash(name+" page successfully deleted.", w)
+	env.authState.SetFlash(name+" page successfully deleted.", w)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 
 }
@@ -97,17 +98,17 @@ func (env *wikiEnv) searchHandler(w http.ResponseWriter, r *http.Request) {
 	p := make(chan page, 1)
 	go env.loadPage(r, p)
 
+	user := auth.GetUserState(r.Context())
+
 	var fileList string
 
-	username := getUser(env.authState, r)
-
 	for _, v := range env.cache.Cache {
-		if username != "" {
+		if auth.IsLoggedIn(r.Context()) {
 			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
 				fileList = fileList + " " + `"` + v.Filename + `"`
 			}
-			if env.authState.IsAdmin(username) {
+			if user.IsAdmin() {
 				if v.Permission == adminPermission {
 					//log.Println("admin", v.Filename)
 					fileList = fileList + " " + `"` + v.Filename + `"`
@@ -168,7 +169,7 @@ func (env *wikiEnv) adminUsersHandler(w http.ResponseWriter, r *http.Request) {
 	p := make(chan page, 1)
 	go env.loadPage(r, p)
 
-	userlist, err := env.authState.Users().All()
+	userlist, err := env.authState.Userlist()
 	if err != nil {
 		panic(err)
 	}
@@ -197,7 +198,7 @@ func (env *wikiEnv) adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	p := make(chan page, 1)
 	go env.loadPage(r, p)
 
-	userlist, err := env.authState.Users().All()
+	userlist, err := env.authState.Userlist()
 	if err != nil {
 		panic(err)
 	}
@@ -235,12 +236,7 @@ func adminUserPostHandler(w http.ResponseWriter, r *http.Request) {
 func (env *wikiEnv) adminGeneratePostHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	selectedRole := r.FormValue("role")
-	registerToken, err := env.authState.GenerateUniqueConfirmationCode()
-	if err != nil {
-		log.Println("error generating registration token", err)
-		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
-		return
-	}
+	registerToken := env.authState.GenerateRegisterToken(selectedRole)
 
 	/*
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -268,7 +264,7 @@ func (env *wikiEnv) adminGeneratePostHandler(w http.ResponseWriter, r *http.Requ
 		tpl := template.Must(template.New("NewTokenPage").Parse(newTokenTmpl))
 		tpl.Execute(w, data)
 	*/
-	env.setFlash("Token:"+registerToken+" |Role: "+selectedRole, w)
+	env.authState.SetFlash("Token:"+registerToken+" |Role: "+selectedRole, w)
 	http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 }
 
@@ -483,9 +479,7 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 func (env *wikiEnv) editHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "editHandler")
 	name := nameFromContext(r.Context())
-	log.Debugln(name)
 	p := env.loadWikiPage(r, name)
-	log.Debugln(p)
 	renderTemplate(r.Context(), env, w, "wiki_edit.tmpl", p)
 }
 
@@ -556,7 +550,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			//panic(err)
 			log.Println("Error pushing to remote git repo:", err)
-			env.setFlash("Wiki page successfully saved, but error pushing to remote git repo.", w)
+			env.authState.SetFlash("Wiki page successfully saved, but error pushing to remote git repo.", w)
 			http.Redirect(w, r, "/"+name, http.StatusSeeOther)
 			log.Println(name + " page saved!")
 
@@ -567,7 +561,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	go env.refreshStuff()
 
-	env.setFlash("Wiki page successfully saved.", w)
+	env.authState.SetFlash("Wiki page successfully saved.", w)
 	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
 	log.Println(name + " page saved!")
 }
@@ -606,7 +600,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	wikiExists := wikiExistsFromContext(r.Context())
 	if !wikiExists {
-		log.Debugln("wikiExists false: No such file...creating one.")
+		httputils.Debugln("wikiExists false: No such file...creating one.")
 		//http.Redirect(w, r, "/edit/"+name, http.StatusTemporaryRedirect)
 		env.createWiki(w, r, name)
 		return
@@ -615,19 +609,17 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	// If this is a commit, pass along the SHA1 to that function
 	if r.URL.Query().Get("commit") != "" {
 		// Only allow logged in users to view past pages, in case information had to be redacted on a now-public page
-		if getUser(env.authState, r) != "" {
+		if auth.IsLoggedIn(r.Context()) {
 			commit := r.URL.Query().Get("commit")
 			//utils.Debugln(r.URL.Query().Get("commit"))
 			env.viewCommitHandler(w, r, commit, name)
 			return
 		}
-		// Otherwise redirect to login screen and store existing URL
-		env.setRedirect(r.URL.Path, w, r)
+		mitigateWiki(true, env, r, w)
 		return
 	}
 
 	if !isWiki(filepath.Join(env.cfg.WikiDir, name)) {
-		log.Debugln(name, "does not appear to be a markdown file. serving it raw...")
 		http.ServeFile(w, r, filepath.Join(env.cfg.WikiDir, name))
 		return
 	}
@@ -637,20 +629,19 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Build a list of filenames to be fed to closestmatch, for similarity matching
 	var filelist []string
-	user := getUser(env.authState, r)
-
+	user := auth.GetUserState(r.Context())
 	for _, v := range env.cache.Cache {
 		if v.Permission == publicPermission {
 			//log.Println("pubic", v.Filename)
 			filelist = append(filelist, v.Filename)
 		}
-		if user != "" {
+		if auth.IsLoggedIn(r.Context()) {
 			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
 				filelist = append(filelist, v.Filename)
 			}
 		}
-		if env.authState.IsAdmin(user) {
+		if user.IsAdmin() {
 			if v.Permission == adminPermission {
 				//log.Println("admin", v.Filename)
 				filelist = append(filelist, v.Filename)
@@ -868,20 +859,20 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 
 	var list []gitDirList
 
-	user := getUser(env.authState, r)
+	user := auth.GetUserState(r.Context())
 
 	for _, v := range env.cache.Cache {
 		if v.Permission == publicPermission {
 			//log.Println("pubic", v.Filename)
 			list = append(list, v)
 		}
-		if user != "" {
+		if auth.IsLoggedIn(r.Context()) {
 			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
 				list = append(list, v)
 			}
 		}
-		if env.authState.IsAdmin(user) {
+		if user.IsAdmin() {
 			if v.Permission == adminPermission {
 				//log.Println("admin", v.Filename)
 				list = append(list, v)
@@ -900,12 +891,10 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		params := httptreemux.ContextParams(r.Context())
 		name := params["name"]
-		user := getUser(env.authState, r)
+		user := auth.GetUserState(r.Context())
 		fullfilename := filepath.Join(env.cfg.WikiDir, name)
 		pageExists, relErr := env.checkName(&name)
 		//wikiDir := filepath.Join(dataDir, "wikidata")
-
-		log.Debugln("wikimiddle user:", user)
 
 		if relErr != nil {
 			if relErr == errBaseNotDir {
@@ -930,18 +919,13 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		nameCtx := newNameContext(r.Context(), name)
 		ctx := newWikiExistsContext(nameCtx, pageExists)
 		r = r.WithContext(ctx)
-		var isLoggedIn bool
-		if user != "" {
-			isLoggedIn = true
-		}
 
-		if wikiRejected(fullfilename, pageExists, env.authState.IsAdmin(user), isLoggedIn) {
-			env.setRedirect(r.URL.Path, w, r)
+		if wikiRejected(fullfilename, pageExists, user.IsAdmin(), auth.IsLoggedIn(r.Context())) {
+			mitigateWiki(true, env, r, w)
+		} else {
+			next.ServeHTTP(w, r)
 			return
 		}
-
-		next.ServeHTTP(w, r)
-		return
 
 	})
 }
