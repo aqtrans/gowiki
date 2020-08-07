@@ -23,16 +23,16 @@ func (env *wikiEnv) gitCommand(args ...string) *exec.Cmd {
 	return c
 }
 
-/*
 // Execute `git init {directory}` in the current workingDirectory
-func gitInit() error {
+func (env *wikiEnv) gitInit() error {
 	//wd, err := os.Getwd()
 	//if err != nil {
 	//	return err
 	//}
-	return gitCommand("init").Run()
+	return env.gitCommand("init").Run()
 }
 
+/*
 // Execute `git clone [repo]` in the current workingDirectory
 func gitClone(repo string) error {
 	//wd, err := os.Getwd()
