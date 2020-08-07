@@ -154,9 +154,16 @@ func (env *wikiEnv) signupPageHandler(w http.ResponseWriter, r *http.Request) {
 	p := make(chan page, 1)
 	go env.loadPage(r, p)
 
-	gp := &genPage{
+	anyUsers := env.authState.AnyUsers()
+
+	gp := struct {
+		page
+		Title    string
+		AnyUsers bool
+	}{
 		<-p,
 		title,
+		anyUsers,
 	}
 	renderTemplate(r.Context(), env, w, "signup.tmpl", gp)
 
@@ -566,9 +573,14 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println(name + " page saved!")
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
+func (env *wikiEnv) indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "indexHandler")
-
+	if !env.authState.AnyUsers() {
+		log.Println("Need to signup...")
+		env.authState.SetFlash("Welcome! Sign up to start creating and editing pages.", w)
+		http.Redirect(w, r, "/signup", http.StatusSeeOther)
+		return
+	}
 	http.Redirect(w, r, "/index", http.StatusSeeOther)
 	//viewHandler(w, r, "index")
 }
