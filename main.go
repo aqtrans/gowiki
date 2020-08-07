@@ -223,7 +223,7 @@ type config struct {
 	PushOnSave     bool   `yaml:"PushOnSave,omitempty"`
 	InitWikiRepo   bool   `yaml:"InitWikiRepo,omitempty"`
 	CacheEnabled   bool   `yaml:"CacheEnabled,omitempty"`
-	DevMode        bool   `yaml:"DevMode,omitempty"`
+	CSRF           bool   `yaml:"CSRF,omitempty"`
 }
 
 // Env wrapper to hold app-specific configs, to pass to handlers
@@ -1687,22 +1687,27 @@ func timer(next http.Handler) http.Handler {
 	})
 }
 
-func router(env *wikiEnv) http.Handler {
+func (env *wikiEnv) initialSignup(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !env.authState.AnyUsers() && r.RequestURI != "/signup" {
+			log.Println("Need to signup...")
+			http.Redirect(w, r, "/signup", http.StatusSeeOther)
+		}
+		//next.ServeHTTP(w, r.WithContext(newTime))
+	})
+}
 
-	csrfSecure := true
-	if env.cfg.DevMode {
-		csrfSecure = false
-	}
+func router(env *wikiEnv) http.Handler {
 
 	// HTTP stuff from here on out
 	//s := alice.New(httputils.Timer, httputils.Logger, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
-	s := alice.New(timer, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
+	s := alice.New(timer, env.authState.CtxMiddle, env.authState.CSRFProtect(env.cfg.CSRF))
 
 	r := httptreemux.NewContextMux()
 
 	r.PanicHandler = errorHandler
 
-	r.GET("/", indexHandler)
+	r.GET("/", env.indexHandler)
 
 	r.GET("/tags", env.authState.AuthMiddle(env.tagMapHandler))
 	r.GET("/tag/*name", env.authState.AuthMiddle(env.tagHandler))
