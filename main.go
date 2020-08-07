@@ -302,6 +302,8 @@ func loadConfig(confFile string) config {
 		if err != nil {
 			log.Fatalln("Error unmarshaling config:", err)
 		}
+	case "":
+		log.Println("No config file specified. Loading defaults.")
 	default:
 		log.Fatalln("Only able to load TOML and YAML files currently. Unable to load", confFile)
 	}
@@ -315,6 +317,18 @@ func loadConfig(confFile string) config {
 		cfg.WikiDir = filepath.Join(cfg.DataDir, "wikidata")
 	}
 
+	if cfg.GitCommitEmail == "" {
+		cfg.GitCommitEmail = "golang-wiki@foo.bar"
+	}
+
+	if cfg.GitCommitName == "" {
+		cfg.GitCommitName = "Golang Wiki"
+	}
+
+	if cfg.Port == "" {
+		cfg.Port = "5000"
+	}
+
 	// Look for git, if GitPath is not defined in the config file
 	if cfg.GitPath == "" {
 		gitPath, err := exec.LookPath("git")
@@ -324,14 +338,6 @@ func loadConfig(confFile string) config {
 		if err == nil {
 			cfg.GitPath = gitPath
 		}
-	}
-
-	if cfg.GitCommitEmail == "" {
-		cfg.GitCommitEmail = "golang-wiki@foo.bar"
-	}
-
-	if cfg.GitCommitName == "" {
-		cfg.GitCommitName = "Golang Wiki"
 	}
 
 	return cfg
@@ -1352,7 +1358,7 @@ func initWikiDir(cfg config) error {
 	dir, err := os.Stat(cfg.DataDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			log.Println(cfg.DataDir, "does not exist; creating it.")
+			log.Println("Datadir", cfg.DataDir, "does not exist; creating it.")
 			err = os.Mkdir(cfg.DataDir, 0755)
 			if err != nil {
 				return err
@@ -1367,12 +1373,22 @@ func initWikiDir(cfg config) error {
 	//Check for wikiDir directory + git repo existence
 	_, err = os.Stat(cfg.WikiDir)
 	if err != nil && os.IsNotExist(err) {
-		return fmt.Errorf("wikiDir does not exist at %s: %v", cfg.WikiDir, err)
+		log.Println("Wikidir at", cfg.WikiDir, "does not exist; creating it.")
+		err = os.Mkdir(cfg.WikiDir, 0755)
+		if err != nil {
+			return err
+		}
 	}
 	_, err = os.Stat(filepath.Join(cfg.WikiDir, ".git"))
-	if err != nil {
-		log.Println(cfg.WikiDir + " is not a git repo!")
-		return fmt.Errorf("Clone/move your existing repo to " + cfg.WikiDir + ", or change the configured wikiDir.")
+	if err != nil && os.IsNotExist(err) {
+		log.Println("Initializing git repository at", cfg.WikiDir)
+		env := &wikiEnv{
+			cfg: cfg,
+		}
+		err := env.gitInit()
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -1758,7 +1774,7 @@ func main() {
 	formatter.DisableLevelTruncation = true
 	log.SetFormatter(formatter)
 
-	confFile := flag.String("conf", "config.toml", "Path to the TOML config file.")
+	confFile := flag.String("conf", "", "Path to the TOML or YAML config file.")
 	debug := flag.Bool("debug", false, "Toggle debug logging.")
 	flag.Parse()
 
