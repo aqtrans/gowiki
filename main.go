@@ -1758,7 +1758,7 @@ func router(env *wikiEnv) http.Handler {
 	a.POST("/login", env.authState.LoginPostHandler)
 	a.POST("/logout", env.authState.LogoutHandler)
 	a.GET("/logout", env.authState.LogoutHandler)
-	a.POST("/signup", env.authState.UserSignupPostHandler)
+	a.POST("/signup", env.authState.UserSignupTokenPostHandler)
 
 	r.POST("/gitadd", env.authState.AuthMiddle(env.gitCheckinPostHandler))
 	r.GET("/gitadd", env.authState.AuthMiddle(env.gitCheckinHandler))
