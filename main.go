@@ -99,6 +99,7 @@ const (
 	wikiNameKey    key = 1
 	wikiExistsKey  key = 2
 	wikiKey        key = 3
+	flashKey       key = 4
 	yamlSeparator      = "---"
 	yamlSeparator2     = "..."
 
@@ -502,6 +503,19 @@ func wikiFromContext(c context.Context) *wiki {
 	return w
 }
 
+func flashNewContext(c context.Context, t string) context.Context {
+	return context.WithValue(c, flashKey, t)
+}
+
+func flashFromContext(c context.Context) string {
+	t, ok := c.Value(flashKey).(string)
+	if !ok {
+		log.Debugln("No flash in context.")
+		return ""
+	}
+	return t
+}
+
 func isAdmin(s string) bool {
 	if s == "User" {
 		return false
@@ -587,8 +601,11 @@ func (env *wikiEnv) loadPage(r *http.Request, p chan<- page) {
 	//timer.Step("loadpageFunc")
 
 	// Auth lib middlewares should load the user and tokens into context for reading
-	user := auth.GetUserState(r.Context())
-	msg := auth.GetFlash(r.Context())
+	user := env.authState.GetUserState(r)
+
+	// Flash is loaded into context in timer() because it's one-time-use
+	//   requires passing http.ResponseWriter
+	msg := flashFromContext(r.Context())
 	//token := auth.GetToken(r.Context())
 	token := auth.CSRFTemplateField(r)
 
@@ -631,7 +648,7 @@ func (env *wikiEnv) loadPage(r *http.Request, p chan<- page) {
 		UserInfo: userInfo{
 			Username:   user.GetName(),
 			IsAdmin:    user.IsAdmin(),
-			IsLoggedIn: auth.IsLoggedIn(r.Context()),
+			IsLoggedIn: env.authState.IsLoggedIn(r),
 		},
 		Token:     token,
 		FlashMsg:  message,
@@ -1663,11 +1680,15 @@ func getRenderTime(c context.Context) string {
 	return elapsed.String()
 }
 
-func timer(next http.Handler) http.Handler {
+func (env *wikiEnv) timer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Throw current time in now, to be fetched by GetRenderTime
 		newTime := timeNewContext(r.Context(), time.Now())
-		next.ServeHTTP(w, r.WithContext(newTime))
+		// Get flash from cookie, put into context
+		msg := env.authState.GetFlash(r, w)
+		f := flashNewContext(newTime, msg)
+
+		next.ServeHTTP(w, r.WithContext(f))
 	})
 }
 
@@ -1680,7 +1701,7 @@ func router(env *wikiEnv) http.Handler {
 
 	// HTTP stuff from here on out
 	//s := alice.New(httputils.Timer, httputils.Logger, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
-	s := alice.New(timer, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
+	s := alice.New(env.timer, env.authState.CSRFProtect(csrfSecure))
 
 	r := httptreemux.NewContextMux()
 
@@ -1764,7 +1785,6 @@ func main() {
 
 	if *debug {
 		httputils.Debug = true
-		auth.Debug = true
 		log.SetLevel(log.DebugLevel)
 	}
 
