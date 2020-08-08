@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"git.jba.io/go/auth"
 	"git.jba.io/go/httputils"
 	"github.com/dimfeld/httptreemux"
 	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
@@ -98,12 +97,12 @@ func (env *wikiEnv) searchHandler(w http.ResponseWriter, r *http.Request) {
 	p := make(chan page, 1)
 	go env.loadPage(r, p)
 
-	user := auth.GetUserState(r.Context())
+	user := env.authState.GetUserState(r)
 
 	var fileList string
 
 	for _, v := range env.cache.Cache {
-		if auth.IsLoggedIn(r.Context()) {
+		if env.authState.IsLoggedIn(r) {
 			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
 				fileList = fileList + " " + `"` + v.Filename + `"`
@@ -609,7 +608,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	// If this is a commit, pass along the SHA1 to that function
 	if r.URL.Query().Get("commit") != "" {
 		// Only allow logged in users to view past pages, in case information had to be redacted on a now-public page
-		if auth.IsLoggedIn(r.Context()) {
+		if env.authState.IsLoggedIn(r) {
 			commit := r.URL.Query().Get("commit")
 			//utils.Debugln(r.URL.Query().Get("commit"))
 			env.viewCommitHandler(w, r, commit, name)
@@ -629,13 +628,13 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Build a list of filenames to be fed to closestmatch, for similarity matching
 	var filelist []string
-	user := auth.GetUserState(r.Context())
+	user := env.authState.GetUserState(r)
 	for _, v := range env.cache.Cache {
 		if v.Permission == publicPermission {
 			//log.Println("pubic", v.Filename)
 			filelist = append(filelist, v.Filename)
 		}
-		if auth.IsLoggedIn(r.Context()) {
+		if env.authState.IsLoggedIn(r) {
 			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
 				filelist = append(filelist, v.Filename)
@@ -859,14 +858,14 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 
 	var list []gitDirList
 
-	user := auth.GetUserState(r.Context())
+	user := env.authState.GetUserState(r)
 
 	for _, v := range env.cache.Cache {
 		if v.Permission == publicPermission {
 			//log.Println("pubic", v.Filename)
 			list = append(list, v)
 		}
-		if auth.IsLoggedIn(r.Context()) {
+		if env.authState.IsLoggedIn(r) {
 			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
 				list = append(list, v)
@@ -891,7 +890,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		params := httptreemux.ContextParams(r.Context())
 		name := params["name"]
-		user := auth.GetUserState(r.Context())
+		user := env.authState.GetUserState(r)
 		fullfilename := filepath.Join(env.cfg.WikiDir, name)
 		pageExists, relErr := env.checkName(&name)
 		//wikiDir := filepath.Join(dataDir, "wikidata")
@@ -920,7 +919,7 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		ctx := newWikiExistsContext(nameCtx, pageExists)
 		r = r.WithContext(ctx)
 
-		if wikiRejected(fullfilename, pageExists, user.IsAdmin(), auth.IsLoggedIn(r.Context())) {
+		if wikiRejected(fullfilename, pageExists, user.IsAdmin(), env.authState.IsLoggedIn(r)) {
 			mitigateWiki(true, env, r, w)
 		} else {
 			next.ServeHTTP(w, r)
