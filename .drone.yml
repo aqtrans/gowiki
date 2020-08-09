@@ -9,9 +9,7 @@ steps:
       path: /go
   commands:
     - go get -d
-    - cd vfs/assets && go get -d && go generate && cd ../../
-    - cd vfs/templates && go get -d && go generate && cd ../../
-    - go generate ./...
+    - go generate 
 
 - name: test
   image: golang
