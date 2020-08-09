@@ -54,7 +54,7 @@ steps:
   image: deb-pkg
   commands: 
     - cp wiki gowiki
-    - dch -M -v 1.0-$DRONE_COMMIT_BRANCH-$DRONE_BUILD_NUMBER "New version from Git" && dch -M -r -D buster ""
+    - dch -M -v 1.0-$DRONE_COMMIT_BRANCH-$DRONE_BUILD_STARTED-$($DRONE_COMMIT_SHA| cut -c1-8) "New version from Git" && dch -M -r -D buster ""
     - debuild -us -uc -b  
     - mv ../gowiki_*.deb gowiki.deb
 
