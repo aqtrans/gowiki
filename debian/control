@@ -1,7 +1,7 @@
 Source: gowiki
 Section: web
 Priority: optional
-Maintainer: aqtrans <aqtrans@jba.io>
+Maintainer: Jordan Anderson <aqtrans@jba.io>
 Homepage: https://git.jba.io/go/wiki
 
 Package: gowiki
