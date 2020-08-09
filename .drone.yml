@@ -54,7 +54,7 @@ steps:
     - cp wiki gowiki
     - dch -M -v 1.0.$DRONE_BUILD_STARTED-$DRONE_COMMIT_BRANCH "New version from Git" && dch -M -r -D buster ""
     - debuild -us -uc -b  
-    - mv ../gowiki_1.0.$DRONE_BUILD_STARTED-$DRONE_COMMIT_BRANCH_amd64.deb ./
+    - mv ../gowiki_1.0.*.deb ./
 
 - name: deploy
   image: alpine
@@ -69,8 +69,8 @@ steps:
   - apk add --no-cache openssh
   - ssh-keyscan -H bob.jba.io > $HOME/.ssh/known_hosts  
   - ssh-keyscan -H git.jba.io >> $HOME/.ssh/known_hosts 
-  - scp gowiki_1.0.*_amd64.deb $DEPLOY_HOST:/home/deploy/
-  - ssh $DEPLOY_HOST sudo dpkg -i gowiki_1.0.*_amd64.deb
+  - scp gowiki_1.0.*.deb $DEPLOY_HOST:/home/deploy/
+  - ssh $DEPLOY_HOST sudo dpkg -i gowiki_1.0.*.deb
 
 - name: deploy to repo
   image: alpine
@@ -85,8 +85,8 @@ steps:
   - apk add --no-cache openssh
   - ssh-keyscan -H bob.jba.io > $HOME/.ssh/known_hosts  
   - ssh-keyscan -H git.jba.io >> $HOME/.ssh/known_hosts     
-  - scp gowiki_1.0.*_amd64.deb $DEPLOY_HOST
-  - ssh $DEPLOY_HOST reprepro -b www/debian/ includedeb buster gowiki_1.0.*_amd64.deb 
+  - scp gowiki_1.0.*.deb $DEPLOY_HOST
+  - ssh $DEPLOY_HOST reprepro -b www/debian/ includedeb buster gowiki_1.0.*.deb 
 
 - name: notify
   image: plugins/pushover
