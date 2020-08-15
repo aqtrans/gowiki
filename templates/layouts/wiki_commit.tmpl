@@ -7,16 +7,20 @@
     <li class="tabs-title"><a href="/{{.Wiki.Filename}}">{{ svg "file-text2" }} View page @ HEAD</a></li>
     <li class="tabs-title"><a href="/history/{{.Wiki.Filename}}">{{ svg "history" }} History</a></li>
   </ul>
-  <ul data-tabs class="tabs sub" id="subtabs">
-    <li class="tab-title"><a data-tabby-default class="tablinks is-active" id="content-tab" href="#content">Content</a></li>
-    <li class="tab-title"><a class="tablinks" id="diff-tab" href="#diff">Diff</a></li>
+  <ul class="links">
+    <li><a href="#content">Content</a></li>
+    <li><a href="#diff">Diff</a></li>
   </ul>
-  <div id="content" class="tabcontent">
+  <hr>
+  <div id="content">
+  <h1>Content:</h1>
     <div class="content">
       {{.Rendered | safeHTML}}
     </div>
   </div>
-  <div id="diff" class="tabcontent">
+  <hr>
+  <div id="diff">
+  <h1>Diff:</h1>
     <div>
       <pre><code>{{.Diff}}</code></pre>
     </div>
@@ -46,7 +50,4 @@
 </main>
 {{ end }}
 {{ define "extra_scripts" }}
-<!--<script src="/assets/js/tabs.js"></script>-->
-<script src="/assets/js/tabby.polyfills.min.js"></script>
-<script src="/assets/js/my-tabby.js"></script>
 {{ end }}
