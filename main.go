@@ -136,6 +136,7 @@ var (
 	//gitPath string
 	//dataDir string
 	//cache          *wikiCache
+	debugMode      bool
 	errNotInGit    = errors.New("given file not in Git repo")
 	errNoFile      = errors.New("no such file")
 	errNoDirIndex  = errors.New("no such directory index")
@@ -1722,7 +1723,11 @@ func router(env *wikiEnv) http.Handler {
 
 	// HTTP stuff from here on out
 	//s := alice.New(httputils.Timer, httputils.Logger, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
-	s := alice.New(env.timer, env.authState.CSRFProtect(env.cfg.CSRF))
+	csrfSecure := true
+	if debugMode {
+		csrfSecure = false
+	}
+	s := alice.New(env.timer, env.authState.CSRFProtect(csrfSecure))
 
 	r := httptreemux.NewContextMux()
 
@@ -1801,10 +1806,11 @@ func main() {
 	log.SetFormatter(formatter)
 
 	confFile := flag.String("conf", "", "Path to the TOML or YAML config file.")
-	debug := flag.Bool("debug", false, "Toggle debug logging.")
+	flag.BoolVar(&debugMode, "debug", false, "Toggle debug logging.")
+
 	flag.Parse()
 
-	if *debug {
+	if *&debugMode {
 		httputils.Debug = true
 		log.SetLevel(log.DebugLevel)
 	}
