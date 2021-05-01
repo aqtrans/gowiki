@@ -903,8 +903,10 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 		params := httptreemux.ContextParams(r.Context())
 		name := params["name"]
 		user := env.authState.GetUserState(r)
-		fullfilename := filepath.Join(env.cfg.WikiDir, name)
+
 		pageExists, relErr := env.checkName(&name)
+		fullfilename := filepath.Join(env.cfg.WikiDir, name)
+
 		//wikiDir := filepath.Join(dataDir, "wikidata")
 
 		if relErr != nil {
