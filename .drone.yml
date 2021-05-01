@@ -72,21 +72,21 @@ steps:
   - scp gowiki.deb $DEPLOY_HOST:/home/deploy/gowiki.deb
   - ssh $DEPLOY_HOST sudo dpkg -i gowiki.deb
 
-- name: deploy to repo
-  image: alpine
-  environment:
-    DEPLOY_HOST: 'repo@bob.jba.io'
-    SSH_KEY:
-      from_secret: ssh_key    
-  commands:
-  - mkdir $HOME/.ssh
-  - echo "$SSH_KEY" > $HOME/.ssh/id_ed25519
-  - chmod 600 $HOME/.ssh/id_ed25519
-  - apk add --no-cache openssh
-  - ssh-keyscan -H bob.jba.io > $HOME/.ssh/known_hosts  
-  - ssh-keyscan -H git.jba.io >> $HOME/.ssh/known_hosts     
-  - scp gowiki.deb $DEPLOY_HOST:/home/repo/gowiki.deb
-  - ssh $DEPLOY_HOST reprepro -b www/debian/ includedeb buster gowiki.deb 
+#- name: deploy to repo
+#  image: alpine
+#  environment:
+#    DEPLOY_HOST: 'repo@bob.jba.io'
+#    SSH_KEY:
+#      from_secret: ssh_key    
+#  commands:
+#  - mkdir $HOME/.ssh
+#  - echo "$SSH_KEY" > $HOME/.ssh/id_ed25519
+#  - chmod 600 $HOME/.ssh/id_ed25519
+#  - apk add --no-cache openssh
+#  - ssh-keyscan -H bob.jba.io > $HOME/.ssh/known_hosts  
+#  - ssh-keyscan -H git.jba.io >> $HOME/.ssh/known_hosts     
+#  - scp gowiki.deb $DEPLOY_HOST:/home/repo/gowiki.deb
+#  - ssh $DEPLOY_HOST reprepro -b www/debian/ includedeb buster gowiki.deb 
 
 - name: notify
   image: plugins/pushover
