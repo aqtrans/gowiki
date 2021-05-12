@@ -1,6 +1,6 @@
 module git.jba.io/go/wiki
 
-go 1.14
+go 1.16
 
 require (
 	git.jba.io/go/auth v1.1.1

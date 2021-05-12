@@ -32,6 +32,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"embed"
 	"encoding/gob"
 	"encoding/json"
 	"errors"
@@ -70,8 +71,8 @@ import (
 
 	"git.jba.io/go/auth"
 	"git.jba.io/go/httputils"
-	"git.jba.io/go/wiki/vfs/assets"
-	"git.jba.io/go/wiki/vfs/templates"
+	//"git.jba.io/go/wiki/vfs/assets"
+	//"git.jba.io/go/wiki/vfs/templates"
 )
 
 type key int
@@ -127,6 +128,13 @@ const (
 			bf.TOC
 	*/
 )
+
+// Go 1.16 embed:
+//go:embed assets
+var assetsfs embed.FS
+
+//go:embed templates
+var templatefs embed.FS
 
 var (
 	//authState      *auth.AuthState
@@ -358,14 +366,35 @@ func markdownRender(input []byte) string {
 	return string(unsanitized)
 }
 
+func svg(iconName string) template.HTML {
+	// MAJOR TODO:
+	// Check for file existence before trying to read the file; if non-existent return ""
+	iconFile, err := assetsfs.ReadFile("assets/icons/" + iconName + ".svg")
+	if err != nil {
+		log.Println("Error loading assets/icons/", iconName, err)
+		return template.HTML("")
+	}
+	return template.HTML(`<div class="svg-icon">` + string(iconFile) + `</div>`)
+}
+
+func svgByte(iconName string) []byte {
+	// MAJOR TODO:
+	// Check for file existence before trying to read the file; if non-existent return ""
+	iconFile, err := assetsfs.ReadFile("assets/icons/" + iconName + ".svg")
+	if err != nil {
+		log.Println("Error loading assets/icons/", iconName, err)
+		return []byte("")
+	}
+	return []byte(`<div class="svg-icon">` + string(iconFile) + `</div>`)
+}
+
 // Task List support, replacing checkboxs with an SVG for more visibility
 func (r *renderer) ListItem(out *bytes.Buffer, text []byte, flags int) {
 	switch {
 	case bytes.HasPrefix(text, []byte("[ ] ")):
-
-		text = append(assets.SvgByte("checkbox-unchecked"), text[3:]...)
+		text = append(svgByte("checkbox-unchecked"), text[3:]...)
 	case bytes.HasPrefix(text, []byte("[x] ")) || bytes.HasPrefix(text, []byte("[X] ")):
-		text = append(assets.SvgByte("checkbox-checked"), text[3:]...)
+		text = append(svgByte("checkbox-checked"), text[3:]...)
 	}
 	r.Html.ListItem(out, text, flags)
 }
@@ -1339,10 +1368,10 @@ func (wiki *wiki) save(env *wikiEnv) error {
 func typeIcon(gitType string) template.HTML {
 	var html template.HTML
 	if gitType == "blob" {
-		html = assets.Svg("file-text")
+		html = svg("file-text")
 	}
 	if gitType == "tree" {
-		html = assets.Svg("folder-open")
+		html = svg("folder-open")
 	}
 	return html
 }
@@ -1360,13 +1389,13 @@ func tmplInit() map[string]*template.Template {
 		log.Fatalln(err)
 	}
 
-	funcMap := template.FuncMap{"svg": assets.Svg, "typeIcon": typeIcon, "prettyDate": httputils.PrettyDate, "safeHTML": httputils.SafeHTML, "imgClass": httputils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
+	funcMap := template.FuncMap{"svg": svg, "typeIcon": typeIcon, "prettyDate": httputils.PrettyDate, "safeHTML": httputils.SafeHTML, "imgClass": httputils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
 
 	for _, layout := range layouts {
 		files := append(includes, layout)
 		//DEBUG TEMPLATE LOADING
 		//httputils.Debugln(files)
-		templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFiles(files...))
+		templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFS(templatefs, files...))
 	}
 	return templates
 }
@@ -1786,10 +1815,10 @@ func router(env *wikiEnv) http.Handler {
 	r.GET("/debug/pprof/profile", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Profile)))
 	r.GET("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
 	r.GET("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
-	r.GET("/robots.txt", assets.Robots)
-	r.GET("/favicon.ico", assets.FaviconICO)
-	r.GET("/favicon.png", assets.FaviconPNG)
-	r.Handler("GET", "/assets/*", http.StripPrefix("/assets/", http.FileServer(assets.Assets)))
+	//r.GET("/robots.txt", robots)
+	//r.GET("/favicon.ico", faviconICO)
+	//r.GET("/favicon.png", faviconPNG)
+	r.Handler("GET", "/assets/*", http.FileServer(http.FS(assetsfs)))
 
 	return s.Then(r)
 }
@@ -1825,7 +1854,7 @@ func main() {
 	env := &wikiEnv{
 		cfg:       serverCfg,
 		authState: *auth.NewAuthState(filepath.Join(serverCfg.DataDir, "auth.db")),
-		templates: templates.TmplInit(),
+		templates: tmplInit(),
 		mutex:     sync.Mutex{},
 		cache:     new(wikiCache),
 	}
