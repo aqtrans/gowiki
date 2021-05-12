@@ -1379,23 +1379,28 @@ func typeIcon(gitType string) template.HTML {
 func tmplInit() map[string]*template.Template {
 	templates := make(map[string]*template.Template)
 
-	templatesDir := "./templates/"
-	layouts, err := filepath.Glob(templatesDir + "layouts/*.tmpl")
+	//templatesDir := "./templates/"
+	layouts, err := templatefs.ReadDir("templates/layouts")
 	if err != nil {
 		log.Fatalln(err)
 	}
-	includes, err := filepath.Glob(templatesDir + "includes/*.tmpl")
+	includes, err := templatefs.ReadDir("templates/includes")
 	if err != nil {
 		log.Fatalln(err)
+	}
+
+	var includesString []string
+	for _, includeEntry := range includes {
+		includesString = append(includesString, "templates/includes/"+includeEntry.Name())
 	}
 
 	funcMap := template.FuncMap{"svg": svg, "typeIcon": typeIcon, "prettyDate": httputils.PrettyDate, "safeHTML": httputils.SafeHTML, "imgClass": httputils.ImgClass, "isLoggedIn": isLoggedIn, "jsTags": jsTags}
 
 	for _, layout := range layouts {
-		files := append(includes, layout)
+		files := append(includesString, "templates/layouts/"+layout.Name())
 		//DEBUG TEMPLATE LOADING
 		//httputils.Debugln(files)
-		templates[filepath.Base(layout)] = template.Must(template.New("templates").Funcs(funcMap).ParseFS(templatefs, files...))
+		templates[filepath.Base(layout.Name())] = template.Must(template.New("templates").Funcs(funcMap).ParseFS(templatefs, files...))
 	}
 	return templates
 }
