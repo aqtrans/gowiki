@@ -234,6 +234,7 @@ type config struct {
 	InitWikiRepo   bool   `yaml:"InitWikiRepo,omitempty"`
 	CacheEnabled   bool   `yaml:"CacheEnabled,omitempty"`
 	CSRF           bool   `yaml:"CSRF,omitempty"`
+	DebugMode      bool   `yaml:"DebugMode,omitempty"`
 }
 
 // Env wrapper to hold app-specific configs, to pass to handlers
@@ -1844,12 +1845,13 @@ func main() {
 
 	flag.Parse()
 
-	if *&debugMode {
+	serverCfg := loadConfig(*confFile)
+
+	if debugMode || serverCfg.DebugMode {
+		log.Println("Debug mode enabled")
 		httputils.Debug = true
 		log.SetLevel(log.DebugLevel)
 	}
-
-	serverCfg := loadConfig(*confFile)
 
 	err := initWikiDir(serverCfg)
 	if err != nil {
