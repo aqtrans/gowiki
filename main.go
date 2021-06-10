@@ -56,6 +56,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/pelletier/go-toml"
@@ -1831,8 +1832,8 @@ func router(env *wikiEnv) http.Handler {
 
 func main() {
 	// subscribe to SIGINT signals
-	stopChan := make(chan os.Signal)
-	signal.Notify(stopChan, os.Interrupt)
+	stopChan := make(chan os.Signal, 1)
+	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
 
 	formatter := new(log.TextFormatter)
 	formatter.TimestampFormat = "01-02-2006 03:04:05pm"
@@ -1868,9 +1869,11 @@ func main() {
 	env.cache.Tags = make(map[string][]string)
 	env.cache.Favs = make(map[string]struct{})
 
-	env.loadCache()
-	env.favs.List = env.cache.Favs
-	env.tags.List = env.cache.Tags
+	go func() {
+		env.loadCache()
+		env.favs.List = env.cache.Favs
+		env.tags.List = env.cache.Tags
+	}()
 
 	// Check for unclean Git dir on startup
 	if !env.gitIsEmpty() {
