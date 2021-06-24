@@ -1868,12 +1868,9 @@ func main() {
 	}
 	env.cache.Tags = make(map[string][]string)
 	env.cache.Favs = make(map[string]struct{})
-
-	go func() {
-		env.loadCache()
-		env.favs.List = env.cache.Favs
-		env.tags.List = env.cache.Tags
-	}()
+	env.loadCache()
+	env.favs.List = env.cache.Favs
+	env.tags.List = env.cache.Tags
 
 	// Check for unclean Git dir on startup
 	if !env.gitIsEmpty() {
