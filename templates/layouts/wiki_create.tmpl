@@ -1,9 +1,7 @@
 {{ define "title" }}Create {{ .Wiki.Title }}?{{ end }}
 {{ define "content" }}
-  <main>
-      There's no existing page named '{{.Wiki.Filename}}'.<br>
-      Would you like to <a href="/edit/{{.Wiki.Filename}}">create a page named '{{.Wiki.Filename}}'</a>?
-        <footer>
-        </footer>
-  </main>
+    There's no existing page named '{{.Wiki.Filename}}'.<br>
+    Would you like to <a href="/edit/{{.Wiki.Filename}}">create a page named '{{.Wiki.Filename}}'</a>?
+      <footer>
+      </footer>
 {{ end }}

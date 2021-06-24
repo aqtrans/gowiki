@@ -1,28 +1,26 @@
 {{ define "title" }}History of {{ .Wiki.Title }}{{ end }}
 
 {{ define "content" }}
-    <main>
-        <ul class="tabs">
-            <li class="tabs-title"><a href="/{{.Wiki.Filename}}">{{svg "file-text2"}} View</a></li>
-            <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}">{{svg "pencil"}} Edit</a></li>
-            <li class="tabs-title is-active"><a href="#">{{svg "history"}} History</a></li>
-        </ul>    
-        <table>
-        <thead>
-            <tr>
-            <th>Link</th>
-            <th>Date</th>
-            <th>Message</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{range .FileHistory}}
-            <tr>
-                <td><a href="/{{.Filename}}?commit={{.Commit}}">{{.Commit}}</a></td>
-                <td>{{ .Date|prettyDate }}</td>
-                <td>{{ .Message }}</td>
-            </tr>  
-            {{ end }}
-        </table>
-    </main>
+    <ul class="tabs">
+        <li class="tabs-title"><a href="/{{.Wiki.Filename}}">{{svg "file-text2"}} View</a></li>
+        <li class="tabs-title"><a href="/edit/{{.Wiki.Filename}}">{{svg "pencil"}} Edit</a></li>
+        <li class="tabs-title is-active"><a href="#">{{svg "history"}} History</a></li>
+    </ul>    
+    <table>
+    <thead>
+        <tr>
+        <th>Link</th>
+        <th>Date</th>
+        <th>Message</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .FileHistory}}
+        <tr>
+            <td><a href="/{{.Filename}}?commit={{.Commit}}">{{.Commit}}</a></td>
+            <td>{{ .Date|prettyDate }}</td>
+            <td>{{ .Message }}</td>
+        </tr>  
+        {{ end }}
+    </table>
 {{ end }}

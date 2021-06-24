@@ -2,8 +2,6 @@
 
 {{ define "content" }}
 <link rel="stylesheet" href="/assets/css/tagdog.css">
-
-    <main>
         <ul class="tabs">
             <li class="tabs-title"><a href="/{{.Wiki.Filename}}">{{svg "file-text2"}} View</a></li>
             <li class="tabs-title is-active"><a href="#">{{svg "pencil"}} Edit</a></li>
@@ -91,8 +89,6 @@ some code
             {{.Token}}
             <button type="submit" class="delete button">Delete File</button>
         </form>
-    </main>
-
 {{ end }}
 {{ define "extra_scripts" }}
 <script src="/assets/js/tabby.polyfills.min.js"></script>
