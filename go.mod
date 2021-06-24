@@ -5,12 +5,9 @@ go 1.16
 require (
 	git.jba.io/go/auth v1.1.1
 	git.jba.io/go/httputils v0.0.0-20190322205649-639279c6da32
-	git.jba.io/go/wiki/vfs/assets v0.0.0-20191215031851-8d47f34bdc41
-	git.jba.io/go/wiki/vfs/templates v0.0.0-00010101000000-000000000000
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
 	github.com/dimfeld/httptreemux v5.0.0+incompatible
-	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
 	github.com/gliderlabs/ssh v0.2.2 // indirect
 	github.com/google/go-cmp v0.3.0 // indirect
 	github.com/gorilla/csrf v1.7.0 // indirect
@@ -36,10 +33,4 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.1.0
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.2.2
-)
-
-replace (
-	git.jba.io/go/wiki/vfs => ./vfs
-	git.jba.io/go/wiki/vfs/assets => ./vfs/assets
-	git.jba.io/go/wiki/vfs/templates => ./vfs/templates
 )
