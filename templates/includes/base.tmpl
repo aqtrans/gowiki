@@ -12,11 +12,12 @@
 </head>
 <body>
   <nav>
-      {{ template "sidebar" . }}
+      {{ block "sidebar" . }}
+      {{ end }}
   </nav>
     {{ .FlashMsg }}
   <header>
-    <h1>{{ template "header_title" . }}</h1>
+    <h1>{{ block "header_title" . }}{{ end }}</h1>
     <div class="searchwiki">
       <form method="POST" action="/search" id="searchwiki">
         <div class="input-wrapper">
@@ -27,8 +28,10 @@
       </form> 
     </div>    
   </header>
-
-  {{ template "content" . }}
+  
+  <main>
+    {{ block "content" . }}{{ end }}
+  </main>
 {{ end }}
 
 {{ define "footer" }}
