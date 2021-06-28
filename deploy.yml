@@ -1,0 +1,53 @@
+---
+
+- name: Deploy go app
+  connection: ssh
+  gather_facts: false
+  hosts: all
+  become: yes
+  become_user: root
+
+  vars:
+    app_name: esg
+
+  tasks:
+    - name: create app group
+      group:
+        name: "{{app_name}}"
+        state: present
+
+    - name: create app user
+      user:
+        name: "{{app_name}}"
+        groups: "{{app_name}}"
+        shell: /usr/sbin/nologin
+        append: yes
+        state: present
+        create_home: no
+
+    - name: Copy systemd service file to server
+      copy:
+        src: "{{app_name}}.service"
+        dest: /etc/systemd/system
+        owner: root
+        group: root
+      notify:
+        - Restart app
+
+    - name: Copy binary to server
+      copy:
+        src: "{{app_name}}"
+        dest: /usr/local/bin
+        mode: 0755
+        owner: root
+        group: root
+      notify:
+        - Restart app
+
+  handlers:
+    - name: Restart app
+      systemd:
+        name: "{{app_name}}"
+        state: restarted
+        daemon-reload: yes
+        enabled: yes

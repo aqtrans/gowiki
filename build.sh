@@ -1,40 +1,89 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
+
+DEBVERSION=1.0.$(date +'%s')
+APPNAME=gowiki
 
 function build_css()
 {
-    sassc -M scss/grid.scss assets/css/wiki.css
+    sassc -t compressed -M scss/grid.scss assets/css/wiki.css
+}
+
+function build_debian()
+{
+    podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:buster go build -buildmode=pie -v -o $APPNAME
+}
+
+function test_it() {
+    go test -race -cover
+    #go test -cover
+    #go test -bench=.
+}
+
+# Build Debian package inside a container
+function build_package() {
+    podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp debian:buster ./build-pkg.sh $DEBVERSION
 }
 
 while [ "$1" != "" ]; do 
     case $1 in
-        run)
-            GO111MODULE=on go generate
-            build_css
-            GO111MODULE=on go run -race -tags=dev .
+        test)
+            test_it
+            exit
             ;;
-        run-prod)
-            GO111MODULE=on go generate
+        run)
+            test_it
             build_css
-            GO111MODULE=on go run -race .
-            ;;            
+            go run -race .
+            ;;
         css)
             build_css
             exit
             ;;
         build)
-            GO111MODULE=on go generate
+            test_it
             build_css
-            GO111MODULE=on go build -o gowiki .
+            go build -buildmode=pie -o $APPNAME
             exit
             ;;
-        build-pkg)
-            GO111MODULE=on go generate
-            build_css
-            GO111MODULE=on go build -o gowiki
-            debuild -us -uc -b
+        pkg)
+            if [ "$(which dch)" != "" ]; then 
+                test_it
+                build_css
+                go build -buildmode=pie -o $APPNAME
+                ./build-pkg.sh $DEBVERSION
+            else
+                echo "dch not found. building inside container."
+                test_it
+                build_css                
+                build_debian
+                build_package
+            fi
             exit
             ;;
+        build-debian)
+            echo "Building binary inside Debian container..."
+            test_it
+            build_css
+            build_debian
+            exit
+            ;;
+        deploy-binary)
+            test_it
+            build_css
+            build_debian
+            ansible-playbook -i bob.jba.io, deploy.yml
+            exit
+            ;;
+        deploy)
+            test_it
+            build_css
+            build_debian
+            build_package
+            scp $APPNAME-$DEBVERSION.deb bob:
+            ssh bob.jba.io sudo dpkg -i $APPNAME-$DEBVERSION.deb
+            exit
+            ;;            
     esac
 done
