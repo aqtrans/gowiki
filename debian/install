@@ -1,3 +1,0 @@
-gowiki usr/bin/
-gowiki.service lib/systemd/system/
-gowiki.dist.toml etc/
