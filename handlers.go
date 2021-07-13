@@ -101,6 +101,7 @@ func (env *wikiEnv) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	var fileList string
 
+	env.cache.m.RLock()
 	for _, v := range env.cache.Cache {
 		if env.authState.IsLoggedIn(r) {
 			if v.Permission == privatePermission {
@@ -120,6 +121,7 @@ func (env *wikiEnv) searchHandler(w http.ResponseWriter, r *http.Request) {
 			fileList = fileList + " " + `"` + v.Filename + `"`
 		}
 	}
+	env.cache.m.RUnlock()
 
 	//log.Println(fileList)
 
@@ -641,6 +643,8 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	// Build a list of filenames to be fed to closestmatch, for similarity matching
 	var filelist []string
 	user := env.authState.GetUserState(r)
+	env.cache.m.RLock()
+	// TODO: Replace this with a call to listDir() somehow
 	for _, v := range env.cache.Cache {
 		if v.Permission == publicPermission {
 			//log.Println("pubic", v.Filename)
@@ -659,6 +663,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	env.cache.m.RUnlock()
 	// Check for similar filenames
 	/*
 		var similarPages []string
@@ -872,6 +877,8 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 
 	user := env.authState.GetUserState(r)
 
+	env.cache.m.RLock()
+
 	for _, v := range env.cache.Cache {
 		if v.Permission == publicPermission {
 			//log.Println("pubic", v.Filename)
@@ -890,6 +897,8 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+
+	env.cache.m.RUnlock()
 
 	l := listPage{
 		page:  <-p,

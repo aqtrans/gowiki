@@ -251,6 +251,7 @@ type wikiEnv struct {
 }
 
 type wikiCache struct {
+	m     sync.RWMutex
 	SHA1  string
 	Cache []gitDirList
 	Tags  map[string][]string
@@ -1462,6 +1463,9 @@ func setPageTitle(frontmatterTitle, filename string) string {
 
 func (env *wikiEnv) buildCache() {
 	defer httputils.TimeTrack(time.Now(), "buildCache")
+
+	env.cache.m.Lock()
+	defer env.cache.m.Unlock()
 	/*
 		cache := new(wikiCache)
 		cache.Tags = make(map[string][]string)
@@ -1644,8 +1648,14 @@ func (env *wikiEnv) headHash() string {
 // This should be all the stuff we need to be refreshed on startup and when pages are saved
 func (env *wikiEnv) refreshStuff() {
 	env.loadCache()
+	env.cache.m.RLock()
+	env.favs.Lock()
 	env.favs.List = env.cache.Favs
+	env.favs.Unlock()
+	env.tags.Lock()
 	env.tags.List = env.cache.Tags
+	env.tags.Unlock()
+	env.cache.m.RUnlock()
 }
 
 type mdPreviewJSON struct {
@@ -1753,6 +1763,35 @@ func (env *wikiEnv) initialSignup(next http.Handler) http.Handler {
 		}
 		//next.ServeHTTP(w, r.WithContext(newTime))
 	})
+}
+
+func (env *wikiEnv) listDir(user *auth.User, dir string) []gitDirList {
+	var list []gitDirList
+
+	env.cache.m.RLock()
+	for _, v := range env.cache.Cache {
+		if filepath.Dir(v.Filename) == dir {
+			if v.Permission == publicPermission {
+				//log.Println("pubic", v.Filename)
+				list = append(list, v)
+			}
+			if user.IsValid() {
+				if v.Permission == privatePermission {
+					//log.Println("priv", v.Filename)
+					list = append(list, v)
+				}
+			}
+			if user.IsAdmin() {
+				if v.Permission == adminPermission {
+					//log.Println("admin", v.Filename)
+					list = append(list, v)
+				}
+			}
+		}
+	}
+	env.cache.m.RUnlock()
+
+	return list
 }
 
 func router(env *wikiEnv) http.Handler {
