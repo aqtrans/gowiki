@@ -934,6 +934,10 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 					return
 				}
 			}
+			if relErr == errIsDir {
+				env.listDirHandler(name, w, r)
+				return
+			}
 			httpErrorHandler(w, r, relErr)
 			return
 		}
@@ -1051,3 +1055,44 @@ func wikiHandler(fn wHandler) http.HandlerFunc {
 	}
 }
 */
+
+func (env *wikiEnv) listDirHandler(dir string, w http.ResponseWriter, r *http.Request) {
+
+	p := make(chan page, 1)
+	go env.loadPage(r, p)
+
+	var list []gitDirList
+
+	user := env.authState.GetUserState(r)
+
+	env.cache.m.RLock()
+
+	for _, v := range env.cache.Cache {
+		if filepath.Dir(v.Filename) == dir {
+			if v.Permission == publicPermission {
+				//log.Println("pubic", v.Filename)
+				list = append(list, v)
+			}
+			if env.authState.IsLoggedIn(r) {
+				if v.Permission == privatePermission {
+					//log.Println("priv", v.Filename)
+					list = append(list, v)
+				}
+			}
+			if user.IsAdmin() {
+				if v.Permission == adminPermission {
+					//log.Println("admin", v.Filename)
+					list = append(list, v)
+				}
+			}
+		}
+	}
+
+	env.cache.m.RUnlock()
+
+	l := listPage{
+		page:  <-p,
+		Wikis: list,
+	}
+	renderTemplate(r.Context(), env, w, "list.tmpl", l)
+}
