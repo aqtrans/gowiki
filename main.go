@@ -1027,11 +1027,13 @@ func (env *wikiEnv) checkName(name *string) (bool, error) {
 	// Remove trailing spaces
 	*name = strings.Trim(*name, " ")
 
-	// Security check; ensure we are not serving any files from wikidata/.git
-	// If so, toss them to the index, no hints given
-	if strings.Contains(*name, ".git") {
-		return false, errors.New("Unable to access given file")
-	}
+	/*
+		// Security check; ensure we are not serving any files from wikidata/.git
+		// If so, toss them to the index, no hints given
+		if strings.Contains(*name, ".git") {
+			return false, errors.New("Unable to access given file")
+		}
+	*/
 
 	/*
 		// Directory without specified index
@@ -1802,7 +1804,7 @@ func router(env *wikiEnv) http.Handler {
 	if debugMode {
 		csrfSecure = false
 	}
-	s := alice.New(env.timer, env.authState.CSRFProtect(csrfSecure))
+	s := alice.New(env.timer, env.authState.CSRFProtect(csrfSecure), env.securityCheck)
 
 	r := httptreemux.NewContextMux()
 

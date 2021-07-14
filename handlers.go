@@ -907,6 +907,19 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(r.Context(), env, w, "list.tmpl", l)
 }
 
+func (env *wikiEnv) securityCheck(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Security check; ensure we are not serving any files from wikidata/.git
+		// If so, toss them to the index, no hints given
+		if strings.Contains(r.URL.EscapedPath(), ".git") {
+			http.Error(w, "unable to access that", http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		params := httptreemux.ContextParams(r.Context())
