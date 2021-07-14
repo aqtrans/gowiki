@@ -924,20 +924,30 @@ func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			// If the given name is a directory, and URL is just /name/, check for /name/index
-			//    If name/index exists, redirect to it
-			if relErr == errIsDir && r.URL.Path[:len("/"+name)] == "/"+name {
-				// Check if name/index exists, and if it does, serve it
-				_, err := os.Stat(filepath.Join(env.cfg.WikiDir, name, "index"))
-				if err == nil {
-					http.Redirect(w, r, "/"+path.Join(name, "index"), http.StatusFound)
+			// If we have a directory, do some stuff:
+			if relErr == errIsDir {
+				// If we have a ?list query string, just list it
+				if r.URL.Query().Get("list") != "" {
+					env.listDirHandler(name, w, r)
 					return
 				}
-			}
-			if relErr == errIsDir {
+
+				// If the given name is a directory, and URL is just /name/, check for /name/index
+				//    If name/index exists, redirect to it
+				if r.URL.Path[:len("/"+name)] == "/"+name {
+					// Check if name/index exists, and if it does, serve it
+					_, err := os.Stat(filepath.Join(env.cfg.WikiDir, name, "index"))
+					if err == nil {
+						http.Redirect(w, r, "/"+path.Join(name, "index"), http.StatusFound)
+						return
+					}
+				}
+
+				// Otherwise fallback to just listing it
 				env.listDirHandler(name, w, r)
 				return
 			}
+
 			httpErrorHandler(w, r, relErr)
 			return
 		}
