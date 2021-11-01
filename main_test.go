@@ -669,9 +669,9 @@ func TestDotGit(t *testing.T) {
 	router(e).ServeHTTP(w, r)
 
 	// Check the status code is what we expect.
-	if status := w.Code; status != http.StatusInternalServerError {
+	if status := w.Code; status != http.StatusUnauthorized {
 		t.Errorf("handler returned wrong status code: got %v want %v",
-			status, http.StatusInternalServerError)
+			status, http.StatusUnauthorized)
 	}
 }
 
