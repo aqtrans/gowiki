@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-DEBVERSION=1.0.$(date +'%s')
+DEBVERSION=1.0.$(date +'%s')-$(git rev-parse --short HEAD)
 APPNAME=gowiki
 
 function build_css()
