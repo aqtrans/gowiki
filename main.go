@@ -1018,6 +1018,7 @@ func (env *wikiEnv) checkName(name *string) (bool, error) {
 	separators := regexp.MustCompile(`[ &_=+:]`)
 	dashes := regexp.MustCompile(`[\-]+`)
 
+	/* MOVED TO cleanName()
 	// Rely on httptreemux's Clean function to clean up ../ and other potential path-escaping sequences;
 	//  stripping off the / so we can pass it along to git
 	*name = httptreemux.Clean(*name)
@@ -1026,28 +1027,29 @@ func (env *wikiEnv) checkName(name *string) (bool, error) {
 	}
 	// Remove trailing spaces
 	*name = strings.Trim(*name, " ")
-
-	/*
-		// Security check; ensure we are not serving any files from wikidata/.git
-		// If so, toss them to the index, no hints given
-		if strings.Contains(*name, ".git") {
-			return false, errors.New("Unable to access given file")
-		}
 	*/
 
-	/*
-		// Directory without specified index
-		if strings.HasSuffix(*name, "/") {
-			*name = filepath.Join(*name, "index")
-		}
+	/* MOVED TO securityCheck()
+	// Security check; ensure we are not serving any files from wikidata/.git
+	// If so, toss them to the index, no hints given
+	if strings.Contains(*name, ".git") {
+		return false, errors.New("Unable to access given file")
+	}
 	*/
 
+	// Directory without specified index
+	if strings.HasSuffix(*name, "/") {
+		*name = filepath.Join(*name, "index")
+	}
+
+	/* MOVED TO securityCheck()
 	// Check that no one is trying to escape out of wikiDir, etc
 	// Very important to check it here, before trying to check if it exists
 	relErr := env.relativePathCheck(*name)
 	if relErr != nil {
 		return false, relErr
 	}
+	*/
 
 	// Build the full path
 
@@ -1794,6 +1796,19 @@ func (env *wikiEnv) listDir(user *auth.User, dir string) []gitDirList {
 	env.cache.m.RUnlock()
 
 	return list
+}
+
+func (env *wikiEnv) cleanName(name string) string {
+	// Rely on httptreemux's Clean function to clean up ../ and other potential path-escaping sequences;
+	//  stripping off the / so we can pass it along to git
+	name = httptreemux.Clean(name)
+	if strings.HasPrefix(name, "/") {
+		name = strings.TrimPrefix(name, "/")
+	}
+	// Remove trailing spaces
+	name = strings.Trim(name, " ")
+
+	return name
 }
 
 func router(env *wikiEnv) http.Handler {

@@ -916,6 +916,15 @@ func (env *wikiEnv) securityCheck(next http.Handler) http.Handler {
 			return
 		}
 
+		// Check that no one is trying to escape out of wikiDir, etc
+		// Very important to check it here, before trying to check if it exists
+		relErr := env.relativePathCheck(r.URL.EscapedPath())
+		if relErr != nil {
+			log.Println("securityCheck error:", relErr)
+			http.Error(w, "unable to access that", http.StatusUnauthorized)
+			return
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
