@@ -12,7 +12,7 @@ function build_css()
 
 function build_debian()
 {
-    podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:buster go build -buildmode=pie -v -o $APPNAME
+    podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:bullseye go build -buildmode=pie -v -o $APPNAME
 }
 
 function test_it() {
@@ -23,7 +23,7 @@ function test_it() {
 
 # Build Debian package inside a container
 function build_package() {
-    podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp debian:buster ./build-pkg.sh $DEBVERSION
+    podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp debian:bullseye ./build-pkg.sh $DEBVERSION
 }
 
 while [ "$1" != "" ]; do 
