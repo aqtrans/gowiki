@@ -1466,8 +1466,12 @@ func setPageTitle(frontmatterTitle, filename string) string {
 func (env *wikiEnv) buildCache() {
 	defer httputils.TimeTrack(time.Now(), "buildCache")
 
-	env.cache.m.Lock()
-	defer env.cache.m.Unlock()
+	var newCache wikiCache
+	newCache.Tags = make(map[string][]string)
+	newCache.Favs = make(map[string]struct{})
+
+	//env.cache.m.Lock()
+	//defer env.cache.m.Unlock()
 	/*
 		cache := new(wikiCache)
 		cache.Tags = make(map[string][]string)
@@ -1549,15 +1553,15 @@ func (env *wikiEnv) buildCache() {
 				// Replacing readFavs and readTags
 				if fm.Favorite {
 					//cache.Favs.LoadOrStore(file.Filename)
-					if _, ok := env.cache.Favs[file.Filename]; !ok {
+					if _, ok := newCache.Favs[file.Filename]; !ok {
 						log.Debugln("buildCache.favs: " + file.Filename + " is not already a favorite.")
-						env.cache.Favs[file.Filename] = struct{}{}
+						newCache.Favs[file.Filename] = struct{}{}
 					}
 				}
 				if fm.Tags != nil {
 					//cache.Tags.LoadOrStore(fm.Tags, file.Filename)
 					for _, tag := range fm.Tags {
-						env.cache.Tags[tag] = append(env.cache.Tags[tag], file.Filename)
+						newCache.Tags[tag] = append(newCache.Tags[tag], file.Filename)
 					}
 				}
 				/*
@@ -1577,10 +1581,10 @@ func (env *wikiEnv) buildCache() {
 				wps = append(wps, wp)
 			}
 		}
-		env.cache.SHA1 = env.headHash()
+		newCache.SHA1 = env.headHash()
 	}
 
-	env.cache.Cache = wps
+	newCache.Cache = wps
 
 	if env.cfg.CacheEnabled {
 		cacheFile, err := os.Create(filepath.Join(env.cfg.DataDir, "cache.gob"))
@@ -1591,7 +1595,7 @@ func (env *wikiEnv) buildCache() {
 			return
 		}
 		cacheEncoder := gob.NewEncoder(cacheFile)
-		err = cacheEncoder.Encode(env.cache)
+		err = cacheEncoder.Encode(&newCache)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"error": err,
@@ -1606,6 +1610,12 @@ func (env *wikiEnv) buildCache() {
 			return
 		}
 	}
+
+	// Update env.cache
+	env.cache.m.Lock()
+	defer env.cache.m.Unlock()
+	env.cache = &newCache
+
 }
 
 func (env *wikiEnv) loadCache() {
