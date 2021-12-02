@@ -240,12 +240,13 @@ type config struct {
 
 // Env wrapper to hold app-specific configs, to pass to handlers
 // cache is a pointer here since it's pretty large itself, and holds a mutex
+// pageWriteLock locks the entire repo upon wiki page saving
 type wikiEnv struct {
-	cfg       config
-	authState auth.State
-	cache     *wikiCache
-	templates map[string]*template.Template
-	mutex     sync.Mutex
+	cfg           config
+	authState     auth.State
+	cache         *wikiCache
+	templates     map[string]*template.Template
+	pageWriteLock sync.Mutex
 	favs
 	tags
 }
@@ -1253,7 +1254,7 @@ func (env *wikiEnv) loadWikiPage(r *http.Request, name string) wikiPage {
 }
 
 func (wiki *wiki) save(env *wikiEnv) error {
-	env.mutex.Lock()
+	env.pageWriteLock.Lock()
 	defer httputils.TimeTrack(time.Now(), "wiki.save()")
 
 	dir, filename := filepath.Split(wiki.Filename)
@@ -1266,7 +1267,7 @@ func (wiki *wiki) save(env *wikiEnv) error {
 		if _, err := os.Stat(dirpath); os.IsNotExist(err) {
 			err := os.MkdirAll(dirpath, 0755)
 			if err != nil {
-				env.mutex.Unlock()
+				env.pageWriteLock.Unlock()
 				return err
 			}
 		}
@@ -1281,7 +1282,7 @@ func (wiki *wiki) save(env *wikiEnv) error {
 	var err error
 	f, err = os.OpenFile(fullfilename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0666)
 	if err != nil {
-		env.mutex.Unlock()
+		env.pageWriteLock.Unlock()
 		return err
 	}
 
@@ -1290,43 +1291,43 @@ func (wiki *wiki) save(env *wikiEnv) error {
 
 	_, err = wb.WriteString("---\n")
 	if err != nil {
-		env.mutex.Unlock()
+		env.pageWriteLock.Unlock()
 		return err
 	}
 
 	yamlBuffer, err := yaml.Marshal(wiki.Frontmatter)
 	if err != nil {
-		env.mutex.Unlock()
+		env.pageWriteLock.Unlock()
 		return err
 	}
 
 	_, err = wb.Write(yamlBuffer)
 	if err != nil {
-		env.mutex.Unlock()
+		env.pageWriteLock.Unlock()
 		return err
 	}
 
 	_, err = wb.WriteString("---\n")
 	if err != nil {
-		env.mutex.Unlock()
+		env.pageWriteLock.Unlock()
 		return err
 	}
 
 	_, err = wb.Write(wiki.Content)
 	if err != nil {
-		env.mutex.Unlock()
+		env.pageWriteLock.Unlock()
 		return err
 	}
 
 	err = wb.Flush()
 	if err != nil {
-		env.mutex.Unlock()
+		env.pageWriteLock.Unlock()
 		return err
 	}
 
 	err = f.Close()
 	if err != nil {
-		env.mutex.Unlock()
+		env.pageWriteLock.Unlock()
 		return err
 	}
 
@@ -1353,19 +1354,19 @@ func (wiki *wiki) save(env *wikiEnv) error {
 
 	err = env.gitAddFilepath(gitfilename)
 	if err != nil {
-		env.mutex.Unlock()
+		env.pageWriteLock.Unlock()
 		return err
 	}
 
 	// FIXME: add a message box to edit page, check for it here
 	err = env.gitCommitEmpty()
 	if err != nil {
-		env.mutex.Unlock()
+		env.pageWriteLock.Unlock()
 		return err
 	}
 
 	log.Println(fullfilename + " has been saved.")
-	env.mutex.Unlock()
+	env.pageWriteLock.Unlock()
 
 	go env.refreshStuff()
 
@@ -1928,11 +1929,11 @@ func main() {
 	}
 
 	env := &wikiEnv{
-		cfg:       serverCfg,
-		authState: *auth.NewAuthState(filepath.Join(serverCfg.DataDir, "auth.db")),
-		templates: tmplInit(),
-		mutex:     sync.Mutex{},
-		cache:     new(wikiCache),
+		cfg:           serverCfg,
+		authState:     *auth.NewAuthState(filepath.Join(serverCfg.DataDir, "auth.db")),
+		templates:     tmplInit(),
+		pageWriteLock: sync.Mutex{},
+		cache:         new(wikiCache),
 	}
 	env.cache.Tags = make(map[string][]string)
 	env.cache.Favs = make(map[string]struct{})
