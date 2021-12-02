@@ -1646,7 +1646,9 @@ func (env *wikiEnv) loadCache() {
 			err = cacheDecoder.Decode(&env.cache)
 			//check(err)
 			if err != nil {
-				log.Println("Error loading cache. Rebuilding it.", err)
+				log.WithFields(logrus.Fields{
+					"error": err,
+				}).Errorln("Error loading cache. Rebuilding it.")
 				env.buildCache()
 			}
 			// Check the cached sha1 versus HEAD sha1, rebuild if they differ
@@ -1669,7 +1671,9 @@ func (env *wikiEnv) loadCache() {
 func (env *wikiEnv) headHash() string {
 	output, err := env.gitCommand("rev-parse", "HEAD").CombinedOutput()
 	if err != nil {
-		log.Println("Error retrieving SHA1 of wikidata:", err)
+		log.WithFields(logrus.Fields{
+			"error": err,
+		}).Errorln("Error retrieving SHA1 of wikidata")
 		return ""
 	}
 	return string(output)
@@ -1697,7 +1701,9 @@ func markdownPreview(w http.ResponseWriter, r *http.Request) {
 	var md mdPreviewJSON
 	err := dec.Decode(&md)
 	if err != nil {
-		log.Println("[markdownPreview] error decoding JSON:", err)
+		log.WithFields(logrus.Fields{
+			"error": err,
+		}).Errorln("error decoding JSON to Markdown")
 		w.Write([]byte(""))
 	}
 	w.Write([]byte(markdownRender([]byte(md.MD))))
@@ -1715,7 +1721,10 @@ func wikiRejected(fullPath string, wikiExists, isAdmin, isLoggedIn bool) bool {
 		// If err, reject, and log that error
 		f, err := os.Open(fullPath)
 		if err != nil {
-			log.Println("wikiRejected: Error reading", fullPath, err)
+			log.WithFields(logrus.Fields{
+				"full path": fullPath,
+				"error":     err,
+			}).Errorln("error reading full path for wikiRejected check")
 			return true
 		}
 		fm := readFront(f)
@@ -1945,7 +1954,9 @@ func main() {
 	if !env.gitIsEmpty() {
 		err := env.gitIsCleanStartup()
 		if err != nil {
-			log.Fatalln("There was an issue with the git repo:", err)
+			log.WithFields(logrus.Fields{
+				"error": err,
+			}).Fatalln("There was an issue with the git repo")
 		}
 	}
 
@@ -1977,10 +1988,13 @@ func main() {
 	}
 
 	go func() {
-		// service connections
-		if err := srv.ListenAndServe(); err != nil {
-			log.Printf("listen: %s\n", err)
+		err := srv.ListenAndServe()
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"error": err,
+			}).Fatalln("error starting HTTP server")
 		}
+		log.Println("Listening on 127.0.0.1:" + serverCfg.Port)
 	}()
 
 	<-stopChan // wait for SIGINT
