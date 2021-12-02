@@ -12,7 +12,7 @@ function build_css()
 
 function build_debian()
 {
-    podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:bullseye go build -buildmode=pie -v -o $APPNAME
+    podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:bullseye go build -buildmode=pie -v -ldflags "-X main.appVersion=$DEBVERSION" -o $APPNAME
 }
 
 function test_it() {
@@ -26,6 +26,11 @@ function build_package() {
     podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp debian:bullseye ./build-pkg.sh $DEBVERSION
 }
 
+# Build plain binary on host system
+function build_binary() {
+    go build -buildmode=pie -ldflags "-X main.appVersion=$DEBVERSION" -o $APPNAME
+}
+
 while [ "$1" != "" ]; do 
     case $1 in
         test)
@@ -35,7 +40,7 @@ while [ "$1" != "" ]; do
         run)
             test_it
             build_css
-            go run -race .
+            go run -ldflags "-X main.appVersion=$DEBVERSION" -race .
             ;;
         css)
             build_css
@@ -44,14 +49,14 @@ while [ "$1" != "" ]; do
         build)
             test_it
             build_css
-            go build -buildmode=pie -o $APPNAME
+            build_binary
             exit
             ;;
         pkg)
             if [ "$(which dch)" != "" ]; then 
                 test_it
                 build_css
-                go build -buildmode=pie -o $APPNAME
+                build_binary
                 ./build-pkg.sh $DEBVERSION
             else
                 echo "dch not found. building inside container."

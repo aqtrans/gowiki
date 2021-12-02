@@ -156,6 +156,8 @@ var (
 	errGitBehind   = errors.New("wiki git repo is behind; Need to pull")
 	errGitDiverged = errors.New("wiki git repo has diverged; Need to intervene manually")
 	errIsDir       = errors.New("file is a directory")
+	// app version string to be embedded when built
+	appVersion string
 )
 
 type renderer struct {

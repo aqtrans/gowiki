@@ -295,11 +295,17 @@ func (env *wikiEnv) adminMainHandler(w http.ResponseWriter, r *http.Request) {
 	p := make(chan page, 1)
 	go env.loadPage(r, p)
 
-	gp := &genPage{
+	data := struct {
+		page
+		Title      string
+		AppVersion string
+	}{
 		<-p,
 		title,
+		appVersion,
 	}
-	renderTemplate(r.Context(), env, w, "admin_main.tmpl", gp)
+
+	renderTemplate(r.Context(), env, w, "admin_main.tmpl", data)
 }
 
 func (env *wikiEnv) gitCheckinHandler(w http.ResponseWriter, r *http.Request) {
