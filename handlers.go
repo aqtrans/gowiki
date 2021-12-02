@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path"
@@ -16,6 +15,8 @@ import (
 	"git.jba.io/go/httputils"
 	"github.com/dimfeld/httptreemux"
 	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
+	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +39,10 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := p.Wiki.save(env)
 	if err != nil {
-		log.Println("error saving wiki page:", name, err)
+		log.WithFields(logrus.Fields{
+			"page":  name,
+			"error": err,
+		}).Errorln("error saving wiki page")
 		http.Error(w, "error saving wiki page. check logs for more information", http.StatusInternalServerError)
 		return
 	}
@@ -56,13 +60,19 @@ func (env *wikiEnv) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err := env.gitRmFilepath(name)
 	if err != nil {
-		log.Println("Error deleting file from git repo,", name, err)
+		log.WithFields(logrus.Fields{
+			"page":  name,
+			"error": err,
+		}).Errorln("error deleting file from git repo")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 
 	err = env.gitCommitWithMessage(name + " has been removed from git repo.")
 	if err != nil {
-		log.Println("Error commiting to git repo,", name, err)
+		log.WithFields(logrus.Fields{
+			"page":  name,
+			"error": err,
+		}).Errorln("error commiting to git repo,")
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 
@@ -500,8 +510,14 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		log.Println("Error parsing form ", err)
+		log.WithFields(logrus.Fields{
+			"page":  name,
+			"error": err,
+		}).Errorln("error parsing request form")
+		http.Error(w, "error parsing form. check logs for more information", http.StatusInternalServerError)
+		return
 	}
+
 	content := r.FormValue("editor")
 
 	/*
@@ -551,7 +567,10 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = thewiki.save(env)
 	if err != nil {
-		log.Println("error saving wiki page:", name, err)
+		log.WithFields(logrus.Fields{
+			"page":  name,
+			"error": err,
+		}).Errorln("error saving wiki page")
 		http.Error(w, "error saving wiki page. check logs for more information", http.StatusInternalServerError)
 		return
 	}
@@ -808,7 +827,9 @@ func (env *wikiEnv) recentHandler(w http.ResponseWriter, r *http.Request) {
 
 	gh, err := env.gitHistory()
 	if err != nil {
-		log.Println("Error getting git history:", err)
+		log.WithFields(logrus.Fields{
+			"error": err,
+		}).Errorln("error getting git history")
 		http.Error(w, "Unable to fetch git history", 500)
 		return
 	}
