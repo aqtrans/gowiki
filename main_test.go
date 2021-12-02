@@ -119,10 +119,10 @@ func testEnv(authState *auth.State) *wikiEnv {
 			Tags: make(map[string][]string),
 			Favs: make(map[string]struct{}),
 		},
-		templates: tmplInit(),
-		mutex:     sync.Mutex{},
-		tags:      newTagsMap(),
-		favs:      newFavsMap(),
+		templates:     tmplInit(),
+		pageWriteLock: sync.Mutex{},
+		tags:          newTagsMap(),
+		favs:          newFavsMap(),
 	}
 }
 
@@ -1042,10 +1042,10 @@ func BenchmarkWholeWiki(b *testing.B) {
 			Tags: make(map[string][]string),
 			Favs: make(map[string]struct{}),
 		},
-		templates: tmplInit(),
-		mutex:     sync.Mutex{},
-		tags:      newTagsMap(),
-		favs:      newFavsMap(),
+		templates:     tmplInit(),
+		pageWriteLock: sync.Mutex{},
+		tags:          newTagsMap(),
+		favs:          newFavsMap(),
 	}
 	defer os.Remove(tmpdb)
 
