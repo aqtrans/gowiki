@@ -1366,6 +1366,23 @@ func (wiki *wiki) save(env *wikiEnv) error {
 
 	log.Println(fullfilename + " has been saved.")
 	env.mutex.Unlock()
+
+	go env.refreshStuff()
+
+	// If PushOnSave is enabled, push to remote repo after save
+	if env.cfg.PushOnSave {
+		err := env.gitPush()
+		if err != nil {
+			//panic(err)
+			log.Println("error pushing to remote git repo:", err)
+			/*env.authState.SetFlash("Wiki page successfully saved, but error pushing to remote git repo.", w)
+			http.Redirect(w, r, "/"+name, http.StatusSeeOther)
+			log.Println(name + " page saved!")*/
+
+			return err
+		}
+	}
+
 	return err
 
 }

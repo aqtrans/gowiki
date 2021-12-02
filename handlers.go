@@ -38,7 +38,9 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 
 	err := p.Wiki.save(env)
 	if err != nil {
-		log.Println(err)
+		log.Println("error saving wiki page:", name, err)
+		http.Error(w, "error saving wiki page. check logs for more information", http.StatusInternalServerError)
+		return
 	}
 
 	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
@@ -549,25 +551,10 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = thewiki.save(env)
 	if err != nil {
-		panic(err)
+		log.Println("error saving wiki page:", name, err)
+		http.Error(w, "error saving wiki page. check logs for more information", http.StatusInternalServerError)
+		return
 	}
-
-	// If PushOnSave is enabled, push to remote repo after save
-	if env.cfg.PushOnSave {
-		err := env.gitPush()
-		if err != nil {
-			//panic(err)
-			log.Println("Error pushing to remote git repo:", err)
-			env.authState.SetFlash("Wiki page successfully saved, but error pushing to remote git repo.", w)
-			http.Redirect(w, r, "/"+name, http.StatusSeeOther)
-			log.Println(name + " page saved!")
-
-			go env.refreshStuff()
-			return
-		}
-	}
-
-	go env.refreshStuff()
 
 	env.authState.SetFlash("Wiki page successfully saved.", w)
 	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
