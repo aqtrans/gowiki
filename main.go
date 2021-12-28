@@ -236,7 +236,6 @@ type config struct {
 	PushOnSave     bool   `yaml:"PushOnSave,omitempty"`
 	InitWikiRepo   bool   `yaml:"InitWikiRepo,omitempty"`
 	CacheEnabled   bool   `yaml:"CacheEnabled,omitempty"`
-	CSRF           bool   `yaml:"CSRF,omitempty"`
 	DebugMode      bool   `yaml:"DebugMode,omitempty"`
 }
 
@@ -1372,8 +1371,8 @@ func (wiki *wiki) save(env *wikiEnv) error {
 
 	go env.refreshStuff()
 
-	// If PushOnSave is enabled, push to remote repo after save
-	if env.cfg.PushOnSave {
+	// If PushOnSave is enabled and RemoteGitRepo is configured, push to remote repo after save
+	if env.cfg.PushOnSave && (env.cfg.RemoteGitRepo != "") {
 		err := env.gitPush()
 		if err != nil {
 			//panic(err)
@@ -1840,7 +1839,8 @@ func router(env *wikiEnv) http.Handler {
 	// HTTP stuff from here on out
 	//s := alice.New(httputils.Timer, httputils.Logger, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
 	csrfSecure := true
-	if debugMode {
+	if debugMode || env.cfg.DebugMode {
+		log.Infoln("CSRF TLS protection disabled")
 		csrfSecure = false
 	}
 	s := alice.New(env.timer, env.authState.CSRFProtect(csrfSecure), env.securityCheck)
