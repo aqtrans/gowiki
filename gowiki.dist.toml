@@ -1,13 +1,41 @@
-#GitPath = /usr/bin/git
-#GitCommitEmail = "wiki@example.com"
-#GitCommitName = "Golang Wiki"
-Domain = "wiki.example.com"
-Port = "8000"
+# Define a custom path to the Git binary. 
+#  If blank, it will try looking in $PATH 
+#GitPath = "/usr/bin/git"
+
+# Define the email address associated with all commits from the wiki
+GitCommitEmail = "wiki@example.lan"
+
+# Define the Name associated with all commits from the wiki
+GitCommitName = "Gowiki" 
+
+# Where to store the cache and user database
 DataDir = "/var/lib/gowiki/"
-WikiDir = "/var/lib/gowiki/wikidata/"
-RemoteGitRepo = ""
-PushOnSave = true
-DevMode = false
-InitWikiRepo = false
+
+# Where should the wiki git repository be stored
+## If blank, it will be set to '$DataDir/wikidata'
+WikiDir = "/var/lib/gowiki/wikidata/" 
+
+# TCP port to listen on
+Port = "8001"    
+
+# Domain name wiki will be served on. Not really used yet.
+#Domain = "wiki.example.lan"
+
+# Optional remote git repository to sync wikidata with
+#RemoteGitRepo = "git@git.example.lan:user/gowiki-data.git"
+
+# If a remote git repository is setup, it can push to the repo when pages are saved
+#PushOnSave = true
+
+# When enabled, on startup we'll try to run 'git init' within $WikiDir if it is empty
+InitWikiRepo = true
+
+# When enabled, a cache of all page names, favorite pages, and tags will be made to speed up page loading
 CacheEnabled = true
-#RavenDSN = "sentry.io/"
+
+# Enable CSRF tokens for extra security. 
+## Disable when not serving the wiki over SSL/TLS
+CSRF = true
+
+# Enable debugging to increase logging and disable CSRF
+DebugMode = true
