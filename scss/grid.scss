@@ -140,7 +140,9 @@ body > nav {
         list-style-type: none;
     }
     fieldset {
-        margin: 0.5rem;
+        margin: 0.5rem; 
+        min-width: 0;
+        overflow: hidden;
     }
     
 }
