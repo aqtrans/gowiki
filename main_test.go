@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"testing"
 
@@ -21,9 +22,10 @@ const UserKey key = 1
 const RoleKey key = 2
 
 var (
-	server    *httptest.Server
-	reader    io.Reader //Ignore this for now
-	serverURL string
+	server      *httptest.Server
+	reader      io.Reader //Ignore this for now
+	serverURL   string
+	tempDataDir = tempdir()
 	//m         *mux.Router
 	//req       *http.Request
 	//rr        *httptest.ResponseRecorder
@@ -88,6 +90,117 @@ func tempfile() string {
 	return f.Name()
 }
 
+// tempdir creates a temporary directory for use as DataDir and WikiDir
+func tempdir() string {
+	tempDataDir, err := ioutil.TempDir("", "gowikidata-")
+	if err != nil {
+		panic(err)
+	}
+	return tempDataDir
+}
+
+// setup a wiki dir for testing. just add a few random commits so various functions work
+func initTestWikiDir(e *wikiEnv) {
+
+	// index page
+	indexPage := &wiki{
+		Title:    "index",
+		Filename: "index",
+		Frontmatter: frontmatter{
+			Title:      "index",
+			Tags:       []string{"yeah"},
+			Favorite:   false,
+			Permission: publicPermission,
+		},
+		Content: []byte("This is the index page!"),
+	}
+
+	err := indexPage.save(e)
+	if err != nil {
+		panic(err)
+	}
+
+	// page index page
+	dirIndexPage := &wiki{
+		Title:    "omg/index",
+		Filename: "omg/index",
+		Frontmatter: frontmatter{
+			Title:      "index",
+			Tags:       []string{"index", "omg"},
+			Favorite:   false,
+			Permission: publicPermission,
+		},
+		Content: []byte("This is a directory index page!"),
+	}
+
+	err = dirIndexPage.save(e)
+	if err != nil {
+		panic(err)
+	}
+
+	// private page
+	privatePage := &wiki{
+		Title:    "private",
+		Filename: "private",
+		Frontmatter: frontmatter{
+			Title:      "private info",
+			Tags:       []string{"secrets"},
+			Favorite:   false,
+			Permission: privatePermission,
+		},
+		Content: []byte("This is a private page!"),
+	}
+
+	err = privatePage.save(e)
+	if err != nil {
+		panic(err)
+	}
+
+	// admin page
+	adminPage := &wiki{
+		Title:    "admin",
+		Filename: "admin-only",
+		Frontmatter: frontmatter{
+			Title:      "admin only",
+			Tags:       []string{"admins", "super secrets"},
+			Favorite:   false,
+			Permission: adminPermission,
+		},
+		Content: []byte("This is a very private, admin only page!"),
+	}
+
+	err = adminPage.save(e)
+	if err != nil {
+		panic(err)
+	}
+
+	randContent, err := httputils.RandKey(32)
+	if err != nil {
+		panic(err)
+	}
+	randTitle, err := httputils.RandKey(8)
+	if err != nil {
+		panic(err)
+	}
+	// another page
+	anotherPage := &wiki{
+		Title:    randTitle,
+		Filename: randTitle,
+		Frontmatter: frontmatter{
+			Title:      randTitle,
+			Tags:       []string{"yeah", "omg"},
+			Favorite:   false,
+			Permission: "public",
+		},
+		Content: []byte(randContent),
+	}
+
+	err = anotherPage.save(e)
+	if err != nil {
+		panic(err)
+	}
+}
+
 /*
 func newState() *auth.AuthState {
 	authDB := mustOpenDB()
@@ -103,16 +216,16 @@ func newState() *auth.AuthState {
 func testEnv(authState *auth.State) *wikiEnv {
 	gitPath, err := exec.LookPath("git")
 	if err != nil {
-                log.Println(err, gitPath)
-                //log.Fatalln(exec.Command("which","git").Run())
+		log.Println(err, gitPath)
+		//log.Fatalln(exec.Command("which","git").Run())
 		log.Fatalln("Git executable was not found in PATH. Git must be installed.")
 	}
-        //gitPath := ""
+	//gitPath := ""
 
 	return &wikiEnv{
 		cfg: config{
-			DataDir:        "./tests/data/",
-			WikiDir:        "./tests/data/wikidata/",
+			DataDir:        tempDataDir,
+			WikiDir:        filepath.Join(tempDataDir, "wikidata"),
 			GitPath:        gitPath,
 			CacheEnabled:   true,
 			GitCommitEmail: "test@test.com",
@@ -161,6 +274,8 @@ func TestWikiInit(t *testing.T) {
 
 	err := initWikiDir(e.cfg)
 	checkT(err, t)
+
+	initTestWikiDir(e)
 }
 
 // TestNewWikiPage tests if viewing a non-existent article, as a logged in user, properly redirects to /edit/page_name with a 404
@@ -447,7 +562,7 @@ func TestListPage(t *testing.T) {
 	e.authState.NewAdmin("admin", "admin")
 
 	e.buildCache()
-	err := os.Remove("./tests/data/cache.gob")
+	err := os.Remove(filepath.Join(e.cfg.DataDir, "cache.gob"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -514,7 +629,7 @@ func TestPrivatePageNotLoggedIn(t *testing.T) {
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
-	req, err := http.NewRequest("GET", "/sites.page", nil)
+	req, err := http.NewRequest("GET", "/private", nil)
 	checkT(err, t)
 
 	//router := httptreemux.NewContextMux()
@@ -523,7 +638,7 @@ func TestPrivatePageNotLoggedIn(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	rr := httptest.NewRecorder()
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, wikiNameKey, "sites.page")
+	ctx = context.WithValue(ctx, wikiNameKey, "private")
 	ctx = context.WithValue(ctx, wikiExistsKey, true)
 	req = req.WithContext(ctx)
 
@@ -557,7 +672,7 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
-	r, err := http.NewRequest("GET", "/sites.page", nil)
+	r, err := http.NewRequest("GET", "/private", nil)
 	checkT(err, t)
 
 	//router := httptreemux.NewContextMux()
@@ -570,7 +685,7 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, wikiNameKey, "sites.page")
+	ctx = context.WithValue(ctx, wikiNameKey, "private")
 	ctx = context.WithValue(ctx, wikiExistsKey, true)
 	/*
 		params := make(map[string]string)
@@ -754,7 +869,7 @@ func TestWikiDirIndex(t *testing.T) {
 
 	e.authState.NewAdmin("admin", "admin")
 
-	r, err := http.NewRequest("GET", "/work", nil)
+	r, err := http.NewRequest("GET", "/omg", nil)
 	checkT(err, t)
 
 	w := httptest.NewRecorder()
@@ -769,7 +884,7 @@ func TestWikiDirIndex(t *testing.T) {
 			status, http.StatusFound)
 	}
 
-	expected := `/work/index`
+	expected := `/omg/index`
 	if w.Header().Get("Location") != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			w.Header().Get("Location"), expected)
@@ -788,7 +903,7 @@ func TestCache(t *testing.T) {
 	if e.cache == nil {
 		t.Error("cache is empty after loadCache()")
 	}
-	err := os.Remove("./tests/data/cache.gob")
+	err := os.Remove(filepath.Join(e.cfg.DataDir, "cache.gob"))
 	if err != nil {
 		t.Error(err)
 	}
