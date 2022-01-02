@@ -1638,16 +1638,18 @@ func (env *wikiEnv) buildCache() {
 }
 
 func (env *wikiEnv) loadCache() {
-	env.cache.m.Lock()
-	defer env.cache.m.Unlock()
 
 	if env.cfg.CacheEnabled {
+
 		cacheFile, err := os.Open(filepath.Join(env.cfg.DataDir, "cache.gob"))
 		defer cacheFile.Close()
 		if err == nil {
 			log.Println("Loading cache from gob.")
 			cacheDecoder := gob.NewDecoder(cacheFile)
+
+			env.cache.m.Lock()
 			err = cacheDecoder.Decode(&env.cache)
+			env.cache.m.Unlock()
 			//check(err)
 			if err != nil {
 				log.WithFields(logrus.Fields{
