@@ -1,18 +1,18 @@
 { stdenv, lib, buildGoModule, git, makeWrapper, substituteAll }:
 
 buildGoModule rec {
-  pname = "gowiki";
-  version = "0.0.1";
+  name = "gowiki";
+  #version = "0.0.1";
 
-  src = ./.;
+  src = ../.;
 
   nativeBuildInputs = [ makeWrapper ];
 
   buildInputs = [ git ];
 
-  vendorSha256 = null;
+  vendorSha256 = "0hbx4z3i33sprs3n5j86q9sahxq1zvi46mic4nj98wyhmhhqsmxa";
 
-  runVend = true;
+  runVend = false;
 
   deleteVendor = false;
 
@@ -27,7 +27,7 @@ buildGoModule rec {
     description = "Simple wiki using Git underneath, written in Go";
     homepage = "https://github.com/aqtrans/gowiki";
     license = licenses.mit;
-    maintainers = with maintainers; [ aqtrans ];
+    maintainers = with maintainers; [ "aqtrans" ];
     platforms = platforms.linux;
   };
 }
