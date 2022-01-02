@@ -1638,6 +1638,9 @@ func (env *wikiEnv) buildCache() {
 }
 
 func (env *wikiEnv) loadCache() {
+	env.cache.m.Lock()
+	defer env.cache.m.Unlock()
+
 	if env.cfg.CacheEnabled {
 		cacheFile, err := os.Open(filepath.Join(env.cfg.DataDir, "cache.gob"))
 		defer cacheFile.Close()
