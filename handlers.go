@@ -113,8 +113,9 @@ func (env *wikiEnv) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	var fileList string
 
-	env.cache.m.RLock()
-	for _, v := range env.cache.Cache {
+	theCache := env.loadCache()
+
+	for _, v := range theCache.Cache {
 		if env.authState.IsLoggedIn(r) {
 			if v.Permission == privatePermission {
 				//log.Println("priv", v.Filename)
@@ -133,7 +134,6 @@ func (env *wikiEnv) searchHandler(w http.ResponseWriter, r *http.Request) {
 			fileList = fileList + " " + `"` + v.Filename + `"`
 		}
 	}
-	env.cache.m.RUnlock()
 
 	//log.Println(fileList)
 
@@ -655,9 +655,11 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	// Build a list of filenames to be fed to closestmatch, for similarity matching
 	var filelist []string
 	user := env.authState.GetUserState(r)
-	env.cache.m.RLock()
+
+	theCache := env.loadCache()
+
 	// TODO: Replace this with a call to listDir() somehow
-	for _, v := range env.cache.Cache {
+	for _, v := range theCache.Cache {
 		if v.Permission == publicPermission {
 			//log.Println("pubic", v.Filename)
 			filelist = append(filelist, v.Filename)
@@ -675,7 +677,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	env.cache.m.RUnlock()
+
 	// Check for similar filenames
 	/*
 		var similarPages []string
@@ -891,9 +893,9 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 
 	user := env.authState.GetUserState(r)
 
-	env.cache.m.RLock()
+	theCache := env.loadCache()
 
-	for _, v := range env.cache.Cache {
+	for _, v := range theCache.Cache {
 		if v.Permission == publicPermission {
 			//log.Println("pubic", v.Filename)
 			list = append(list, v)
@@ -911,8 +913,6 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-
-	env.cache.m.RUnlock()
 
 	l := listPage{
 		page:  <-p,
@@ -1102,9 +1102,9 @@ func (env *wikiEnv) listDirHandler(dir string, w http.ResponseWriter, r *http.Re
 
 	user := env.authState.GetUserState(r)
 
-	env.cache.m.RLock()
+	theCache := env.loadCache()
 
-	for _, v := range env.cache.Cache {
+	for _, v := range theCache.Cache {
 		if filepath.Dir(v.Filename) == dir {
 			if v.Permission == publicPermission {
 				//log.Println("pubic", v.Filename)
@@ -1124,8 +1124,6 @@ func (env *wikiEnv) listDirHandler(dir string, w http.ResponseWriter, r *http.Re
 			}
 		}
 	}
-
-	env.cache.m.RUnlock()
 
 	l := listPage{
 		page:  <-p,

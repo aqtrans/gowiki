@@ -245,15 +245,15 @@ type config struct {
 type wikiEnv struct {
 	cfg           config
 	authState     auth.State
-	cache         *wikiCache
+	cache         wikiCache
 	templates     map[string]*template.Template
 	pageWriteLock sync.Mutex
+	cacheLock     sync.Mutex
 	favs
 	tags
 }
 
 type wikiCache struct {
-	m     sync.RWMutex
 	SHA1  string
 	Cache []gitDirList
 	Tags  map[string][]string
@@ -1482,7 +1482,7 @@ func setPageTitle(frontmatterTitle, filename string) string {
 	return onlyFileName
 }
 
-func (env *wikiEnv) buildCache() {
+func (env *wikiEnv) buildCache() wikiCache {
 	defer httputils.TimeTrack(time.Now(), "buildCache")
 
 	var newCache wikiCache
@@ -1505,7 +1505,7 @@ func (env *wikiEnv) buildCache() {
 			log.WithFields(logrus.Fields{
 				"error": err,
 			}).Errorln("Error loading file list from git")
-			return
+			return wikiCache{}
 		}
 
 		for _, file := range fileList {
@@ -1547,7 +1547,7 @@ func (env *wikiEnv) buildCache() {
 						"error": err,
 						"file":  f.Name(),
 					}).Errorln("Error opening file")
-					return
+					return wikiCache{}
 				}
 
 				fm := readFront(f)
@@ -1611,7 +1611,7 @@ func (env *wikiEnv) buildCache() {
 			log.WithFields(logrus.Fields{
 				"error": err,
 			}).Errorln("Error creating cache file")
-			return
+			return wikiCache{}
 		}
 		cacheEncoder := gob.NewEncoder(cacheFile)
 		err = cacheEncoder.Encode(&newCache)
@@ -1619,25 +1619,31 @@ func (env *wikiEnv) buildCache() {
 			log.WithFields(logrus.Fields{
 				"error": err,
 			}).Errorln("Error encoding cache in gob")
-			return
+			return wikiCache{}
 		}
 		err = cacheFile.Close()
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"error": err,
 			}).Errorln("Error closing cache file")
-			return
+			return wikiCache{}
 		}
 	}
 
-	// Update env.cache
-	env.cache.m.Lock()
-	defer env.cache.m.Unlock()
-	env.cache = &newCache
-
+	/*
+		// Update env.cache
+		env.cache.m.Lock()
+		defer env.cache.m.Unlock()
+		env.cache = &newCache
+	*/
+	return newCache
 }
 
-func (env *wikiEnv) loadCache() {
+func (env *wikiEnv) loadCache() wikiCache {
+
+	//defer env.wg.Done()
+
+	var newCache wikiCache
 
 	if env.cfg.CacheEnabled {
 
@@ -1647,31 +1653,32 @@ func (env *wikiEnv) loadCache() {
 			log.Println("Loading cache from gob.")
 			cacheDecoder := gob.NewDecoder(cacheFile)
 
-			env.cache.m.Lock()
-			err = cacheDecoder.Decode(&env.cache)
-			env.cache.m.Unlock()
+			err = cacheDecoder.Decode(&newCache)
 			//check(err)
 			if err != nil {
 				log.WithFields(logrus.Fields{
 					"error": err,
 				}).Errorln("Error loading cache. Rebuilding it.")
-				env.buildCache()
+
+				newCache = env.buildCache()
 			}
 			// Check the cached sha1 versus HEAD sha1, rebuild if they differ
-			if !env.gitIsEmpty() && env.cache.SHA1 != env.headHash() {
+			if !env.gitIsEmpty() && newCache.SHA1 != env.headHash() {
 				log.Println("Cache SHA1s do not match. Rebuilding cache.")
-				env.buildCache()
+				newCache = env.buildCache()
 			}
 		}
 		// If cache does not exist, build it
 		if os.IsNotExist(err) {
 			log.Println("Cache does not exist, building it...")
-			env.buildCache()
+			newCache = env.buildCache()
 		}
 	} else {
 		log.Println("Building cache...")
-		env.buildCache()
+		newCache = env.buildCache()
 	}
+
+	return newCache
 }
 
 func (env *wikiEnv) headHash() string {
@@ -1687,15 +1694,18 @@ func (env *wikiEnv) headHash() string {
 
 // This should be all the stuff we need to be refreshed on startup and when pages are saved
 func (env *wikiEnv) refreshStuff() {
-	env.loadCache()
-	env.cache.m.RLock()
+
+	env.cacheLock.Lock()
+	env.cache = env.loadCache()
+
 	env.favs.Lock()
 	env.favs.List = env.cache.Favs
 	env.favs.Unlock()
 	env.tags.Lock()
 	env.tags.List = env.cache.Tags
 	env.tags.Unlock()
-	env.cache.m.RUnlock()
+
+	env.cacheLock.Unlock()
 }
 
 type mdPreviewJSON struct {
@@ -1813,8 +1823,9 @@ func (env *wikiEnv) initialSignup(next http.Handler) http.Handler {
 func (env *wikiEnv) listDir(user *auth.User, dir string) []gitDirList {
 	var list []gitDirList
 
-	env.cache.m.RLock()
-	for _, v := range env.cache.Cache {
+	theCache := env.loadCache()
+
+	for _, v := range theCache.Cache {
 		if filepath.Dir(v.Filename) == dir {
 			if v.Permission == publicPermission {
 				//log.Println("pubic", v.Filename)
@@ -1834,7 +1845,6 @@ func (env *wikiEnv) listDir(user *auth.User, dir string) []gitDirList {
 			}
 		}
 	}
-	env.cache.m.RUnlock()
 
 	return list
 }
@@ -1949,11 +1959,13 @@ func main() {
 		authState:     *auth.NewAuthState(filepath.Join(serverCfg.DataDir, "auth.db")),
 		templates:     tmplInit(),
 		pageWriteLock: sync.Mutex{},
-		cache:         new(wikiCache),
+		cache:         wikiCache{},
 	}
 	env.cache.Tags = make(map[string][]string)
 	env.cache.Favs = make(map[string]struct{})
-	env.loadCache()
+
+	env.cache = env.loadCache()
+
 	env.favs.List = env.cache.Favs
 	env.tags.List = env.cache.Tags
 

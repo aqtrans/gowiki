@@ -232,7 +232,7 @@ func testEnv(authState *auth.State) *wikiEnv {
 			GitCommitName:  "gowiki-tests",
 		},
 		authState: *authState,
-		cache: &wikiCache{
+		cache: wikiCache{
 			Tags: make(map[string][]string),
 			Favs: make(map[string]struct{}),
 		},
@@ -714,8 +714,9 @@ func TestSearchPage(t *testing.T) {
 	//err := e.gitPull()
 	//checkT(err, t)
 
-	e.buildCache()
-	if e.cache == nil {
+	e.cache = e.loadCache()
+
+	if &e.cache == nil {
 		t.Error("cache is empty")
 	}
 
@@ -762,7 +763,7 @@ func TestDotGit(t *testing.T) {
 	//checkT(err, t)
 
 	e.buildCache()
-	if e.cache == nil {
+	if &e.cache == nil {
 		t.Error("cache is empty")
 	}
 
@@ -802,8 +803,9 @@ func TestWikiDirEscape(t *testing.T) {
 	//err := e.gitPull()
 	//checkT(err, t)
 
-	e.buildCache()
-	if e.cache == nil {
+	e.cache = e.loadCache()
+
+	if &e.cache == nil {
 		t.Error("cache is empty")
 	}
 
@@ -895,12 +897,14 @@ func TestCache(t *testing.T) {
 	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
 
-	e.buildCache()
-	if e.cache == nil {
+	theCache := e.loadCache()
+
+	if &theCache == nil {
 		t.Error("cache is empty")
 	}
-	e.loadCache()
-	if e.cache == nil {
+
+	theCache2 := e.loadCache()
+	if &theCache2 == nil {
 		t.Error("cache is empty after loadCache()")
 	}
 	err := os.Remove(filepath.Join(e.cfg.DataDir, "cache.gob"))
@@ -1157,7 +1161,7 @@ func BenchmarkWholeWiki(b *testing.B) {
 	authState := auth.NewAuthState(tmpdb)
 	env := &wikiEnv{
 		authState: *authState,
-		cache: &wikiCache{
+		cache: wikiCache{
 			Tags: make(map[string][]string),
 			Favs: make(map[string]struct{}),
 		},
