@@ -185,7 +185,7 @@ func initTestWikiDir(e *wikiEnv) {
 	// another page
 	anotherPage := &wiki{
 		Title:    randTitle,
-		Filename: randTitle,
+		Filename: "random",
 		Frontmatter: frontmatter{
 			Title:      randTitle,
 			Tags:       []string{"yeah", "omg"},
