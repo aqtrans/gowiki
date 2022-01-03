@@ -1369,7 +1369,7 @@ func (wiki *wiki) save(env *wikiEnv) error {
 	log.Println(fullfilename + " has been saved.")
 	env.pageWriteLock.Unlock()
 
-	go env.refreshStuff()
+	//go env.refreshStuff()
 
 	// If PushOnSave is enabled and RemoteGitRepo is configured, push to remote repo after save
 	if env.cfg.PushOnSave && (env.cfg.RemoteGitRepo != "") {
@@ -1636,6 +1636,7 @@ func (env *wikiEnv) buildCache() wikiCache {
 		defer env.cache.m.Unlock()
 		env.cache = &newCache
 	*/
+	log.Println("Cache built.")
 	return newCache
 }
 
@@ -1692,18 +1693,15 @@ func (env *wikiEnv) loadCache() wikiCache {
 		}
 
 		// Update fav and tag lists
-
 		env.favs.Lock()
-		env.cacheLock.Lock()
-		env.favs.List = env.cache.Favs
-		env.cacheLock.Unlock()
+		env.favs.List = newCache.Favs
 		env.favs.Unlock()
+
 		env.tags.Lock()
-		env.cacheLock.Lock()
-		env.tags.List = env.cache.Tags
-		env.cacheLock.Unlock()
+		env.tags.List = newCache.Tags
 		env.tags.Unlock()
 
+		// Update cache
 		env.cacheLock.Lock()
 		env.cache = newCache
 		env.cacheLock.Unlock()
@@ -1721,13 +1719,6 @@ func (env *wikiEnv) headHash() string {
 		return ""
 	}
 	return string(output)
-}
-
-// This should be all the stuff we need to be refreshed on startup and when pages are saved
-func (env *wikiEnv) refreshStuff() {
-
-	go env.loadCache()
-
 }
 
 type mdPreviewJSON struct {
