@@ -1641,44 +1641,75 @@ func (env *wikiEnv) buildCache() wikiCache {
 
 func (env *wikiEnv) loadCache() wikiCache {
 
-	//defer env.wg.Done()
-
-	var newCache wikiCache
-
-	if env.cfg.CacheEnabled {
-
-		cacheFile, err := os.Open(filepath.Join(env.cfg.DataDir, "cache.gob"))
-		defer cacheFile.Close()
-		if err == nil {
-			log.Println("Loading cache from gob.")
-			cacheDecoder := gob.NewDecoder(cacheFile)
-
-			err = cacheDecoder.Decode(&newCache)
-			//check(err)
-			if err != nil {
-				log.WithFields(logrus.Fields{
-					"error": err,
-				}).Errorln("Error loading cache. Rebuilding it.")
-
-				newCache = env.buildCache()
-			}
-			// Check the cached sha1 versus HEAD sha1, rebuild if they differ
-			if !env.gitIsEmpty() && newCache.SHA1 != env.headHash() {
-				log.Println("Cache SHA1s do not match. Rebuilding cache.")
-				newCache = env.buildCache()
-			}
-		}
-		// If cache does not exist, build it
-		if os.IsNotExist(err) {
-			log.Println("Cache does not exist, building it...")
-			newCache = env.buildCache()
-		}
-	} else {
-		log.Println("Building cache...")
-		newCache = env.buildCache()
+	env.cacheLock.Lock()
+	defer env.cacheLock.Unlock()
+	// If cache is blank, definitely build it and wait
+	if env.cache.Cache == nil {
+		env.cache = env.buildCache()
+		return env.cache
+	}
+	// Check if we can just return the cache in memory
+	if env.cache.SHA1 == env.headHash() {
+		return env.cache
 	}
 
-	return newCache
+	// Try to build new cache in the background. Return current cache for now
+	go func() {
+
+		var newCache wikiCache
+
+		if env.cfg.CacheEnabled {
+
+			cacheFile, err := os.Open(filepath.Join(env.cfg.DataDir, "cache.gob"))
+			defer cacheFile.Close()
+			if err == nil {
+				log.Println("Loading cache from gob.")
+				cacheDecoder := gob.NewDecoder(cacheFile)
+
+				err = cacheDecoder.Decode(&newCache)
+				//check(err)
+				if err != nil {
+					log.WithFields(logrus.Fields{
+						"error": err,
+					}).Errorln("Error loading cache. Rebuilding it.")
+
+					newCache = env.buildCache()
+				}
+				// Check the cached sha1 versus HEAD sha1, rebuild if they differ
+				if !env.gitIsEmpty() && newCache.SHA1 != env.headHash() {
+					log.Println("Cache SHA1s do not match. Rebuilding cache.")
+					newCache = env.buildCache()
+				}
+			}
+			// If cache does not exist, build it
+			if os.IsNotExist(err) {
+				log.Println("Cache does not exist, building it...")
+				newCache = env.buildCache()
+			}
+		} else {
+			log.Println("Building cache...")
+			newCache = env.buildCache()
+		}
+
+		// Update fav and tag lists
+
+		env.favs.Lock()
+		env.cacheLock.Lock()
+		env.favs.List = env.cache.Favs
+		env.cacheLock.Unlock()
+		env.favs.Unlock()
+		env.tags.Lock()
+		env.cacheLock.Lock()
+		env.tags.List = env.cache.Tags
+		env.cacheLock.Unlock()
+		env.tags.Unlock()
+
+		env.cacheLock.Lock()
+		env.cache = newCache
+		env.cacheLock.Unlock()
+	}()
+
+	return env.cache
 }
 
 func (env *wikiEnv) headHash() string {
@@ -1695,17 +1726,8 @@ func (env *wikiEnv) headHash() string {
 // This should be all the stuff we need to be refreshed on startup and when pages are saved
 func (env *wikiEnv) refreshStuff() {
 
-	env.cacheLock.Lock()
-	env.cache = env.loadCache()
+	go env.loadCache()
 
-	env.favs.Lock()
-	env.favs.List = env.cache.Favs
-	env.favs.Unlock()
-	env.tags.Lock()
-	env.tags.List = env.cache.Tags
-	env.tags.Unlock()
-
-	env.cacheLock.Unlock()
 }
 
 type mdPreviewJSON struct {

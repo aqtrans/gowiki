@@ -714,9 +714,9 @@ func TestSearchPage(t *testing.T) {
 	//err := e.gitPull()
 	//checkT(err, t)
 
-	e.cache = e.loadCache()
+	e.loadCache()
 
-	if &e.cache == nil {
+	if e.cache.Cache == nil {
 		t.Error("cache is empty")
 	}
 
@@ -762,8 +762,8 @@ func TestDotGit(t *testing.T) {
 	//err := e.gitPull()
 	//checkT(err, t)
 
-	e.buildCache()
-	if &e.cache == nil {
+	e.loadCache()
+	if e.cache.Cache == nil {
 		t.Error("cache is empty")
 	}
 
@@ -803,9 +803,9 @@ func TestWikiDirEscape(t *testing.T) {
 	//err := e.gitPull()
 	//checkT(err, t)
 
-	e.cache = e.loadCache()
+	e.loadCache()
 
-	if &e.cache == nil {
+	if e.cache.Cache == nil {
 		t.Error("cache is empty")
 	}
 
