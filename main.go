@@ -236,6 +236,7 @@ type config struct {
 	PushOnSave     bool   `yaml:"PushOnSave,omitempty"`
 	InitWikiRepo   bool   `yaml:"InitWikiRepo,omitempty"`
 	CacheEnabled   bool   `yaml:"CacheEnabled,omitempty"`
+	CsrfTLS        bool   `yaml:"CsrfTLS,omitempty"`
 	DebugMode      bool   `yaml:"DebugMode,omitempty"`
 }
 
@@ -1866,12 +1867,8 @@ func router(env *wikiEnv) http.Handler {
 
 	// HTTP stuff from here on out
 	//s := alice.New(httputils.Timer, httputils.Logger, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
-	csrfSecure := true
-	if debugMode || env.cfg.DebugMode {
-		log.Infoln("CSRF TLS protection disabled")
-		csrfSecure = false
-	}
-	s := alice.New(env.timer, env.authState.CSRFProtect(csrfSecure), env.securityCheck)
+
+	s := alice.New(env.timer, env.authState.CSRFProtect(env.cfg.CsrfTLS), env.securityCheck)
 
 	r := httptreemux.NewContextMux()
 
