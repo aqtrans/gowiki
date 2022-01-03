@@ -9,6 +9,8 @@ buildGoModule rec {
           nativeBuildInputs = [ git ];
       } "GIT_DIR=${src}/.git git rev-parse --short HEAD | tr -d '\n' > $out";  
 
+  buildDate = runCommand "get-date" {} "date +'%Y-%m-%d_%T' | tr -d '\n' > $out";      
+
   version = "0" + builtins.readFile revision;
 
   src = ../.;
@@ -17,7 +19,7 @@ buildGoModule rec {
 
   buildInputs = [ git ];
 
-  ldflags = [ "-X main.appVersion=${version}" ];
+  ldflags = [ "-X main.sha1ver=${builtins.readFile revision}" "-X main.buildTime=${builtins.readFile buildDate}" ];
 
   vendorSha256 = "0hbx4z3i33sprs3n5j86q9sahxq1zvi46mic4nj98wyhmhhqsmxa";
 

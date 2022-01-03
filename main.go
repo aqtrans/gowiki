@@ -156,8 +156,8 @@ var (
 	errGitBehind   = errors.New("wiki git repo is behind; Need to pull")
 	errGitDiverged = errors.New("wiki git repo has diverged; Need to intervene manually")
 	errIsDir       = errors.New("file is a directory")
-	// app version string to be embedded when built
-	appVersion string
+	sha1ver        string // git commit to be set when built
+	buildTime      string // date+time to be set when built
 )
 
 type renderer struct {
@@ -1937,9 +1937,15 @@ func main() {
 	log.SetFormatter(formatter)
 
 	confFile := flag.String("conf", "", "Path to the TOML or YAML config file.")
+	showVersion := flag.Bool("version", false, "Print app version")
 	flag.BoolVar(&debugMode, "debug", false, "Toggle debug logging.")
 
 	flag.Parse()
+
+	if *showVersion {
+		log.Printf("Build date: %s\nGit commit: %s\n", buildTime, sha1ver)
+		os.Exit(0)
+	}
 
 	serverCfg := loadConfig(*confFile)
 

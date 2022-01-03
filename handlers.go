@@ -297,12 +297,14 @@ func (env *wikiEnv) adminMainHandler(w http.ResponseWriter, r *http.Request) {
 
 	data := struct {
 		page
-		Title      string
-		AppVersion string
+		Title     string
+		GitSha1   string
+		BuildDate string
 	}{
 		<-p,
 		title,
-		appVersion,
+		sha1ver,
+		buildTime,
 	}
 
 	renderTemplate(r.Context(), env, w, "admin_main.tmpl", data)

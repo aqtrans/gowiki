@@ -9,7 +9,8 @@
     <ul>
       <li><a href="/admin/users">Manage Users</a></li>
     </ul>
-    <div>
-      App version: {{ .AppVersion }}
-    </div>
+    <ul>
+      <li>App sha1: {{ .GitSha1 }}</li>
+      <li>App build date: {{ .BuildDate }}</li>
+    </ul>
 {{ end }}

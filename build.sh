@@ -12,7 +12,7 @@ function build_css()
 
 function build_debian()
 {
-    podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:bullseye go build -buildmode=pie -v -ldflags "-X main.appVersion=$DEBVERSION" -o $APPNAME
+    podman run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp golang:bullseye go build -buildmode=pie -v -ldflags "-X main.sha1ver=$(git rev-parse HEAD) -X main.buildTime=$(date +'%Y-%m-%d_%T')" -o $APPNAME
 }
 
 function test_it() {
@@ -28,7 +28,7 @@ function build_package() {
 
 # Build plain binary on host system
 function build_binary() {
-    go build -buildmode=pie -ldflags "-X main.appVersion=$DEBVERSION" -o $APPNAME
+    go build -buildmode=pie -ldflags "-X main.sha1ver=$(git rev-parse HEAD) -X main.buildTime=$(date +'%Y-%m-%d_%T')" -o $APPNAME
 }
 
 while [ "$1" != "" ]; do 
@@ -40,7 +40,7 @@ while [ "$1" != "" ]; do
         run)
             test_it
             build_css
-            go run -ldflags "-X main.appVersion=$DEBVERSION" -race .
+            go run -ldflags "-X main.sha1ver=$(git rev-parse HEAD) -X main.buildTime=$(date +'%Y-%m-%d_%T')" -race .
             ;;
         css)
             build_css
