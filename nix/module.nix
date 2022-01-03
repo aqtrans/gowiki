@@ -18,7 +18,7 @@ let
     PushOnSave = ${boolToString cfg.pushOnSave}
     InitWikiRepo = ${boolToString cfg.initWikiRepo}
     CacheEnabled = ${boolToString cfg.cacheEnabled}
-    CSRF = ${boolToString cfg.csrfEnabled}
+    CsrfTLS = ${boolToString cfg.csrfTlsEnabled}
     DebugMode = ${boolToString cfg.debugMode}
   '';
 
@@ -104,16 +104,16 @@ in {
         description = "Enable a cache of pages to speed up page loads";
       }; 
 
-      csrfEnabled = mkOption {
+      csrfTlsEnabled = mkOption {
         type = types.bool;
         default = true;
-        description = "Enable CSRF protection. Can be disabled for debugging/development";
+        description = "Enable Secure CSRF cookie mode. Extra security if the app is behind a TLS cert.";
       };
 
       debugMode = mkOption {
         type = types.bool;
         default = false;
-        description = "Enable debug logging and disable certain security protections";
+        description = "Enable debug logging";
       };
 
     };
