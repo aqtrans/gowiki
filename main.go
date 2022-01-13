@@ -59,13 +59,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/pelletier/go-toml"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/dimfeld/httptreemux"
-	"github.com/justinas/alice"
 	"github.com/oxtoacart/bpool"
 	"github.com/russross/blackfriday"
 	_ "github.com/tevjef/go-runtime-metrics/expvar"
@@ -1023,7 +1023,7 @@ func (env *wikiEnv) checkName(name *string) (bool, error) {
 
 	// Rely on httptreemux's Clean function to clean up ../ and other potential path-escaping sequences;
 	//  stripping off the / so we can pass it along to git
-	*name = httptreemux.Clean(*name)
+	//*name = httptreemux.Clean(*name)
 	if strings.HasPrefix(*name, "/") {
 		*name = strings.TrimPrefix(*name, "/")
 	}
@@ -1090,7 +1090,9 @@ func (env *wikiEnv) checkName(name *string) (bool, error) {
 			if err == errIsDir {
 				return false, errIsDir
 			}
-			*name = normalName
+			if exists {
+				*name = normalName
+			}
 		}
 	}
 
@@ -1868,71 +1870,80 @@ func router(env *wikiEnv) http.Handler {
 	// HTTP stuff from here on out
 	//s := alice.New(httputils.Timer, httputils.Logger, env.authState.CtxMiddle, env.authState.CSRFProtect(csrfSecure))
 
-	s := alice.New(env.timer, env.authState.CSRFProtect(env.cfg.CsrfTLS), env.securityCheck)
+	//s := alice.New(env.timer, env.authState.CSRFProtect(env.cfg.CsrfTLS), env.securityCheck)
 
-	r := httptreemux.NewContextMux()
+	r := chi.NewRouter()
 
-	r.PanicHandler = errorHandler
+	r.Use(middleware.Logger)
+	r.Use(middleware.CleanPath)
+	r.Use(env.timer)
+	r.Use(env.authState.CSRFProtect(env.cfg.CsrfTLS))
+	r.Use(env.securityCheck)
 
-	r.GET("/", env.indexHandler)
+	//r.PanicHandler = errorHandler
 
-	r.GET("/tags", env.authState.AuthMiddle(env.tagMapHandler))
-	r.GET("/tag/*name", env.authState.AuthMiddle(env.tagHandler))
+	r.Get("/", env.indexHandler)
 
-	r.GET("/login", env.loginPageHandler)
-	r.GET("/logout", env.authState.LogoutHandler)
-	r.GET("/signup", env.signupPageHandler)
-	r.GET("/list", env.listHandler)
-	r.GET("/search/*name", env.searchHandler)
-	r.POST("/search", env.searchHandler)
-	r.GET("/recent", env.authState.AuthMiddle(env.recentHandler))
-	r.GET("/health", healthCheckHandler)
+	r.Get("/tags", env.authState.AuthMiddle(env.tagMapHandler))
+	r.Get("/tag/*", env.authState.AuthMiddle(env.tagHandler))
 
-	admin := r.NewContextGroup("/admin")
-	admin.GET("/", env.authState.AuthAdminMiddle(env.adminMainHandler))
-	admin.GET("/git", env.authState.AuthAdminMiddle(env.adminGitHandler))
-	admin.POST("/git/push", env.authState.AuthAdminMiddle(env.gitPushPostHandler))
-	admin.POST("/git/checkin", env.authState.AuthAdminMiddle(env.gitCheckinPostHandler))
-	admin.POST("/git/pull", env.authState.AuthAdminMiddle(env.gitPullPostHandler))
-	admin.GET("/users", env.authState.AuthAdminMiddle(env.adminUsersHandler))
-	admin.POST("/user", env.authState.AuthAdminMiddle(adminUserPostHandler))
-	admin.GET("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
-	admin.POST("/user/:username", env.authState.AuthAdminMiddle(env.adminUserHandler))
-	admin.POST("/user/generate", env.authState.AuthAdminMiddle(env.adminGeneratePostHandler))
+	r.Get("/login", env.loginPageHandler)
+	r.Get("/logout", env.authState.LogoutHandler)
+	r.Get("/signup", env.signupPageHandler)
+	r.Get("/list", env.listHandler)
+	r.Get("/search/*", env.searchHandler)
+	r.Post("/search", env.searchHandler)
+	r.Get("/recent", env.authState.AuthMiddle(env.recentHandler))
+	r.Get("/health", healthCheckHandler)
 
-	a := r.NewContextGroup("/auth")
-	a.POST("/login", env.authState.LoginPostHandler)
-	a.POST("/logout", env.authState.LogoutHandler)
-	a.GET("/logout", env.authState.LogoutHandler)
-	a.POST("/signup", env.authState.UserSignupTokenPostHandler)
+	r.Route("/admin", func(r chi.Router) {
+		r.Get("/", env.authState.AuthAdminMiddle(env.adminMainHandler))
+		r.Get("/git", env.authState.AuthAdminMiddle(env.adminGitHandler))
+		r.Post("/git/push", env.authState.AuthAdminMiddle(env.gitPushPostHandler))
+		r.Post("/git/checkin", env.authState.AuthAdminMiddle(env.gitCheckinPostHandler))
+		r.Post("/git/pull", env.authState.AuthAdminMiddle(env.gitPullPostHandler))
+		r.Get("/users", env.authState.AuthAdminMiddle(env.adminUsersHandler))
+		r.Post("/user", env.authState.AuthAdminMiddle(adminUserPostHandler))
+		r.Get("/user/{username}", env.authState.AuthAdminMiddle(env.adminUserHandler))
+		r.Post("/user/{username}", env.authState.AuthAdminMiddle(env.adminUserHandler))
+		r.Post("/user/generate", env.authState.AuthAdminMiddle(env.adminGeneratePostHandler))
 
-	r.POST("/gitadd", env.authState.AuthMiddle(env.gitCheckinPostHandler))
-	r.GET("/gitadd", env.authState.AuthMiddle(env.gitCheckinHandler))
+	})
 
-	r.POST("/md_render", markdownPreview)
+	r.Route("/auth", func(r chi.Router) {
+		r.Post("/login", env.authState.LoginPostHandler)
+		r.Post("/logout", env.authState.LogoutHandler)
+		r.Get("/logout", env.authState.LogoutHandler)
+		r.Post("/signup", env.authState.UserSignupTokenPostHandler)
+	})
 
-	r.Handler("GET", "/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
+	r.Post("/gitadd", env.authState.AuthMiddle(env.gitCheckinPostHandler))
+	r.Get("/gitadd", env.authState.AuthMiddle(env.gitCheckinHandler))
+
+	r.Post("/md_render", markdownPreview)
+
+	r.Handle("/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
 
 	// Wiki page handlers
-	r.GET(`/fav/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.setFavoriteHandler)))
-	r.GET(`/edit/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.editHandler)))
-	r.POST(`/save/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.saveHandler)))
-	r.GET(`/history/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.historyHandler)))
-	r.POST(`/delete/*name`, env.authState.AuthMiddle(env.wikiMiddle(env.deleteHandler)))
-	r.GET(`/*name`, env.wikiMiddle(env.viewHandler))
+	r.Get(`/fav/*`, env.authState.AuthMiddle(env.wikiMiddle(env.setFavoriteHandler)))
+	r.Get(`/edit/*`, env.authState.AuthMiddle(env.wikiMiddle(env.editHandler)))
+	r.Post(`/save/*`, env.authState.AuthMiddle(env.wikiMiddle(env.saveHandler)))
+	r.Get(`/history/*`, env.authState.AuthMiddle(env.wikiMiddle(env.historyHandler)))
+	r.Post(`/delete/*`, env.authState.AuthMiddle(env.wikiMiddle(env.deleteHandler)))
+	r.Get(`/*`, env.wikiMiddle(env.viewHandler))
 
-	r.Handler("GET", "/debug/vars", expvar.Handler())
-	r.GET("/debug/pprof/", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Index)))
-	r.GET("/debug/pprof/cmdline", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Cmdline)))
-	r.GET("/debug/pprof/profile", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Profile)))
-	r.GET("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
-	r.GET("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
-	//r.GET("/robots.txt", robots)
-	//r.GET("/favicon.ico", faviconICO)
-	//r.GET("/favicon.png", faviconPNG)
-	r.Handler("GET", "/assets/*", http.FileServer(http.FS(assetsfs)))
+	r.Handle("/debug/vars", expvar.Handler())
+	r.Get("/debug/pprof/", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Index)))
+	r.Get("/debug/pprof/cmdline", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Cmdline)))
+	r.Get("/debug/pprof/profile", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Profile)))
+	r.Get("/debug/pprof/symbol", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Symbol)))
+	r.Get("/debug/pprof/trace", env.authState.AuthAdminMiddle(http.HandlerFunc(pprof.Trace)))
+	//r.Get("/robots.txt", robots)
+	//r.Get("/favicon.ico", faviconICO)
+	//r.Get("/favicon.png", faviconPNG)
+	r.Handle("/assets/*", http.FileServer(http.FS(assetsfs)))
 
-	return s.Then(r)
+	return r
 }
 
 func main() {

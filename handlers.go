@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"git.jba.io/go/httputils"
-	"github.com/dimfeld/httptreemux"
+	"github.com/go-chi/chi/v5"
 	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
@@ -21,7 +21,8 @@ import (
 
 func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "setFavoriteHandler")
-	name := nameFromContext(r.Context())
+	name := chi.URLParam(r, "*")
+
 	if !wikiExistsFromContext(r.Context()) {
 		http.Redirect(w, r, "/"+name, http.StatusFound)
 		return
@@ -53,7 +54,8 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 
 func (env *wikiEnv) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "deleteHandler")
-	name := nameFromContext(r.Context())
+	name := chi.URLParam(r, "*")
+
 	if !wikiExistsFromContext(r.Context()) {
 		http.Redirect(w, r, "/"+name, http.StatusFound)
 		return
@@ -92,8 +94,7 @@ type searchPage struct {
 }
 
 func (env *wikiEnv) searchHandler(w http.ResponseWriter, r *http.Request) {
-	params := httptreemux.ContextParams(r.Context())
-	name := params["name"]
+	name := chi.URLParam(r, "*")
 
 	// If this is a POST request, and searchwiki form is not blank,
 	//  redirect to /search/$(searchform)
@@ -224,8 +225,7 @@ func (env *wikiEnv) adminUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//ctx := r.Context()
-	params := httptreemux.ContextParams(r.Context())
-	selectedUser := params["username"]
+	selectedUser := chi.URLParam(r, "username")
 
 	data := struct {
 		page
@@ -456,8 +456,7 @@ type tagPage struct {
 func (env *wikiEnv) tagHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "tagHandler")
 
-	params := httptreemux.ContextParams(r.Context())
-	name := params["name"]
+	name := chi.URLParam(r, "*")
 
 	p := make(chan page, 1)
 	go env.loadPage(r, p)
@@ -506,7 +505,8 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 
 func (env *wikiEnv) editHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "editHandler")
-	name := nameFromContext(r.Context())
+	name := chi.URLParam(r, "*")
+
 	p := env.loadWikiPage(r, name)
 	renderTemplate(r.Context(), env, w, "wiki_edit.tmpl", p)
 }
@@ -514,7 +514,7 @@ func (env *wikiEnv) editHandler(w http.ResponseWriter, r *http.Request) {
 func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "saveHandler")
 
-	name := nameFromContext(r.Context())
+	name := chi.URLParam(r, "*")
 
 	err := r.ParseForm()
 	if err != nil {
@@ -603,7 +603,7 @@ func (env *wikiEnv) indexHandler(w http.ResponseWriter, r *http.Request) {
 func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "viewHandler")
 
-	name := nameFromContext(r.Context())
+	name := chi.URLParam(r, "*")
 	/*
 		nameStat, err := os.Stat(filepath.Join(dataDir, "wikidata", name))
 		if err != nil {
@@ -721,7 +721,7 @@ type historyPage struct {
 }
 
 func (env *wikiEnv) historyHandler(w http.ResponseWriter, r *http.Request) {
-	name := nameFromContext(r.Context())
+	name := chi.URLParam(r, "*")
 
 	if !wikiExistsFromContext(r.Context()) {
 		http.Redirect(w, r, "/"+name, http.StatusSeeOther)
@@ -938,8 +938,7 @@ func (env *wikiEnv) securityCheck(next http.Handler) http.Handler {
 
 func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		params := httptreemux.ContextParams(r.Context())
-		name := params["name"]
+		name := chi.URLParam(r, "*")
 		user := env.authState.GetUserState(r)
 
 		pageExists, relErr := env.checkName(&name)

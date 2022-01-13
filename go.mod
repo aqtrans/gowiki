@@ -7,11 +7,10 @@ require (
 	git.jba.io/go/httputils v0.0.0-20190322205649-639279c6da32
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
-	github.com/dimfeld/httptreemux v5.0.0+incompatible
 	github.com/gliderlabs/ssh v0.2.2 // indirect
+	github.com/go-chi/chi/v5 v5.0.7
 	github.com/google/go-cmp v0.3.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/justinas/alice v0.0.0-20171023064455-03f45bd4b7da
 	github.com/kevinburke/ssh_config v0.0.0-20180127194858-0ff8514904a8 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/oxtoacart/bpool v0.0.0-20150712133111-4e1c5567d7c2
@@ -22,6 +21,7 @@ require (
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/src-d/gcfg v1.3.0 // indirect
+	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/tevjef/go-runtime-metrics v0.0.0-20170326170900-527a54029307
 	github.com/xanzy/ssh-agent v0.1.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
