@@ -17,8 +17,8 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-func goGitIsClean() error {
-	repo := goGitOpen()
+func goGitIsClean(dataDir string) error {
+	repo := goGitOpen(dataDir)
 	workTree, err := repo.Worktree()
 	if err != nil {
 		log.Println(err)
@@ -35,7 +35,7 @@ func goGitIsClean() error {
 	return nil
 }
 
-func goGitOpen() *git.Repository {
+func goGitOpen(dataDir string) *git.Repository {
 	repo, err := git.PlainOpen(filepath.Join(dataDir, "wikidata"))
 	if err != nil {
 		log.Println(err)
