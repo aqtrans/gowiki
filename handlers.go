@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"git.jba.io/go/auth"
 	"git.jba.io/go/httputils"
 	"github.com/go-chi/chi/v5"
 	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
@@ -110,7 +111,7 @@ func (env *wikiEnv) searchHandler(w http.ResponseWriter, r *http.Request) {
 	p := make(chan page, 1)
 	go env.loadPage(r, p)
 
-	user := env.authState.GetUserState(r)
+	user := env.authState.GetUser(r)
 
 	var fileList string
 
@@ -656,7 +657,7 @@ func (env *wikiEnv) viewHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Build a list of filenames to be fed to closestmatch, for similarity matching
 	var filelist []string
-	user := env.authState.GetUserState(r)
+	user := env.authState.GetUser(r)
 
 	theCache := env.loadCache()
 
@@ -893,7 +894,7 @@ func (env *wikiEnv) listHandler(w http.ResponseWriter, r *http.Request) {
 
 	var list []gitDirList
 
-	user := env.authState.GetUserState(r)
+	user := env.authState.GetUser(r)
 
 	theCache := env.loadCache()
 
@@ -939,7 +940,7 @@ func (env *wikiEnv) securityCheck(next http.Handler) http.Handler {
 func (env *wikiEnv) wikiMiddle(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		name := chi.URLParam(r, "*")
-		user := env.authState.GetUserState(r)
+		user := env.authState.GetUser(r)
 
 		pageExists, relErr := env.checkName(&name)
 		fullfilename := filepath.Join(env.cfg.WikiDir, name)
@@ -1101,7 +1102,7 @@ func (env *wikiEnv) listDirHandler(dir string, w http.ResponseWriter, r *http.Re
 
 	var list []gitDirList
 
-	user := env.authState.GetUserState(r)
+	user := env.authState.GetUser(r)
 
 	theCache := env.loadCache()
 
@@ -1131,4 +1132,94 @@ func (env *wikiEnv) listDirHandler(dir string, w http.ResponseWriter, r *http.Re
 		Wikis: list,
 	}
 	renderTemplate(r.Context(), env, w, "list.tmpl", l)
+}
+
+func (env *wikiEnv) LoginPostHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+	case "POST":
+		// Handle login POST request
+		username := r.FormValue("username")
+		password := r.FormValue("password")
+
+		// Login authentication
+		if env.authState.Auth(username, password) {
+			env.authState.Login(username, w)
+			env.authState.SetFlash("User '"+username+"' successfully logged in.", w)
+			// Check if we have a redirect URL in the cookie, if so redirect to it
+			redirURL := env.authState.GetRedirect(r, w)
+			if redirURL != "" {
+				http.Redirect(w, r, redirURL, http.StatusSeeOther)
+				return
+			}
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
+		env.authState.SetFlash("User '"+username+"' failed to login. Please check your credentials and try again.", w)
+		http.Redirect(w, r, env.authState.Cfg.LoginPath, http.StatusSeeOther)
+		return
+	case "PUT":
+		// Update an existing record.
+	case "DELETE":
+		// Remove the record.
+	default:
+		// Give an error message.
+	}
+}
+
+func (e *wikiEnv) UserSignupTokenPostHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+	case "POST":
+		username := r.FormValue("username")
+		password := r.FormValue("password")
+		givenToken := r.FormValue("register_key")
+
+		isValid, userRole := e.authState.ValidateRegisterToken(givenToken)
+
+		if isValid {
+
+			// Delete the token so it cannot be reused if the token is not blank
+			// The first user can signup without a token and is granted admin rights
+			if givenToken != "" {
+				e.authState.DeleteRegisterToken(givenToken)
+			}
+
+			if userRole == auth.RoleAdmin {
+				err := e.authState.NewAdmin(username, password)
+				if err != nil {
+					log.Println("Error adding admin:", err)
+					e.authState.SetFlash("Error adding user. Check logs.", w)
+					http.Redirect(w, r, r.Referer(), http.StatusInternalServerError)
+					return
+				}
+			} else if userRole == auth.RoleUser {
+				err := e.authState.NewUser(username, password)
+				if err != nil {
+					log.Println("Error adding user:", err)
+					e.authState.SetFlash("Error adding user. Check logs.", w)
+					http.Redirect(w, r, r.Referer(), http.StatusInternalServerError)
+					return
+				}
+			}
+
+			// Login the recently added user
+			if e.authState.Auth(username, password) {
+				e.authState.Login(username, w)
+			}
+
+			e.authState.SetFlash("Successfully added '"+username+"' user.", w)
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+		} else {
+			e.authState.SetFlash("Registration token is invalid.", w)
+			http.Redirect(w, r, "/", http.StatusInternalServerError)
+		}
+
+	case "PUT":
+		// Update an existing record.
+	case "DELETE":
+		// Remove the record.
+	default:
+		// Give an error message.
+	}
 }

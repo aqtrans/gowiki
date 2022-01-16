@@ -3,7 +3,7 @@ module git.jba.io/go/wiki
 go 1.16
 
 require (
-	git.jba.io/go/auth v1.2.1
+	git.jba.io/go/auth v1.2.2-0.20220116055312-4d9aaff931f3
 	git.jba.io/go/httputils v0.0.0-20190322205649-639279c6da32
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect

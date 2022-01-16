@@ -1,5 +1,9 @@
 git.jba.io/go/auth v1.2.1 h1:pMGNrv7lyyn3B2oZ1FCBXQDuhkUoYkVh8VRavQNz+Ew=
 git.jba.io/go/auth v1.2.1/go.mod h1:qkIbhu6g7pwJ7zFBr5V4vEwDSr3uLvcG+n2jQLxJ8Ho=
+git.jba.io/go/auth v1.2.2-0.20220116054526-0b1fb32dd38f h1:r4jkvgM63Ngyu5lMGEKA/l5QCdxGo/VlQ4pM7KpK6vQ=
+git.jba.io/go/auth v1.2.2-0.20220116054526-0b1fb32dd38f/go.mod h1:qkIbhu6g7pwJ7zFBr5V4vEwDSr3uLvcG+n2jQLxJ8Ho=
+git.jba.io/go/auth v1.2.2-0.20220116055312-4d9aaff931f3 h1:C29G91pMDcWUXV2Hry2LDqQwohXLK1L+6LF1vMBxnqg=
+git.jba.io/go/auth v1.2.2-0.20220116055312-4d9aaff931f3/go.mod h1:qkIbhu6g7pwJ7zFBr5V4vEwDSr3uLvcG+n2jQLxJ8Ho=
 git.jba.io/go/httputils v0.0.0-20190322205649-639279c6da32 h1:9U4APB2n5HBUU5db+gaH7PDFqHfGrvO29SUX7HREhM4=
 git.jba.io/go/httputils v0.0.0-20190322205649-639279c6da32/go.mod h1:m/ZyF4y/giEln4zQNcc9dSE4MlPIZNy8Fy6St3S3p7w=
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=

@@ -76,7 +76,7 @@ func gitCloneTest() error {
 */
 
 // tempfile returns a temporary file path.
-func tempfile() string {
+func tempfile() auth.Config {
 	f, err := ioutil.TempFile("", "bolt-")
 	if err != nil {
 		panic(err)
@@ -87,7 +87,10 @@ func tempfile() string {
 	if err := os.Remove(f.Name()); err != nil {
 		panic(err)
 	}
-	return f.Name()
+	cfg := auth.Config{
+		DbPath: f.Name(),
+	}
+	return cfg
 }
 
 // tempdir creates a temporary directory for use as DataDir and WikiDir
@@ -248,12 +251,12 @@ func testEnvInit() (string, *wikiEnv) {
 	//defer os.Remove(tmpdb)
 	authState := auth.NewAuthState(tmpdb)
 	e := testEnv(authState)
-	return tmpdb, e
+	return tmpdb.DbPath, e
 }
 
 func TestAuthInit(t *testing.T) {
 	tmpdb := tempfile()
-	defer os.Remove(tmpdb)
+	defer os.Remove(tmpdb.DbPath)
 	authState := auth.NewAuthState(tmpdb)
 	_, err := authState.Userlist()
 	checkT(err, t)
@@ -261,14 +264,14 @@ func TestAuthInit(t *testing.T) {
 
 func TestTmplInit(t *testing.T) {
 	tmpdb := tempfile()
-	defer os.Remove(tmpdb)
+	defer os.Remove(tmpdb.DbPath)
 	authState := auth.NewAuthState(tmpdb)
 	testEnv(authState)
 }
 
 func TestWikiInit(t *testing.T) {
 	tmpdb := tempfile()
-	defer os.Remove(tmpdb)
+	defer os.Remove(tmpdb.DbPath)
 	authState := auth.NewAuthState(tmpdb)
 	e := testEnv(authState)
 
@@ -1170,7 +1173,7 @@ func BenchmarkWholeWiki(b *testing.B) {
 		tags:          newTagsMap(),
 		favs:          newFavsMap(),
 	}
-	defer os.Remove(tmpdb)
+	defer os.Remove(tmpdb.DbPath)
 
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {

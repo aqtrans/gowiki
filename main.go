@@ -68,8 +68,6 @@ import (
 
 	"git.jba.io/go/auth"
 	"git.jba.io/go/httputils"
-	//"git.jba.io/go/wiki/vfs/assets"
-	//"git.jba.io/go/wiki/vfs/templates"
 )
 
 type key int
@@ -104,26 +102,6 @@ const (
 	adminPermission   = "admin"
 	privatePermission = "private"
 	publicPermission  = "public"
-
-	/*
-		commonHTMLFlags2 = 0 |
-			bf.FootnoteReturnLinks |
-			bf.NofollowLinks
-
-		commonExtensions2 = 0 |
-			bf.NoIntraEmphasis |
-			bf.Tables |
-			bf.FencedCode |
-			bf.Autolink |
-			bf.Strikethrough |
-			bf.AutoHeaderIDs |
-			bf.BackslashLineBreak |
-			bf.DefinitionLists |
-			bf.NoEmptyLineBeforeBlock |
-			bf.Footnotes |
-			bf.Titleblock |
-			bf.TOC
-	*/
 )
 
 // Go 1.16 embed:
@@ -134,13 +112,6 @@ var assetsfs embed.FS
 var templatefs embed.FS
 
 var (
-	//authState      *auth.AuthState
-	//linkPattern = regexp.MustCompile(`\[\/(?P<Name>[0-9a-zA-Z-_\.\/]+)\]\(\)`)
-	//bufpool        *bpool.BufferPool
-	//templates      map[string]*template.Template
-	//gitPath string
-	//dataDir string
-	//cache          *wikiCache
 	debugMode      bool
 	errNotInGit    = errors.New("given file not in Git repo")
 	errNoFile      = errors.New("no such file")
@@ -639,7 +610,7 @@ func (env *wikiEnv) loadPage(r *http.Request, p chan<- page) {
 	//timer.Step("loadpageFunc")
 
 	// Auth lib middlewares should load the user and tokens into context for reading
-	user := env.authState.GetUserState(r)
+	user := env.authState.GetUser(r)
 
 	// Flash is loaded into context in timer() because it's one-time-use
 	//   requires passing http.ResponseWriter
@@ -1896,9 +1867,17 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	aCfg := auth.Config{
+		CookieSecure:         true,
+		DbPath:               filepath.Join(serverCfg.DataDir, "auth.db"),
+		LoginPath:            "/login",
+		SignupPath:           "/signup",
+		SessionLifetimeHours: 48,
+	}
+
 	env := &wikiEnv{
 		cfg:           serverCfg,
-		authState:     *auth.NewAuthState(filepath.Join(serverCfg.DataDir, "auth.db")),
+		authState:     *auth.NewAuthState(aCfg),
 		templates:     tmplInit(),
 		pageWriteLock: sync.Mutex{},
 		cache:         wikiCache{},

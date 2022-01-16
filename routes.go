@@ -56,10 +56,10 @@ func router(env *wikiEnv) http.Handler {
 	})
 
 	r.Route("/auth", func(r chi.Router) {
-		r.Post("/login", env.authState.LoginPostHandler)
+		r.Post("/login", env.LoginPostHandler)
 		r.Post("/logout", env.authState.LogoutHandler)
 		r.Get("/logout", env.authState.LogoutHandler)
-		r.Post("/signup", env.authState.UserSignupTokenPostHandler)
+		r.Post("/signup", env.UserSignupTokenPostHandler)
 	})
 
 	r.Post("/gitadd", env.authState.AuthMiddle(env.gitCheckinPostHandler))
