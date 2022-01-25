@@ -66,7 +66,7 @@ import (
 	"github.com/russross/blackfriday"
 	_ "github.com/tevjef/go-runtime-metrics/expvar"
 
-	"git.jba.io/go/auth"
+	"git.jba.io/go/auth/v2"
 	"git.jba.io/go/httputils"
 )
 

@@ -13,7 +13,7 @@ import (
 	"sync"
 	"testing"
 
-	"git.jba.io/go/auth"
+	"git.jba.io/go/auth/v2"
 	"git.jba.io/go/httputils"
 	log "github.com/sirupsen/logrus"
 )

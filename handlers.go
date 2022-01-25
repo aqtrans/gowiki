@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"git.jba.io/go/auth"
+	"git.jba.io/go/auth/v2"
 	"git.jba.io/go/httputils"
 	"github.com/go-chi/chi/v5"
 	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
