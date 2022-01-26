@@ -40,7 +40,7 @@
             Tags:
             <input type="text" id="tags" name="tags" placeholder="Separate tags with commas" value="{{ .Wiki.Frontmatter.Tags|jsTags }}" />
         </div>
-        {{.Token}}
+        <input type="hidden" name="csrf_token" value="{{ .Token }}">
 
         <ul data-tabs class="tabs sub" id="subtabs">
             <li class="tab-title"><a data-tabby-default class="tablinks" id="edit-tab" href="#edit">Edit</a></li>
@@ -86,7 +86,7 @@ some code
         </form>
         <br>
         <form action="/delete/{{.Wiki.Filename}}" method="POST" id="deletewiki">
-            {{.Token}}
+            <input type="hidden" name="csrf_token" value="{{ .Token }}">
             <button type="submit" class="delete button">Delete File</button>
         </form>
 {{ end }}

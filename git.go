@@ -528,12 +528,12 @@ func (env *wikiEnv) gitSearch(searchTerm, fileSpec string) []result {
 	return results
 }
 
-func (env *wikiEnv) gitIsCleanURLs(token template.HTML) template.HTML {
+func (env *wikiEnv) gitIsCleanURLs(token string) template.HTML {
 	switch env.gitIsClean() {
 	case errGitAhead:
-		return template.HTML(`<form method="post" action="/admin/git/push" id="git_push">` + token + `<i class="fa fa-cloud-upload" aria-hidden="true"></i><button type="submit" class="button">Push git</button></form>`)
+		return template.HTML(`<form method="post" action="/admin/git/push" id="git_push"><input type="hidden" name="csrf_token" value="` + token + `"><i class="fa fa-cloud-upload" aria-hidden="true"></i><button type="submit" class="button">Push git</button></form>`)
 	case errGitBehind:
-		return template.HTML(`<form method="post" action="/admin/git/pull" id="git_pull">` + token + `<i class="fa fa-cloud-download" aria-hidden="true"></i><button type="submit" class="button">Pull git</button></form>`)
+		return template.HTML(`<form method="post" action="/admin/git/pull" id="git_pull"><input type="hidden" name="csrf_token" value="` + token + `"><i class="fa fa-cloud-download" aria-hidden="true"></i><button type="submit" class="button">Pull git</button></form>`)
 	case errGitDiverged:
 		return template.HTML(`<a href="/admin/git"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>Issue with git:wiki!</a>`)
 	default:

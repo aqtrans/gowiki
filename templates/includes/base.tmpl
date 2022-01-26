@@ -22,7 +22,7 @@
       <form method="POST" action="/search" id="searchwiki">
         <div class="input-wrapper">
             <input type="text" placeholder="Search" id="searchwiki" name="searchwiki">
-            {{.Token}}
+            <input type="hidden" name="csrf_token" value="{{ .Token }}">
             <button type="submit">{{ svg "search" }}</button>
         </div>
       </form> 

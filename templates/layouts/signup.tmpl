@@ -6,7 +6,7 @@
         {{ if .AnyUsers }}
         <input class="stack" type="text" id="register_key" name="register_key" placeholder="Register Key" size="12">
         {{ end }}
-        {{.Token}}
+        <input type="hidden" name="csrf_token" value="{{ .Token }}">
         <button class="stack" type="submit" class="button">Sign Up</button>
         </form>
 {{ end }}

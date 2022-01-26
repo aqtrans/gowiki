@@ -8,7 +8,7 @@
       </ul>
         <h2>Edit existing user:</h2>
         <form method="post" action="/admin/user" id="user">
-        {{.Token}}
+        <input type="hidden" name="csrf_token" value="{{ .Token }}">
         <select name="user">
         User: {{range .Users }}
         <option value="{{.}}">{{.}}</option>
@@ -21,7 +21,7 @@
         <form method="post" action="/auth/signup" id="signup">
         User:<input type="text" id="username" name="username" placeholder="Username" size="12">
         Password:<input type="password" id="password" name="password" placeholder="Password" size="12">
-        {{.Token}}
+        <input type="hidden" name="csrf_token" value="{{ .Token }}">
         <button type="submit" class="button">Add User</button>
         </form>
         <h2>Generate registration token:</h2>
@@ -31,7 +31,7 @@
           <option value="admin">Admin</option>
           <option value="user">User</option>
         </select>
-        {{.Token}}
+        <input type="hidden" name="csrf_token" value="{{ .Token }}">
         <button type="submit" class="button">Generate Token</button>
         </form>        
 {{ end }}

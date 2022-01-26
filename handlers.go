@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"git.jba.io/go/auth/v2"
 	"git.jba.io/go/httputils"
 	"github.com/go-chi/chi/v5"
 	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
@@ -251,42 +250,6 @@ func adminUserPostHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	selectedUser := r.FormValue("user")
 	http.Redirect(w, r, "/admin/user/"+selectedUser, http.StatusSeeOther)
-}
-
-// Function to take a <select><option> value and redirect to a URL based on it
-func (env *wikiEnv) adminGeneratePostHandler(w http.ResponseWriter, r *http.Request) {
-	r.ParseForm()
-	selectedRole := r.FormValue("role")
-	registerToken := env.authState.GenerateRegisterToken(selectedRole)
-
-	/*
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-
-		data := struct {
-			RegistrationToken string
-			SelectedRole      string
-		}{
-			registerToken,
-			selectedRole,
-		}
-
-		newTokenTmpl := `
-		<html>
-			<head>
-				<title>Registration Token</title>
-				<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-			</head>
-			<body>
-				<p>Registration token: {{ .RegistrationToken }}</p>
-				<p>Role: {{ .SelectedRole }}</p>
-			</body>
-		</html>`
-
-		tpl := template.Must(template.New("NewTokenPage").Parse(newTokenTmpl))
-		tpl.Execute(w, data)
-	*/
-	env.authState.SetFlash("Token:"+registerToken+" |Role: "+selectedRole, w)
-	http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 }
 
 func (env *wikiEnv) adminMainHandler(w http.ResponseWriter, r *http.Request) {
@@ -1168,52 +1131,40 @@ func (env *wikiEnv) LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *wikiEnv) UserSignupTokenPostHandler(w http.ResponseWriter, r *http.Request) {
+	defer httputils.TimeTrack(time.Now(), "UserSignupTokenPostHandler")
 	switch r.Method {
 	case "GET":
 	case "POST":
 		username := r.FormValue("username")
 		password := r.FormValue("password")
-		givenToken := r.FormValue("register_key")
 
-		isValid, userRole := e.authState.ValidateRegisterToken(givenToken)
-
-		if isValid {
-
-			// Delete the token so it cannot be reused if the token is not blank
-			// The first user can signup without a token and is granted admin rights
-			if givenToken != "" {
-				e.authState.DeleteRegisterToken(givenToken)
+		// If there are no users, first user is an admin
+		if !e.authState.AnyUsers() {
+			log.Println(username, "is an admin since there are no existing users.")
+			err := e.authState.NewAdmin(username, password)
+			if err != nil {
+				log.Println("Error adding admin:", err)
+				e.authState.SetFlash("Error adding user. Check logs.", w)
+				http.Redirect(w, r, r.Referer(), http.StatusInternalServerError)
+				return
 			}
-
-			if userRole == auth.RoleAdmin {
-				err := e.authState.NewAdmin(username, password)
-				if err != nil {
-					log.Println("Error adding admin:", err)
-					e.authState.SetFlash("Error adding user. Check logs.", w)
-					http.Redirect(w, r, r.Referer(), http.StatusInternalServerError)
-					return
-				}
-			} else if userRole == auth.RoleUser {
-				err := e.authState.NewUser(username, password)
-				if err != nil {
-					log.Println("Error adding user:", err)
-					e.authState.SetFlash("Error adding user. Check logs.", w)
-					http.Redirect(w, r, r.Referer(), http.StatusInternalServerError)
-					return
-				}
-			}
-
-			// Login the recently added user
-			if e.authState.Auth(username, password) {
-				e.authState.Login(username, w)
-			}
-
-			e.authState.SetFlash("Successfully added '"+username+"' user.", w)
-			http.Redirect(w, r, "/", http.StatusSeeOther)
 		} else {
-			e.authState.SetFlash("Registration token is invalid.", w)
-			http.Redirect(w, r, "/", http.StatusInternalServerError)
+			err := e.authState.NewUser(username, password)
+			if err != nil {
+				log.Println("Error adding user:", err)
+				e.authState.SetFlash("Error adding user. Check logs.", w)
+				http.Redirect(w, r, r.Referer(), http.StatusInternalServerError)
+				return
+			}
 		}
+
+		// Login the recently added user
+		if e.authState.Auth(username, password) {
+			e.authState.Login(username, w)
+		}
+
+		e.authState.SetFlash("Successfully added '"+username+"' user.", w)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 	case "PUT":
 		// Update an existing record.

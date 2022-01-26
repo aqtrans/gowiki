@@ -10,7 +10,7 @@
         <h1>Editing User {{.User}}</h1>
         <br>
         <form method="post" action="/admin/user" id="user">
-        {{.Token}}
+        <input type="hidden" name="csrf_token" value="{{ .Token }}">
         <select name="user">
         User: {{range .Users }}
         <option value="{{.}}">{{.}}</option>
@@ -29,7 +29,7 @@
         <form method="post" action="/admin/user/password_change" id="pwchange">
         User:<input type="text" id="username" name="username" placeholder="Username" value="{{.User}}" size="12">
         Password:<input type="password" id="password" name="password" placeholder="Password" size="12">
-        {{.Token}}
+        <input type="hidden" name="csrf_token" value="{{ .Token }}">
         <button type="submit" class="button">Change Users Password</button>
         </form>
     </div>
@@ -46,7 +46,7 @@
     <div>
         <form method="post" action="/admin/user/delete" id="userdelete">
         User:<input type="text" id="username" name="username" placeholder="Username" value="{{.User}}" size="12">
-        {{.Token}}
+        <input type="hidden" name="csrf_token" value="{{ .Token }}">
         <button type="submit" class="button">Delete user</button>
         </form>
     </div>

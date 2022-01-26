@@ -68,6 +68,7 @@ import (
 
 	"git.jba.io/go/auth/v2"
 	"git.jba.io/go/httputils"
+	"github.com/justinas/nosurf"
 )
 
 type key int
@@ -136,7 +137,7 @@ type page struct {
 	SiteName  string
 	Favs      []string
 	UserInfo  userInfo
-	Token     template.HTML
+	Token     string
 	FlashMsg  template.HTML
 	GitStatus template.HTML
 }
@@ -616,7 +617,7 @@ func (env *wikiEnv) loadPage(r *http.Request, p chan<- page) {
 	//   requires passing http.ResponseWriter
 	msg := flashFromContext(r.Context())
 	//token := auth.GetToken(r.Context())
-	token := auth.CSRFTemplateField(r)
+	token := nosurf.Token(r)
 
 	var message template.HTML
 	if msg != "" {
@@ -1843,7 +1844,7 @@ func main() {
 	formatter.DisableLevelTruncation = true
 	log.SetFormatter(formatter)
 
-	confFile := flag.String("conf", "", "Path to the TOML or YAML config file.")
+	confFile := flag.String("conf", "config.toml", "Path to the TOML or YAML config file.")
 	showVersion := flag.Bool("version", false, "Print app version")
 	flag.BoolVar(&debugMode, "debug", false, "Toggle debug logging.")
 
@@ -1882,6 +1883,9 @@ func main() {
 		pageWriteLock: sync.Mutex{},
 		cache:         wikiCache{},
 	}
+
+	defer env.authState.CloseDB()
+
 	env.cache.Tags = make(map[string][]string)
 	env.cache.Favs = make(map[string]struct{})
 
@@ -1923,7 +1927,7 @@ func main() {
 		Addr:    "127.0.0.1:" + serverCfg.Port,
 		Handler: router(env),
 		// Good practice: enforce timeouts for servers you create!
-		WriteTimeout: 15 * time.Second,
+		WriteTimeout: 60 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
 

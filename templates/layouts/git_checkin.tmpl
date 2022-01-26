@@ -5,7 +5,7 @@
     <hr>
     <p>Would you like to check them in now?</p>
   <form method="post">
-    {{.Token}}
+    <input type="hidden" name="csrf_token" value="{{ .Token }}">
     <button type="submit" class="button">Yes</button>
   </form>
 {{ end }}
