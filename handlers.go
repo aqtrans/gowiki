@@ -14,7 +14,7 @@ import (
 
 	"git.jba.io/go/httputils"
 	"github.com/go-chi/chi/v5"
-	fuzzy2 "github.com/renstrom/fuzzysearch/fuzzy"
+	fuzzy2 "github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 )
