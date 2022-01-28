@@ -290,17 +290,27 @@ func TestNewWikiPage(t *testing.T) {
 	e.authState.NewAdmin("admin", "admin")
 
 	randPage, err := httputils.RandKey(8)
-	checkT(err, t)
-	r, err := http.NewRequest("GET", "/"+randPage, nil)
-	checkT(err, t)
+	if err != nil {
+		t.Fail()
+	}
+
+	r := httptest.NewRequest("GET", "/"+randPage, nil)
 
 	w := httptest.NewRecorder()
-	e.authState.Login("admin", w)
+
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
+
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
+	w2 := httptest.NewRecorder()
 
-	router(e).ServeHTTP(w, r)
+	router(e).ServeHTTP(w2, r)
 
-	if status := w.Code; status != http.StatusNotFound {
+	if status := w2.Code; status != http.StatusNotFound {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusNotFound)
 	}
@@ -364,18 +374,23 @@ func TestNewHandler(t *testing.T) {
 
 	e.authState.NewAdmin("admin", "admin")
 
-	r, err := http.NewRequest("GET", "/afefwdwdef/dwwafefe/fegegrgr", reader)
-	checkT(err, t)
-
+	r := httptest.NewRequest("GET", "/afefwdwdef/dwwafefe/fegegrgr", reader)
 	w := httptest.NewRecorder()
 
-	e.authState.Login("admin", w)
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
+
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
-	router(e).ServeHTTP(w, r)
+	w2 := httptest.NewRecorder()
 
-	if status := w.Code; status != http.StatusNotFound {
-		t.Log(w.Body.String())
+	router(e).ServeHTTP(w2, r)
+
+	if status := w2.Code; status != http.StatusNotFound {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusNotFound)
 	}
@@ -396,12 +411,20 @@ func TestIndexPage(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	e.authState.Login("admin", w)
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
+
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
-	router(e).ServeHTTP(w, r)
+	w2 := httptest.NewRecorder()
 
-	if status := w.Code; status != http.StatusSeeOther {
+	router(e).ServeHTTP(w2, r)
+
+	if status := w2.Code; status != http.StatusSeeOther {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusSeeOther)
 	}
@@ -422,10 +445,18 @@ func TestIndexHistoryPage(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	e.authState.Login("admin", w)
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
+
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
-	router(e).ServeHTTP(w, r)
+	w2 := httptest.NewRecorder()
+
+	router(e).ServeHTTP(w2, r)
 
 	if status := w.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
@@ -458,12 +489,20 @@ func TestIndexEditPage(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	e.authState.Login("admin", w)
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
+
+	w2 := httptest.NewRecorder()
+
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
-	router(e).ServeHTTP(w, r)
+	router(e).ServeHTTP(w2, r)
 
-	if status := w.Code; status != http.StatusOK {
+	if status := w2.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
@@ -489,7 +528,13 @@ func TestDirBaseHandler(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	e.authState.Login("admin", w)
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
+
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
@@ -499,10 +544,11 @@ func TestDirBaseHandler(t *testing.T) {
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
 	//router.DefaultContext = ctx
-	router(e).ServeHTTP(w, r)
+	w2 := httptest.NewRecorder()
+	router(e).ServeHTTP(w2, r)
 
 	// Check the status code is what we expect.
-	if status := w.Code; status != http.StatusInternalServerError {
+	if status := w2.Code; status != http.StatusInternalServerError {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusInternalServerError)
 	}
@@ -540,7 +586,13 @@ func TestRecentsPage(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	w := httptest.NewRecorder()
 
-	e.authState.Login("admin", w)
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
+
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
@@ -581,7 +633,13 @@ func TestListPage(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	w := httptest.NewRecorder()
 
-	e.authState.Login("admin", w)
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
+
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
@@ -684,7 +742,13 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	w := httptest.NewRecorder()
 
-	e.authState.Login("admin", w)
+	// Login
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
+
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
 	ctx := context.Background()
@@ -700,11 +764,12 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
 	//router.DefaultContext = ctx
-	router(e).ServeHTTP(w, r)
+	w2 := httptest.NewRecorder()
+	router(e).ServeHTTP(w2, r)
 	//t.Log(rr.Body.String())
 
 	// Check the status code is what we expect.
-	if status := w.Code; status != http.StatusOK {
+	if status := w2.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
@@ -736,7 +801,12 @@ func TestSearchPage(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	w := httptest.NewRecorder()
 
-	e.authState.Login("admin", w)
+	// Login
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
 	/*
@@ -783,16 +853,22 @@ func TestDotGit(t *testing.T) {
 	// We create a ResponseRecorder (which satisfies http.ResponseWriter) to record the response.
 	w := httptest.NewRecorder()
 
-	e.authState.Login("admin", w)
+	// Login
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
 	// Our handlers satisfy http.Handler, so we can call their ServeHTTP method
 	// directly and pass in our Request and ResponseRecorder.
 	//router.DefaultContext = ctx
-	router(e).ServeHTTP(w, r)
+	w2 := httptest.NewRecorder()
+	router(e).ServeHTTP(w2, r)
 
 	// Check the status code is what we expect.
-	if status := w.Code; status != http.StatusUnauthorized {
+	if status := w2.Code; status != http.StatusUnauthorized {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusUnauthorized)
 	}
@@ -818,14 +894,21 @@ func TestWikiDirEscape(t *testing.T) {
 	checkT(err, t)
 	w := httptest.NewRecorder()
 
-	e.authState.Login("admin", w)
+	// Login
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
+
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
-	router(e).ServeHTTP(w, r)
+	w2 := httptest.NewRecorder()
+
+	router(e).ServeHTTP(w2, r)
 
 	// Check the status code is what we expect.
-	if status := w.Code; status != http.StatusNotFound {
-		t.Log(w.Header())
+	if status := w2.Code; status != http.StatusNotFound {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusNotFound)
 	}
@@ -846,12 +929,19 @@ func TestWikiHistoryNonExistent(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	e.authState.Login("admin", w)
+	// Login
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
-	router(e).ServeHTTP(w, r)
+	w2 := httptest.NewRecorder()
 
-	if status := w.Code; status != http.StatusSeeOther {
+	router(e).ServeHTTP(w2, r)
+
+	if status := w2.Code; status != http.StatusSeeOther {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusSeeOther)
 	}
@@ -860,9 +950,9 @@ func TestWikiHistoryNonExistent(t *testing.T) {
 	e.checkName(&randPage)
 
 	expected := `/` + randPage
-	if w.Header().Get("Location") != expected {
+	if w2.Header().Get("Location") != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
-			w.Header().Get("Location"), expected)
+			w2.Header().Get("Location"), expected)
 	}
 }
 
@@ -879,20 +969,27 @@ func TestWikiDirIndex(t *testing.T) {
 
 	w := httptest.NewRecorder()
 
-	e.authState.Login("admin", w)
+	// Login
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e.authState.Login("admin", r)
+	})
+	handler := e.authState.LoadAndSave(testHandler)
+	handler.ServeHTTP(w, r)
 	r.Header = http.Header{"Cookie": w.HeaderMap["Set-Cookie"]}
 
-	router(e).ServeHTTP(w, r)
+	w2 := httptest.NewRecorder()
 
-	if status := w.Code; status != http.StatusFound {
+	router(e).ServeHTTP(w2, r)
+
+	if status := w2.Code; status != http.StatusFound {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusFound)
 	}
 
 	expected := `/omg/index`
-	if w.Header().Get("Location") != expected {
+	if w2.Header().Get("Location") != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
-			w.Header().Get("Location"), expected)
+			w2.Header().Get("Location"), expected)
 	}
 }
 

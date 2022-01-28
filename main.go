@@ -1761,7 +1761,7 @@ func wikiRejected(fullPath string, wikiExists, isAdmin, isLoggedIn bool) bool {
 // mitigateWiki is a general redirect handler; redirect should be set to true for login mitigations
 func mitigateWiki(redirect bool, env *wikiEnv, r *http.Request, w http.ResponseWriter) {
 	log.Debugln("mitigateWiki: " + r.Host + r.URL.Path)
-	env.authState.SetFlash("Unable to view that.", w)
+	env.authState.SetFlash("Unable to view that.", r)
 	if redirect {
 		// Use auth.Redirect to redirect while storing the current URL for future use
 		auth.Redirect(&env.authState, w, r)
@@ -1787,7 +1787,7 @@ func (env *wikiEnv) timer(next http.Handler) http.Handler {
 		// Throw current time in now, to be fetched by GetRenderTime
 		newTime := timeNewContext(r.Context(), time.Now())
 		// Get flash from cookie, put into context
-		msg := env.authState.GetFlash(r, w)
+		msg := env.authState.GetFlash(r)
 		f := flashNewContext(newTime, msg)
 
 		next.ServeHTTP(w, r.WithContext(f))

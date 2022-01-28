@@ -21,10 +21,11 @@ func router(env *wikiEnv) http.Handler {
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.CleanPath)
+	r.Use(env.authState.LoadAndSave)
+
 	r.Use(env.timer)
 	r.Use(nosurf.NewPure)
 	r.Use(env.securityCheck)
-	r.Use(env.authState.ValidateTokens)
 
 	//r.PanicHandler = errorHandler
 

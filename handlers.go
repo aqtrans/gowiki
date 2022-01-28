@@ -30,11 +30,11 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 	p := env.loadWikiPage(r, name)
 	if p.Wiki.Frontmatter.Favorite {
 		p.Wiki.Frontmatter.Favorite = false
-		env.authState.SetFlash(name+" has been un-favorited.", w)
+		env.authState.SetFlash(name+" has been un-favorited.", r)
 		log.Println(name + " page un-favorited!")
 	} else {
 		p.Wiki.Frontmatter.Favorite = true
-		env.authState.SetFlash(name+" has been favorited.", w)
+		env.authState.SetFlash(name+" has been favorited.", r)
 		log.Println(name + " page favorited!")
 	}
 
@@ -78,7 +78,7 @@ func (env *wikiEnv) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 
-	env.authState.SetFlash(name+" page successfully deleted.", w)
+	env.authState.SetFlash(name+" page successfully deleted.", r)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 
 }
@@ -547,7 +547,7 @@ func (env *wikiEnv) saveHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	env.authState.SetFlash("Wiki page successfully saved.", w)
+	env.authState.SetFlash("Wiki page successfully saved.", r)
 	http.Redirect(w, r, "/"+name, http.StatusSeeOther)
 	log.Println(name + " page saved!")
 }
@@ -556,7 +556,7 @@ func (env *wikiEnv) indexHandler(w http.ResponseWriter, r *http.Request) {
 	defer httputils.TimeTrack(time.Now(), "indexHandler")
 	if !env.authState.AnyUsers() {
 		log.Println("Need to signup...")
-		env.authState.SetFlash("Welcome! Sign up to start creating and editing pages.", w)
+		env.authState.SetFlash("Welcome! Sign up to start creating and editing pages.", r)
 		http.Redirect(w, r, "/signup", http.StatusSeeOther)
 		return
 	}
@@ -1107,10 +1107,10 @@ func (env *wikiEnv) LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Login authentication
 		if env.authState.Auth(username, password) {
-			env.authState.Login(username, w)
-			env.authState.SetFlash("User '"+username+"' successfully logged in.", w)
+			env.authState.Login(username, r)
+			env.authState.SetFlash("User '"+username+"' successfully logged in.", r)
 			// Check if we have a redirect URL in the cookie, if so redirect to it
-			redirURL := env.authState.GetRedirect(r, w)
+			redirURL := env.authState.GetRedirect(r)
 			if redirURL != "" {
 				http.Redirect(w, r, redirURL, http.StatusSeeOther)
 				return
@@ -1118,7 +1118,7 @@ func (env *wikiEnv) LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
-		env.authState.SetFlash("User '"+username+"' failed to login. Please check your credentials and try again.", w)
+		env.authState.SetFlash("User '"+username+"' failed to login. Please check your credentials and try again.", r)
 		http.Redirect(w, r, env.authState.Cfg.LoginPath, http.StatusSeeOther)
 		return
 	case "PUT":
@@ -1144,7 +1144,7 @@ func (e *wikiEnv) UserSignupTokenPostHandler(w http.ResponseWriter, r *http.Requ
 			err := e.authState.NewAdmin(username, password)
 			if err != nil {
 				log.Println("Error adding admin:", err)
-				e.authState.SetFlash("Error adding user. Check logs.", w)
+				e.authState.SetFlash("Error adding user. Check logs.", r)
 				http.Redirect(w, r, r.Referer(), http.StatusInternalServerError)
 				return
 			}
@@ -1152,7 +1152,7 @@ func (e *wikiEnv) UserSignupTokenPostHandler(w http.ResponseWriter, r *http.Requ
 			err := e.authState.NewUser(username, password)
 			if err != nil {
 				log.Println("Error adding user:", err)
-				e.authState.SetFlash("Error adding user. Check logs.", w)
+				e.authState.SetFlash("Error adding user. Check logs.", r)
 				http.Redirect(w, r, r.Referer(), http.StatusInternalServerError)
 				return
 			}
@@ -1160,10 +1160,10 @@ func (e *wikiEnv) UserSignupTokenPostHandler(w http.ResponseWriter, r *http.Requ
 
 		// Login the recently added user
 		if e.authState.Auth(username, password) {
-			e.authState.Login(username, w)
+			e.authState.Login(username, r)
 		}
 
-		e.authState.SetFlash("Successfully added '"+username+"' user.", w)
+		e.authState.SetFlash("Successfully added '"+username+"' user.", r)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 	case "PUT":
