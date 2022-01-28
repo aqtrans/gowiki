@@ -1873,7 +1873,7 @@ func main() {
 		DbPath:               filepath.Join(serverCfg.DataDir, "auth.db"),
 		LoginPath:            "/login",
 		SignupPath:           "/signup",
-		SessionLifetimeHours: 48,
+		SessionLifetimeHours: 1440,
 	}
 
 	env := &wikiEnv{
