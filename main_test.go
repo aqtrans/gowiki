@@ -324,8 +324,7 @@ func TestNewWikiPageNotLoggedIn(t *testing.T) {
 
 	randPage, err := httputils.RandKey(8)
 	checkT(err, t)
-	r, err := http.NewRequest("GET", "/"+randPage, nil)
-	checkT(err, t)
+	r := httptest.NewRequest("GET", "/"+randPage, nil)
 
 	w := httptest.NewRecorder()
 
@@ -344,8 +343,7 @@ func TestNewWikiPageNotLoggedIn(t *testing.T) {
 }
 
 func TestHealthCheckHandler(t *testing.T) {
-	req, err := http.NewRequest("GET", "/health", nil)
-	checkT(err, t)
+	req := httptest.NewRequest("GET", "/health", nil)
 	rr := httptest.NewRecorder()
 
 	tmpdb, e := testEnvInit()
@@ -406,8 +404,7 @@ func TestIndexPage(t *testing.T) {
 
 	e.authState.NewAdmin("admin", "admin")
 
-	r, err := http.NewRequest("GET", "/", nil)
-	checkT(err, t)
+	r := httptest.NewRequest("GET", "/", nil)
 
 	w := httptest.NewRecorder()
 
@@ -440,8 +437,7 @@ func TestIndexHistoryPage(t *testing.T) {
 
 	e.authState.NewAdmin("admin", "admin")
 
-	r, err := http.NewRequest("GET", "/history/index", nil)
-	checkT(err, t)
+	r := httptest.NewRequest("GET", "/history/index", nil)
 
 	w := httptest.NewRecorder()
 
@@ -484,8 +480,7 @@ func TestIndexEditPage(t *testing.T) {
 
 	e.authState.NewAdmin("admin", "admin")
 
-	r, err := http.NewRequest("GET", "/edit/index", nil)
-	checkT(err, t)
+	r := httptest.NewRequest("GET", "/edit/index", nil)
 
 	w := httptest.NewRecorder()
 
@@ -513,8 +508,7 @@ func TestIndexEditPage(t *testing.T) {
 func TestDirBaseHandler(t *testing.T) {
 	//setup()
 	// Create a request to pass to our handler.
-	r, err := http.NewRequest("GET", "/index/what/omg", nil)
-	checkT(err, t)
+	r := httptest.NewRequest("GET", "/index/what/omg", nil)
 
 	tmpdb, e := testEnvInit()
 	defer os.Remove(tmpdb)
@@ -577,8 +571,7 @@ func TestRecentsPage(t *testing.T) {
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
-	r, err := http.NewRequest("GET", "/recent", nil)
-	checkT(err, t)
+	r := httptest.NewRequest("GET", "/recent", nil)
 
 	//router := httptreemux.NewContextMux()
 	//router.GET("/recent", e.authState.AuthMiddle(e.recentHandler))
@@ -624,8 +617,7 @@ func TestListPage(t *testing.T) {
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
-	r, err := http.NewRequest("GET", "/list", nil)
-	checkT(err, t)
+	r := httptest.NewRequest("GET", "/list", nil)
 
 	//router := httptreemux.NewContextMux()
 	//router.GET("/list", e.listHandler)
@@ -672,8 +664,7 @@ func TestServer(t *testing.T) {
 	ts := httptest.NewServer(router(e))
 	defer ts.Close()
 
-	//req, err := http.NewRequest("GET", ts.URL+"/", nil)
-	//checkT(err, t)
+	//req := httptest.NewRequest("GET", ts.URL+"/", nil)
 	res, err := http.Get(ts.URL + "/")
 	checkT(err, t)
 	t.Log(res.Request.Referer(), res.Request.URL)
@@ -690,8 +681,7 @@ func TestPrivatePageNotLoggedIn(t *testing.T) {
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
-	req, err := http.NewRequest("GET", "/private", nil)
-	checkT(err, t)
+	req := httptest.NewRequest("GET", "/private", nil)
 
 	//router := httptreemux.NewContextMux()
 	//router.GET(`/*name`, e.wikiMiddle(e.viewHandler))
@@ -733,8 +723,7 @@ func TestPrivatePageLoggedIn(t *testing.T) {
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
-	r, err := http.NewRequest("GET", "/private", nil)
-	checkT(err, t)
+	r := httptest.NewRequest("GET", "/private", nil)
 
 	//router := httptreemux.NewContextMux()
 	//router.GET(`/*name`, e.wikiMiddle(e.viewHandler))
@@ -792,8 +781,7 @@ func TestSearchPage(t *testing.T) {
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
-	r, err := http.NewRequest("GET", "/search/omg", nil)
-	checkT(err, t)
+	r := httptest.NewRequest("GET", "/search/omg", nil)
 
 	//router := httptreemux.NewContextMux()
 	//router.GET("/search/*name", e.search)
@@ -844,8 +832,7 @@ func TestDotGit(t *testing.T) {
 
 	// Create a request to pass to our handler. We don't have any query parameters for now, so we'll
 	// pass 'nil' as the third parameter.
-	r, err := http.NewRequest("GET", "/.git/index", nil)
-	checkT(err, t)
+	r := httptest.NewRequest("GET", "/.git/index", nil)
 
 	//router := httptreemux.NewContextMux()
 	//router.GET("/*name", e.wikiMiddle(e.viewHandler))
@@ -890,8 +877,7 @@ func TestWikiDirEscape(t *testing.T) {
 
 	e.authState.NewAdmin("admin", "admin")
 
-	r, err := http.NewRequest("GET", "/../../test.md", nil)
-	checkT(err, t)
+	r := httptest.NewRequest("GET", "/../../test.md", nil)
 	w := httptest.NewRecorder()
 
 	// Login
@@ -924,8 +910,7 @@ func TestWikiHistoryNonExistent(t *testing.T) {
 
 	randPage, err := httputils.RandKey(8)
 	checkT(err, t)
-	r, err := http.NewRequest("GET", "/history/"+randPage, nil)
-	checkT(err, t)
+	r := httptest.NewRequest("GET", "/history/"+randPage, nil)
 
 	w := httptest.NewRecorder()
 
@@ -964,8 +949,7 @@ func TestWikiDirIndex(t *testing.T) {
 
 	e.authState.NewAdmin("admin", "admin")
 
-	r, err := http.NewRequest("GET", "/omg", nil)
-	checkT(err, t)
+	r := httptest.NewRequest("GET", "/omg", nil)
 
 	w := httptest.NewRecorder()
 
@@ -1272,10 +1256,7 @@ func BenchmarkWholeWiki(b *testing.B) {
 	}
 	defer os.Remove(tmpdb.DbPath)
 
-	req, err := http.NewRequest("GET", "/", nil)
-	if err != nil {
-		b.Fatal(err)
-	}
+	req := httptest.NewRequest("GET", "/", nil)
 
 	//router := httptreemux.NewContextMux()
 	//router.GET("/", indexHandler)
