@@ -1,3 +1,5 @@
+git.jba.io/go/auth/v2 v2.0.0-beta.3 h1:2NvecOQXaMXTDzB/Uj5aLx15cCsdS7o7Db5+Y02Nsy8=
+git.jba.io/go/auth/v2 v2.0.0-beta.3/go.mod h1:bT+thwuOg7acB/f58zJIFBX9AZb5zx2FzdQdhwly5e4=
 git.jba.io/go/httputils v0.0.0-20190322205649-639279c6da32 h1:9U4APB2n5HBUU5db+gaH7PDFqHfGrvO29SUX7HREhM4=
 git.jba.io/go/httputils v0.0.0-20190322205649-639279c6da32/go.mod h1:m/ZyF4y/giEln4zQNcc9dSE4MlPIZNy8Fy6St3S3p7w=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=

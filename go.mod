@@ -2,7 +2,7 @@ module git.jba.io/go/wiki
 
 go 1.16
 
-replace git.jba.io/go/auth/v2 => /home/aqtrans/go/src/git.jba.io/go/auth
+//replace git.jba.io/go/auth/v2 => /home/aqtrans/go/src/git.jba.io/go/auth
 
 require (
 	git.jba.io/go/auth/v2 v2.0.0-beta.3
