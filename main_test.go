@@ -15,6 +15,7 @@ import (
 
 	"git.jba.io/go/auth/v2"
 	"git.jba.io/go/httputils"
+	"github.com/oxtoacart/bpool"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -243,6 +244,7 @@ func testEnv(authState *auth.State) *wikiEnv {
 		pageWriteLock: sync.Mutex{},
 		tags:          newTagsMap(),
 		favs:          newFavsMap(),
+		pool:          bpool.NewBufferPool(64),
 	}
 }
 

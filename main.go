@@ -218,6 +218,7 @@ type wikiEnv struct {
 	templates     map[string]*template.Template
 	pageWriteLock sync.Mutex
 	cacheLock     sync.Mutex
+	pool          *bpool.BufferPool
 	favs
 	tags
 }
@@ -884,13 +885,12 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 	}
 
 	// Create buffer to write to and check for errors
-	bufpool := bpool.NewBufferPool(64)
-	buf := bufpool.Get()
+	buf := env.pool.Get()
 	err := tmpl.ExecuteTemplate(buf, "base", data)
 	if err != nil {
 		log.Println("renderTemplate error:")
 		log.Println(err)
-		bufpool.Put(buf)
+		env.pool.Put(buf)
 		panic(err)
 	}
 
@@ -902,7 +902,7 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 	if err != nil {
 		log.Println("renderTemplate error:")
 		log.Println(err)
-		bufpool.Put(buf)
+		env.pool.Put(buf)
 		panic(err)
 	}
 
@@ -910,11 +910,11 @@ func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name
 	if err != nil {
 		log.Println("renderTemplate error:")
 		log.Println(err)
-		bufpool.Put(buf)
+		env.pool.Put(buf)
 		panic(err)
 	}
 	buf.WriteTo(w)
-	bufpool.Put(buf)
+	env.pool.Put(buf)
 }
 
 func parseBool(value string) bool {
@@ -1882,6 +1882,7 @@ func main() {
 		templates:     tmplInit(),
 		pageWriteLock: sync.Mutex{},
 		cache:         wikiCache{},
+		pool:          bpool.NewBufferPool(64),
 	}
 
 	defer env.authState.CloseDB()
