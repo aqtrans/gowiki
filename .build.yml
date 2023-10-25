@@ -7,25 +7,34 @@ secrets:
   - 1efbd7f2-d0b5-4cfc-8a0c-f1c12da95d4e
 sources:
   - ssh://git@git.squanch.space/~aqtrans/gowiki
+environment:
+  project: gowiki
+  remote: deploy@starbuck.squanch.space
 tasks:
   - setup: |
-      cd gowiki
+      cd ${project}
       go get -d
       go generate
   - test: |
-      cd gowiki
+      cd ${project}
       go test
       go test -race
       go test -cover
       go test -bench=.
   - scss: |
-      cd gowiki
+      cd ${project}
       sassc -t compressed scss/grid.scss assets/css/wiki.css
   - build: |
-      cd gowiki
+      cd ${project}
       go build -ldflags "-X main.sha1ver=$(git rev-parse HEAD) -X main.buildTime=$(date +'%Y-%m-%d_%T')" -o gowiki
   - deploy: |
-      cd gowiki
-      scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no gowiki deploy@morty.squanch.space:/tmp/gowiki
-      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no deploy@morty.squanch.space "doas /bin/mv /tmp/gowiki /usr/local/bin/gowiki"
-      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no deploy@morty.squanch.space "doas /usr/sbin/rcctl restart gowiki"
+      cd ${project}
+      scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no gowiki $remote:/tmp/gowiki
+      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $remote "doas /bin/mv /tmp/gowiki /usr/local/bin/gowiki"
+      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $remote "doas /usr/sbin/rcctl restart gowiki"
+  - mirror-to-github: |
+      cd ${project}
+      ssh-keyscan -H github.com > $HOME/.ssh/known_hosts
+      echo -e "Host github.com\n    IdentityFile ~/.ssh/id_rsa\n    IdentitiesOnly yes\n    BatchMode yes\n" >> ~/.ssh/config
+      git remote add github git@github.com:aqtrans/gowiki.git
+      git push --prune github +refs/remotes/origin/*:refs/heads/* +refs/tags/*:refs/tags/* master
