@@ -90,5 +90,10 @@ while [ "$1" != "" ]; do
             ssh bob.jba.io sudo dpkg -i $APPNAME-$DEBVERSION.deb
             exit
             ;;            
+        build-bsd)
+            build_css
+            GOOS=openbsd GOARCH=amd64 go build -ldflags "-X main.sha1ver=$(git rev-parse HEAD) -X main.buildTime=$(date +'%Y-%m-%d_%T')" -o $APPNAME-obsd
+            exit
+            ;;
     esac
 done
