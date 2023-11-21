@@ -6,7 +6,7 @@ packages:
 secrets:
   - 1efbd7f2-d0b5-4cfc-8a0c-f1c12da95d4e
 sources:
-  - ssh://git@git.squanch.space/~aqtrans/gowiki
+  - ssh://git@git.sr.ht/~aqtrans/gowiki
 environment:
   project: gowiki
   remote: deploy@starbuck.squanch.space
