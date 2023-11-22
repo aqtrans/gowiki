@@ -4,7 +4,7 @@ packages:
   - git
   - sassc
 secrets:
-  - 1efbd7f2-d0b5-4cfc-8a0c-f1c12da95d4e
+  - 8ad6a3b8-827a-4454-8337-3ec2baab7ca0
 sources:
   - ssh://git@git.sr.ht/~aqtrans/gowiki
 environment:
