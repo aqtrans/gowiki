@@ -29,7 +29,7 @@ require (
 	github.com/tevjef/go-runtime-metrics v0.0.0-20170326170900-527a54029307
 	github.com/xanzy/ssh-agent v0.1.0 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
-	golang.org/x/crypto v0.11.0 // indirect
+	golang.org/x/crypto v0.17.0 // indirect
 	gopkg.in/src-d/go-billy.v4 v4.0.2 // indirect
 	gopkg.in/src-d/go-git-fixtures.v3 v3.5.0 // indirect
 	gopkg.in/src-d/go-git.v4 v4.1.0
