@@ -37,9 +37,9 @@ require (
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/xanzy/ssh-agent v0.1.0 // indirect
 	go.etcd.io/bbolt v1.3.8 // indirect
-	golang.org/x/crypto v0.15.0 // indirect
-	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/sys v0.14.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/src-d/go-billy.v4 v4.0.2 // indirect
 	gopkg.in/src-d/go-git-fixtures.v3 v3.5.0 // indirect
