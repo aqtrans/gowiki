@@ -9,7 +9,7 @@ toolchain go1.21.4
 require (
 	git.jba.io/go/auth/v2 v2.0.0-beta.3
 	git.jba.io/go/httputils v0.0.0-20190322205649-2c0076f47d18
-	github.com/go-chi/chi/v5 v5.0.10
+	github.com/go-chi/chi/v5 v5.0.12
 	github.com/justinas/nosurf v1.1.1
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c
@@ -23,7 +23,7 @@ require (
 
 require (
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
-	github.com/alexedwards/scs/boltstore v0.0.0-20231113091146-cef4b05350c8 // indirect
+	github.com/alexedwards/scs/boltstore v0.0.0-20240203174419-a38e822451b6 // indirect
 	github.com/alexedwards/scs/v2 v2.7.0 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
 	github.com/gliderlabs/ssh v0.2.2 // indirect
@@ -36,7 +36,7 @@ require (
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/xanzy/ssh-agent v0.1.0 // indirect
-	go.etcd.io/bbolt v1.3.8 // indirect
+	go.etcd.io/bbolt v1.3.9 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
