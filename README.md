@@ -1,6 +1,6 @@
 # Gowiki - a Gitit clone written in Golang
 
-[![Build Status](https://ci.jba.io/api/badges/go/wiki/status.svg)](https://ci.jba.io/go/wiki)
+[![builds.sr.ht status](https://builds.sr.ht/~aqtrans/gowiki.svg)](https://builds.sr.ht/~aqtrans/gowiki?)
 
 This is my attempt to replicate the featureset of Gitit, written in Go. 
 
