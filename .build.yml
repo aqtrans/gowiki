@@ -27,6 +27,9 @@ tasks:
   - build: |
       cd ${project}
       go build -ldflags "-X main.sha1ver=$(git rev-parse HEAD) -X main.buildTime=$(date +'%Y-%m-%d_%T')" -o gowiki
+      if [ "$(git rev-parse origin/master)" != "$(git rev-parse HEAD)" ]; then \
+        complete-build; \
+      fi
   - deploy: |
       cd ${project}
       scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no gowiki $remote:/tmp/gowiki
