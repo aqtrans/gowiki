@@ -9,7 +9,7 @@ sources:
   - ssh://git@git.sr.ht/~aqtrans/gowiki
 environment:
   project: gowiki
-  remote: deploy@starbuck.squanch.space
+  remote: deploy@barry.squanch.space
 tasks:
   - setup: |
       cd ${project}
