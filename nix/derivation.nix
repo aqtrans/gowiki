@@ -37,7 +37,7 @@ buildGoModule rec {
 
   meta = with lib; {
     description = "Simple wiki using Git underneath, written in Go";
-    homepage = "https://github.com/aqtrans/gowiki";
+    homepage = "https://git.sr.ht/~aqtrans/gowiki";
     license = licenses.mit;
     maintainers = with maintainers; [ "aqtrans" ];
     platforms = platforms.linux;

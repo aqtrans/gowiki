@@ -4,11 +4,9 @@ go 1.21
 
 toolchain go1.21.4
 
-//replace git.sr.ht/~aqtrans/goauth/v2 => /home/aqtrans/go/src/git.jba.io/go/auth
-
 require (
-	git.jba.io/go/auth/v2 v2.0.0-beta.3
-	git.jba.io/go/httputils v0.0.0-20190322205649-2c0076f47d18
+	git.sr.ht/~aqtrans/goauth/v2 v2.0.0
+	git.sr.ht/~aqtrans/gohttputils v0.0.0-20180127041929-921d30347ce2
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/justinas/nosurf v1.1.1
 	github.com/lithammer/fuzzysearch v1.1.8
