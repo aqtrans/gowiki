@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/justinas/nosurf"
 	chiprometheus "github.com/ppaanngggg/chi-prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func router(env *wikiEnv) http.Handler {
@@ -39,6 +40,7 @@ func router(env *wikiEnv) http.Handler {
 	r.Use(env.securityCheck)
 
 	//r.PanicHandler = errorHandler
+	r.Handle("/metrics", promhttp.Handler())
 
 	r.Get("/", env.indexHandler)
 

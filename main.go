@@ -58,7 +58,6 @@ import (
 	"time"
 
 	"github.com/pelletier/go-toml"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
@@ -1946,26 +1945,6 @@ func main() {
 		}
 		log.Println("Listening on 127.0.0.1:" + serverCfg.Port)
 	}()
-
-	if env.cfg.Prometheus {
-		promSrv := &http.Server{
-			Addr:    "127.0.0.1:" + serverCfg.PrometheusPort,
-			Handler: promhttp.Handler(),
-			// Good practice: enforce timeouts for servers you create!
-			WriteTimeout: 60 * time.Second,
-			ReadTimeout:  15 * time.Second,
-		}
-		// Serve our metrics.
-		go func() {
-			err := promSrv.ListenAndServe()
-			if err != nil {
-				log.WithFields(logrus.Fields{
-					"error": err,
-				}).Fatalln("error starting HTTP Prometheus server")
-			}
-			log.Printf("metrics listening at 127.0.0.1:" + serverCfg.PrometheusPort)
-		}()
-	}
 
 	<-stopChan // wait for SIGINT
 	log.Println("Shutting down server...")
