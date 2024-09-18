@@ -1,4 +1,4 @@
-image: openbsd/7.4
+image: openbsd/7.5
 packages:
   - go
   - git
