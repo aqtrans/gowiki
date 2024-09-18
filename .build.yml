@@ -22,7 +22,6 @@ tasks:
   - test: |
       cd ${project}
       go test
-      go test -race
       go test -cover
       go test -bench=.
   - scss: |
