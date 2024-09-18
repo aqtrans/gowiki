@@ -58,6 +58,7 @@ import (
 	"time"
 
 	"github.com/pelletier/go-toml"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
@@ -106,6 +107,7 @@ const (
 )
 
 // Go 1.16 embed:
+//
 //go:embed assets
 var assetsfs embed.FS
 
@@ -132,7 +134,7 @@ type renderer struct {
 	*blackfriday.Html
 }
 
-//Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
+// Base struct, page ; has to be wrapped in a data {} strut for consistency reasons
 type page struct {
 	SiteName  string
 	Favs      []string
@@ -206,6 +208,7 @@ type config struct {
 	CacheEnabled   bool   `yaml:"CacheEnabled,omitempty"`
 	CsrfTLS        bool   `yaml:"CsrfTLS,omitempty"`
 	DebugMode      bool   `yaml:"DebugMode,omitempty"`
+	Prometheus     bool   `yaml:"Prometheus,omitempty"`
 }
 
 // Env wrapper to hold app-specific configs, to pass to handlers
@@ -1069,7 +1072,8 @@ func (env *wikiEnv) checkName(name *string) (bool, error) {
 }
 
 // checkDir should perform a recursive check over all directory elements of a given path,
-//  and check that we're not trying to overwrite a file with a directory
+//
+//	and check that we're not trying to overwrite a file with a directory
 func (env *wikiEnv) checkDir(dir string) error {
 	defer httputils.TimeTrack(time.Now(), "checkDir")
 
@@ -1941,6 +1945,16 @@ func main() {
 		}
 		log.Println("Listening on 127.0.0.1:" + serverCfg.Port)
 	}()
+
+	if env.cfg.Prometheus {
+		// Serve our metrics.
+		go func() {
+			log.Printf("metrics listening at %s", ":9090")
+			if err := http.ListenAndServe(":9090", promhttp.Handler()); err != nil {
+				log.Panicf("error while serving metrics: %s", err)
+			}
+		}()
+	}
 
 	<-stopChan // wait for SIGINT
 	log.Println("Shutting down server...")

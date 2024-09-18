@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/justinas/nosurf"
+	chiprometheus "github.com/ppaanngggg/chi-prometheus"
 )
 
 func router(env *wikiEnv) http.Handler {
@@ -19,7 +20,17 @@ func router(env *wikiEnv) http.Handler {
 
 	r := chi.NewRouter()
 
+	r.Use(middleware.Heartbeat("/health"))
+
+	if env.cfg.Prometheus {
+		//Prometheus:
+		promMiddle := chiprometheus.NewMiddleware("wiki")
+		r.Use(promMiddle)
+	}
+
 	r.Use(middleware.Logger)
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Recoverer)
 	r.Use(middleware.CleanPath)
 	r.Use(env.authState.LoadAndSave)
 
@@ -41,7 +52,7 @@ func router(env *wikiEnv) http.Handler {
 	r.Get("/search/*", env.searchHandler)
 	r.Post("/search", env.searchHandler)
 	r.Get("/recent", env.authState.UsersOnly(env.recentHandler))
-	r.Get("/health", healthCheckHandler)
+	//r.Get("/health", healthCheckHandler)
 
 	r.Route("/admin", func(r chi.Router) {
 		r.Use(env.authState.AdminsOnlyH)

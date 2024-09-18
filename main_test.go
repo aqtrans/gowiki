@@ -234,6 +234,7 @@ func testEnv(authState *auth.State) *wikiEnv {
 			CacheEnabled:   true,
 			GitCommitEmail: "test@test.com",
 			GitCommitName:  "gowiki-tests",
+			Prometheus:     false,
 		},
 		authState: *authState,
 		cache: wikiCache{
@@ -358,7 +359,7 @@ func TestHealthCheckHandler(t *testing.T) {
 			status, http.StatusOK)
 	}
 
-	expected := `{"alive": true}`
+	expected := `.`
 	if rr.Body.String() != expected {
 		t.Errorf("handler returned unexpected body: got %v want %v",
 			rr.Body.String(), expected)
