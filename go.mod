@@ -12,6 +12,8 @@ require (
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c
 	github.com/pelletier/go-toml v1.9.5
+	github.com/ppaanngggg/chi-prometheus v0.0.0-20221028102310-98bfe0c05e89
+	github.com/prometheus/client_golang v1.20.4
 	github.com/russross/blackfriday v1.6.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/tevjef/go-runtime-metrics v0.0.0-20170326170900-527a54029307
@@ -27,16 +29,14 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/gliderlabs/ssh v0.2.2 // indirect
-	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20180127194858-0ff8514904a8 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pelletier/go-buffruneio v0.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/ppaanngggg/chi-prometheus v0.0.0-20221028102310-98bfe0c05e89 // indirect
-	github.com/prometheus/client_golang v1.20.4 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
