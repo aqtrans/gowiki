@@ -67,8 +67,8 @@ import (
 	"github.com/russross/blackfriday"
 	_ "github.com/tevjef/go-runtime-metrics/expvar"
 
-	"git.sr.ht/~aqtrans/goauth/v2"
-	"git.sr.ht/~aqtrans/gohttputils"
+	auth "git.sr.ht/~aqtrans/goauth/v2"
+	httputils "git.sr.ht/~aqtrans/gohttputils"
 	"github.com/justinas/nosurf"
 )
 
@@ -209,6 +209,7 @@ type config struct {
 	CsrfTLS        bool   `yaml:"CsrfTLS,omitempty"`
 	DebugMode      bool   `yaml:"DebugMode,omitempty"`
 	Prometheus     bool   `yaml:"Prometheus,omitempty"`
+	PrometheusPort string `yaml:"PrometheusPort,omitempty"`
 }
 
 // Env wrapper to hold app-specific configs, to pass to handlers
@@ -1947,12 +1948,22 @@ func main() {
 	}()
 
 	if env.cfg.Prometheus {
+		promSrv := &http.Server{
+			Addr:    "127.0.0.1:" + serverCfg.PrometheusPort,
+			Handler: promhttp.Handler(),
+			// Good practice: enforce timeouts for servers you create!
+			WriteTimeout: 60 * time.Second,
+			ReadTimeout:  15 * time.Second,
+		}
 		// Serve our metrics.
 		go func() {
-			log.Printf("metrics listening at %s", ":9090")
-			if err := http.ListenAndServe(":9090", promhttp.Handler()); err != nil {
-				log.Panicf("error while serving metrics: %s", err)
+			err := promSrv.ListenAndServe()
+			if err != nil {
+				log.WithFields(logrus.Fields{
+					"error": err,
+				}).Fatalln("error starting HTTP Prometheus server")
 			}
+			log.Printf("metrics listening at 127.0.0.1:" + serverCfg.PrometheusPort)
 		}()
 	}
 
