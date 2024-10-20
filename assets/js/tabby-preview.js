@@ -6,7 +6,7 @@ function mdPreview() {
         body: JSON.stringify({md: document.querySelector("#wikieditor").value}), // data can be `string` or {object}!
         headers:{
             'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRF-Token': document.querySelector("input[name='gorilla.csrf.Token']").value,
+            'X-CSRF-Token': document.querySelector("input[name='csrf_token']").value,
         }
     })
     .then(function(response) {
