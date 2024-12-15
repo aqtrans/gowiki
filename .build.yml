@@ -8,7 +8,7 @@ secrets:
 sources:
   - ssh://git@git.jba.io:go/wiki.git
 environment:
-  project: gowiki
+  project: wiki
   remote: deploy@barry.squanch.space
 triggers:
   - action: email
