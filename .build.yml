@@ -5,8 +5,6 @@ packages:
   - sassc
 secrets:
   - dfbc7cb0-b02f-44ab-9b11-cf1a5467c3d2
-sources:
-  - ssh://git@git.jba.io:go/wiki.git
 environment:
   project: wiki
   remote: deploy@barry.squanch.space
