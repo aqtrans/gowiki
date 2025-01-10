@@ -224,6 +224,7 @@ type wikiEnv struct {
 	pool          *bpool.BufferPool
 	favs
 	tags
+	testing bool
 }
 
 type wikiCache struct {

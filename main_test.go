@@ -13,8 +13,8 @@ import (
 	"sync"
 	"testing"
 
-	"git.sr.ht/~aqtrans/goauth/v2"
-	"git.sr.ht/~aqtrans/gohttputils"
+	auth "git.sr.ht/~aqtrans/goauth/v2"
+	httputils "git.sr.ht/~aqtrans/gohttputils"
 	"github.com/oxtoacart/bpool"
 	log "github.com/sirupsen/logrus"
 )
@@ -218,6 +218,8 @@ func newState() *auth.AuthState {
 */
 
 func testEnv(authState *auth.State) *wikiEnv {
+	log.SetOutput(io.Discard)
+
 	gitPath, err := exec.LookPath("git")
 	if err != nil {
 		log.Println(err, gitPath)
@@ -246,6 +248,7 @@ func testEnv(authState *auth.State) *wikiEnv {
 		tags:          newTagsMap(),
 		favs:          newFavsMap(),
 		pool:          bpool.NewBufferPool(64),
+		testing:       true,
 	}
 }
 
@@ -1243,6 +1246,9 @@ func BenchmarkReadFront2(b *testing.B) {
 
 func BenchmarkWholeWiki(b *testing.B) {
 
+	// Turn off all logging
+	log.SetOutput(io.Discard)
+
 	tmpdb := tempfile()
 	//defer os.Remove(tmpdb)
 	authState := auth.NewAuthState(tmpdb)
@@ -1256,6 +1262,7 @@ func BenchmarkWholeWiki(b *testing.B) {
 		pageWriteLock: sync.Mutex{},
 		tags:          newTagsMap(),
 		favs:          newFavsMap(),
+		testing:       true,
 	}
 	defer os.Remove(tmpdb.DbPath)
 
@@ -1272,6 +1279,7 @@ func BenchmarkWholeWiki(b *testing.B) {
 	//router.DefaultContext = ctx
 
 	for n := 0; n < b.N; n++ {
+		log.SetOutput(io.Discard)
 		router(env).ServeHTTP(rr, req)
 	}
 }

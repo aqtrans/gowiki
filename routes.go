@@ -29,7 +29,12 @@ func router(env *wikiEnv) http.Handler {
 		r.Use(promMiddle)
 	}
 
-	r.Use(middleware.Logger)
+	// Disable logger middleware if testing
+	// TODO: wrap this into a Logrus() instance passed through the env
+	if !env.testing {
+		r.Use(middleware.Logger)
+	}
+
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.CleanPath)
