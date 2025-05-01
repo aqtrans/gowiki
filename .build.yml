@@ -9,7 +9,7 @@ sources:
   - ssh://git@git.sr.ht/~aqtrans/gowiki
 environment:
   project: gowiki
-  remote: deploy@bob.squanch.space
+  remote: deploy@jba42.com
   goversion: 1.24.0
 triggers:
   - action: email
