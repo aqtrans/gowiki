@@ -9,8 +9,8 @@ sources:
   - ssh://git@git.sr.ht/~aqtrans/gowiki
 environment:
   project: gowiki
-  remote: deploy@jba42.com
-  goversion: 1.24.0
+  remote: deploy@server.jba42.com
+  goversion: 1.25.1
 triggers:
   - action: email
     condition: failure
