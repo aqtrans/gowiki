@@ -1,19 +1,19 @@
 module git.sr.ht/~aqtrans/gowiki
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.2
 
 require (
 	git.sr.ht/~aqtrans/goauth/v2 v2.0.0
 	git.sr.ht/~aqtrans/gohttputils v0.0.0-20180127041929-921d30347ce2
-	github.com/go-chi/chi/v5 v5.2.2
+	github.com/go-chi/chi/v5 v5.2.3
 	github.com/justinas/nosurf v1.2.0
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c
 	github.com/pelletier/go-toml v1.9.5
 	github.com/ppaanngggg/chi-prometheus v0.0.0-20221028102310-98bfe0c05e89
-	github.com/prometheus/client_golang v1.22.0
+	github.com/prometheus/client_golang v1.23.2
 	github.com/russross/blackfriday v1.6.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/tevjef/go-runtime-metrics v0.0.0-20170326170900-527a54029307
@@ -31,14 +31,15 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/skeema/knownhosts v1.3.0 // indirect
-	golang.org/x/mod v0.25.0 // indirect
-	golang.org/x/sync v0.15.0 // indirect
-	golang.org/x/tools v0.33.0 // indirect
+	go.yaml.in/yaml/v2 v2.4.3 // indirect
+	golang.org/x/mod v0.27.0 // indirect
+	golang.org/x/sync v0.17.0 // indirect
+	golang.org/x/tools v0.36.0 // indirect
 )
 
 require (
 	github.com/alexedwards/scs/boltstore v0.0.0-20250417082927-ab20b3feb5e9 // indirect
-	github.com/alexedwards/scs/v2 v2.8.0 // indirect
+	github.com/alexedwards/scs/v2 v2.9.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
@@ -48,15 +49,15 @@ require (
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.65.0 // indirect
+	github.com/prometheus/common v0.66.1 // indirect
 	github.com/prometheus/procfs v0.17.0 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	go.etcd.io/bbolt v1.4.2 // indirect
-	golang.org/x/crypto v0.39.0 // indirect
-	golang.org/x/net v0.40.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/text v0.26.0 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	go.etcd.io/bbolt v1.4.3 // indirect
+	golang.org/x/crypto v0.42.0 // indirect
+	golang.org/x/net v0.43.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
+	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
