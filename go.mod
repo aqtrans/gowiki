@@ -2,7 +2,7 @@ module git.sr.ht/~aqtrans/gowiki
 
 go 1.24.0
 
-toolchain go1.24.2
+toolchain go1.25.3
 
 require (
 	git.sr.ht/~aqtrans/goauth/v2 v2.0.0
