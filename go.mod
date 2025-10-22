@@ -12,6 +12,7 @@ require (
 	github.com/lithammer/fuzzysearch v1.1.8
 	github.com/oxtoacart/bpool v0.0.0-20190530202638-03653db5a59c
 	github.com/pelletier/go-toml v1.9.5
+	github.com/pelletier/go-toml/v2 v2.2.4
 	github.com/ppaanngggg/chi-prometheus v0.0.0-20221028102310-98bfe0c05e89
 	github.com/prometheus/client_golang v1.23.2
 	github.com/russross/blackfriday v1.6.0
