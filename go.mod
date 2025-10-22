@@ -15,6 +15,7 @@ require (
 	github.com/ppaanngggg/chi-prometheus v0.0.0-20221028102310-98bfe0c05e89
 	github.com/prometheus/client_golang v1.23.2
 	github.com/russross/blackfriday v1.6.0
+	github.com/russross/blackfriday/v2 v2.1.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/tevjef/go-runtime-metrics v0.0.0-20170326170900-527a54029307
 	gopkg.in/yaml.v2 v2.4.0
