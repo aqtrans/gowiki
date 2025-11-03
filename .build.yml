@@ -10,7 +10,7 @@ sources:
 environment:
   project: gowiki
   remote: deploy@server.jba42.com
-  goversion: 1.25.1
+  goversion: 1.25.3
 triggers:
   - action: email
     condition: failure
