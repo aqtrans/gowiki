@@ -1,8 +1,6 @@
 module git.sr.ht/~aqtrans/gowiki
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.25.0
 
 require (
 	git.sr.ht/~aqtrans/goauth/v2 v2.0.0
@@ -33,9 +31,9 @@ require (
 	github.com/pjbgf/sha1cd v0.5.0 // indirect
 	github.com/skeema/knownhosts v1.3.2 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
-	golang.org/x/mod v0.29.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/tools v0.38.0 // indirect
+	golang.org/x/mod v0.37.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
+	golang.org/x/tools v0.47.0 // indirect
 )
 
 require (
@@ -54,10 +52,10 @@ require (
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.etcd.io/bbolt v1.4.3 // indirect
-	golang.org/x/crypto v0.43.0 // indirect
-	golang.org/x/net v0.46.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
+	golang.org/x/crypto v0.54.0 // indirect
+	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/text v0.40.0 // indirect
 	google.golang.org/protobuf v1.36.10 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
