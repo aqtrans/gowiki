@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"html"
 	"io"
 	"net/http"
 	"os"
@@ -12,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"git.sr.ht/~aqtrans/gohttputils"
+	httputils "git.sr.ht/~aqtrans/gohttputils"
 	"github.com/go-chi/chi/v5"
 	fuzzy2 "github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/sirupsen/logrus"
@@ -30,11 +31,11 @@ func (env *wikiEnv) setFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 	p := env.loadWikiPage(r, name)
 	if p.Wiki.Frontmatter.Favorite {
 		p.Wiki.Frontmatter.Favorite = false
-		env.authState.SetFlash(name+" has been un-favorited.", r)
+		env.authState.SetFlash(html.EscapeString(name+" has been un-favorited."), r)
 		log.Println(name + " page un-favorited!")
 	} else {
 		p.Wiki.Frontmatter.Favorite = true
-		env.authState.SetFlash(name+" has been favorited.", r)
+		env.authState.SetFlash(html.EscapeString(name+" has been favorited."), r)
 		log.Println(name + " page favorited!")
 	}
 
@@ -78,7 +79,7 @@ func (env *wikiEnv) deleteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 
-	env.authState.SetFlash(name+" page successfully deleted.", r)
+	env.authState.SetFlash(html.EscapeString(name+" page successfully deleted."), r)
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 
 }
@@ -1108,7 +1109,7 @@ func (env *wikiEnv) LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 		// Login authentication
 		if env.authState.Auth(username, password) {
 			env.authState.Login(username, r)
-			env.authState.SetFlash("User '"+username+"' successfully logged in.", r)
+			env.authState.SetFlash(html.EscapeString("User '"+username+"' successfully logged in."), r)
 			// Check if we have a redirect URL in the cookie, if so redirect to it
 			redirURL := env.authState.GetRedirect(r)
 			if redirURL != "" {
@@ -1118,7 +1119,7 @@ func (env *wikiEnv) LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
-		env.authState.SetFlash("User '"+username+"' failed to login. Please check your credentials and try again.", r)
+		env.authState.SetFlash(html.EscapeString("User '"+username+"' failed to login. Please check your credentials and try again."), r)
 		http.Redirect(w, r, env.authState.Cfg.LoginPath, http.StatusSeeOther)
 		return
 	case "PUT":
@@ -1163,7 +1164,7 @@ func (e *wikiEnv) UserSignupTokenPostHandler(w http.ResponseWriter, r *http.Requ
 			e.authState.Login(username, r)
 		}
 
-		e.authState.SetFlash("Successfully added '"+username+"' user.", r)
+		e.authState.SetFlash(html.EscapeString("Successfully added '"+username+"' user."), r)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 	case "PUT":
