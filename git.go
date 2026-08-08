@@ -507,7 +507,7 @@ func (env *wikiEnv) gitSearch(searchTerm, fileSpec string) []result {
 		if len(vs) == 2 {
 			theResult := result{
 				Name:   vs[0],
-				Result: vs[1],
+				Result: strings.TrimPrefix(vs[1], "title: "),
 			}
 			results = append(results, theResult)
 		}
