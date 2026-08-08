@@ -959,7 +959,7 @@ func doesPageExist(name string) (bool, error) {
 		}
 	}
 
-	log.Debugln("doesPageExist", name, exists)
+	//log.Debugln("doesPageExist", name, exists)
 
 	return exists, finError
 }
@@ -1718,7 +1718,7 @@ func markdownPreview(w http.ResponseWriter, r *http.Request) {
 // return true if request should be rejected
 func wikiRejected(fullPath string, wikiExists, isAdmin, isLoggedIn bool) bool {
 
-	log.Debugln("wikiRejected name", fullPath)
+	//log.Debugln("wikiRejected name", fullPath)
 
 	// if wikiExists, read the frontmatter and reject/accept based on frontmatter.Permission
 	if wikiExists {
