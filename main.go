@@ -50,6 +50,7 @@ import (
 	"regexp"
 	"runtime"
 	"runtime/debug"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -396,17 +397,15 @@ func (r *renderer) NormalText(out *bytes.Buffer, text []byte) {
 }
 
 func appendIfMissing(slice []string, s string) []string {
-	for _, ele := range slice {
-		if ele == s {
-			return slice
-		}
+	if slices.Contains(slice, s) {
+		return slice
 	}
 	return append(slice, s)
 }
 
-func httpErrorHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
+func httpErrorHandler(w http.ResponseWriter, r *http.Request, err any) {
 	data := struct {
-		Error interface{}
+		Error any
 	}{
 		err,
 	}
@@ -429,12 +428,12 @@ func httpErrorHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
 	tpl.Execute(w, data)
 }
 
-func errorHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
+func errorHandler(w http.ResponseWriter, r *http.Request, err any) {
 	_, filePath, line, _ := runtime.Caller(4)
 	data := struct {
 		Filepath string
 		Line     int
-		Error    interface{}
+		Error    any
 	}{
 		filePath,
 		line,
@@ -837,7 +836,7 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 		err := yaml.Unmarshal(fmdata, &fm)
 		// Try and handle malformed YAML here
 		if err != nil {
-			m := map[string]interface{}{}
+			m := map[string]any{}
 			err2 := yaml.Unmarshal(fmdata, &m)
 			if err2 != nil {
 				return frontmatter{}
@@ -881,7 +880,7 @@ func marshalFrontmatter(fmdata []byte) (fm frontmatter) {
 	return fm
 }
 
-func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name string, data interface{}) {
+func renderTemplate(c context.Context, env *wikiEnv, w http.ResponseWriter, name string, data any) {
 	tmpl, ok := env.templates[name]
 	if !ok {
 		log.Println(fmt.Errorf("The template %s does not exist", name))
@@ -996,8 +995,8 @@ func (env *wikiEnv) checkName(name *string) (bool, error) {
 	// Rely on httptreemux's Clean function to clean up ../ and other potential path-escaping sequences;
 	//  stripping off the / so we can pass it along to git
 	//*name = httptreemux.Clean(*name)
-	if strings.HasPrefix(*name, "/") {
-		*name = strings.TrimPrefix(*name, "/")
+	if after, ok := strings.CutPrefix(*name, "/"); ok {
+		*name = after
 	}
 	// Remove trailing spaces
 	*name = strings.Trim(*name, " ")

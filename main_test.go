@@ -1312,7 +1312,7 @@ func TestMultipleWrites(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(50)
 
-	for w := 0; w < 50; w++ {
+	for range 50 {
 		go func() {
 			name := "index"
 			randContent, err := httputils.RandKey(32)

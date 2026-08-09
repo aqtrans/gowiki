@@ -494,11 +494,11 @@ func (env *wikiEnv) gitSearch(searchTerm, fileSpec string) []result {
 	}
 
 	// split each result onto it's own line
-	logsplit := strings.Split(string(o), "\n")
+	logsplit := strings.SplitSeq(string(o), "\n")
 	// now split each search result line into it's slice
 	// format should be: filename:searchresult
 
-	for _, v := range logsplit {
+	for v := range logsplit {
 		//var theCommit *commitLog
 		var vs = strings.SplitN(v, ":", 2)
 		//log.Println(len(vs))
@@ -513,8 +513,8 @@ func (env *wikiEnv) gitSearch(searchTerm, fileSpec string) []result {
 		}
 	}
 	// Check for matching filenames
-	listOfFiles := strings.Fields(fileSpec)
-	for _, v := range listOfFiles {
+	listOfFiles := strings.FieldsSeq(fileSpec)
+	for v := range listOfFiles {
 		if strings.Contains(v, searchTerm) {
 			cleanV := strings.TrimPrefix(v, "\"")
 			cleanV = strings.TrimSuffix(cleanV, "\"")
